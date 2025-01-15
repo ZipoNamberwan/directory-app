@@ -8,6 +8,8 @@ use App\Models\Village;
 use App\Models\Sls;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use App\Jobs\SlsJob;
 
 class AreaSeeder extends Seeder
 {
@@ -9217,5 +9219,41 @@ $desa3579030007 = Village::create(['short_code' => '007', 'long_code' => '357903
 $desa3579030008 = Village::create(['short_code' => '008', 'long_code' => '3579030008', 'name' => 'GIRIPURNO', 'subdistrict_id' => $kec3579030->id,]);
 $desa3579030009 = Village::create(['short_code' => '009', 'long_code' => '3579030009', 'name' => 'SUMBER BRANTAS', 'subdistrict_id' => $kec3579030->id,]);
 
+$folderPath = storage_path('../python_script/result/sls'); // Adjust this path to your folder
+
+        // Get all files in the folder
+        $files = File::files($folderPath);
+
+        $allData = [];
+
+        foreach ($files as $file) {
+            // Process only CSV files
+            if ($file->getExtension() === 'csv') {
+                try {
+                    if (($handle = fopen($file, 'r')) !== false) {
+                        $header = null;
+                        $csvData = [];
+            
+                        // Loop through each row
+                        while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+                            // If this is the first row, use it as the header
+                            if (!$header) {
+                                $header = $row; // Store header names
+                            } else {
+                                // Combine the header with the row values
+                                $csvData[] = array_combine($header, $row);
+                            }
+                        }
+            
+                        // Close the file
+                        fclose($handle);
+
+                        SlsJob::dispatch($csvData);            
+                    }
+                } catch (\Exception $e) {
+                    dd('error');
+                }
+            }
+        }
     }
 }
