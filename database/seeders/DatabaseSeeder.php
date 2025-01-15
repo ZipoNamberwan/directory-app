@@ -22,5 +22,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@argon.com',
             'password' => bcrypt('secret')
         ]);
+
+        $this->call([AreaSeeder::class]);
     }
 }

@@ -35,12 +35,29 @@ return new class extends Migration
             $table->id()->autoincrement();
             $table->string('short_code');
             $table->string('long_code')->unique();
-            $table->enum('type', ['SLS', 'Non SLS']);
+            // $table->enum('type', ['SLS', 'Non SLS']);
             $table->string('name');
             $table->foreignId('village_id')->constrained('villages');
         });
 
-        
+        Schema::create('statuses', function (Blueprint $table) {
+            $table->id()->autoincrement();
+            $table->string('name');
+        });
+
+        Schema::create('categorized_business', function (Blueprint $table) {
+            $table->id()->autoincrement();
+            $table->string('name');
+            $table->string('owner');
+            $table->foreignId('regency_id')->constrained('regencies');
+            $table->foreignId('subdistrict_id')->nullable()->constrained('subdistricts');
+            $table->foreignId('village_id')->nullable()->constrained('villages');
+            $table->foreignId('sls_id')->nullable()->constrained('sls');
+            $table->string('note')->nullable();
+            $table->foreignId('status_id')->nullable()->constrained('statuses');
+
+        });
+
     }
 
     /**
