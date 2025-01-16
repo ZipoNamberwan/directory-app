@@ -6,6 +6,7 @@ use App\Models\Sls;
 use App\Models\Village;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Str;
 
 class SlsJob implements ShouldQueue
 {
@@ -26,9 +27,17 @@ class SlsJob implements ShouldQueue
      */
     public function handle(): void
     {
+        $data = [];
         foreach ($this->records as $record) {
-            $village = Village::where(['long_code' => $record['prov'].$record['kab'].$record['kec'].$record['des']])->first();
-            Sls::create(['short_code' => $record['sls'], 'long_code' => $record['prov'].$record['kab'].$record['kec'].$record['des'].$record['sls'], 'name' => $record['sls_name'], 'village_id' => $village->id,]);
+            $data[] = [
+                'id' => $record['prov'] . $record['kab'] . $record['kec'] . $record['des'] . $record['sls'] . $record['subsls'],
+                'short_code' => $record['sls'] . $record['subsls'],
+                'long_code' => $record['prov'] . $record['kab'] . $record['kec'] . $record['des'] . $record['sls'] . $record['subsls'],
+                'name' => $record['sls_name'],
+                'village_id' => Village::find($record['prov'] . $record['kab'] . $record['kec'] . $record['des'])->id,
+            ];
         }
+
+        Sls::insert($data);
     }
 }

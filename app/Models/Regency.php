@@ -11,4 +11,9 @@ class Regency extends Model
     protected $guarded = [];
     public $timestamps = false;
     protected $table = 'regencies';
+
+    public function subdistricts()
+    {
+        return $this->hasMany(Subdistrict::class, 'regency_id');
+    }
 }
