@@ -28,6 +28,7 @@ return new class extends Migration
         });
         Schema::create('villages', function (Blueprint $table) {
             $table->string('id')->primary();
+
             $table->string('short_code');
             $table->string('long_code')->unique();
             $table->string('name');
@@ -59,7 +60,7 @@ return new class extends Migration
             // $table->foreignId('subdistrict_id')->nullable()->constrained('subdistricts');
             // $table->foreignId('village_id')->nullable()->constrained('villages');
             // $table->foreignId('sls_id')->nullable()->constrained('sls');
-            
+
             $table->string('regency_id')->nullable();
             $table->foreign('regency_id')->references('id')->on('regencies')->onDelete('cascade');
             $table->string('subdistrict_id')->nullable();
@@ -73,6 +74,11 @@ return new class extends Migration
             $table->foreignId('status_id')->nullable()->constrained('statuses');
             $table->foreignId('pml_id')->nullable()->constrained('users');
             $table->foreignId('ppl_id')->nullable()->constrained('users');
+        });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('regency_id')->nullable();
+            $table->foreign('regency_id')->references('id')->on('regencies')->onDelete('cascade');
         });
     }
 
