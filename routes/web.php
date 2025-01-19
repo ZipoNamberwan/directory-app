@@ -8,7 +8,6 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\ResetPassword;
 use App\Http\Controllers\ChangePassword;
-use App\Http\Controllers\MainController;
 use App\Http\Controllers\PclController;
 
 Route::get('/register', [RegisterController::class, 'create'])->middleware('guest')->name('register');
@@ -23,6 +22,13 @@ Route::post('/change-password', [ChangePassword::class, 'update'])->middleware('
 Route::group(['middleware' => 'auth'], function () {
 
 	Route::get('/', [HomeController::class, 'index'])->name('home');
+	Route::get('/desa/{id}', [PclController::class, 'getVillage']);
+    Route::get('/sls/{id}', [PclController::class, 'getSls']);
+    Route::get('/directory/{id}', [PclController::class, 'getDirectory']);
+
+	Route::post('/directory', [PclController::class, 'addDirectory']);
+	Route::delete('/directory/{id}', [PclController::class, 'deleteDirectory']);
+    Route::patch('/directory/edit/{id}', [PclController::class, 'updateDirectory']);
 
 	Route::group(['middleware' => ['role:pcl']], function () {
 		Route::get('/pemutakhiran', [PclController::class, 'update'])->name('updating');

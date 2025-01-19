@@ -55,4 +55,14 @@ class User extends Authenticatable
     // {
     //     $this->attributes['password'] = bcrypt($value);
     // }
+
+    public function regency()
+    {
+        return $this->belongsTo(Regency::class, 'regency_id');
+    }
+
+    public function business()
+    {
+        return $this->hasMany(CategorizedBusiness::class, 'pcl_id');
+    }
 }

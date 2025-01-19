@@ -19,7 +19,7 @@
                     </button>
                     <div class="collapse navbar-collapse" id="navigation">
                         <ul class="navbar-nav mx-auto">
-                            <li class="nav-item">
+                            <!-- <li class="nav-item">
                                 <a class="nav-link d-flex align-items-center me-2 active" aria-current="page"
                                     href="{{ route('home') }}">
                                     <i class="fa fa-chart-pie opacity-6 text-dark me-1"></i>
@@ -37,14 +37,17 @@
                                     <i class="fas fa-key opacity-6 text-dark me-1"></i>
                                     Sign In
                                 </a>
+                            </li> -->
+                            <li class="nav-item">
+                                <img style="max-height: 3rem !important;" src="/img/full_logo.png" class="navbar-brand-img h-100" alt="main_logo">
                             </li>
                         </ul>
-                        <ul class="navbar-nav d-lg-block d-none">
+                        <!-- <ul class="navbar-nav d-lg-block d-none">
                             <li class="nav-item">
-                                <a href="https://www.creative-tim.com/product/argon-dashboard-laravel" target="_blank"
+                                <a href="/" target="_blank"
                                     class="btn btn-sm mb-0 me-1 btn-primary">Ken Dedes</a>
                             </li>
-                        </ul>
+                        </ul> -->
                     </div>
                 </div>
             </nav>

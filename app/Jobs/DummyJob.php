@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\CategorizedBusiness;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -39,21 +40,24 @@ class DummyJob implements ShouldQueue
         ]);
         $pcl->assignRole('pcl');
 
-        $pcl = User::create([
+        $adminkab = User::create([
             'username' => 'admin3501@gmail.com',
             'email' => 'admin3501@gmail.com',
             'firstname' => 'Admin 01',
             'password' => Hash::make('123456'),
             'regency_id' => '3501',
         ]);
-        $pcl->assignRole('adminkab');
+        $adminkab->assignRole('adminkab');
 
-        $pcl = User::create([
+        $adminprov = User::create([
             'username' => 'admin3500@gmail.com',
             'email' => 'admin3500@gmail.com',
             'firstname' => 'Admin Prov',
             'password' => Hash::make('123456'),
         ]);
-        $pcl->assignRole('adminkab');
+        $adminprov->assignRole('adminprov');
+
+        $ids = CategorizedBusiness::where('regency_id', $pcl->regency_id)->skip(0)->take(1000)->pluck('id');
+        CategorizedBusiness::whereIn('id', $ids)->update(['pcl_id' => $pcl->id]);
     }
 }

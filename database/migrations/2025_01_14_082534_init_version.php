@@ -22,9 +22,8 @@ return new class extends Migration
             $table->string('short_code');
             $table->string('long_code')->unique();
             $table->string('name');
-            // $table->foreignId('regency_id')->constrained('regencies');
             $table->string('regency_id');
-            $table->foreign('regency_id')->references('id')->on('regencies')->onDelete('cascade');
+            $table->foreign('regency_id')->references('id')->on('regencies');
         });
         Schema::create('villages', function (Blueprint $table) {
             $table->string('id')->primary();
@@ -32,53 +31,50 @@ return new class extends Migration
             $table->string('short_code');
             $table->string('long_code')->unique();
             $table->string('name');
-            // $table->foreignId('subdistrict_id')->constrained('subdistricts');
             $table->string('subdistrict_id');
-            $table->foreign('subdistrict_id')->references('id')->on('subdistricts')->onDelete('cascade');
+            $table->foreign('subdistrict_id')->references('id')->on('subdistricts');
         });
         Schema::create('sls', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->string('short_code');
             $table->string('long_code')->unique();
-            // $table->enum('type', ['SLS', 'Non SLS']);
             $table->string('name');
-            // $table->foreignId('village_id')->constrained('villages');
             $table->string('village_id');
-            $table->foreign('village_id')->references('id')->on('villages')->onDelete('cascade');
+            $table->foreign('village_id')->references('id')->on('villages');
         });
 
         Schema::create('statuses', function (Blueprint $table) {
             $table->id()->autoincrement();
             $table->string('name');
+            $table->string('color')->nullable();
         });
 
         Schema::create('categorized_business', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('owner')->nullable();
-            // $table->foreignId('regency_id')->nullable()->constrained('regencies');
-            // $table->foreignId('subdistrict_id')->nullable()->constrained('subdistricts');
-            // $table->foreignId('village_id')->nullable()->constrained('villages');
-            // $table->foreignId('sls_id')->nullable()->constrained('sls');
 
-            $table->string('regency_id')->nullable();
-            $table->foreign('regency_id')->references('id')->on('regencies')->onDelete('cascade');
-            $table->string('subdistrict_id')->nullable();
-            $table->foreign('subdistrict_id')->references('id')->on('subdistricts')->onDelete('cascade');
-            $table->string('village_id')->nullable();
-            $table->foreign('village_id')->references('id')->on('villages')->onDelete('cascade');
-            $table->string('sls_id')->nullable();
-            $table->foreign('sls_id')->references('id')->on('sls')->onDelete('cascade');
+            $table->string('regency_id');
+            $table->foreign('regency_id')->references('id')->on('regencies');
+            $table->string('subdistrict_id');
+            $table->foreign('subdistrict_id')->references('id')->on('subdistricts');
+            $table->string('village_id');
+            $table->foreign('village_id')->references('id')->on('villages');
+            $table->string('sls_id');
+            $table->foreign('sls_id')->references('id')->on('sls');
 
             $table->string('note')->nullable();
-            $table->foreignId('status_id')->nullable()->constrained('statuses');
+            $table->foreignId('status_id')->constrained('statuses');
             $table->foreignId('pml_id')->nullable()->constrained('users');
-            $table->foreignId('ppl_id')->nullable()->constrained('users');
+            $table->foreignId('pcl_id')->nullable()->constrained('users');
+
+            $table->boolean('is_new')->default(false);
+            $table->softDeletes(); 
         });
 
         Schema::table('users', function (Blueprint $table) {
             $table->string('regency_id')->nullable();
-            $table->foreign('regency_id')->references('id')->on('regencies')->onDelete('cascade');
+            $table->foreign('regency_id')->references('id')->on('regencies');
         });
     }
 
