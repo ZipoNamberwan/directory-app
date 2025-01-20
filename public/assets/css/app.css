@@ -235,3 +235,19 @@
 .form-control-lg+.select2-container--default .select2-selection--multiple .select2-selection__choice {
     line-height: 1.875rem;
 }
+
+table.dataTable tbody tr {
+    border-bottom: 1px solid #ddd;
+    /* Adjust the color to your design */
+}
+
+/* Optional: Add hover effect */
+table.dataTable tbody tr:hover {
+    background-color: #f1f1f1;
+    /* Highlight the row on hover */
+}
+
+/* Add top border to the first row for consistency */
+table.dataTable tbody tr:first-child {
+    border-top: 1px solid #ddd;
+}

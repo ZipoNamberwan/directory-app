@@ -22,9 +22,10 @@ Route::post('/change-password', [ChangePassword::class, 'update'])->middleware('
 Route::group(['middleware' => 'auth'], function () {
 
 	Route::get('/', [HomeController::class, 'index'])->name('home');
-	Route::get('/desa/{id}', [PclController::class, 'getVillage']);
-    Route::get('/sls/{id}', [PclController::class, 'getSls']);
-    Route::get('/directory/{id}', [PclController::class, 'getDirectory']);
+	Route::get('/desa/{subdistrict_id}', [PclController::class, 'getVillage']);
+    Route::get('/sls/{village_id}', [PclController::class, 'getSls']);
+	Route::get('/directory/data', [PclController::class, 'getDirectoryTables']);
+    Route::get('/directory/{id_sls}', [PclController::class, 'getDirectory']);
 
 	Route::post('/directory', [PclController::class, 'addDirectory']);
 	Route::delete('/directory/{id}', [PclController::class, 'deleteDirectory']);

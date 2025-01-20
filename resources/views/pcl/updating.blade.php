@@ -65,7 +65,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="sampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal fade" id="updateDirectoryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header pb-1">
@@ -97,6 +97,37 @@
                 <div class="modal-footer pt-0">
                     <button type="button" class="btn btn-secondary mb-0" data-bs-dismiss="modal">Batal</button>
                     <button onclick="onSave()" type="button" class="btn btn-primary mb-0">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="updateNewModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header pb-1">
+                    <div>
+                        <h5 id="modaltitle-new">Modal title</h5>
+                        <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle-new">Modal title</span>
+                    </div>
+                </div>
+                <input type="hidden" id="business_id_new" />
+                <div class="modal-body pt-0 mt-2" style="height: auto;">
+                    <label class="form-control-label">Nama Usaha <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" placeholder="Nama Usaha" id="name-new" name="name-new">
+                    <p id="name-new-error" style="display: none; font-size: 0.6rem; color:red"></p>
+
+                    <div id="status_error_new" style="display: none;" class="text-valid mt-2">
+                        Belum diisi
+                    </div>
+                    <div>
+                        <p id="loading-save-new" style="visibility: hidden;" class="text-warning mt-3">Loading...</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer pt-0">
+                    <button type="button" class="btn btn-secondary mb-0" data-bs-dismiss="modal">Batal</button>
+                    <button onclick="onSaveNew()" type="button" class="btn btn-primary mb-0">Simpan</button>
                 </div>
             </div>
         </div>
@@ -153,7 +184,7 @@
             <div class="modal-content">
                 <div class="modal-header pb-1">
                     <div>
-                        <h5>Delete Usaha Berikut?</h5>
+                        <h5>Hapus Usaha Berikut?</h5>
                     </div>
                 </div>
                 <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -336,18 +367,20 @@
                         itemDiv.className = 'col-md-4 col-sm-6 col-xs-12 p-1';
                         itemDiv.style = "cursor: pointer;"
 
-                        itemDiv.onclick = function() {
-                            openUpdateModal(item)
-                        };
-
                         let button = ''
                         if (item.status.id != 4) {
+                            itemDiv.onclick = function() {
+                                openUpdateDirectoryModal(item)
+                            };
                             button = `
                                 <button class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
                                     <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
                                 </button>
                             `
                         } else {
+                            itemDiv.onclick = function() {
+                                openUpdateNewModal(item)
+                            };
                             button = `
                             <button onclick="onDeleteModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="button">
                                 <span class="btn-inner--icon"><i class="fas fa-trash-alt"></i></span>
@@ -383,8 +416,8 @@
         }
     }
 
-    function openUpdateModal(item) {
-        $('#sampleModal').modal('show');
+    function openUpdateDirectoryModal(item) {
+        $('#updateDirectoryModal').modal('show');
 
         document.getElementById('modaltitle').innerHTML = item.name
         document.getElementById('modalsubtitle').innerHTML = "[" + item.sls.id + "] " +
@@ -399,6 +432,18 @@
             var sel = st.id == item.status.id ? 'selected' : ''
             $('#status').append(`<option ${sel} value="${st.id}">${st.name}</option>`);
         })
+    }
+
+    function openUpdateNewModal(item) {
+        $('#updateNewModal').modal('show');
+
+        document.getElementById('modaltitle-new').innerHTML = item.name
+        document.getElementById('modalsubtitle-new').innerHTML = "[" + item.sls.id + "] " +
+            item.subdistrict.name + ", " + item.village.name + ", " + item.sls.name
+        document.getElementById('business_id_new').value = item.id
+
+        document.getElementById('status_error_new').style.display = 'none'
+        document.getElementById('name-new').value = item.name
     }
 
     function getAreaName(input) {
@@ -466,6 +511,7 @@
             id = document.getElementById('business_id').value
             var updateData = {
                 status: document.getElementById('status').value,
+                new: false
             };
 
             $.ajax({
@@ -477,7 +523,7 @@
                 },
                 success: function(response) {
                     loadDirectory(null)
-                    $('#sampleModal').modal('hide');
+                    $('#updateDirectoryModal').modal('hide');
                     document.getElementById('loading-save').style.visibility = 'hidden'
                 },
                 error: function(xhr, status, error) {
@@ -487,21 +533,21 @@
         }
     }
 
-    function validateAdd() {
+    function validateAddNewForm(input, error) {
         var name_valid = true
-        if (document.getElementById('name-add').value == "") {
+        if (document.getElementById(input).value == "") {
             name_valid = false
-            document.getElementById('name-add-error').style.display = 'block'
-            document.getElementById('name-add-error').innerHTML = 'Nama Usaha harus diisi'
+            document.getElementById(error).style.display = 'block'
+            document.getElementById(error).innerHTML = 'Nama Usaha harus diisi'
         } else {
-            document.getElementById('name-add-error').style.display = 'none'
+            document.getElementById(error).style.display = 'none'
         }
 
         return name_valid
     }
 
     function onAdd() {
-        if (validateAdd()) {
+        if (validateAddNewForm('name-add', 'name-add-error')) {
             document.getElementById('loading-add').style.visibility = 'visible'
 
             $.ajax({
@@ -546,6 +592,37 @@
                 document.getElementById('loading-delete').innerHTML = 'Gagal menghapus usaha'
             }
         });
+    }
+
+    function onSaveNew() {
+        document.getElementById('status_error_new').style.visibility = 'hidden'
+
+        if (validateAddNewForm('name-new', 'name-new-error')) {
+            document.getElementById('loading-save-new').style.visibility = 'visible'
+
+            id = document.getElementById('business_id_new').value
+            var updateData = {
+                name: document.getElementById('name-new').value,
+                new: true,
+            };
+
+            $.ajax({
+                url: `/directory/edit/${id}`,
+                type: 'PATCH',
+                data: updateData,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    loadDirectory(null)
+                    $('#updateNewModal').modal('hide');
+                    document.getElementById('loading-save-new').style.visibility = 'hidden'
+                },
+                error: function(xhr, status, error) {
+                    document.getElementById('loading-save-new').style.visibility = 'hidden'
+                }
+            });
+        }
     }
 
     function emptyDirectoryList() {

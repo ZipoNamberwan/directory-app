@@ -10,53 +10,10 @@ use App\Models\User;
 use App\Models\Village;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Support\Str;
 
 class PclController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        return view('pcl.index');
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update()
     {
         $subdistricts = Subdistrict::whereIn(
@@ -69,18 +26,15 @@ class PclController extends Controller
         return view('pcl.updating', ['subdistricts' => $subdistricts, 'statuses' => $statuses]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
-
     public function updateDirectory(Request $request, $id)
     {
         $business = CategorizedBusiness::find($id);
-        $business->status_id = $request->status;
+
+        if ($request->new == "true") {
+            $business->name = $request->name;
+        } else {
+            $business->status_id = $request->status;
+        }
         $business->save();
 
         return response()->json($business);
@@ -115,27 +69,87 @@ class PclController extends Controller
         return response()->json($business);
     }
 
-    public function getVillage($id)
+    public function getVillage($subdistrict_id)
     {
         $village = Village::whereIn(
             'id',
-            User::find(Auth::id())->business()->select('village_id')->where('village_id', 'like', "{$id}%")->distinct()->pluck('village_id')
+            User::find(Auth::id())->business()->select('village_id')->where('village_id', 'like', "{$subdistrict_id}%")->distinct()->pluck('village_id')
         )->get();
 
         return response()->json($village);
     }
-    public function getSls($id)
+    public function getSls($village_id)
     {
         $sls = Sls::whereIn(
             'id',
-            User::find(Auth::id())->business()->select('sls_id')->where('sls_id', 'like', "{$id}%")->distinct()->pluck('sls_id')
+            User::find(Auth::id())->business()->select('sls_id')->where('sls_id', 'like', "{$village_id}%")->distinct()->pluck('sls_id')
         )->get();
         return response()->json($sls);
     }
-    public function getDirectory($id)
+    public function getDirectory($id_sls)
     {
-        $business = User::find(Auth::id())->business()->where('sls_id', '=', $id)->with(['status', 'sls', 'village', 'subdistrict'])->get();
-
+        $business = User::find(Auth::id())->business()->where('sls_id', '=', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();
         return response()->json($business);
+    }
+    public function getDirectoryTables(Request $request)
+    {
+        $records = User::find(Auth::id())->business();
+
+        if ($request->status) {
+            if ($request->status != 'all') {
+                $records->where(['status_id' => $request->status]);
+            }
+        }
+
+        $recordsTotal = $records->count();
+
+        $orderColumn = 'sls_id';
+        $orderDir = 'desc';
+        if ($request->order != null) {
+            if ($request->order[0]['dir'] == 'asc') {
+                $orderDir = 'asc';
+            } else {
+                $orderDir = 'desc';
+            }
+            if ($request->order[0]['column'] == '0') {
+                $orderColumn = 'sls_id';
+            } else if ($request->order[0]['column'] == '1') {
+                $orderColumn = 'name';
+            } else if ($request->order[0]['column'] == '2') {
+                $orderColumn = 'status_id';
+            }
+        }
+
+        $searchkeyword = $request->search['value'];
+        $samples = $records->with(['status', 'sls', 'village', 'subdistrict'])->get();
+        if ($searchkeyword != null) {
+            $samples = $samples->filter(function ($q) use (
+                $searchkeyword
+            ) {
+                return Str::contains(strtolower($q->name), strtolower($searchkeyword)) ||
+                    Str::contains(strtolower($q->sls_id), strtolower($searchkeyword));
+            });
+        }
+        $recordsFiltered = $samples->count();
+
+        if ($orderDir == 'asc') {
+            $samples = $samples->sortBy($orderColumn);
+        } else {
+            $samples = $samples->sortByDesc($orderColumn);
+        }
+
+        if ($request->length != -1) {
+            $samples = $samples->skip($request->start)
+                ->take($request->length);
+        }
+
+        $samples = $samples->values();
+
+        return response()->json([
+            "draw" => $request->draw,
+            "recordsTotal" => $recordsTotal,
+            "recordsFiltered" => $recordsFiltered,
+            "data" => $samples
+        ]);
     }
 }
