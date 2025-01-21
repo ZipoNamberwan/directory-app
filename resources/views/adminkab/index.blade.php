@@ -185,7 +185,7 @@
         responsive: true,
         columns: [{
                 responsivePriority: 1,
-                width: "5%",
+                width: "10%",
                 data: "name",
                 type: "text",
             },
@@ -214,6 +214,22 @@
                 render: function(data, type, row) {
                     if (type === 'display') {
                         return '<p class="mb-0"><span class="badge bg-gradient-' + data.color + '">' + data.name + '</span></p>';
+                    }
+                    return data.id;
+                }
+            },
+            {
+                responsivePriority: 4,
+                width: "10%",
+                data: "pcl",
+                type: "text",
+                render: function(data, type, row) {
+                    if (type === 'display') {
+                        if (data == null) {
+                            return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>-</p>`;
+                        } else {
+                            return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>${data.firstname}</p>`;
+                        }
                     }
                     return data.id;
                 }

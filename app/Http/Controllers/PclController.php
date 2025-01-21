@@ -91,9 +91,14 @@ class PclController extends Controller
         $business = User::find(Auth::id())->business()->where('sls_id', '=', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();
         return response()->json($business);
     }
-    public function getDirectoryTables(Request $request)
+    public function getDirectoryTables(Request $request, $type)
     {
-        $records = User::find(Auth::id())->business();
+        $records = null;
+        if ($type == 'pcl') {
+            $records = User::find(Auth::id())->business();
+        } else if ($type == 'adminkab') {
+            $records = CategorizedBusiness::where(['regency_id' => User::find(Auth::id())->regency_id]);
+        }
 
         if ($request->status) {
             if ($request->status != 'all') {
@@ -121,7 +126,7 @@ class PclController extends Controller
         }
 
         $searchkeyword = $request->search['value'];
-        $samples = $records->with(['status', 'sls', 'village', 'subdistrict'])->get();
+        $samples = $records->with(['status', 'sls', 'village', 'subdistrict', 'pcl'])->get();
         if ($searchkeyword != null) {
             $samples = $samples->filter(function ($q) use (
                 $searchkeyword

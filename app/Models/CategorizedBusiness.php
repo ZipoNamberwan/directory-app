@@ -38,4 +38,9 @@ class CategorizedBusiness extends Model
     {
         return $this->belongsTo(Status::class);
     }
+
+    public function pcl()
+    {
+        return $this->belongsTo(User::class, 'pcl_id');
+    }
 }

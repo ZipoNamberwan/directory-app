@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CategorizedBusinessTemplateExport;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,8 @@ class LoginController extends Controller
      */
     public function show()
     {
+        return (new CategorizedBusinessTemplateExport('3501'))->store('test.xlsx');
+
         return view('auth.login');
     }
 
@@ -31,7 +34,7 @@ class LoginController extends Controller
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $request->session()->regenerate();
 
-            return redirect()->intended('dashboard');
+            return redirect('/');
         }
 
         return back()->withErrors([
