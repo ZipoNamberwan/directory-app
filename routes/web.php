@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminKabController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
@@ -33,6 +34,11 @@ Route::group(['middleware' => 'auth'], function () {
 
 	Route::group(['middleware' => ['role:pcl']], function () {
 		Route::get('/pemutakhiran', [PclController::class, 'update'])->name('updating');
+	});
+
+	Route::group(['middleware' => ['role:adminkab']], function () {
+		Route::get('/assignment', [AdminKabController::class, 'showAssignment'])->name('assignment');
+		Route::get('/report', [AdminKabController::class, 'report'])->name('report');
 	});
 
 	Route::get('/virtual-reality', [PageController::class, 'vr'])->name('virtual-reality');

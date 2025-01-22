@@ -49,12 +49,21 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{  str_contains(request()->url(), 'assignment') == true ? 'active' : '' }}" href="{{ route('page', ['page' => 'assignment']) }}">
+                <a class="nav-link {{  str_contains(request()->url(), 'assignment') == true ? 'active' : '' }}" href="{{ route('assignment') }}">
                     <div
                         class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="ni ni-credit-card text-success text-sm opacity-10"></i>
                     </div>
                     <span class="nav-link-text ms-1">Assignment</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ str_contains(request()->url(), 'report') == true ? 'active' : '' }}" href="{{ route('report') }}">
+                    <div
+                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="ni ni-calendar-grid-58 text-warning text-sm opacity-10"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Report</span>
                 </a>
             </li>
             @endhasrole

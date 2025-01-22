@@ -35,11 +35,6 @@
                             </div>
                         </div>
                     </div>
-                    <a href="/pemutakhiran" class="mb-0 mt-2 btn btn-primary btn-sm d-flex justify-content-center align-items-center" role="button" aria-pressed="true">
-                        <span class="btn-inner--text">Mulai Pemutakhiran</span>
-                        <span class="btn-inner--icon"><i class="ni ni-bold-right"></i></span>
-                        <span class="btn-inner--icon"><i class="ni ni-bold-right"></i></span>
-                    </a>
                 </div>
             </div>
         </div>
