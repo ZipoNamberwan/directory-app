@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SlsAssignmentExport;
+use App\Jobs\AssignmentNotificationJob;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +20,7 @@ class LoginController extends Controller
      */
     public function show()
     {
-        // return (new CategorizedBusinessTemplateExport('3501'))->store('test.xlsx');
+        // (new SlsAssignmentExport('3501'))->queue('test.xlsx');
 
         return view('auth.login');
     }

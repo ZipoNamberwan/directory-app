@@ -36,14 +36,15 @@
                                 <p class="text-muted small mb-3">
                                     Tombol status digunakan untuk melihat status proses pembuatan template
                                 </p>
-                                <button onclick="generateTemplate()" class="btn btn-info">
+                                @livewire('export')
+                                <!-- <button onclick="generateTemplate()" class="btn btn-info">
                                     <i class="fas fa-play me-2"></i>
                                     Buat
                                 </button>
                                 <button onclick="generateTemplate()" class="btn btn-outline-info">
                                     <i class="fas fa-circle-info me-2"></i>
                                     Status
-                                </button>
+                                </button> -->
                             </div>
                         </div>
                         <div class="col-md-4 col-sm-12 p-2">
