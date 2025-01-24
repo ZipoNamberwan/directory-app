@@ -2,11 +2,11 @@
 
 namespace App\Jobs;
 
-use App\Models\ImportAssignmentStatus;
+use App\Models\AssignmentStatus;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-class AssignmentNotificationImportJob implements ShouldQueue
+class AssignmentNotificationJob implements ShouldQueue
 {
     use Queueable;
     protected $uuid;
@@ -23,7 +23,7 @@ class AssignmentNotificationImportJob implements ShouldQueue
      */
     public function handle(): void
     {
-        ImportAssignmentStatus::where('uuid', $this->uuid)->update([
+        AssignmentStatus::where('uuid', $this->uuid)->update([
             'status' => 'success',
         ]);
     }

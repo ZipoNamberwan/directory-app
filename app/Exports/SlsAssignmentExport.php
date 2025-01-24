@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\ExportAssignmentStatus;
+use App\Models\AssignmentStatus;
 use App\Models\Sls;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,7 +28,7 @@ implements FromQuery, ShouldQueue, WithHeadings, WithMapping, WithCustomValueBin
         $this->regency = $regency;
         $this->uuid = $uuid;
 
-        ExportAssignmentStatus::where('uuid', $uuid)->update([
+        AssignmentStatus::where('uuid', $uuid)->update([
             'status' => 'loading',
         ]);
     }

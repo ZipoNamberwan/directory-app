@@ -3,9 +3,8 @@
 namespace App\Livewire;
 
 use App\Imports\SlsAssignmentImport;
-use App\Jobs\AssignmentNotificationImportJob;
-use App\Models\ExportAssignmentStatus;
-use App\Models\ImportAssignmentStatus;
+use App\Jobs\AssignmentNotificationJob;
+use App\Models\AssignmentStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
@@ -27,7 +26,8 @@ class Import extends Component
             'importFile' => 'required',
         ]);
 
-        $status = ExportAssignmentStatus::where('user_id', Auth::id())
+        $status = AssignmentStatus::where('user_id', Auth::id())
+            ->where('type', 'import')
             ->where('status', 'loading')->first();
 
         if ($status == null) {
@@ -35,14 +35,15 @@ class Import extends Component
             $this->importFilePath = $this->importFile->store('imports');
 
             $uuid = (string) Str::uuid();
-            ImportAssignmentStatus::create([
+            AssignmentStatus::create([
                 'uuid' => $uuid,
                 'user_id' => Auth::id(),
                 'status' => 'loading',
+                'type' => 'import',
             ]);
 
             (new SlsAssignmentImport)->queue($this->importFilePath)->chain([
-                new AssignmentNotificationImportJob($uuid),
+                new AssignmentNotificationJob($uuid),
             ]);
         }
     }

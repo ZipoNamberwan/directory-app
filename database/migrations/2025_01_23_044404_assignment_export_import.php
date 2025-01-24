@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('uuid');
             $table->enum('status', ['start', 'loading', 'success', 'failed']);
             $table->enum('type', ['export', 'import']);
+            $table->foreignId('user_id')->constrained('users');
             $table->timestamps();
         });
     }

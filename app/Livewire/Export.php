@@ -4,8 +4,8 @@ namespace App\Livewire;
 
 use App\Exports\SlsAssignmentExport;
 use Livewire\Component;
-use App\Jobs\AssignmentNotificationExportJob;
-use App\Models\ExportAssignmentStatus;
+use App\Jobs\AssignmentNotificationJob;
+use App\Models\AssignmentStatus;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +20,8 @@ class Export extends Component
 
     public function export()
     {
-        $status = ExportAssignmentStatus::where('user_id', Auth::id())
+        $status = AssignmentStatus::where('user_id', Auth::id())
+            ->where('type', 'export')
             ->where(function ($query) {
                 $query->where('status', 'start')
                     ->orWhere('status', 'loading');
@@ -33,14 +34,15 @@ class Export extends Component
             $uuid = (string) Str::uuid();
             $this->uuid = $uuid;
 
-            ExportAssignmentStatus::create([
+            AssignmentStatus::create([
                 'uuid' => $uuid,
                 'status' => 'start',
                 'user_id' => Auth::id(),
+                'type' => 'export',
             ]);
 
             (new SlsAssignmentExport(User::find(Auth::id())->regency_id, $uuid))->store($uuid . '.xlsx')->chain([
-                new AssignmentNotificationExportJob($uuid),
+                new AssignmentNotificationJob($uuid),
             ]);
         }
     }
@@ -52,7 +54,7 @@ class Export extends Component
 
     public function updateExportProgress()
     {
-        $this->exportFinished = ExportAssignmentStatus::where('uuid', $this->uuid)->first()->status == 'success';
+        $this->exportFinished = AssignmentStatus::where('uuid', $this->uuid)->first()->status == 'success';
 
         if ($this->exportFinished) {
             $this->exporting = false;
