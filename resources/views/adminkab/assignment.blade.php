@@ -37,6 +37,7 @@
                                     Tombol status digunakan untuk melihat status proses pembuatan template
                                 </p>
                                 @livewire('export')
+                                @livewire('import')
                                 <!-- <button onclick="generateTemplate()" class="btn btn-info">
                                     <i class="fas fa-play me-2"></i>
                                     Buat
@@ -47,7 +48,7 @@
                                 </button> -->
                             </div>
                         </div>
-                        <div class="col-md-4 col-sm-12 p-2">
+                        <!-- <div class="col-md-4 col-sm-12 p-2">
                             <div class="bg-light p-4 rounded">
                                 <h6 class="mb-3 d-flex align-items-center">
                                     <span class="badge bg-primary me-2">2</span>
@@ -61,11 +62,11 @@
                                     Unduh
                                 </button>
                             </div>
-                        </div>
+                        </div> -->
                         <div class="col-md-4 col-sm-12 p-2">
                             <div class="bg-light p-4 rounded">
                                 <h6 class="mb-3 d-flex align-items-center">
-                                    <span class="badge bg-success me-2">3</span>
+                                    <span class="badge bg-success me-2">2</span>
                                     Upload Template
                                 </h6>
                                 <p class="text-muted small mb-3">

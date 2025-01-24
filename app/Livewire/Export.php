@@ -4,8 +4,8 @@ namespace App\Livewire;
 
 use App\Exports\SlsAssignmentExport;
 use Livewire\Component;
-use App\Jobs\AssignmentNotificationJob;
-use App\Models\AssignmentStatus;
+use App\Jobs\AssignmentNotificationExportJob;
+use App\Models\ExportAssignmentStatus;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,21 +20,29 @@ class Export extends Component
 
     public function export()
     {
-        $this->exporting = true;
-        $this->exportFinished = false;
+        $status = ExportAssignmentStatus::where('user_id', Auth::id())
+            ->where(function ($query) {
+                $query->where('status', 'start')
+                    ->orWhere('status', 'loading');
+            })->first();
 
-        $uuid = (string) Str::uuid();
-        $this->uuid = $uuid;
+        if ($status == null) {
+            $this->exporting = true;
+            $this->exportFinished = false;
 
-        AssignmentStatus::create([
-            'uuid' => $uuid,
-            'status' => 'start',
-            'type' => 'export',
-        ]);
+            $uuid = (string) Str::uuid();
+            $this->uuid = $uuid;
 
-        (new SlsAssignmentExport(User::find(Auth::id())->regency_id))->store($uuid . '.xlsx')->chain([
-            new AssignmentNotificationJob($uuid, 'export'),
-        ]);
+            ExportAssignmentStatus::create([
+                'uuid' => $uuid,
+                'status' => 'start',
+                'user_id' => Auth::id(),
+            ]);
+
+            (new SlsAssignmentExport(User::find(Auth::id())->regency_id, $uuid))->store($uuid . '.xlsx')->chain([
+                new AssignmentNotificationExportJob($uuid),
+            ]);
+        }
     }
 
     public function downloadExport()
@@ -44,7 +52,7 @@ class Export extends Component
 
     public function updateExportProgress()
     {
-        $this->exportFinished = AssignmentStatus::where('uuid', $this->uuid)->first()->status == 'success';
+        $this->exportFinished = ExportAssignmentStatus::where('uuid', $this->uuid)->first()->status == 'success';
 
         if ($this->exportFinished) {
             $this->exporting = false;

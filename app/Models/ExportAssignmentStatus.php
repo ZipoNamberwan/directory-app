@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class AssignmentStatus extends Model
+class ExportAssignmentStatus extends Model
 {
     use HasFactory;
     protected $guarded = [];
-    protected $table = 'assignment_status';
+    protected $table = 'export_assignment_status';
 }

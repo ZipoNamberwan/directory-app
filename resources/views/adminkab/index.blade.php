@@ -139,6 +139,7 @@
                                     <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Usaha</th>
                                     <th class="text-uppercase text-small font-weight-bolder opacity-7">Wilayah</th>
                                     <th class="text-uppercase text-small font-weight-bolder opacity-7">Status</th>
+                                    <th class="text-uppercase text-small font-weight-bolder opacity-7">PCL</th>
                                 </tr>
                             </thead>
                             <tbody>
