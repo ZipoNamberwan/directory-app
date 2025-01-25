@@ -15,11 +15,12 @@ class Import extends Component
 {
     use WithFileUploads;
 
-    public $batchId;
     public $importFile;
     public $importing = false;
     public $importFilePath;
     public $importFinished = false;
+    public $uuid = null;
+    public $status = null;
 
     public function import()
     {
@@ -33,9 +34,11 @@ class Import extends Component
 
         if ($status == null) {
             $this->importing = true;
+            $this->importFinished = false;
             $this->importFilePath = $this->importFile->store('imports');
 
             $uuid = (string) Str::uuid();
+            $this->uuid = $uuid;
             AssignmentStatus::create([
                 'id' => $uuid,
                 'user_id' => Auth::id(),
@@ -49,24 +52,23 @@ class Import extends Component
         }
     }
 
-    // public function getImportBatchProperty()
-    // {
-    //     if (!$this->batchId) {
-    //         return null;
-    //     }
+    public function updateImportProgress()
+    {
+        $status = AssignmentStatus::find($this->uuid);
+        if ($status) {
+            $this->importFinished = $status->status == 'success' || $status->status == 'success with error';
+        }
 
-    //     return Bus::findBatch($this->batchId);
-    // }
+        if ($this->importFinished) {
+            $this->importing = false;
+            $this->status = $status->status;
+        }
+    }
 
-    // public function updateImportProgress()
-    // {
-    //     $this->importFinished = $this->importBatch->finished();
-
-    //     if ($this->importFinished) {
-    //         Storage::delete($this->importFilePath);
-    //         $this->importing = false;
-    //     }
-    // }
+    public function showDialog()
+    {
+        $this->dispatch('show-dialog', 'import');
+    }
 
     public function render()
     {

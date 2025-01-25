@@ -17,10 +17,10 @@ class AreaSeeder extends Seeder
      */
     public function run(): void
     {
-        Status::create(['name' => 'Belum Dimutakhirkan', 'color' => 'secondary']);
-        Status::create(['name' => 'Aktif', 'color' => 'success']);
-        Status::create(['name' => 'Tidak Aktif', 'color' => 'danger']);
-        Status::create(['name' => 'Baru', 'color' => 'info']);
+        Status::create(['name' => 'Belum Dimutakhirkan', 'color' => 'secondary', 'order' => 1]);
+        Status::create(['name' => 'Aktif', 'color' => 'success', 'order' => 2]);
+        Status::create(['name' => 'Tidak Aktif', 'color' => 'danger', 'order' => 3]);
+        Status::create(['name' => 'Baru', 'color' => 'info', 'order' => 4]);
 
         Regency::create(['short_code' => '01', 'long_code' => '3501', 'id' => '3501', 'name' => 'PACITAN',]);
         Regency::create(['short_code' => '02', 'long_code' => '3502', 'id' => '3502', 'name' => 'PONOROGO',]);

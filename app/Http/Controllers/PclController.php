@@ -21,7 +21,7 @@ class PclController extends Controller
             User::find(Auth::id())->business()->select('subdistrict_id')->distinct()->pluck('subdistrict_id')
         )->get();
 
-        $statuses = Status::where('name', '!=', 'Baru')->get();
+        $statuses = Status::where('name', '!=', 'Baru')->orderBy('order', 'asc') ->get();
 
         return view('pcl.updating', ['subdistricts' => $subdistricts, 'statuses' => $statuses]);
     }

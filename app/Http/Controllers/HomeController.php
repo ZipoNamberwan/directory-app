@@ -35,7 +35,7 @@ class HomeController extends Controller
             $active = (clone $businessBase)->where(['status_id' => 2])->count();
             $not_active = (clone $businessBase)->where(['status_id' => 3])->count();
             $new = (clone $businessBase)->where(['status_id' => 4])->count();
-            $statuses = Status::all();
+            $statuses = Status::all()->sortBy('order');
 
             return view('pcl.index', [
                 'total' => $total,
@@ -53,7 +53,7 @@ class HomeController extends Controller
             $active = (clone $businessBase)->where(['status_id' => 2])->count();
             $not_active = (clone $businessBase)->where(['status_id' => 3])->count();
             $new = (clone $businessBase)->where(['status_id' => 4])->count();
-            $statuses = Status::all();
+            $statuses = Status::all()->sortBy('order');
 
             return view('adminkab.index', [
                 'total' => $total,

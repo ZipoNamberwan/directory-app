@@ -54,30 +54,31 @@ class ImportAssignmentJob implements ShouldQueue
         }
 
         if (count($invalid_emails) > 0) {
-            $message = "Email tidak ditemukan: " . implode(', ', $invalid_emails) . "\n";
+            $message = "Email tidak ditemukan: " . implode(', ', $invalid_emails) . "<br>";
             $assignmentStatus = AssignmentStatus::find($this->uuid);
             $assignmentStatus->update([
-                'status' => 'failed',
                 'message' => $assignmentStatus->message . $message,
             ]);
             return;
         }
 
-        DB::transaction(function () use ($updates) {
+        if (count($updates) > 0) {
+            DB::transaction(function () use ($updates) {
 
-            $query = "UPDATE categorized_business SET pcl_id = CASE sls_id";
+                $query = "UPDATE categorized_business SET pcl_id = CASE sls_id";
 
-            $bindings = [];
-            foreach ($updates as $idArea => $idUser) {
-                $query .= " WHEN ? THEN ?";
-                $bindings[] = $idArea;
-                $bindings[] = $idUser;
-            }
+                $bindings = [];
+                foreach ($updates as $idArea => $idUser) {
+                    $query .= " WHEN ? THEN ?";
+                    $bindings[] = $idArea;
+                    $bindings[] = $idUser;
+                }
 
-            $query .= " END WHERE sls_id IN (" . implode(',', array_fill(0, count($updates), '?')) . ")";
-            $bindings = array_merge($bindings, array_keys($updates));
+                $query .= " END WHERE sls_id IN (" . implode(',', array_fill(0, count($updates), '?')) . ")";
+                $bindings = array_merge($bindings, array_keys($updates));
 
-            DB::statement($query, $bindings);
-        });
+                DB::statement($query, $bindings);
+            });
+        }
     }
 }

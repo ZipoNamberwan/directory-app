@@ -23,8 +23,15 @@ class AssignmentNotificationJob implements ShouldQueue
      */
     public function handle(): void
     {
-        AssignmentStatus::find($this->uuid)->update([
-            'status' => 'success',
-        ]);
+        $status = AssignmentStatus::find($this->uuid);
+        if ($status->message != null) {
+            $status->update([
+                'status' => 'success with error',
+            ]);
+        } else {
+            $status->update([
+                'status' => 'success',
+            ]);
+        }
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Exports\SlsAssignmentExport;
-use App\Exports\TestExport;
 use Livewire\Component;
 use App\Jobs\AssignmentNotificationJob;
 use App\Models\AssignmentStatus;
@@ -11,8 +10,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Maatwebsite\Excel\Facades\Excel;
-use PHPUnit\Framework\Attributes\Test;
 
 class Export extends Component
 {
@@ -57,11 +54,19 @@ class Export extends Component
 
     public function updateExportProgress()
     {
-        $this->exportFinished = AssignmentStatus::find($this->uuid)->status == 'success';
+        $status = AssignmentStatus::find($this->uuid);
+        if ($status) {
+            $this->exportFinished = $status->status == 'success';
+        }
 
         if ($this->exportFinished) {
             $this->exporting = false;
         }
+    }
+
+    public function showDialog()
+    {
+        $this->dispatch('show-dialog', 'export');
     }
 
     public function render()

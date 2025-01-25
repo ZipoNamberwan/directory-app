@@ -47,6 +47,7 @@ return new class extends Migration
             $table->id()->autoincrement();
             $table->string('name');
             $table->string('color')->nullable();
+            $table->integer('order');
         });
 
         Schema::create('categorized_business', function (Blueprint $table) {
@@ -65,8 +66,8 @@ return new class extends Migration
 
             $table->string('note')->nullable();
             $table->foreignId('status_id')->constrained('statuses');
-            $table->foreignId('pml_id')->nullable()->constrained('users');
-            $table->foreignId('pcl_id')->nullable()->constrained('users');
+            $table->foreignUuid('pml_id')->nullable()->constrained('users');
+            $table->foreignUuid('pcl_id')->nullable()->constrained('users');
 
             $table->boolean('is_new')->default(false);
             $table->softDeletes(); 

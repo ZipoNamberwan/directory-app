@@ -24,46 +24,22 @@
                 <div class="card-body p-3">
 
                     <div class="row">
-                        <div class="col-md-4 col-sm-12 p-2">
+                        <div class="col-md-6 col-sm-12 p-2">
                             <div class="bg-light p-4 rounded">
                                 <h6 class="mb-3 d-flex align-items-center">
                                     <span class="badge bg-info me-2">1</span>
                                     Generate Template
                                 </h6>
                                 <p class="text-muted small mb-3">
-                                    Menu ini digunakan untuk membuat template assignment. Proses pembuatan template akan masuk antrian, sehingga mungkin akan memakan waktu beberapa saat
+                                    Menu ini digunakan untuk membuat template assignment. Proses pembuatan template akan masuk antrian, sehingga mungkin akan memakan waktu beberapa saat.
                                 </p>
                                 <p class="text-muted small mb-3">
-                                    Tombol status digunakan untuk melihat status proses pembuatan template
+                                    Tombol status digunakan untuk melihat status proses pembuatan template.
                                 </p>
                                 @livewire('export')
-                                @livewire('import')
-                                <!-- <button onclick="generateTemplate()" class="btn btn-info">
-                                    <i class="fas fa-play me-2"></i>
-                                    Buat
-                                </button>
-                                <button onclick="generateTemplate()" class="btn btn-outline-info">
-                                    <i class="fas fa-circle-info me-2"></i>
-                                    Status
-                                </button> -->
                             </div>
                         </div>
-                        <!-- <div class="col-md-4 col-sm-12 p-2">
-                            <div class="bg-light p-4 rounded">
-                                <h6 class="mb-3 d-flex align-items-center">
-                                    <span class="badge bg-primary me-2">2</span>
-                                    Unduh Template
-                                </h6>
-                                <p class="text-muted small mb-3">
-                                    Menu ini digunakan untuk mengunduh template yang telah selesai diproses. Tombol hanya akan aktif jika proses pembuatan template telah selesai.
-                                </p>
-                                <button onclick="generateTemplate()" class="btn btn-primary">
-                                    <i class="fas fa-download me-2"></i>
-                                    Unduh
-                                </button>
-                            </div>
-                        </div> -->
-                        <div class="col-md-4 col-sm-12 p-2">
+                        <div class="col-md-6 col-sm-12 p-2">
                             <div class="bg-light p-4 rounded">
                                 <h6 class="mb-3 d-flex align-items-center">
                                     <span class="badge bg-success me-2">2</span>
@@ -73,19 +49,9 @@
                                     Menu ini digunakan untuk mengupload template yang telah diisi. Karena data assignment yang diproses banyak, sehingga proses ini akan memakan beberapa waktu.
                                 </p>
                                 <p class="text-muted small mb-3">
-                                    Tombol status digunakan untuk melihat status assignment
+                                    Tombol status digunakan untuk melihat status assignment.
                                 </p>
-                                <div class="input-group">
-                                    <input type="file" class="form-control form-control-lg" id="fileUpload" accept=".csv,.xlsx" onchange="handleFileUpload(event)">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('fileUpload').click()">
-                                        <i class="fas fa-upload me-2"></i>
-                                        Choose File
-                                    </button>
-                                    <button onclick="generateTemplate()" class="btn btn-outline-success">
-                                        <i class="fas fa-circle-success me-2"></i>
-                                        Status
-                                    </button>
-                                </div>
+                                @livewire('import')
                             </div>
                         </div>
                     </div>
@@ -93,6 +59,13 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="statusDialog" tabindex="-1" role="dialog" aria-labelledby="statusDialogLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            @livewire('status-dialog')
+        </div>
+    </div>
+
     @include('layouts.footers.auth.footer')
 </div>
 @endsection
