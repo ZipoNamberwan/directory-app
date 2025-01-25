@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('assignment_status', function (Blueprint $table) {
-            $table->id();
-            $table->string('uuid');
+            $table->uuid('id')->primary();
             $table->enum('status', ['start', 'loading', 'success', 'failed']);
             $table->enum('type', ['export', 'import']);
             $table->foreignId('user_id')->constrained('users');

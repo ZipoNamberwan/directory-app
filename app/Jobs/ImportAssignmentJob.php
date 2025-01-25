@@ -55,7 +55,7 @@ class ImportAssignmentJob implements ShouldQueue
 
         if (count($invalid_emails) > 0) {
             $message = "Email tidak ditemukan: " . implode(', ', $invalid_emails) . "\n";
-            $assignmentStatus = AssignmentStatus::where('uuid', $this->uuid)->first();
+            $assignmentStatus = AssignmentStatus::find($this->uuid);
             $assignmentStatus->update([
                 'status' => 'failed',
                 'message' => $assignmentStatus->message . $message,

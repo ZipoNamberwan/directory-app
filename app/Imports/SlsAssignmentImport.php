@@ -21,7 +21,7 @@ class SlsAssignmentImport implements WithMultipleSheets, ShouldQueue, WithChunkR
         $this->uuid = $uuid;
         $this->regency = $regency;
 
-        AssignmentStatus::where('uuid', $uuid)->update([
+        AssignmentStatus::find($uuid)->update([
             'status' => 'loading',
         ]);
     }

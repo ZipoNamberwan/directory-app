@@ -38,7 +38,7 @@ class Export extends Component
             $this->uuid = $uuid;
 
             AssignmentStatus::create([
-                'uuid' => $uuid,
+                'id' => $uuid,
                 'status' => 'start',
                 'user_id' => Auth::id(),
                 'type' => 'export',
@@ -57,7 +57,7 @@ class Export extends Component
 
     public function updateExportProgress()
     {
-        $this->exportFinished = AssignmentStatus::where('uuid', $this->uuid)->first()->status == 'success';
+        $this->exportFinished = AssignmentStatus::find($this->uuid)->status == 'success';
 
         if ($this->exportFinished) {
             $this->exporting = false;

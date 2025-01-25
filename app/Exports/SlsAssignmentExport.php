@@ -20,7 +20,7 @@ class SlsAssignmentExport implements WithMultipleSheets, ShouldQueue
         $this->regency = $regency;
         $this->uuid = $uuid;
 
-        AssignmentStatus::where('uuid', $uuid)->update([
+        AssignmentStatus::find($uuid)->update([
             'status' => 'loading',
         ]);
     }

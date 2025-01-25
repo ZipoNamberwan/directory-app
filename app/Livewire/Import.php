@@ -37,7 +37,7 @@ class Import extends Component
 
             $uuid = (string) Str::uuid();
             AssignmentStatus::create([
-                'uuid' => $uuid,
+                'id' => $uuid,
                 'user_id' => Auth::id(),
                 'status' => 'start',
                 'type' => 'import',
