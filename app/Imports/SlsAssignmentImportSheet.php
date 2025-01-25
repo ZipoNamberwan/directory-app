@@ -2,14 +2,17 @@
 
 namespace App\Imports;
 
+use App\Jobs\ImportAssignmentJob;
 use App\Models\AssignmentStatus;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\Importable;
+use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Maatwebsite\Excel\Concerns\WithStartRow;
 
-class SlsAssignmentImport implements WithMultipleSheets, ShouldQueue, WithChunkReading
+class SlsAssignmentImportSheet implements ToCollection, WithChunkReading, WithStartRow, ShouldQueue
 {
     use Importable, Queueable;
 
@@ -20,21 +23,23 @@ class SlsAssignmentImport implements WithMultipleSheets, ShouldQueue, WithChunkR
     {
         $this->uuid = $uuid;
         $this->regency = $regency;
-
-        AssignmentStatus::where('uuid', $uuid)->update([
-            'status' => 'loading',
-        ]);
     }
 
-    public function sheets(): array
+    /**
+     * @param Collection $collection
+     */
+    public function collection(Collection $rows)
     {
-        return [
-            0 => new SlsAssignmentImportSheet($this->regency, $this->uuid),
-        ];
+        ImportAssignmentJob::dispatch($rows, $this->regency, $this->uuid);
     }
 
     public function chunkSize(): int
     {
         return 1000;
+    }
+
+    public function startRow(): int
+    {
+        return 2;
     }
 }

@@ -2,9 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Models\AssignmentStatus;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
 class ImportAssignmentJob implements ShouldQueue
@@ -12,12 +14,16 @@ class ImportAssignmentJob implements ShouldQueue
     use Queueable;
 
     protected $records;
+    protected $uuid;
+    protected $regency;
     /**
      * Create a new job instance.
      */
-    public function __construct($records)
+    public function __construct($records, $regency, $uuid)
     {
         $this->records = $records;
+        $this->uuid = $uuid;
+        $this->regency = $regency;
     }
 
     /**
@@ -26,16 +32,35 @@ class ImportAssignmentJob implements ShouldQueue
     public function handle(): void
     {
         $updates = [];
+
+        $invalid_emails = [];
+
         foreach ($this->records as $record) {
             $idArea = $record[0];
             $email = $record[4];
 
-            if ($idArea && $email) {
-                $id_user = User::where('email', $email)->first();
-                if ($id_user) {
-                    $updates[$idArea] = $id_user->id;
+            if (Str::startsWith($idArea, $this->regency)) {
+                if ($idArea && $email) {
+                    $id_user = User::where('email', $email)->first();
+                    if ($id_user) {
+                        $updates[$idArea] = $id_user->id;
+                    } else {
+                        if (!in_array($email, $invalid_emails)) {
+                            $invalid_emails[] = $email;
+                        }
+                    }
                 }
             }
+        }
+
+        if (count($invalid_emails) > 0) {
+            $message = "Email tidak ditemukan: " . implode(', ', $invalid_emails) . "\n";
+            $assignmentStatus = AssignmentStatus::where('uuid', $this->uuid)->first();
+            $assignmentStatus->update([
+                'status' => 'failed',
+                'message' => $assignmentStatus->message . $message,
+            ]);
+            return;
         }
 
         DB::transaction(function () use ($updates) {
