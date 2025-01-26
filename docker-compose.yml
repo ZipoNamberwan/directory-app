@@ -9,7 +9,7 @@ services:
         user: sammy
         uid: 1000
     image: laravel_app
-    container_name: laravel_app
+    container_name: directory-app
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -21,7 +21,7 @@ services:
 
   web:
     image: nginx:alpine
-    container_name: nginx_web
+    container_name: directory-app-web
     restart: unless-stopped
     ports:
       - "8888:80"
@@ -35,7 +35,7 @@ services:
 
   db:
     image: mysql:8.0
-    container_name: mysql_db
+    container_name: directory-app-db
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
@@ -44,6 +44,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - dbdata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
     ports:
       - "3306:3306"
     networks:
