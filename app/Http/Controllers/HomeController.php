@@ -33,16 +33,16 @@ class HomeController extends Controller
     public function index()
     {
 
-        $regencyReport = DB::table('categorized_business')
-            ->select(
-                'regency_id',
-                DB::raw("SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) as active_count"),
-                DB::raw("SUM(CASE WHEN status_id = 2 THEN 1 ELSE 0 END) as inactive_count")
-            )
-            ->groupBy('regency_id')
-            ->get();
+        // $regencyReport = DB::table('categorized_business')
+        //     ->select(
+        //         'regency_id',
+        //         DB::raw("SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) as active_count"),
+        //         DB::raw("SUM(CASE WHEN status_id = 2 THEN 1 ELSE 0 END) as inactive_count")
+        //     )
+        //     ->groupBy('regency_id')
+        //     ->get();
 
-        dd($regencyReport);
+        // dd($regencyReport);
 
         $user = User::find(Auth::id());
 
