@@ -71,6 +71,12 @@ return new class extends Migration
 
             $table->boolean('is_new')->default(false);
             $table->softDeletes(); 
+
+            $table->index('regency_id');
+            $table->index('subdistrict_id');
+            $table->index('village_id');
+            $table->index('sls_id');
+            $table->fullText('name');
         });
 
         Schema::table('users', function (Blueprint $table) {

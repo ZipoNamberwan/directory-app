@@ -12,7 +12,13 @@ class AdminKabController extends Controller
         return view('adminkab.index');
     }
 
-    public function showAssignment(){
+    public function showAssignment()
+    {
         return view('adminkab.assignment');
+    }
+
+    public function update()
+    {
+        return 'sada';
     }
 }

@@ -127,7 +127,7 @@
                 </div>
                 <div class="card-body p-3">
                     <div class="row">
-                        <div class="col-sm-12 col-md-4">
+                        <div class="col-sm-12 col-md-3 my-1">
                             <select id="status" name="status" class="form-control" data-toggle="select" required>
                                 <option value="0" disabled selected> -- Filter Status -- </option>
                                 <option value="all"> Semua </option>
@@ -135,6 +135,22 @@
                                 <option value="{{$status->id}}">{{$status->name}}</option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div class="col-sm-12 col-md-3 my-1">
+                            <select style="width: 100%;" id="subdistrict" name="subdistrict" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Filter Kecamatan -- </option>
+                                @foreach ($subdistricts as $subdistrict)
+                                <option value="{{ $subdistrict->id }}" {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
+                                    [{{ $subdistrict->short_code}}] {{ $subdistrict->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-3 my-1">
+                            <select id="village" name="village" class="form-control" data-toggle="select" name="village"></select>
+                        </div>
+                        <div id="sls_div" class="col-sm-12 col-md-3 my-1">
+                            <select id="sls" name="sls" class="form-control" data-toggle="select"></select>
                         </div>
                     </div>
                     <div>
@@ -169,17 +185,74 @@
 <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
 
 <script>
-    $('#status').select2({
-        placeholder: 'Filter Status',
-        allowClear: true,
+    [{
+            selector: '#subdistrict',
+            placeholder: 'Filter Kecamatan'
+        },
+        {
+            selector: '#village',
+            placeholder: 'Filter Desa'
+        },
+        {
+            selector: '#sls',
+            placeholder: 'Filter SLS'
+        },
+        {
+            selector: '#status',
+            placeholder: 'Filter Status'
+        },
+    ].forEach(config => {
+        $(config.selector).select2({
+            placeholder: config.placeholder,
+            allowClear: true,
+        });
     });
+
+    $('#subdistrict').on('change', function() {
+        loadVillage(null, null);
+        renderTable();
+    });
+    $('#village').on('change', function() {
+        loadSls(null, null);
+        renderTable();
+    });
+    $('#sls').on('change', function() {
+        renderTable();
+    });
+    $('#status').on('change', function() {
+        renderTable();
+    });
+
+    function getFilterUrl(filter) {
+        var filterUrl = ''
+        var e = document.getElementById(filter);
+        var filterselected = e.options[e.selectedIndex];
+        if (filterselected != null) {
+            var filterid = filterselected.value
+            if (filterid != 0) {
+                filterUrl = `&${filter}=` + filterid
+            }
+        }
+
+        return filterUrl
+    }
+
+    function renderTable() {
+        filterUrl = ''
+        filterTypes = ['status', 'subdistrict', 'village', 'sls']
+        filterTypes.forEach(f => {
+            filterUrl += getFilterUrl(f)
+        });
+
+        table.ajax.url('/directory/data?' + filterUrl).load();
+    }
 
     let table = new DataTable('#myTable', {
         order: [],
         serverSide: true,
         processing: true,
         ajax: {
-            url: '/directory/data/{{$type}}',
+            url: '/directory/data',
             type: 'GET',
         },
         responsive: true,
@@ -225,16 +298,6 @@
                 next: '<i class="fas fa-angle-right"></i>'
             }
         }
-    });
-
-    $('#status').on('change', function() {
-        var statusUrl = ''
-        var e = document.getElementById('status');
-        var statusid = e.options[e.selectedIndex].value;
-        if (statusid != 0) {
-            statusUrl = '&status=' + statusid
-        }
-        table.ajax.url('/directory/data/{{$type}}?' + statusUrl).load();
     });
 </script>
 @endpush
