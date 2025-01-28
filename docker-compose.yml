@@ -9,13 +9,12 @@ services:
         user: sammy
         uid: 1000
     image: laravel_app
+    entrypoint: php artisan octane:frankenphp
     container_name: directory-app
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./:/var/www
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
-      # - /var/www/vendor
     networks:
       - laravel_network
 
