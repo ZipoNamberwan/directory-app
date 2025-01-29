@@ -20,5 +20,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-/python_script/result
-/python_script/usaha/*
+# /python_script/result
+# /python_script/usaha/*
