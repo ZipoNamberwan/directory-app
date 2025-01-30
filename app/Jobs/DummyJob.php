@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\CategorizedBusiness;
+use App\Models\SlsBusiness;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -57,7 +57,7 @@ class DummyJob implements ShouldQueue
         ]);
         $adminprov->assignRole('adminprov');
 
-        $ids = CategorizedBusiness::where('regency_id', $pcl->regency_id)->skip(0)->take(1000)->pluck('id');
-        CategorizedBusiness::whereIn('id', $ids)->update(['pcl_id' => $pcl->id]);
+        $ids = SlsBusiness::where('regency_id', $pcl->regency_id)->skip(0)->take(1000)->pluck('id');
+        SlsBusiness::whereIn('id', $ids)->update(['pcl_id' => $pcl->id]);
     }
 }

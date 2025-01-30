@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CategorizedBusiness;
+use App\Models\SlsBusiness;
 use App\Models\Sls;
 use App\Models\Status;
 use App\Models\Subdistrict;
@@ -47,7 +47,7 @@ class HomeController extends Controller
         $user = User::find(Auth::id());
 
         if ($user->hasRole('pcl')) {
-            $businessBase = CategorizedBusiness::where(['pcl_id' => Auth::id()]);
+            $businessBase = SlsBusiness::where(['pcl_id' => Auth::id()]);
             $total = (clone $businessBase)->count();
             $not_done = (clone $businessBase)->where(['status_id' => 1])->count();
             $active = (clone $businessBase)->where(['status_id' => 2])->count();
@@ -66,7 +66,7 @@ class HomeController extends Controller
                 'subdistricts' => $subdistricts
             ]);
         } else if ($user->hasRole('adminkab')) {
-            $businessBase = CategorizedBusiness::where(['regency_id' => User::find(Auth::id())->regency_id]);
+            $businessBase = SlsBusiness::where(['regency_id' => User::find(Auth::id())->regency_id]);
             $total = (clone $businessBase)->count();
             $not_done = (clone $businessBase)->where(['status_id' => 1])->count();
             $active = (clone $businessBase)->where(['status_id' => 2])->count();
@@ -130,7 +130,7 @@ class HomeController extends Controller
         if ($user->hasRole('pcl')) {
             $business = $user->business()->where('sls_id', '=', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();
         } else if ($user->hasRole('adminkab')) {
-            $business = CategorizedBusiness::where('sls_id', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();;
+            $business = SlsBusiness::where('sls_id', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();;
         }
         return response()->json($business);
     }
@@ -144,7 +144,7 @@ class HomeController extends Controller
         if ($user->hasRole('pcl')) {
             $records = User::find(Auth::id())->business();
         } else if ($user->hasRole('adminkab')) {
-            $records = CategorizedBusiness::where(['regency_id' => User::find(Auth::id())->regency_id]);
+            $records = SlsBusiness::where(['regency_id' => User::find(Auth::id())->regency_id]);
         }
 
         if ($request->status) {

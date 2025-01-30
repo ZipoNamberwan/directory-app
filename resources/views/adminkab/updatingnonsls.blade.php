@@ -26,7 +26,7 @@
     <div class="card">
         <div class="card-header pb-0">
             <div class="d-flex align-items-center">
-                <p class="mb-0">Pilih Wilayah</p>
+                <p class="mb-0">*****[Under Construction....]******</p>
             </div>
         </div>
         <div class="card-body pt-1">
@@ -45,10 +45,6 @@
                 <div class="col-md-4">
                     <label class="form-control-label">Desa <span class="text-danger">*</span></label>
                     <select id="village" name="village" class="form-control" data-toggle="select" name="village"></select>
-                </div>
-                <div id="sls_div" class="col-md-4">
-                    <label class="form-control-label">SLS <span class="text-danger">*</span></label>
-                    <select id="sls" name="sls" class="form-control" data-toggle="select"></select>
                 </div>
             </div>
         </div>
@@ -215,17 +211,7 @@
 <script src="/vendor/select2/select2.min.js"></script>
 
 <script>
-    function toggleAddButton() {
-        isAddDisabled = true;
-        if (document.getElementById('sls').value != 0) {
-            isAddDisabled = false;
-        }
-        document.getElementById('add-button').disabled = isAddDisabled;
-    }
-</script>
-<script>
     statuses = @json($statuses);
-    toggleAddButton()
 </script>
 
 <script>
@@ -258,9 +244,6 @@
         loadVillage(null, null);
     });
     $('#village').on('change', function() {
-        loadSls(null, null);
-    });
-    $('#sls').on('change', function() {
         loadDirectory(null);
     });
 
@@ -272,9 +255,7 @@
         }
         $('#village').empty();
         $('#village').append(`<option value="0" disabled selected>Processing...</option>`);
-        $('#sls').empty();
-        $('#sls').append(`<option value="0" disabled selected>Processing...</option>`);
-
+   
         if (id != null) {
             $.ajax({
                 type: 'GET',
@@ -283,8 +264,6 @@
 
                     $('#village').empty();
                     $('#village').append(`<option value="0" disabled selected> -- Pilih Desa -- </option>`);
-                    $('#sls').empty();
-                    $('#sls').append(`<option value="0" disabled selected> -- Pilih SLS -- </option>`);
                     response.forEach(element => {
                         if (selectedvillage == String(element.id)) {
                             $('#village').append('<option value=\"' + element.id + '\" selected>' +
@@ -299,45 +278,7 @@
         } else {
             $('#village').empty();
             $('#village').append(`<option value="0" disabled> -- Pilih Desa -- </option>`);
-            $('#sls').empty();
-            $('#sls').append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
         }
-        toggleAddButton()
-    }
-
-    function loadSls(villageid = null, selectedsls = null) {
-        emptyDirectoryList()
-        let id = $('#village').val();
-        if (villageid != null) {
-            id = villageid;
-        }
-
-        $('#sls').empty();
-        $('#sls').append(`<option value="0" disabled selected>Processing...</option>`);
-        if (id != null) {
-            $.ajax({
-                type: 'GET',
-                url: '/sls/' + id,
-                success: function(response) {
-
-                    $('#sls').empty();
-                    $('#sls').append(`<option value="0" disabled selected> -- Pilih SLS -- </option>`);
-                    response.forEach(element => {
-                        if (selectedsls == String(element.id)) {
-                            $('#sls').append('<option value=\"' + element.id + '\" selected>' +
-                                '[' + element.short_code + '] ' + element.name + '</option>');
-                        } else {
-                            $('#sls').append('<option value=\"' + element.id + '\">' +
-                                '[' + element.short_code + '] ' + element.name + '</option>');
-                        }
-                    });
-                }
-            });
-        } else {
-            $('#sls').empty();
-            $('#sls').append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
-        }
-        toggleAddButton()
     }
 
     function loadDirectory(bsid = null) {
@@ -420,7 +361,6 @@
         } else {
             resultDiv.innerHTML = '';
         }
-        toggleAddButton()
     }
 
     function openUpdateDirectoryModal(item) {

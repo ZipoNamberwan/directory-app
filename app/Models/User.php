@@ -63,6 +63,6 @@ class User extends Authenticatable
 
     public function business()
     {
-        return $this->hasMany(CategorizedBusiness::class, 'pcl_id');
+        return $this->hasMany(SlsBusiness::class, 'pcl_id');
     }
 }

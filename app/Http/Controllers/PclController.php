@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CategorizedBusiness;
+use App\Models\SlsBusiness;
 use App\Models\Status;
 use App\Models\Subdistrict;
 use App\Models\User;
@@ -31,7 +31,7 @@ class PclController extends Controller
 
     public function updateDirectory(Request $request, $id)
     {
-        $business = CategorizedBusiness::find($id);
+        $business = SlsBusiness::find($id);
 
         if ($request->new == "true") {
             $business->name = $request->name;
@@ -51,7 +51,7 @@ class PclController extends Controller
             'sls' => 'required',
         ]);
 
-        $business = new CategorizedBusiness();
+        $business = new SlsBusiness();
         $business->name = $request->name;
         $business->regency_id = User::find(Auth::id())->regency_id;
         $business->subdistrict_id = $request->subdistrict;
@@ -66,7 +66,7 @@ class PclController extends Controller
     }
     public function deleteDirectory(string $id)
     {
-        $business = CategorizedBusiness::find($id);
+        $business = SlsBusiness::find($id);
         $business->delete();
 
         return response()->json($business);

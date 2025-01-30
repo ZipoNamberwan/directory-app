@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Jobs\CategorizedJob;
+use App\Jobs\NonSlsBusinessJob;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
 
-class CategorizedBusinessSeeder extends Seeder
+class NonSlsBusinessSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -40,7 +40,7 @@ class CategorizedBusinessSeeder extends Seeder
                         // Close the file
                         fclose($handle);
 
-                        CategorizedJob::dispatch($csvData);
+                        NonSlsBusinessJob::dispatch($csvData);
                     }
                 } catch (\Exception $e) {
                     dd($e);

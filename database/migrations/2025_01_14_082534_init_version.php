@@ -50,7 +50,7 @@ return new class extends Migration
             $table->integer('order');
         });
 
-        Schema::create('categorized_business', function (Blueprint $table) {
+        Schema::create('sls_business', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('owner')->nullable();

@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class CategorizedBusiness extends Model
+class NonSlsBusiness extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
     protected $guarded = [];
     public $timestamps = false;
-    protected $table = 'categorized_business';
+    protected $table = 'non_sls_business';
 
     public function regency()
     {

@@ -2,15 +2,13 @@
 
 namespace App\Jobs;
 
-use App\Models\CategorizedBusiness;
-use App\Models\Regency;
+use App\Models\NonSlsBusiness;
 use App\Models\Sls;
-use App\Models\Status;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Str;
 
-class CategorizedJob implements ShouldQueue
+class NonSlsBusinessJob implements ShouldQueue
 {
     use Queueable;
 
@@ -45,6 +43,6 @@ class CategorizedJob implements ShouldQueue
                 ];
             }
         }
-        CategorizedBusiness::insert($data);
+        NonSlsBusiness::insert($data);
     }
 }
