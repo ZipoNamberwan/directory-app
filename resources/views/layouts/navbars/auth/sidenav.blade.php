@@ -22,33 +22,39 @@
                 </a>
             </li>
             @hasrole('pcl')
-            <!-- <li class="nav-item mt-3 d-flex align-items-center">
-                <div class="ps-4">
-                    <i class="fab fa-laravel" style="color: #f4645f;"></i>
-                </div>
-                <h6 class="ms-2 text-uppercase text-xs font-weight-bolder opacity-6 mb-0">Direktori Usaha</h6>
-            </li> -->
+            <li class="nav-item mt-3">
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori</h6>
+            </li>
             <li class="nav-item">
                 <a class="nav-link {{ Route::currentRouteName() == 'updating-sls' ? 'active' : '' }}" href="{{ route('updating-sls') }}">
                     <div
                         class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-list-ol text-success text-sm opacity-10"></i>
                     </div>
-                    <span class="nav-link-text ms-1">Level SLS</span>
+                    <span class="nav-link-text ms-1">Sampai Level SLS</span>
                 </a>
             </li>
             @endhasrole
             @hasrole('adminkab')
             <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Pemutakhiran</h6>
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori</h6>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ Route::currentRouteName() == 'updating-kab' ? 'active' : '' }}" href="{{ route('updating-kab') }}">
+                <a class="nav-link {{ Route::currentRouteName() == 'updating-sls' ? 'active' : '' }}" href="{{ route('updating-sls') }}">
+                    <div
+                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-list-ol text-success text-sm opacity-10"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Sampai Level SLS</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ Route::currentRouteName() == 'updating-non-sls' ? 'active' : '' }}" href="{{ route('updating-non-sls') }}">
                     <div
                         class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-list-ul text-danger text-sm opacity-10"></i>
                     </div>
-                    <span class="nav-link-text ms-1">Level Kabupaten</span>
+                    <span class="nav-link-text ms-1">Tidak Sampai Level SLS</span>
                 </a>
             </li>
             <li class="nav-item mt-3">
@@ -73,6 +79,18 @@
                         <i class="ni ni-calendar-grid-58 text-info text-sm opacity-10"></i>
                     </div>
                     <span class="nav-link-text ms-1">Report</span>
+                </a>
+            </li>
+            <li class="nav-item mt-3">
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Petugas</h6>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ str_contains(request()->url(), 'users') == true ? 'active' : '' }}" href="/users">
+                    <div
+                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-user text-secondary text-sm opacity-10"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Petugas</span>
                 </a>
             </li>
             @endhasrole

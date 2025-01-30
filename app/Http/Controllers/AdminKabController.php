@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\CategorizedBusinessTemplateExport;
-use Illuminate\Http\Request;
+use App\Models\Status;
+use App\Models\Subdistrict;
 
 class AdminKabController extends Controller
 {
@@ -19,6 +19,9 @@ class AdminKabController extends Controller
 
     public function update()
     {
-        return 'sada';
+        $subdistricts = Subdistrict::all();
+        $statuses = Status::where('name', '!=', 'Baru')->orderBy('order', 'asc')->get();
+
+        return view('adminkab.updatingnonsls', ['subdistricts' => $subdistricts, 'statuses' => $statuses]);
     }
 }

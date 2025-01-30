@@ -130,8 +130,7 @@ class HomeController extends Controller
         if ($user->hasRole('pcl')) {
             $business = $user->business()->where('sls_id', '=', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();
         } else if ($user->hasRole('adminkab')) {
-
-            $business = CategorizedBusiness::where('sls_id', $id_sls)->get();;
+            $business = CategorizedBusiness::where('sls_id', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();;
         }
         return response()->json($business);
     }

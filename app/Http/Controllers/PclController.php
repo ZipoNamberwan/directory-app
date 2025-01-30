@@ -13,14 +13,20 @@ class PclController extends Controller
 {
     public function update()
     {
-        $subdistricts = Subdistrict::whereIn(
-            'id',
-            User::find(Auth::id())->business()->select('subdistrict_id')->distinct()->pluck('subdistrict_id')
-        )->get();
+        $user = User::find(Auth::id());
+        $subdistricts = [];
+        if ($user->hasRole('pcl')) {
+            $subdistricts = Subdistrict::whereIn(
+                'id',
+                User::find(Auth::id())->business()->select('subdistrict_id')->distinct()->pluck('subdistrict_id')
+            )->get();
+        } else if ($user->hasRole('adminkab')) {
+            $subdistricts = Subdistrict::all();
+        }
 
-        $statuses = Status::where('name', '!=', 'Baru')->orderBy('order', 'asc') ->get();
+        $statuses = Status::where('name', '!=', 'Baru')->orderBy('order', 'asc')->get();
 
-        return view('pcl.updating', ['subdistricts' => $subdistricts, 'statuses' => $statuses]);
+        return view('pcl.updatingsls', ['subdistricts' => $subdistricts, 'statuses' => $statuses]);
     }
 
     public function updateDirectory(Request $request, $id)

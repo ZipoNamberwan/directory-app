@@ -1,7 +1,6 @@
 @extends('layouts.app', ['class' => 'g-sidenav-show bg-gray-100'])
 
 @section('css')
-<link href="/vendor/fontawesome/css/all.min.css" rel="stylesheet">
 
 @endsection
 

@@ -20,6 +20,7 @@
     <!-- CSS Files -->
     <link id="pagestyle" href="/assets/css/argon-dashboard.css" rel="stylesheet" />
 
+    <link href="/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     @yield('css')
 
 </head>

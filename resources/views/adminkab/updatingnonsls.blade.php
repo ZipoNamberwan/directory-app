@@ -56,7 +56,7 @@
     <div class="card mt-2">
         <div class="card-header pb-0">
             <div class="d-flex align-items-center">
-                <p class="mb-0">Daftar Direktori</p>
+                <p class="mb-0">Daftar Direktori Tidak Sampai Level SLS</p>
                 <button id="add-button" onclick="openAddModal()" class="btn btn-primary btn-sm ms-auto p-2 m-0">Tambah</button>
             </div>
         </div>
@@ -256,15 +256,12 @@
 
     $('#subdistrict').on('change', function() {
         loadVillage(null, null);
-        toggleAddButton()
     });
     $('#village').on('change', function() {
         loadSls(null, null);
-        toggleAddButton()
     });
     $('#sls').on('change', function() {
         loadDirectory(null);
-        toggleAddButton()
     });
 
     function loadVillage(subdistrictid = null, selectedvillage = null) {
@@ -275,6 +272,9 @@
         }
         $('#village').empty();
         $('#village').append(`<option value="0" disabled selected>Processing...</option>`);
+        $('#sls').empty();
+        $('#sls').append(`<option value="0" disabled selected>Processing...</option>`);
+
         if (id != null) {
             $.ajax({
                 type: 'GET',
@@ -302,6 +302,7 @@
             $('#sls').empty();
             $('#sls').append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
         }
+        toggleAddButton()
     }
 
     function loadSls(villageid = null, selectedsls = null) {
@@ -336,6 +337,7 @@
             $('#sls').empty();
             $('#sls').append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
         }
+        toggleAddButton()
     }
 
     function loadDirectory(bsid = null) {
@@ -400,6 +402,10 @@
 
                         resultDiv.appendChild(itemDiv);
                     });
+
+                    if (response.length == 0) {
+                        resultDiv.innerHTML = `<p class="text-small text-warning">Tidak ada direktori di SLS ini</p>`
+                    }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     const resultDiv = document.getElementById('samplelist');
@@ -414,6 +420,7 @@
         } else {
             resultDiv.innerHTML = '';
         }
+        toggleAddButton()
     }
 
     function openUpdateDirectoryModal(item) {

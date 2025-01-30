@@ -10,6 +10,7 @@ use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\ResetPassword;
 use App\Http\Controllers\ChangePassword;
 use App\Http\Controllers\PclController;
+use App\Http\Controllers\UserController;
 
 Route::get('/register', [RegisterController::class, 'create'])->middleware('guest')->name('register');
 Route::post('/register', [RegisterController::class, 'store'])->middleware('guest')->name('register.perform');
@@ -33,14 +34,17 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::delete('/directory/{id}', [PclController::class, 'deleteDirectory']);
     Route::patch('/directory/edit/{id}', [PclController::class, 'updateDirectory']);
 
-	Route::group(['middleware' => ['role:pcl']], function () {
+	Route::group(['middleware' => ['role:pcl|adminkab']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'update'])->name('updating-sls');
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {
 		Route::get('/assignment', [AdminKabController::class, 'showAssignment'])->name('assignment');
-		Route::get('/pemutakhiran-kab', [AdminKabController::class, 'update'])->name('updating-kab');
+		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'update'])->name('updating-non-sls');
 		Route::get('/report', [AdminKabController::class, 'report'])->name('report');
+
+		Route::get('/users/data', [UserController::class, 'getUserData']);
+		Route::resource('users', UserController::class);
 	});
 
 	Route::get('/virtual-reality', [PageController::class, 'vr'])->name('virtual-reality');

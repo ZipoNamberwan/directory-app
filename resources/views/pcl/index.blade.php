@@ -6,7 +6,6 @@
 <link href="/vendor/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
 <link href="/vendor/datatables/responsive.bootstrap5.min.css" rel="stylesheet" />
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link href="/vendor/fontawesome/css/all.min.css" rel="stylesheet">
 
 @endsection
 
@@ -35,7 +34,7 @@
                             </div>
                         </div>
                     </div>
-                    <a href="/pemutakhiran" class="mb-0 mt-2 btn btn-primary btn-sm d-flex justify-content-center align-items-center" role="button" aria-pressed="true">
+                    <a href="/pemutakhiran-sls" class="mb-0 mt-2 btn btn-primary btn-sm d-flex justify-content-center align-items-center" role="button" aria-pressed="true">
                         <span class="btn-inner--text">Mulai Pemutakhiran</span>
                         <span class="btn-inner--icon"><i class="ni ni-bold-right"></i></span>
                         <span class="btn-inner--icon"><i class="ni ni-bold-right"></i></span>
