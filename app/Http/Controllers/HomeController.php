@@ -137,43 +137,34 @@ class HomeController extends Controller
 
     public function getDirectoryTables(Request $request)
     {
+        $user = User::find(Auth::id());
         $records = null;
 
-        $user = User::find(Auth::id());
-
         if ($user->hasRole('pcl')) {
-            $records = User::find(Auth::id())->business();
-        } else if ($user->hasRole('adminkab')) {
-            $records = SlsBusiness::where(['regency_id' => User::find(Auth::id())->regency_id]);
+            $records = $user->business();
+        } elseif ($user->hasRole('adminkab')) {
+            $records = SlsBusiness::where('regency_id', $user->regency_id);
         }
 
-        if ($request->status) {
-            if ($request->status != 'all') {
-                $records->where(['status_id' => $request->status]);
-            }
+        // Apply filters
+        if ($request->status && $request->status !== 'all') {
+            $records->where('status_id', $request->status);
         }
 
-        if ($request->subdistrict) {
-            if ($request->subdistrict != 'all') {
-                $records->where(['subdistrict_id' => $request->subdistrict]);
-            }
+        if ($request->subdistrict && $request->subdistrict !== 'all') {
+            $records->where('subdistrict_id', $request->subdistrict);
         }
-        if ($request->village) {
-            if ($request->village != 'all') {
-                $records->where(['village_id' => $request->village]);
-            }
+
+        if ($request->village && $request->village !== 'all') {
+            $records->where('village_id', $request->village);
         }
-        if ($request->sls) {
-            if ($request->sls != 'all') {
-                $records->where(['sls_id' => $request->sls]);
-            }
+
+        if ($request->sls && $request->sls !== 'all') {
+            $records->where('sls_id', $request->sls);
         }
-        if ($request->assignment) {
-            if ($request->assignment == '1') {
-                $records->where('pcl_id', '!=', null);
-            } else if ($request->assignment == '0') {
-                $records->where('pcl_id', '=', null);
-            }
+
+        if ($request->assignment !== null) {
+            $records->where('pcl_id', $request->assignment == '1' ? '!=' : '=', null);
         }
 
         $recordsTotal = $records->count();
