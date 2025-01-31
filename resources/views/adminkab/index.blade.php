@@ -253,7 +253,7 @@
             filterUrl += getFilterUrl(f)
         });
 
-        table.ajax.url('/directory/data?' + filterUrl).load();
+        table.ajax.url('/sls-directory/data?' + filterUrl).load();
     }
 
     function loadVillage(subdistrictid = null, selectedvillage = null) {
@@ -329,8 +329,9 @@
         order: [],
         serverSide: true,
         processing: true,
+        // deferLoading: 0,
         ajax: {
-            url: '/directory/data',
+            url: '/sls-directory/data',
             type: 'GET',
         },
         responsive: true,

@@ -20,8 +20,13 @@ class AdminKabController extends Controller
     public function update()
     {
         $subdistricts = Subdistrict::all();
-        $statuses = Status::where('name', '!=', 'Baru')->orderBy('order', 'asc')->get();
+        $statuses = Status::orderBy('order', 'asc')->get();
 
         return view('adminkab.updatingnonsls', ['subdistricts' => $subdistricts, 'statuses' => $statuses]);
+    }
+
+    public function report()
+    {
+        return 'coming soon';
     }
 }

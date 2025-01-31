@@ -43,4 +43,9 @@ class NonSlsBusiness extends Model
     {
         return $this->belongsTo(User::class, 'pcl_id');
     }
+
+    public function pml()
+    {
+        return $this->belongsTo(User::class, 'pml_id');
+    }
 }

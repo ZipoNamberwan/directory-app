@@ -243,7 +243,7 @@
             filterUrl += getFilterUrl(f)
         });
 
-        table.ajax.url('/directory/data?' + filterUrl).load();
+        table.ajax.url('/sls-directory/data?' + filterUrl).load();
     }
 
     let table = new DataTable('#myTable', {
@@ -251,7 +251,7 @@
         serverSide: true,
         processing: true,
         ajax: {
-            url: '/directory/data',
+            url: '/sls-directory/data',
             type: 'GET',
         },
         responsive: true,

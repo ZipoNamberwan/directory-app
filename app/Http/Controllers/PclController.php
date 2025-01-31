@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\NonSlsBusiness;
 use App\Models\SlsBusiness;
 use App\Models\Status;
 use App\Models\Subdistrict;
@@ -18,7 +19,7 @@ class PclController extends Controller
         if ($user->hasRole('pcl')) {
             $subdistricts = Subdistrict::whereIn(
                 'id',
-                User::find(Auth::id())->business()->select('subdistrict_id')->distinct()->pluck('subdistrict_id')
+                User::find(Auth::id())->slsBusiness()->select('subdistrict_id')->distinct()->pluck('subdistrict_id')
             )->get();
         } else if ($user->hasRole('adminkab')) {
             $subdistricts = Subdistrict::all();
@@ -29,9 +30,15 @@ class PclController extends Controller
         return view('pcl.updatingsls', ['subdistricts' => $subdistricts, 'statuses' => $statuses]);
     }
 
-    public function updateDirectory(Request $request, $id)
+    public function updateDirectory(Request $request, $type, $id)
     {
-        $business = SlsBusiness::find($id);
+        $business = null;
+
+        if ($type == 'sls') {
+            $business = SlsBusiness::find($id);
+        } else {
+            $business = NonSlsBusiness::find($id);
+        }
 
         if ($request->new == "true") {
             $business->name = $request->name;

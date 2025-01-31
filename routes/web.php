@@ -23,16 +23,17 @@ Route::post('/change-password', [ChangePassword::class, 'update'])->middleware('
 
 Route::group(['middleware' => 'auth'], function () {
 
-	Route::get('/directory/data', [HomeController::class, 'getDirectoryTables']);
+	Route::get('/sls-directory/data', [HomeController::class, 'getSlsDirectoryTables']);
+	Route::get('/non-sls-directory/data', [HomeController::class, 'getNonSlsDirectoryTables']);
 
 	Route::get('/', [HomeController::class, 'index'])->name('home');
 	Route::get('/desa/{subdistrict_id}', [HomeController::class, 'getVillage']);
     Route::get('/sls/{village_id}', [HomeController::class, 'getSls']);
-    Route::get('/directory/{id_sls}', [HomeController::class, 'getDirectory']);
+    Route::get('/sls-directory/{id_sls}', [HomeController::class, 'getSlsDirectory']);
 
-	Route::post('/directory', [PclController::class, 'addDirectory']);
-	Route::delete('/directory/{id}', [PclController::class, 'deleteDirectory']);
-    Route::patch('/directory/edit/{id}', [PclController::class, 'updateDirectory']);
+	Route::post('/sls-directory', [PclController::class, 'addDirectory']);
+	Route::delete('/sls-directory/{id}', [PclController::class, 'deleteDirectory']);
+    Route::patch('/directory/edit/{type}/{id}', [PclController::class, 'updateDirectory']);
 
 	Route::group(['middleware' => ['role:pcl|adminkab']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'update'])->name('updating-sls');

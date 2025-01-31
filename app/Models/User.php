@@ -45,24 +45,18 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    // /**
-    //  * Always encrypt the password when it is updated.
-    //  *
-    //  * @param $value
-    // * @return string
-    // */
-    // public function setPasswordAttribute($value)
-    // {
-    //     $this->attributes['password'] = bcrypt($value);
-    // }
-
     public function regency()
     {
         return $this->belongsTo(Regency::class, 'regency_id');
     }
 
-    public function business()
+    public function slsBusiness()
     {
         return $this->hasMany(SlsBusiness::class, 'pcl_id');
+    }
+
+    public function nonSlsBusiness()
+    {
+        return $this->hasMany(NonSlsBusiness::class, 'pml_id');
     }
 }

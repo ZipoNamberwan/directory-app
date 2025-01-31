@@ -352,7 +352,7 @@
         if (id != null) {
             $.ajax({
                 type: 'GET',
-                url: '/directory/' + id,
+                url: '/sls-directory/' + id,
                 success: function(response) {
 
                     selectedBS = id;
@@ -496,8 +496,6 @@
     }
 
     function validate() {
-        var commodity_valid = true
-
         var status_valid = true
         if (document.getElementById('status').value == 0 || document.getElementById('status').value == null) {
             status_valid = false
@@ -522,7 +520,7 @@
             };
 
             $.ajax({
-                url: `/directory/edit/${id}`,
+                url: `/directory/edit/sls/${id}`,
                 type: 'PATCH',
                 data: updateData,
                 headers: {
@@ -558,7 +556,7 @@
             document.getElementById('loading-add').style.visibility = 'visible'
 
             $.ajax({
-                url: '/directory',
+                url: '/sls-directory',
                 type: 'POST',
                 data: {
                     name: document.getElementById('name-add').value,
@@ -585,7 +583,7 @@
         document.getElementById('loading-delete').style.visibility = 'visible'
 
         $.ajax({
-            url: `/directory/${document.getElementById('id-hidden').value}`,
+            url: `/sls-directory/${document.getElementById('id-hidden').value}`,
             type: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -614,7 +612,7 @@
             };
 
             $.ajax({
-                url: `/directory/edit/${id}`,
+                url: `/directory/edit/sls/${id}`,
                 type: 'PATCH',
                 data: updateData,
                 headers: {

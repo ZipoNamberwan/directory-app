@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\NonSlsBusiness;
 use App\Models\SlsBusiness;
 use App\Models\Sls;
 use App\Models\Status;
@@ -98,7 +99,7 @@ class HomeController extends Controller
         if ($user->hasRole('pcl')) {
             $village = Village::whereIn(
                 'id',
-                $user->business()->select('village_id')->where('village_id', 'like', "{$subdistrict_id}%")->distinct()->pluck('village_id')
+                $user->slsBusiness()->select('village_id')->where('village_id', 'like', "{$subdistrict_id}%")->distinct()->pluck('village_id')
             )->get();
         } else if ($user->hasRole('adminkab')) {
             $village = Village::where('subdistrict_id', $subdistrict_id)->get();
@@ -114,7 +115,7 @@ class HomeController extends Controller
         if ($user->hasRole('pcl')) {
             $sls = Sls::whereIn(
                 'id',
-                $user->business()->select('sls_id')->where('sls_id', 'like', "{$village_id}%")->distinct()->pluck('sls_id')
+                $user->slsBusiness()->select('sls_id')->where('sls_id', 'like', "{$village_id}%")->distinct()->pluck('sls_id')
             )->get();
         } else if ($user->hasRole('adminkab')) {
             $sls = Sls::where('village_id', $village_id)->get();
@@ -122,26 +123,26 @@ class HomeController extends Controller
 
         return response()->json($sls);
     }
-    public function getDirectory($id_sls)
+    public function getSlsDirectory($id_sls)
     {
         $user = User::find(Auth::id());
         $business = [];
 
         if ($user->hasRole('pcl')) {
-            $business = $user->business()->where('sls_id', '=', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();
+            $business = $user->slsBusiness()->where('sls_id', '=', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();
         } else if ($user->hasRole('adminkab')) {
             $business = SlsBusiness::where('sls_id', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();;
         }
         return response()->json($business);
     }
 
-    public function getDirectoryTables(Request $request)
+    public function getSlsDirectoryTables(Request $request)
     {
         $user = User::find(Auth::id());
         $records = null;
 
         if ($user->hasRole('pcl')) {
-            $records = $user->business();
+            $records = $user->slsBusiness();
         } elseif ($user->hasRole('adminkab')) {
             $records = SlsBusiness::where('regency_id', $user->regency_id);
         }
@@ -188,6 +189,102 @@ class HomeController extends Controller
 
         $searchkeyword = $request->search['value'];
         $samples = $records->with(['status', 'sls', 'village', 'subdistrict', 'pcl'])->get();
+        if ($searchkeyword != null) {
+            $samples = $samples->filter(function ($q) use (
+                $searchkeyword
+            ) {
+                return Str::contains(strtolower($q->name), strtolower($searchkeyword)) ||
+                    Str::contains(strtolower($q->sls_id), strtolower($searchkeyword));
+            });
+        }
+        $recordsFiltered = $samples->count();
+
+        if ($orderDir == 'asc') {
+            $samples = $samples->sortBy($orderColumn);
+        } else {
+            $samples = $samples->sortByDesc($orderColumn);
+        }
+
+        if ($request->length != -1) {
+            $samples = $samples->skip($request->start)
+                ->take($request->length);
+        }
+
+        $samples = $samples->values();
+
+        return response()->json([
+            "draw" => $request->draw,
+            "recordsTotal" => $recordsTotal,
+            "recordsFiltered" => $recordsFiltered,
+            "data" => $samples
+        ]);
+    }
+
+    public function getNonSlsDirectoryTables(Request $request)
+    {
+        $user = User::find(Auth::id());
+        $records = null;
+
+        if ($user->hasRole('pml')) {
+            $records = $user->nonSlsBusiness();
+        } elseif ($user->hasRole('adminkab')) {
+            $records = NonSlsBusiness::where('regency_id', $user->regency_id);
+        }
+
+        if ($request->level === 'regency') {
+            $records->whereNull(['subdistrict_id', 'village_id']);
+        } elseif ($request->level === 'subdistrict') {
+            $records->whereNull('village_id');
+        
+            if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
+                $records->where('subdistrict_id', $request->subdistrict);
+            }
+        } elseif ($request->level === 'village') {
+            $records->whereNotNull('village_id');
+        
+            if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
+                $records->where('subdistrict_id', $request->subdistrict);
+            }
+            
+            if (!empty($request->village) && $request->village !== 'all') {
+                $records->where('village_id', $request->village);
+            }
+        }
+
+        // Apply filters
+        if ($request->status && $request->status !== 'all') {
+            $records->where('status_id', $request->status);
+        }
+
+        // if ($request->sls && $request->sls !== 'all') {
+        //     $records->where('sls_id', $request->sls);
+        // }
+
+        // if ($request->assignment !== null) {
+        //     $records->where('pml_id', $request->assignment == '1' ? '!=' : '=', null);
+        // }
+
+        $recordsTotal = $records->count();
+
+        $orderColumn = 'sls_id';
+        $orderDir = 'desc';
+        if ($request->order != null) {
+            if ($request->order[0]['dir'] == 'asc') {
+                $orderDir = 'asc';
+            } else {
+                $orderDir = 'desc';
+            }
+            if ($request->order[0]['column'] == '0') {
+                $orderColumn = 'sls_id';
+            } else if ($request->order[0]['column'] == '1') {
+                $orderColumn = 'name';
+            } else if ($request->order[0]['column'] == '2') {
+                $orderColumn = 'status_id';
+            }
+        }
+
+        $searchkeyword = $request->search['value'];
+        $samples = $records->with(['status', 'sls', 'village', 'subdistrict', 'regency', 'pml'])->get();
         if ($searchkeyword != null) {
             $samples = $samples->filter(function ($q) use (
                 $searchkeyword
