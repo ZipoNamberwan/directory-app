@@ -12,6 +12,9 @@ services:
       - laravel_network    
     ports:
       - "8888:8000"
+    volumes:
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+      # - /var/www/vendor
     # ports:
     #   - "8085:8000"
 
