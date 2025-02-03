@@ -11,8 +11,6 @@ use App\Models\User;
 use App\Models\Village;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class HomeController extends Controller
 {
@@ -33,17 +31,6 @@ class HomeController extends Controller
      */
     public function index()
     {
-
-        // $regencyReport = DB::table('categorized_business')
-        //     ->select(
-        //         'regency_id',
-        //         DB::raw("SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) as active_count"),
-        //         DB::raw("SUM(CASE WHEN status_id = 2 THEN 1 ELSE 0 END) as inactive_count")
-        //     )
-        //     ->groupBy('regency_id')
-        //     ->get();
-
-        // dd($regencyReport);
 
         $user = User::find(Auth::id());
 
@@ -101,7 +88,7 @@ class HomeController extends Controller
                 'id',
                 $user->slsBusiness()->select('village_id')->where('village_id', 'like', "{$subdistrict_id}%")->distinct()->pluck('village_id')
             )->get();
-        } else if ($user->hasRole('adminkab')) {
+        } else if ($user->hasRole('adminkab') || $user->hasRole('pml')) {
             $village = Village::where('subdistrict_id', $subdistrict_id)->get();
         }
 
@@ -187,27 +174,27 @@ class HomeController extends Controller
             }
         }
 
-        $searchkeyword = $request->search['value'];
-        $samples = $records->with(['status', 'sls', 'village', 'subdistrict', 'pcl'])->get();
-        if ($searchkeyword != null) {
-            $samples = $samples->filter(function ($q) use (
-                $searchkeyword
-            ) {
-                return Str::contains(strtolower($q->name), strtolower($searchkeyword)) ||
-                    Str::contains(strtolower($q->sls_id), strtolower($searchkeyword));
-            });
+        if ($request->search != null) {
+            if ($request->search['value'] != null && $request->search['value'] != '') {
+                $searchkeyword = $request->search['value'];
+                $records->where(function ($query) use ($searchkeyword) {
+                    $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                        ->orWhereRaw('LOWER(sls_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+                });
+            }
         }
+        $samples = $records->with(['status', 'sls', 'village', 'subdistrict', 'pcl']);
         $recordsFiltered = $samples->count();
 
         if ($orderDir == 'asc') {
-            $samples = $samples->sortBy($orderColumn);
+            $samples = $samples->orderBy($orderColumn);
         } else {
-            $samples = $samples->sortByDesc($orderColumn);
+            $samples = $samples->orderByDesc($orderColumn);
         }
 
         if ($request->length != -1) {
             $samples = $samples->skip($request->start)
-                ->take($request->length);
+                ->take($request->length)->get();
         }
 
         $samples = $samples->values();
@@ -225,9 +212,7 @@ class HomeController extends Controller
         $user = User::find(Auth::id());
         $records = null;
 
-        if ($user->hasRole('pml')) {
-            $records = $user->nonSlsBusiness();
-        } elseif ($user->hasRole('adminkab')) {
+        if ($user->hasRole('adminkab') || $user->hasRole('pml')) {
             $records = NonSlsBusiness::where('regency_id', $user->regency_id);
         }
 
@@ -235,17 +220,17 @@ class HomeController extends Controller
             $records->whereNull(['subdistrict_id', 'village_id']);
         } elseif ($request->level === 'subdistrict') {
             $records->whereNull('village_id');
-        
+
             if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
                 $records->where('subdistrict_id', $request->subdistrict);
             }
         } elseif ($request->level === 'village') {
             $records->whereNotNull('village_id');
-        
+
             if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
                 $records->where('subdistrict_id', $request->subdistrict);
             }
-            
+
             if (!empty($request->village) && $request->village !== 'all') {
                 $records->where('village_id', $request->village);
             }
@@ -272,7 +257,7 @@ class HomeController extends Controller
             if ($request->order[0]['dir'] == 'asc') {
                 $orderDir = 'asc';
             } else {
-                $orderDir = 'desc';
+            $orderDir = 'desc';
             }
             if ($request->order[0]['column'] == '0') {
                 $orderColumn = 'sls_id';
@@ -283,27 +268,30 @@ class HomeController extends Controller
             }
         }
 
-        $searchkeyword = $request->search['value'];
-        $samples = $records->with(['status', 'sls', 'village', 'subdistrict', 'regency', 'pml'])->get();
-        if ($searchkeyword != null) {
-            $samples = $samples->filter(function ($q) use (
-                $searchkeyword
-            ) {
-                return Str::contains(strtolower($q->name), strtolower($searchkeyword)) ||
-                    Str::contains(strtolower($q->sls_id), strtolower($searchkeyword));
-            });
+        if ($request->search != null) {
+            if ($request->search['value'] != null && $request->search['value'] != '') {
+                $searchkeyword = $request->search['value'];
+                $records->where(function ($query) use ($searchkeyword) {
+                    $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                        ->orWhereRaw('LOWER(village_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                        ->orWhereRaw('LOWER(subdistrict_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                        ->orWhereRaw('LOWER(regency_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+                });
+            }
         }
+        $samples = $records->with(['status', 'sls', 'village', 'subdistrict', 'regency', 'pml']);
+
         $recordsFiltered = $samples->count();
 
         if ($orderDir == 'asc') {
-            $samples = $samples->sortBy($orderColumn);
+            $samples = $samples->orderBy($orderColumn);
         } else {
-            $samples = $samples->sortByDesc($orderColumn);
+            $samples = $samples->orderByDesc($orderColumn);
         }
 
         if ($request->length != -1) {
-            $samples = $samples->skip($request->start)
-                ->take($request->length);
+            $samples = $samples->skip($request->start ?? 0)
+                ->take($request->length ?? 10)->get();
         }
 
         $samples = $samples->values();

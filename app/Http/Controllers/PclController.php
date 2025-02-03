@@ -22,7 +22,7 @@ class PclController extends Controller
                 User::find(Auth::id())->slsBusiness()->select('subdistrict_id')->distinct()->pluck('subdistrict_id')
             )->get();
         } else if ($user->hasRole('adminkab')) {
-            $subdistricts = Subdistrict::all();
+            $subdistricts = Subdistrict::where('regency_id' , $user->regency_id)->get();
         }
 
         $statuses = Status::where('name', '!=', 'Baru')->orderBy('order', 'asc')->get();

@@ -47,6 +47,7 @@ return new class extends Migration
             $table->id()->autoincrement();
             $table->string('name');
             $table->string('color')->nullable();
+            $table->string('code')->nullable();
             $table->integer('order');
         });
 

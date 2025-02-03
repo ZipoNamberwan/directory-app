@@ -39,9 +39,12 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'update'])->name('updating-sls');
 	});
 
+	Route::group(['middleware' => ['role:adminkab|pml']], function () {
+		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'update'])->name('updating-non-sls');
+	});
+
 	Route::group(['middleware' => ['role:adminkab']], function () {
 		Route::get('/assignment', [AdminKabController::class, 'showAssignment'])->name('assignment');
-		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'update'])->name('updating-non-sls');
 		Route::get('/report', [AdminKabController::class, 'report'])->name('report');
 
 		Route::get('/users/data', [UserController::class, 'getUserData']);

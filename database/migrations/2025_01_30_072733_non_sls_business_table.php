@@ -29,6 +29,7 @@ return new class extends Migration
             $table->foreignId('status_id')->constrained('statuses');
             $table->foreignUuid('pml_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignUuid('pcl_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignUuid('last_modified_by')->nullable()->constrained('users')->onDelete('set null');
 
             $table->boolean('is_new')->default(false);
             $table->softDeletes(); 

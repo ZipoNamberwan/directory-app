@@ -43,7 +43,8 @@ implements FromQuery, ShouldQueue, WithHeadings, WithMapping, WithCustomValueBin
             'Nama_Kecamatan',
             'Nama_Desa',
             'Nama_SLS',
-            'Email_PCL'
+            'Email_PML',
+            'Email_PCL',
         ];
     }
 
@@ -54,6 +55,7 @@ implements FromQuery, ShouldQueue, WithHeadings, WithMapping, WithCustomValueBin
             "[" . $sls->village->subdistrict->short_code . "] " .  $sls->village->subdistrict->name,
             "[" . $sls->village->short_code . "] " .  $sls->village->name,
             $sls->name,
+            '',
             ''
         ];
     }

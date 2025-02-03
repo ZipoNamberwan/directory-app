@@ -87,20 +87,6 @@
             </div>
         </div>
         <div class="card-body">
-            <table id="myTable" class="align-items-center mb-0 text-sm">
-                <thead>
-                    <tr>
-                        <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Usaha</th>
-                        <th class="text-uppercase text-small font-weight-bolder opacity-7">Wilayah</th>
-                        <th class="text-uppercase text-small font-weight-bolder opacity-7">Status</th>
-                        <th class="text-uppercase text-small font-weight-bolder opacity-7">PML</th>
-                        <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-
-                </tbody>
-            </table>
             <div id="directorylist" class="row">
 
             </div>
@@ -190,13 +176,13 @@
 
     $('#subdistrict').on('change', function() {
         loadVillage(null, null);
-        renderTable();
+        renderView();
     });
     $('#village').on('change', function() {
-        renderTable();
+        renderView();
     });
     // $('#status').on('change', function() {
-    //     renderTable();
+    //     renderView();
     // });
     $('#level').on('change', function() {
         onLevelChange()
@@ -217,18 +203,17 @@
 
         if (level === 'regency') {
             areaDisabled(true, true);
-            renderTable();
+            renderView();
         } else {
             areaDisabled(false, level === 'subdistrict');
 
             if (subdistrict != 0 && (level !== 'village' || village != 0)) {
-                renderTable();
+                renderView();
             }
         }
     }
 
-    function openUpdateDirectoryModal(button) {
-        const item = JSON.parse(button.getAttribute('data-row'));
+    function openUpdateDirectoryModal(item) {
         const areaDetail = getLocationDetails(item)
         $('#updateDirectoryModal').modal('show');
 
@@ -301,14 +286,82 @@
         return filterUrl
     }
 
-    function renderTable() {
+    function renderView() {
+        emptyDirectoryList()
+
         filterUrl = ''
         filterTypes = ['level', 'subdistrict', 'village' /* , 'status' */ ]
         filterTypes.forEach(f => {
             filterUrl += getFilterUrl(f)
         });
 
-        table.ajax.url('/non-sls-directory/data?' + filterUrl).load();
+        const resultDiv = document.getElementById('directorylist');
+        resultDiv.innerHTML = '<p class="text-warning">Loading<p/>';
+
+        $.ajax({
+            url: '/non-sls-directory/data?' + filterUrl,
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                directories = []
+
+                const resultDiv = document.getElementById('directorylist');
+                resultDiv.innerHTML = '';
+
+                response.data.forEach(item => {
+                    directories.push(item);
+
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'col-md-4 col-sm-6 col-xs-12 p-1';
+                    itemDiv.style = "cursor: pointer;"
+
+                    let button = ''
+                    if (item.status.id != 4) {
+                        itemDiv.onclick = function() {
+                            openUpdateDirectoryModal(item)
+                        };
+                        button = `
+                                <button class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
+                                    <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
+                                </button>
+                            `
+                    } else {
+                        itemDiv.onclick = function() {
+                            openUpdateNewModal(item)
+                        };
+                        button = `
+                            <button onclick="onDeleteModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="button">
+                                <span class="btn-inner--icon"><i class="fas fa-trash-alt"></i></span>
+                            </button>
+                        `
+                    }
+
+                    itemDiv.innerHTML = `
+                        <div class="border d-flex justify-content-between align-items-center px-3 py-2 border-radius-md">
+                            <div>
+                                <p style="font-size: 0.875rem;" class="mb-1">${item.name}</p>
+                                <p style="font-size: 0.7rem;" class="mb-0">Status: <span class="badge bg-gradient-${item.status.color}">${item.status.name}</span></p>
+                            </div>
+                            ${button}
+                        </div>
+                    `
+
+                    resultDiv.appendChild(itemDiv);
+                });
+
+                if (response.data.length == 0) {
+                    resultDiv.innerHTML = `<p class="text-small text-warning">Tidak ada direktori di SLS ini</p>`
+                }
+            },
+            error: function(xhr, status, error) {
+                const resultDiv = document.getElementById('directorylist');
+                resultDiv.innerHTML = `
+                        <div class="d-flex">
+                            <span class="mr-2">Gagal Menampilkan Sampel</span>
+                            <button onclick="loadSample(null)" class="btn btn-sm btn-outline-primary">Muat Ulang</button>
+                        </div>`;
+            }
+        });
     }
 
     function getLocationDetails(row) {
@@ -361,7 +414,7 @@
                     $('#updateDirectoryModal').modal('hide');
                     document.getElementById('loading-save').style.visibility = 'hidden'
 
-                    renderTable()
+                    renderView()
                 },
                 error: function(xhr, status, error) {
                     document.getElementById('loading-save').style.visibility = 'hidden'
@@ -369,91 +422,6 @@
             });
         }
     }
-
-    let table = new DataTable('#myTable', {
-        order: [],
-        serverSide: true,
-        processing: true,
-        deferLoading: 0,
-        ajax: {
-            url: '/non-sls-directory/data',
-            type: 'GET',
-        },
-        responsive: true,
-        columns: [{
-                responsivePriority: 1,
-                width: "10%",
-                data: "name",
-                type: "text",
-            },
-            {
-                responsivePriority: 2,
-                width: "10%",
-                data: "sls",
-                type: "text",
-                render: function(data, type, row) {
-                    var areaDetail = getLocationDetails(row)
-
-                    if (type === 'display') {
-                        return `<div class="my-1"> 
-                        <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.long_code}</p>
-                        <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.subdistrict}</p>
-                        <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.village}</p>
-                    </div>`
-                    }
-                    return data.id
-                }
-            },
-            {
-                responsivePriority: 3,
-                width: "10%",
-                data: "status",
-                type: "text",
-                render: function(data, type, row) {
-                    if (type === 'display') {
-                        return '<p class="mb-0"><span class="badge bg-gradient-' + data.color + '">' + data.name + '</span></p>';
-                    }
-                    return data.id;
-                }
-            },
-            {
-                responsivePriority: 4,
-                width: "10%",
-                data: "pml",
-                type: "text",
-                render: function(data, type, row) {
-                    if (type === 'display') {
-                        if (data == null) {
-                            return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>-</p>`;
-                        } else {
-                            return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>${data.firstname}</p>`;
-                        }
-                    }
-                    return data.id;
-                }
-            },
-            {
-                responsivePriority: 4,
-                width: "10%",
-                data: "id",
-                type: "text",
-                render: function(data, type, row) {
-                    if (type === 'display') {
-                        return `<button data-row='${JSON.stringify(row)}' onclick="openUpdateDirectoryModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
-                                    <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
-                                </button>`
-                    }
-                    return data;
-                }
-            },
-        ],
-        language: {
-            paginate: {
-                previous: '<i class="fas fa-angle-left"></i>',
-                next: '<i class="fas fa-angle-right"></i>'
-            }
-        }
-    });
 </script>
 @endpush
 

@@ -24,7 +24,7 @@ class UserAssignmentExportSheet implements FromQuery, ShouldQueue, WithHeadings,
 
     public function query()
     {
-        return User::query()->where('regency_id',  $this->regency)->role(['pcl']);
+        return User::query()->where('regency_id',  $this->regency)->role(['pcl', 'pml']);
     }
 
     public function headings(): array
@@ -32,6 +32,7 @@ class UserAssignmentExportSheet implements FromQuery, ShouldQueue, WithHeadings,
         return [
             'Email',
             'Nama_Petugas',
+            'Role'
         ];
     }
 
@@ -40,6 +41,7 @@ class UserAssignmentExportSheet implements FromQuery, ShouldQueue, WithHeadings,
         return [
             $user->email,
             $user->firstname,
+            $user->getRoleNames()->implode(', ')
         ];
     }
 

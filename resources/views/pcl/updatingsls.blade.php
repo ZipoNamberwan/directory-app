@@ -408,7 +408,7 @@
                     }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
-                    const resultDiv = document.getElementById('samplelist');
+                    const resultDiv = document.getElementById('directorylist');
                     resultDiv.innerHTML = `
                         <div class="d-flex">
                             <span class="mr-2">Gagal Menampilkan Sampel</span>
