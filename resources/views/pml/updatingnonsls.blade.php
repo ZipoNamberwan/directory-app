@@ -90,6 +90,7 @@
             <div id="directorylist" class="row">
 
             </div>
+            <div id="paginationContainer"></div>
         </div>
     </div>
 
@@ -422,6 +423,154 @@
             });
         }
     }
+</script>
+
+<script>
+    class Pagination {
+        constructor(options = {}) {
+            this.currentPage = options.currentPage || 1;
+            this.totalPages = options.totalPages || 1;
+            this.visiblePages = options.visiblePages || 5;
+            this.pageLength = options.pageLength || 10;
+            this.container = options.container || document.getElementById('paginationContainer');
+            this.onPageChange = options.onPageChange || (() => {});
+            this.pageLengthOptions = options.pageLengthOptions || [5, 10, 25, 50, 100];
+
+            this.init();
+        }
+
+        init() {
+            this.render();
+            this.attachEventListeners();
+        }
+
+        createPageLengthControl() {
+            const control = document.createElement('div');
+            control.className = 'page-length-control';
+
+            const label = document.createElement('label');
+            label.textContent = 'Items per page:';
+
+            const select = document.createElement('select');
+            this.pageLengthOptions.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                option.selected = value === this.pageLength;
+                select.appendChild(option);
+            });
+
+            select.addEventListener('change', (e) => {
+                this.setPageLength(parseInt(e.target.value));
+            });
+
+            control.appendChild(label);
+            control.appendChild(select);
+            return control;
+        }
+
+        render() {
+            this.container.innerHTML = '';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pagination-container';
+
+            const pagination = document.createElement('ul');
+            pagination.className = 'pagination';
+
+            // Start button
+            pagination.appendChild(this.createPageItem('«', 1, this.currentPage === 1));
+
+            // Previous button
+            pagination.appendChild(this.createPageItem('‹', this.currentPage - 1, this.currentPage === 1));
+
+            // Calculate visible page range
+            let startPage = Math.max(1, this.currentPage - Math.floor(this.visiblePages / 2));
+            let endPage = Math.min(this.totalPages, startPage + this.visiblePages - 1);
+
+            if (endPage - startPage + 1 < this.visiblePages) {
+                startPage = Math.max(1, endPage - this.visiblePages + 1);
+            }
+
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                pagination.appendChild(this.createPageItem(i, i, false, i === this.currentPage));
+            }
+
+            // Next button
+            pagination.appendChild(this.createPageItem('›', this.currentPage + 1, this.currentPage === this.totalPages));
+
+            // End button
+            pagination.appendChild(this.createPageItem('»', this.totalPages, this.currentPage === this.totalPages));
+
+            wrapper.appendChild(pagination);
+            wrapper.appendChild(this.createPageLengthControl());
+            this.container.appendChild(wrapper);
+        }
+
+        createPageItem(text, pageNumber, disabled = false, active = false) {
+            const li = document.createElement('li');
+            li.className = 'page-item';
+            if (disabled) li.className += ' disabled';
+            if (active) li.className += ' active';
+            li.textContent = text;
+            li.dataset.page = pageNumber;
+            return li;
+        }
+
+        attachEventListeners() {
+            this.container.addEventListener('click', (e) => {
+                const pageItem = e.target.closest('.page-item');
+                if (!pageItem || pageItem.classList.contains('disabled')) return;
+
+                const newPage = parseInt(pageItem.dataset.page);
+                this.setCurrentPage(newPage);
+            });
+        }
+
+        setCurrentPage(page) {
+            if (page < 1 || page > this.totalPages) return;
+            this.currentPage = page;
+            this.render();
+            this.onPageChange(page, this.pageLength);
+        }
+
+        setVisiblePages(count) {
+            this.visiblePages = count;
+            this.render();
+        }
+
+        setPageLength(length) {
+            this.pageLength = length;
+            this.currentPage = 1; // Reset to first page when changing page length
+            this.render();
+            this.onPageChange(this.currentPage, this.pageLength);
+        }
+
+        setTotalPages(total) {
+            this.totalPages = total;
+            if (this.currentPage > this.totalPages) {
+                this.currentPage = this.totalPages;
+            }
+            this.render();
+        }
+    }
+
+    // Example usage:
+    const pagination = new Pagination({
+        currentPage: 1,
+        totalPages: 20,
+        visiblePages: 3,
+        pageLength: 10,
+        pageLengthOptions: [5, 10, 25, 50, 100],
+        container: document.getElementById('paginationContainer'),
+        onPageChange: (page, pageLength) => {
+            console.log(`Page changed to ${page}, items per page: ${pageLength}`);
+            // Here you can call your API
+            // fetchData(page, pageLength);
+        }
+    });
+
+    pagination.setCurrentPage(9)
 </script>
 @endpush
 
