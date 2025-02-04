@@ -154,9 +154,6 @@
 
 <script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
 <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
-<script>
-    statuses = @json($statuses);
-</script>
 
 <script>
     directories = [];
@@ -239,13 +236,7 @@
 
         document.getElementById('status_error').style.display = 'none'
 
-        $('#status').empty();
-        $('#status').append(`<option value="0" disabled> -- Pilih Status -- </option>`);
-        statuses.forEach((st) => {
-            var sel = st.id == item.status.id ? 'selected' : ''
-            if (st.name != 'Baru')
-                $('#status').append(`<option ${sel} value="${st.id}">${st.name}</option>`);
-        })
+        $('#status').val(item.status.id).trigger('change');
     }
 
     function emptyDirectoryList() {

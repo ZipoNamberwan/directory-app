@@ -224,7 +224,6 @@
     }
 </script>
 <script>
-    statuses = @json($statuses);
     toggleAddButton()
 </script>
 
@@ -433,12 +432,7 @@
 
         document.getElementById('status_error').style.display = 'none'
 
-        $('#status').empty();
-        $('#status').append(`<option value="0" disabled> -- Pilih Status -- </option>`);
-        statuses.forEach((st) => {
-            var sel = st.id == item.status.id ? 'selected' : ''
-            $('#status').append(`<option ${sel} value="${st.id}">${st.name}</option>`);
-        })
+        $('#status').val(item.status.id).trigger('change');
     }
 
     function openUpdateNewModal(item) {

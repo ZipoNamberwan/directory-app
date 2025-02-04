@@ -63,6 +63,56 @@ class HomeController extends Controller
             $statuses = Status::all()->sortBy('order');
             $subdistricts = Subdistrict::where('regency_id', User::find(Auth::id())->regency_id)->get();
 
+            $slsBusinessStatusCounts = SlsBusiness::selectRaw('status_id, COUNT(*) as count')
+                ->groupBy('status_id')
+                ->get();
+
+            $nonSlsBusinessStatusCounts = NonSlsBusiness::selectRaw('status_id, COUNT(*) as count')
+                ->groupBy('status_id')
+                ->get();
+
+            $data = [
+                'sls' => [],
+                'nonsls' => []
+            ];
+
+            foreach (Status::orderBy('code')->get() as $status) {
+                // Initialize counts for both 'sls' and 'nonsls'
+                $slsCount = 0;
+                $nonslsCount = 0;
+
+                // Check for matching status in slsBusinessStatusCounts
+                foreach ($slsBusinessStatusCounts as $b) {
+                    if ($b->status_id == $status->id) {
+                        $slsCount = $b->count;  // Update the count if match found
+                        break;
+                    }
+                }
+
+                // Check for matching status in nonSlsBusinessStatusCounts
+                foreach ($nonSlsBusinessStatusCounts as $b) {
+                    if ($b->status_id == $status->id) {
+                        $nonslsCount = $b->count;  // Update the count if match found
+                        break;
+                    }
+                }
+
+                // Add status with its count, even if it's 0
+                $data['sls'][] = [
+                    'status' => $status->name,
+                    'color' => $status->color,
+                    'count' => $slsCount
+                ];
+
+                $data['nonsls'][] = [
+                    'status' => $status->name,
+                    'color' => $status->color,
+                    'count' => $nonslsCount
+                ];
+            }
+
+            // dd($data);
+
             return view('adminkab.index', [
                 'total' => $total,
                 'not_done' => $not_done,
@@ -257,7 +307,7 @@ class HomeController extends Controller
             if ($request->order[0]['dir'] == 'asc') {
                 $orderDir = 'asc';
             } else {
-            $orderDir = 'desc';
+                $orderDir = 'desc';
             }
             if ($request->order[0]['column'] == '0') {
                 $orderColumn = 'sls_id';

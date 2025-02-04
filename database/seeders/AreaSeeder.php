@@ -21,8 +21,8 @@ class AreaSeeder extends Seeder
         Status::create(['name' => 'Ada', 'color' => 'success', 'order' => 2, 'code' => '1']);
         Status::create(['name' => 'Tidak Ada', 'color' => 'danger', 'order' => 3, 'code' => '2']);
         Status::create(['name' => 'Bukan Cakupan SE', 'color' => 'danger', 'order' => 4, 'code' => '7']);
-        Status::create(['name' => 'Baru', 'color' => 'info', 'order' => 5, 'code' => '8']);
-        Status::create(['name' => 'Tidak Tahu', 'color' => 'danger', 'order' => 6, 'code' => '9']);
+        Status::create(['id' => 90, 'name' => 'Baru', 'color' => 'info', 'order' => 5, 'code' => '8']);
+        // Status::create(['name' => 'Tidak Tahu', 'color' => 'danger', 'order' => 6, 'code' => '9']);
 
         Regency::create(['short_code' => '01', 'long_code' => '3501', 'id' => '3501', 'name' => 'PACITAN',]);
         Regency::create(['short_code' => '02', 'long_code' => '3502', 'id' => '3502', 'name' => 'PONOROGO',]);

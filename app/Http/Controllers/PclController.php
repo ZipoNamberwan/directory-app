@@ -64,7 +64,7 @@ class PclController extends Controller
         $business->subdistrict_id = $request->subdistrict;
         $business->village_id = $request->village;
         $business->sls_id = $request->sls;
-        $business->status_id = 4;
+        $business->status_id = 90;
         $business->is_new = true;
         $business->pcl_id = Auth::id();
         $business->save();

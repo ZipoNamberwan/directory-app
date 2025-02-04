@@ -48,12 +48,12 @@
                     <div class="row">
                         <div class="col-8">
                             <div class="numbers">
-                                <p class="text-sm mb-0 text-uppercase font-weight-bold">Aktif</p>
+                                <p class="text-sm mb-0 text-uppercase font-weight-bold">Ada</p>
                                 <h5 class="font-weight-bolder">
                                     {{$active}}
                                 </h5>
                                 <p class="mb-0">
-                                    <span class="text-sm">Jumlah direktori usaha yang aktif</span>
+                                    <span class="text-sm">Jumlah direktori dengan status Ada</span>
                                 </p>
                             </div>
                         </div>
@@ -72,12 +72,12 @@
                     <div class="row">
                         <div class="col-8">
                             <div class="numbers">
-                                <p class="text-sm mb-0 text-uppercase font-weight-bold">Tidak Aktif</p>
+                                <p class="text-sm mb-0 text-uppercase font-weight-bold">Tidak Ada</p>
                                 <h5 class="font-weight-bolder">
                                     {{$not_active}}
                                 </h5>
                                 <p class="mb-0">
-                                    <span class="text-sm">Jumlah direktori usaha yang tidak aktif</span>
+                                    <span class="text-sm">Jumlah direktori usaha dengan status Tidak Ada</span>
                                 </p>
                             </div>
                         </div>
@@ -101,7 +101,7 @@
                                     {{$new}}
                                 </h5>
                                 <p class="mb-0">
-                                    <span class="text-sm">Jumlah direktori usaha baru</span>
+                                    <span class="text-sm">Jumlah direktori usaha Baru</span>
                                 </p>
                             </div>
                         </div>

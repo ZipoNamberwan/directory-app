@@ -7,7 +7,108 @@
 <link href="/vendor/datatables/responsive.bootstrap5.min.css" rel="stylesheet" />
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+<style>
+    /* Responsive pagination container */
+    .pagination-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        /* gap: 10px; */
+        justify-content: center;
+    }
 
+    /* Pagination container to allow wrapping */
+    .pagination {
+        display: flex;
+        flex-wrap: wrap;
+        /* gap: 5px; */
+        justify-content: center;
+        /* margin-bottom: 10px; */
+    }
+
+    /* Visibility control */
+    .pagination-wrapper.hidden {
+        opacity: 0;
+        visibility: hidden;
+        height: 0;
+        overflow: hidden;
+    }
+
+    /* Ensure page items can wrap */
+    .page-item {
+        /* margin: 2px; */
+        margin: 0px;
+    }
+
+    /* Mobile-first responsive design */
+    @media (max-width: 576px) {
+        .pagination-wrapper {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .pagination {
+            justify-content: center;
+            /* gap: 5px; */
+        }
+
+        .page-length-control {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+    }
+
+    /* Flexible page length control */
+    .page-length-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .page-length-control select {
+        flex-grow: 1;
+        max-width: 100px;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(128, 128, 128, 0.5);
+        /* Semi-transparent gray overlay */
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    #directorylist {
+        position: relative;
+    }
+</style>
 <style>
     .full-screen-bg {
         position: fixed;
@@ -33,7 +134,7 @@
         </div>
         <div class="card-body pt-1">
             <div class="row mb-1">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-control-label">Level <span class="text-danger">*</span></label>
                     <select style="width: 100%;" id="level" name="level" class="form-control" data-toggle="select">
                         <option value="0" disabled selected> -- Pilih level -- </option>
@@ -50,7 +151,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-control-label">Kecamatan <span class="text-danger">*</span></label>
                     <select disabled style="width: 100%;" id="subdistrict" name="subdistrict" class="form-control" data-toggle="select">
                         <option value="0" disabled selected> -- Pilih Kecamatan -- </option>
@@ -61,21 +162,25 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-control-label">Desa <span class="text-danger">*</span></label>
                     <select disabled id="village" name="village" class="form-control" data-toggle="select" name="village"></select>
                 </div>
-                <!-- <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-control-label">Status <span class="text-danger">*</span></label>
                     <select disabled style="width: 100%;" id="status" name="status" class="form-control" data-toggle="select">
                         <option value="0" disabled selected> -- Pilih Status -- </option>
                         @foreach ($statuses as $status)
                         <option value="{{ $status->id }}" {{ old('status') == $status->id ? 'selected' : '' }}>
-                            {{ $status->name }}
+                            [{{$status->code}}] {{ $status->name }}
                         </option>
                         @endforeach
                     </select>
-                </div> -->
+                </div>
+                <div class="col-md-3">
+                    <label class="form-control-label" for="search">Nama <span class="text-danger">*</span></label>
+                    <input disabled type="text" name="search" class="form-control mb-0" id="search" placeholder="Cari...">
+                </div>
             </div>
         </div>
     </div>
@@ -87,10 +192,13 @@
             </div>
         </div>
         <div class="card-body">
-            <div id="directorylist" class="row">
+            <div id="directorylist" class="row mb-3">
 
             </div>
             <div id="paginationContainer"></div>
+            <div id="loadingOverlay" class="loading-overlay">
+                <div class="loading-spinner"></div>
+            </div>
         </div>
     </div>
 
@@ -109,10 +217,12 @@
                 <input type="hidden" id="business_id" />
                 <div class="modal-body pt-0 mt-2" style="height: auto;">
                     <label class="form-control-label">Status <span class="text-danger">*</span></label>
-                    <select id="status" name="status" class="form-control" data-toggle="select" required>
+                    <select id="statusUpdate" name="status" class="form-control" data-toggle="select" required>
                         <option value="0" disabled selected> -- Pilih Status -- </option>
                         @foreach($statuses as $status)
-                        <option value="{{$status->id}}">{{$status->name}}</option>
+                        @if ($status->name != 'Baru')
+                        <option value="{{$status->id}}">[{{$status->code}}] {{$status->name}}</option>
+                        @endif
                         @endforeach
                     </select>
                     <div id="status_error" style="display: none;" class="text-valid mt-2">
@@ -141,9 +251,10 @@
 
 <script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
 <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
-<script>
+
+<!-- <script>
     statuses = @json($statuses);
-</script>
+</script> -->
 
 <script>
     directories = [];
@@ -168,6 +279,10 @@
             selector: '#level',
             placeholder: 'Pilih Level'
         },
+        {
+            selector: '#statusUpdate',
+            placeholder: 'Pilih Status'
+        },
     ].forEach(config => {
         $(config.selector).select2({
             placeholder: config.placeholder,
@@ -176,40 +291,60 @@
     });
 
     $('#subdistrict').on('change', function() {
+        pagination.reset()
+        emptyDirectoryList();
         loadVillage(null, null);
-        renderView();
+        renderView(null, null);
     });
     $('#village').on('change', function() {
-        renderView();
+        pagination.reset()
+        onVillageChange()
+        renderView(null, null);
     });
-    // $('#status').on('change', function() {
-    //     renderView();
-    // });
+    $('#status').on('change', function() {
+        pagination.reset()
+        renderView(null, null);
+    });
     $('#level').on('change', function() {
+        pagination.reset()
         onLevelChange()
     });
 
-    function areaDisabled(subdistrict_enable, village_enable) {
+    function filterDisabled(subdistrict_enable, village_enable, status_enable) {
         let subdistrict = document.getElementById('subdistrict')
         let village = document.getElementById('village')
+        let status = document.getElementById('status')
+        let search = document.getElementById('search')
 
         subdistrict.disabled = subdistrict_enable;
         village.disabled = village_enable;
+        status.disabled = status_enable;
+        search.disabled = status_enable;
     }
 
     function onLevelChange() {
+        emptyDirectoryList()
+        pagination.hide()
+
         let level = $('#level').val();
         let subdistrict = document.getElementById('subdistrict').value;
         let village = document.getElementById('village').value;
 
-        if (level === 'regency') {
-            areaDisabled(true, true);
-            renderView();
-        } else {
-            areaDisabled(false, level === 'subdistrict');
+        document.getElementById("search").value = "";
+        $('#status').val(null).trigger('change');
 
+        if (level === 'regency') {
+            filterDisabled(true, true, false);
+            renderView(null, null);
+        } else if (level === 'subdistrict') {
+            filterDisabled(false, true, subdistrict == 0);
+            if (subdistrict != 0) {
+                renderView(null, null);
+            }
+        } else if (level === 'village') {
+            filterDisabled(false, false, village == 0);
             if (subdistrict != 0 && (level !== 'village' || village != 0)) {
-                renderView();
+                renderView(null, null);
             }
         }
     }
@@ -225,18 +360,14 @@
 
         document.getElementById('status_error').style.display = 'none'
 
-        $('#status').empty();
-        $('#status').append(`<option value="0" disabled> -- Pilih Status -- </option>`);
-        statuses.forEach((st) => {
-            var sel = st.id == item.status.id ? 'selected' : ''
-            if (st.name != 'Baru')
-                $('#status').append(`<option ${sel} value="${st.id}">${st.name}</option>`);
-        })
+        $('#statusUpdate').val(item.status.id).trigger('change');
     }
 
     function emptyDirectoryList() {
         const resultDiv = document.getElementById('directorylist');
         resultDiv.innerHTML = '';
+
+        pagination.reset()
     }
 
     function loadVillage(subdistrictid = null, selectedvillage = null) {
@@ -245,6 +376,9 @@
         if (subdistrictid != null) {
             id = subdistrictid;
         }
+        document.getElementById('status').disabled = (id == 0 || id == null);
+        document.getElementById('search').disabled = (id == 0 || id == null);
+
         $('#village').empty();
         $('#village').append(`<option value="0" disabled selected>Processing...</option>`);
 
@@ -273,6 +407,12 @@
         }
     }
 
+    function onVillageChange() {
+        let id = $('#village').val();
+        document.getElementById('status').disabled = (id == 0 || id == null);
+        document.getElementById('search').disabled = (id == 0 || id == null);
+    }
+
     function getFilterUrl(filter) {
         var filterUrl = ''
         var e = document.getElementById(filter);
@@ -287,20 +427,31 @@
         return filterUrl
     }
 
-    function renderView() {
-        emptyDirectoryList()
+    function renderView(page, length) {
 
         filterUrl = ''
-        filterTypes = ['level', 'subdistrict', 'village' /* , 'status' */ ]
+        filterTypes = ['level', 'subdistrict', 'village', 'status']
         filterTypes.forEach(f => {
             filterUrl += getFilterUrl(f)
         });
 
-        const resultDiv = document.getElementById('directorylist');
-        resultDiv.innerHTML = '<p class="text-warning">Loading<p/>';
+        var pageUrl = '&start=0&length=10'
+        if (page != null && length != null) {
+            pageUrl = `&start=${page * length}&length=${length}`
+        }
+
+        var searchUrl = ''
+        var keyword = document.getElementById('search').value
+        if (keyword != null && keyword != '') {
+            searchUrl = `&search%5Bvalue%5D=${keyword}`
+        }
+
+        // const resultDiv = document.getElementById('directorylist');
+        // resultDiv.innerHTML = '<p class="text-warning">Loading<p/>';
+        showLoading()
 
         $.ajax({
-            url: '/non-sls-directory/data?' + filterUrl,
+            url: '/non-sls-directory/data?' + filterUrl + pageUrl + searchUrl,
             method: 'GET',
             dataType: 'json',
             success: function(response) {
@@ -351,8 +502,12 @@
                 });
 
                 if (response.data.length == 0) {
-                    resultDiv.innerHTML = `<p class="text-small text-warning">Tidak ada direktori di SLS ini</p>`
+                    resultDiv.innerHTML = `<p class="text-small text-warning">No data</p>`
                 }
+
+                pagination.setTotalPages(Math.floor(response.recordsFiltered / pagination.pageLength))
+                pagination.show()
+                hideLoading()
             },
             error: function(xhr, status, error) {
                 const resultDiv = document.getElementById('directorylist');
@@ -361,6 +516,10 @@
                             <span class="mr-2">Gagal Menampilkan Sampel</span>
                             <button onclick="loadSample(null)" class="btn btn-sm btn-outline-primary">Muat Ulang</button>
                         </div>`;
+
+                hideLoading()
+                pagination.reset()
+                pagination.show()
             }
         });
     }
@@ -382,7 +541,7 @@
 
     function validate() {
         var status_valid = true
-        if (document.getElementById('status').value == 0 || document.getElementById('status').value == null) {
+        if (document.getElementById('statusUpdate').value == 0 || document.getElementById('statusUpdate').value == null) {
             status_valid = false
             document.getElementById('status_error').style.display = 'block'
         } else {
@@ -400,7 +559,7 @@
 
             id = document.getElementById('business_id').value
             var updateData = {
-                status: document.getElementById('status').value,
+                status: document.getElementById('statusUpdate').value,
                 new: false
             };
 
@@ -415,7 +574,7 @@
                     $('#updateDirectoryModal').modal('hide');
                     document.getElementById('loading-save').style.visibility = 'hidden'
 
-                    renderView()
+                    renderView(pagination.currentPage - 1, pagination.pageLength)
                 },
                 error: function(xhr, status, error) {
                     document.getElementById('loading-save').style.visibility = 'hidden'
@@ -423,6 +582,23 @@
             });
         }
     }
+
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    function searchByKeyword(query) {
+        renderView(pagination.currentPage, pagination.pageLength)
+    }
+
+    const searchInput = document.getElementById("search");
+    searchInput.addEventListener("input", debounce((event) => {
+        searchByKeyword(event.target.value);
+    }, 500));
 </script>
 
 <script>
@@ -436,6 +612,9 @@
             this.onPageChange = options.onPageChange || (() => {});
             this.pageLengthOptions = options.pageLengthOptions || [5, 10, 25, 50, 100];
 
+            // Track visibility state
+            this.isVisible = true;
+
             this.init();
         }
 
@@ -446,12 +625,15 @@
 
         createPageLengthControl() {
             const control = document.createElement('div');
-            control.className = 'page-length-control';
+            control.className = 'page-length-control d-flex align-items-center';
 
             const label = document.createElement('label');
-            label.textContent = 'Items per page:';
+            label.textContent = 'Per page:';
+            label.className = 'me-2';
 
             const select = document.createElement('select');
+            select.className = 'form-select form-select-sm';
+
             this.pageLengthOptions.forEach(value => {
                 const option = document.createElement('option');
                 option.value = value;
@@ -472,10 +654,13 @@
         render() {
             this.container.innerHTML = '';
             const wrapper = document.createElement('div');
-            wrapper.className = 'pagination-container';
+            wrapper.className = `pagination-wrapper ${this.isVisible ? '' : 'hidden'}`;
+
+            const paginationContainer = document.createElement('nav');
+            paginationContainer.setAttribute('aria-label', 'Page navigation');
 
             const pagination = document.createElement('ul');
-            pagination.className = 'pagination';
+            pagination.className = 'pagination mb-0';
 
             // Start button
             pagination.appendChild(this.createPageItem('«', 1, this.currentPage === 1));
@@ -483,18 +668,15 @@
             // Previous button
             pagination.appendChild(this.createPageItem('‹', this.currentPage - 1, this.currentPage === 1));
 
-            // Calculate visible page range
-            let startPage = Math.max(1, this.currentPage - Math.floor(this.visiblePages / 2));
-            let endPage = Math.min(this.totalPages, startPage + this.visiblePages - 1);
-
-            if (endPage - startPage + 1 < this.visiblePages) {
-                startPage = Math.max(1, endPage - this.visiblePages + 1);
-            }
-
-            // Page numbers
-            for (let i = startPage; i <= endPage; i++) {
-                pagination.appendChild(this.createPageItem(i, i, false, i === this.currentPage));
-            }
+            // Generate page numbers with intelligent ellipsis
+            const pageNumbers = this.generatePageNumbers();
+            pageNumbers.forEach(page => {
+                if (page === '...') {
+                    pagination.appendChild(this.createEllipsisItem());
+                } else {
+                    pagination.appendChild(this.createPageItem(page, page, false, page === this.currentPage));
+                }
+            });
 
             // Next button
             pagination.appendChild(this.createPageItem('›', this.currentPage + 1, this.currentPage === this.totalPages));
@@ -502,27 +684,100 @@
             // End button
             pagination.appendChild(this.createPageItem('»', this.totalPages, this.currentPage === this.totalPages));
 
-            wrapper.appendChild(pagination);
+            paginationContainer.appendChild(pagination);
+            wrapper.appendChild(paginationContainer);
             wrapper.appendChild(this.createPageLengthControl());
             this.container.appendChild(wrapper);
         }
 
+        generatePageNumbers() {
+            const totalPages = this.totalPages;
+            const currentPage = this.currentPage;
+            const visiblePages = this.visiblePages;
+
+            // If total pages is less than or equal to visible pages, show all pages
+            if (totalPages <= visiblePages + 2) {
+                return Array.from({
+                    length: totalPages
+                }, (_, i) => i + 1);
+            }
+
+            const pages = [];
+            const leftBuffer = Math.floor((visiblePages - 1) / 2);
+            const rightBuffer = Math.ceil((visiblePages - 1) / 2);
+
+            // Always show first page
+            pages.push(1);
+
+            // Determine start and end of middle range
+            let start = Math.max(2, currentPage - leftBuffer);
+            let end = Math.min(totalPages - 1, currentPage + rightBuffer);
+
+            // Adjust start and end to maintain consistent number of visible pages
+            if (currentPage <= leftBuffer + 1) {
+                end = Math.min(visiblePages, totalPages - 1);
+            }
+            if (currentPage >= totalPages - rightBuffer) {
+                start = Math.max(2, totalPages - visiblePages);
+            }
+
+            // Add first ellipsis if needed
+            if (start > 2) {
+                pages.push('...');
+            }
+
+            // Add middle range of pages
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+
+            // Add second ellipsis if needed
+            if (end < totalPages - 1) {
+                pages.push('...');
+            }
+
+            // Always show last page
+            pages.push(totalPages);
+
+            return pages;
+        }
+
         createPageItem(text, pageNumber, disabled = false, active = false) {
             const li = document.createElement('li');
-            li.className = 'page-item';
-            if (disabled) li.className += ' disabled';
-            if (active) li.className += ' active';
-            li.textContent = text;
-            li.dataset.page = pageNumber;
+            li.className = `page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`;
+
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = '#';
+            a.textContent = text;
+            a.dataset.page = pageNumber;
+
+            li.appendChild(a);
+            return li;
+        }
+
+        createEllipsisItem() {
+            const li = document.createElement('li');
+            li.className = 'page-item ellipsis';
+
+            const span = document.createElement('span');
+            span.className = 'page-link';
+            span.textContent = '...';
+
+            li.appendChild(span);
             return li;
         }
 
         attachEventListeners() {
             this.container.addEventListener('click', (e) => {
-                const pageItem = e.target.closest('.page-item');
-                if (!pageItem || pageItem.classList.contains('disabled')) return;
+                const pageLink = e.target.closest('.page-link');
+                if (!pageLink) return;
 
-                const newPage = parseInt(pageItem.dataset.page);
+                e.preventDefault();
+                const pageItem = pageLink.closest('.page-item');
+                if (pageItem.classList.contains('disabled') || pageItem.classList.contains('active') || pageItem.classList.contains('ellipsis')) return;
+
+                const newPage = parseInt(pageLink.dataset.page);
                 this.setCurrentPage(newPage);
             });
         }
@@ -553,24 +808,64 @@
             }
             this.render();
         }
+
+        reset() {
+            this.currentPage = 1
+            this.totalPages = 1
+        }
+
+        // New method to toggle visibility
+        toggle() {
+            this.isVisible = !this.isVisible;
+            this.render();
+            return this.isVisible;
+        }
+
+        // Method to show pagination
+        show() {
+            this.isVisible = true;
+            this.render();
+        }
+
+        // Method to hide pagination
+        hide() {
+            this.isVisible = false;
+            this.render();
+        }
+
+        // Method to check if pagination is visible
+        isCurrentlyVisible() {
+            return this.isVisible;
+        }
     }
 
     // Example usage:
     const pagination = new Pagination({
         currentPage: 1,
-        totalPages: 20,
-        visiblePages: 3,
+        totalPages: 1,
+        visiblePages: 5,
         pageLength: 10,
-        pageLengthOptions: [5, 10, 25, 50, 100],
+        pageLengthOptions: [10, 25, 50],
         container: document.getElementById('paginationContainer'),
         onPageChange: (page, pageLength) => {
-            console.log(`Page changed to ${page}, items per page: ${pageLength}`);
-            // Here you can call your API
-            // fetchData(page, pageLength);
+            // console.log(`Page changed to ${page}, items per page: ${pageLength}`);
+            renderView((page - 1), pageLength)
         }
     });
 
-    pagination.setCurrentPage(9)
+    // Function to show loading overlay
+    function showLoading() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        loadingOverlay.style.display = 'flex';
+    }
+
+    // Function to hide loading overlay
+    function hideLoading() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        loadingOverlay.style.display = 'none';
+    }
+
+    pagination.hide()
 </script>
 @endpush
 
