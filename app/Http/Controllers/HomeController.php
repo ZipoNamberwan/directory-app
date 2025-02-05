@@ -154,7 +154,7 @@ class HomeController extends Controller
                 'id',
                 $user->slsBusiness()->select('sls_id')->where('sls_id', 'like', "{$village_id}%")->distinct()->pluck('sls_id')
             )->get();
-        } else if ($user->hasRole('adminkab')) {
+        } else if ($user->hasRole('adminkab') || $user->hasRole('pml')) {
             $sls = Sls::where('village_id', $village_id)->get();
         }
 
@@ -267,15 +267,15 @@ class HomeController extends Controller
         }
 
         if ($request->level === 'regency') {
-            $records->whereNull(['subdistrict_id', 'village_id']);
+            $records->where('level', 'regency');
         } elseif ($request->level === 'subdistrict') {
-            $records->whereNull('village_id');
+            $records->where('level', 'subdistrict');
 
             if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
                 $records->where('subdistrict_id', $request->subdistrict);
             }
         } elseif ($request->level === 'village') {
-            $records->whereNotNull('village_id');
+            $records->where('level', 'village');
 
             if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
                 $records->where('subdistrict_id', $request->subdistrict);
@@ -301,7 +301,7 @@ class HomeController extends Controller
 
         $recordsTotal = $records->count();
 
-        $orderColumn = 'sls_id';
+        $orderColumn = 'id';
         $orderDir = 'desc';
         if ($request->order != null) {
             if ($request->order[0]['dir'] == 'asc') {

@@ -216,17 +216,57 @@
                 </div>
                 <input type="hidden" id="business_id" />
                 <div class="modal-body pt-0 mt-2" style="height: auto;">
-                    <label class="form-control-label">Status <span class="text-danger">*</span></label>
-                    <select id="statusUpdate" name="status" class="form-control" data-toggle="select" required>
-                        <option value="0" disabled selected> -- Pilih Status -- </option>
-                        @foreach($statuses as $status)
-                        @if ($status->name != 'Baru')
-                        <option value="{{$status->id}}">[{{$status->code}}] {{$status->name}}</option>
-                        @endif
-                        @endforeach
-                    </select>
-                    <div id="status_error" style="display: none;" class="text-valid mt-2">
-                        Belum diisi
+                    <div class="row">
+                        <div class="col-12">
+                            <label class="form-control-label">Status <span class="text-danger">*</span></label>
+                            <select id="statusUpdate" name="status" class="form-control" data-toggle="select" required>
+                                <option value="0" disabled selected> -- Pilih Status -- </option>
+                                @foreach($statuses as $status)
+                                @if ($status->name != 'Baru')
+                                <option value="{{$status->id}}">[{{$status->code}}] {{$status->name}}</option>
+                                @endif
+                                @endforeach
+                            </select>
+                        </div>
+                        <div id="addressCol" class="col-12">
+                            <label class="form-control-label" for="addressUpdate">Alamat Lengkap <span class="text-danger">*</span></label>
+                            <input type="text" name="addressUpdate" class="form-control mb-0" id="addressUpdate" placeholder="Alamat Lengkap">
+                        </div>
+                        <div id="slsColFiled" class="col-12 my-2">
+                            <label class="form-control-label" id="areaUpdateLabel"></label>
+                            <p class="mb-1 text-sm text-muted" id="subdistrictUpdateLabel"></p>
+                            <p class="mb-1 text-sm text-muted" id="villageUpdateLabel"></p>
+                            <p class="mb-1 text-sm text-muted" id="slsUpdateLabel"></p>
+                            <div id="switchAreaLabel" class="form-check form-switch mt-2">
+                                <input onchange="" class="form-check-input" type="checkbox" role="switch" id="switchArea">
+                                <label class="form-check-label" for="flexSwitchCheckDefault">Ganti Wilayah</label>
+                            </div>
+                        </div>
+                        <div id="subdistrictCol" class="col-12">
+                            <label class="form-control-label">Kecamatan <span class="text-danger">*</span></label>
+                            <select id="subdistrictUpdate" name="subdistrictUpdate" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Kecamatan -- </option>
+                                @foreach ($subdistricts as $subdistrict)
+                                <option value="{{ $subdistrict->id }}" {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
+                                    [{{ $subdistrict->short_code}}] {{ $subdistrict->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div id="villageCol" class="col-12">
+                            <label class="form-control-label">Desa <span class="text-danger">*</span></label>
+                            <select id="villageUpdate" name="villageUpdate" class="form-control" data-toggle="select" name="village"></select>
+                        </div>
+                        <div id="slsCol" class="col-12">
+                            <label class="form-control-label">SLS <span class="text-danger">*</span></label>
+                            <select id="slsUpdate" name="slsUpdate" class="form-control" data-toggle="select"></select>
+                        </div>
+                    </div>
+
+                    <div id="update-error">
+                        <p class="error-feedback mb-0 mt-2">
+                            Ada yang Belum diisi
+                        </p>
                     </div>
                     <div>
                         <p id="loading-save" style="visibility: hidden;" class="text-warning mt-3">Loading...</p>
@@ -283,6 +323,18 @@
             selector: '#statusUpdate',
             placeholder: 'Pilih Status'
         },
+        {
+            selector: '#subdistrictUpdate',
+            placeholder: 'Pilih Kecamatan'
+        },
+        {
+            selector: '#villageUpdate',
+            placeholder: 'Pilih Desa'
+        },
+        {
+            selector: '#slsUpdate',
+            placeholder: 'Pilih SLS'
+        },
     ].forEach(config => {
         $(config.selector).select2({
             placeholder: config.placeholder,
@@ -293,10 +345,11 @@
     $('#subdistrict').on('change', function() {
         pagination.reset()
         emptyDirectoryList();
-        loadVillage(null, null);
+        loadVillage('', null, null);
         renderView(null, null);
     });
     $('#village').on('change', function() {
+        emptyDirectoryList();
         pagination.reset()
         onVillageChange()
         renderView(null, null);
@@ -308,6 +361,16 @@
     $('#level').on('change', function() {
         pagination.reset()
         onLevelChange()
+    });
+
+    $('#subdistrictUpdate').on('change', function() {
+        loadVillage('Update', null, null);
+    });
+    $('#villageUpdate').on('change', function() {
+        loadSls('Update', null, null)
+    });
+    $('#statusUpdate').on('change', function() {
+        updateInputStates(selectedBusiness)
     });
 
     function filterDisabled(subdistrict_enable, village_enable, status_enable) {
@@ -330,8 +393,9 @@
         let subdistrict = document.getElementById('subdistrict').value;
         let village = document.getElementById('village').value;
 
+        // TODO
         document.getElementById("search").value = "";
-        $('#status').val(null).trigger('change');
+        // $('#status').val(null).trigger('change');
 
         if (level === 'regency') {
             filterDisabled(true, true, false);
@@ -349,7 +413,11 @@
         }
     }
 
+    var selectedBusiness = null;
+
     function openUpdateDirectoryModal(item) {
+        selectedBusiness = item
+
         const areaDetail = getLocationDetails(item)
         $('#updateDirectoryModal').modal('show');
 
@@ -358,9 +426,69 @@
             areaDetail.subdistrict + ", " + areaDetail.village
         document.getElementById('business_id').value = item.id
 
-        document.getElementById('status_error').style.display = 'none'
+        document.getElementById('update-error').style.display = 'none'
 
         $('#statusUpdate').val(item.status.id).trigger('change');
+        $('#subdistrictUpdate').val(null).trigger('change');
+        $('#villageUpdate').val(null).trigger('change');
+        $('#slsUpdate').val(null).trigger('change');
+
+        updateInputStates(item)
+    }
+
+    function updateInputStates(item) {
+        const statusCol = document.getElementById("statusUpdate");
+        const addressCol = document.getElementById("addressCol");
+        const subdistrictCol = document.getElementById("subdistrictCol");
+        const villageCol = document.getElementById("villageCol");
+        const slsCol = document.getElementById("slsCol");
+
+        document.getElementById('subdistrictUpdateLabel').innerHTML = ''
+        document.getElementById('villageUpdateLabel').innerHTML = ''
+        document.getElementById('slsUpdateLabel').innerHTML = ''
+        document.getElementById('areaUpdateLabel').innerHTML = ''
+        document.getElementById('slsColFiled').style.display = 'none'
+        document.getElementById('switchArea').checked = false
+
+        const isActive = statusCol.value === "2";
+        const level = item.level;
+
+        // Default all inputs to be hidden
+        addressCol.style.display = "none";
+        subdistrictCol.style.display = "none";
+        villageCol.style.display = "none";
+        slsCol.style.display = "none";
+
+        document.getElementById('addressUpdate').value = item.address
+
+        if (isActive) {
+            if (item.sls != null) {
+                document.getElementById('subdistrictUpdateLabel').innerHTML = "[" + item.subdistrict.short_code + "] " + item.subdistrict.name
+                document.getElementById('villageUpdateLabel').innerHTML = "[" + item.village.short_code + "] " + item.village.name
+                document.getElementById('slsUpdateLabel').innerHTML = "[" + item.sls.short_code + "] " + item.sls.name
+                document.getElementById('areaUpdateLabel').innerHTML = 'Wilayah'
+                document.getElementById('slsColFiled').style.display = 'block'
+            } else {
+                addressCol.style.display = "block";
+
+                if (level === "regency") {
+                    subdistrictCol.style.display = "block";
+                    villageCol.style.display = "block";
+                    slsCol.style.display = "block";
+                } else if (level === "subdistrict") {
+                    villageCol.style.display = "block";
+                    slsCol.style.display = "block";
+                    loadVillage('Update', item.subdistrict_id, null)
+                } else if (level === "village") {
+                    slsCol.style.display = "block";
+                    loadSls('Update', item.village_id, null)
+                }
+            }
+        }
+    }
+
+    function onChangeArea(){
+
     }
 
     function emptyDirectoryList() {
@@ -370,40 +498,65 @@
         pagination.reset()
     }
 
-    function loadVillage(subdistrictid = null, selectedvillage = null) {
-        emptyDirectoryList()
-        let id = $('#subdistrict').val();
+    function loadVillage(group = '', subdistrictid = null, selectedvillage = null) {
+
+        let subdistrictSelector = `#subdistrict${group}`;
+        let villageSelector = `#village${group}`;
+        let slsSelector = `#sls${group}`;
+
+        let id = $(subdistrictSelector).val();
         if (subdistrictid != null) {
             id = subdistrictid;
         }
-        document.getElementById('status').disabled = (id == 0 || id == null);
-        document.getElementById('search').disabled = (id == 0 || id == null);
 
-        $('#village').empty();
-        $('#village').append(`<option value="0" disabled selected>Processing...</option>`);
+        $(villageSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+        $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
 
         if (id != null) {
             $.ajax({
                 type: 'GET',
                 url: '/desa/' + id,
                 success: function(response) {
-
-                    $('#village').empty();
-                    $('#village').append(`<option value="0" disabled selected> -- Pilih Desa -- </option>`);
+                    $(villageSelector).empty().append(`<option value="0" disabled selected> -- Pilih Desa -- </option>`);
+                    $(slsSelector).empty().append(`<option value="0" disabled selected> -- Pilih SLS -- </option>`);
                     response.forEach(element => {
-                        if (selectedvillage == String(element.id)) {
-                            $('#village').append('<option value=\"' + element.id + '\" selected>' +
-                                '[' + element.short_code + '] ' + element.name + '</option>');
-                        } else {
-                            $('#village').append('<option value=\"' + element.id + '\">' + '[' +
-                                element.short_code + '] ' + element.name + '</option>');
-                        }
+                        let selected = selectedvillage == String(element.id) ? 'selected' : '';
+                        $(villageSelector).append(`<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`);
                     });
                 }
             });
         } else {
-            $('#village').empty();
-            $('#village').append(`<option value="0" disabled> -- Pilih Desa -- </option>`);
+            $(villageSelector).empty().append(`<option value="0" disabled> -- Pilih Desa -- </option>`);
+            $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+        }
+    }
+
+    function loadSls(group = '', villageid = null, selectedsls = null) {
+
+        let villageSelector = `#village${group}`;
+        let slsSelector = `#sls${group}`;
+
+        let id = $(villageSelector).val();
+        if (villageid != null) {
+            id = villageid;
+        }
+
+        $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+        if (id != null) {
+            $.ajax({
+                type: 'GET',
+                url: '/sls/' + id,
+                success: function(response) {
+                    $(slsSelector).empty().append(`<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                    response.forEach(element => {
+                        let selected = selectedsls == String(element.id) ? 'selected' : '';
+                        $(slsSelector).append(`<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`);
+                    });
+                }
+            });
+        } else {
+            $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
         }
     }
 
@@ -541,18 +694,29 @@
 
     function validate() {
         var status_valid = true
-        if (document.getElementById('statusUpdate').value == 0 || document.getElementById('statusUpdate').value == null) {
+        if (document.getElementById('statusUpdate').value == 0 ||
+            document.getElementById('statusUpdate').value == null
+        ) {
             status_valid = false
-            document.getElementById('status_error').style.display = 'block'
+            document.getElementById('update-error').style.display = 'block'
         } else {
-            document.getElementById('status_error').style.display = 'none'
+            if (document.getElementById('statusUpdate').value == "2" &&
+                (document.getElementById('addressUpdate').value == 0 ||
+                    document.getElementById('addressUpdate').value == null ||
+                    document.getElementById('slsUpdate').value == 0 ||
+                    document.getElementById('slsUpdate').value == null)) {
+                status_valid = false
+                document.getElementById('update-error').style.display = 'block'
+            } else {
+                document.getElementById('update-error').style.display = 'none'
+            }
         }
 
         return status_valid
     }
 
     function onSave() {
-        document.getElementById('status_error').style.visibility = 'hidden'
+        document.getElementById('update-error').style.display = 'none'
 
         if (validate()) {
             document.getElementById('loading-save').style.visibility = 'visible'
@@ -560,6 +724,10 @@
             id = document.getElementById('business_id').value
             var updateData = {
                 status: document.getElementById('statusUpdate').value,
+                subdistrict: document.getElementById('subdistrictUpdate').value,
+                village: document.getElementById('villageUpdate').value,
+                sls: document.getElementById('slsUpdate').value,
+                address: document.getElementById('addressUpdate').value,
                 new: false
             };
 

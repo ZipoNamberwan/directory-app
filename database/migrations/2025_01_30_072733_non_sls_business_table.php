@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('owner')->nullable();
+            $table->string('address')->nullable();
 
             $table->string('regency_id');
             $table->foreign('regency_id')->references('id')->on('regencies');
@@ -25,6 +26,8 @@ return new class extends Migration
             $table->string('sls_id')->nullable();
             $table->foreign('sls_id')->references('id')->on('sls');
 
+            $table->enum('level', ['regency', 'subdistrict', 'village']);
+
             $table->string('note')->nullable();
             $table->foreignId('status_id')->constrained('statuses');
             $table->foreignUuid('pml_id')->nullable()->constrained('users')->onDelete('set null');
@@ -32,7 +35,7 @@ return new class extends Migration
             $table->foreignUuid('last_modified_by')->nullable()->constrained('users')->onDelete('set null');
 
             $table->boolean('is_new')->default(false);
-            $table->softDeletes(); 
+            $table->softDeletes();
 
             $table->index('regency_id');
             $table->index('subdistrict_id');

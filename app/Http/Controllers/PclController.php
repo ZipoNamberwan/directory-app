@@ -22,7 +22,7 @@ class PclController extends Controller
                 User::find(Auth::id())->slsBusiness()->select('subdistrict_id')->distinct()->pluck('subdistrict_id')
             )->get();
         } else if ($user->hasRole('adminkab')) {
-            $subdistricts = Subdistrict::where('regency_id' , $user->regency_id)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
         }
 
         $statuses = Status::where('name', '!=', 'Baru')->orderBy('order', 'asc')->get();
@@ -38,6 +38,20 @@ class PclController extends Controller
             $business = SlsBusiness::find($id);
         } else {
             $business = NonSlsBusiness::find($id);
+            if ($business->level == 'regency') {
+                $business->subdistrict_id = $request->subdistrict == 0 ? null : $request->subdistrict;
+            }
+            if (in_array($business->level, ['regency', 'subdistrict'])) {
+                $business->village_id = $request->village == 0 ? null : $request->village;
+            }
+            if (in_array($business->level, ['regency', 'subdistrict', 'village'])) {
+                $business->sls_id = $request->sls == 0 ? null : $request->sls;
+            }
+            if ($request->status == "2") {
+                $business->address = $request->address;
+            } else {
+                $business->address = null;
+            }
         }
 
         if ($request->new == "true") {
@@ -45,6 +59,7 @@ class PclController extends Controller
         } else {
             $business->status_id = $request->status;
         }
+
         $business->save();
 
         return response()->json($business);

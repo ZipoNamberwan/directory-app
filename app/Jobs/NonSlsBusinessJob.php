@@ -55,6 +55,7 @@ class NonSlsBusinessJob implements ShouldQueue
                     'subdistrict_id' => $subdistrictId,
                     'regency_id' => substr($record['idsls'], 0, 4),
                     'status_id' => 1,
+                    'level' => $randomSelection
                 ];
             }
         }
