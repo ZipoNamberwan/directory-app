@@ -11,7 +11,7 @@
 @section('content')
 @include('layouts.navbars.auth.topnav', ['title' => 'Dashboard'])
 <div class="container-fluid py-4">
-    <!-- <div class="row">
+    <div class="row mb-3">
         <div class="col-xl-3 col-sm-6 mb-xl-0 mb-2">
             <div class="card">
                 <div class="card-body p-3">
@@ -108,11 +108,10 @@
                 </div>
             </div>
         </div>
-    </div> -->
+    </div>
 
-    <div class="row g-4">
-        <!-- SLS Section -->
-        <div class="col-12 col-lg-6">
+
+    <!-- <div class="col-12 col-lg-6">
             <div class="card h-100">
                 <div class="card-header bg-white">
                     <h5 class="card-title mb-0">Direktori Sampai Level SLS</h5>
@@ -176,7 +175,6 @@
             </div>
         </div>
 
-        <!-- Non-SLS Section -->
         <div class="col-12 col-lg-6">
             <div class="card h-100">
                 <div class="card-header bg-white">
@@ -241,7 +239,6 @@
             </div>
         </div>
 
-        <!-- Total Section -->
         <div class="col-12">
             <div class="card">
                 <div class="card-body text-center">
@@ -249,75 +246,73 @@
                     <h2 id="total-businesses">0</h2>
                 </div>
             </div>
-        </div>
+        </div> -->
 
-
-        <div class="row mt-3">
-            <div class="col-lg-12 mb-lg-0 mb-4">
-                <div class="card z-index-2 h-100">
-                    <div class="card-header pb-0 pt-3 bg-transparent">
-                        <h6 class="text-capitalize">Assignment Direktori Usaha</h6>
-                        <p class="text-sm mb-0">
-                            <span>Berikut rekap semua assignment direktori usaha</span>
-                        </p>
+    <div class="row mt-3">
+        <div class="col-lg-12 mb-lg-0 mb-4">
+            <div class="card z-index-2 h-100">
+                <div class="card-header pb-0 pt-3 bg-transparent">
+                    <h6 class="text-capitalize">Assignment Direktori Usaha</h6>
+                    <p class="text-sm mb-0">
+                        <span>Berikut rekap semua assignment direktori usaha</span>
+                    </p>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row mb-2">
+                        <div class="col-sm-12 col-md-3 my-1">
+                            <select id="status" name="status" class="form-control" data-toggle="select" required>
+                                <option value="0" disabled selected> -- Filter Status -- </option>
+                                <option value="all"> Semua </option>
+                                @foreach($statuses as $status)
+                                <option value="{{$status->id}}">{{$status->name}}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-3 my-1">
+                            <select style="width: 100%;" id="subdistrict" name="subdistrict" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Filter Kecamatan -- </option>
+                                @foreach ($subdistricts as $subdistrict)
+                                <option value="{{ $subdistrict->id }}" {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
+                                    [{{ $subdistrict->short_code}}] {{ $subdistrict->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-3 my-1">
+                            <select id="village" name="village" class="form-control" data-toggle="select" name="village"></select>
+                        </div>
+                        <div id="sls_div" class="col-sm-12 col-md-3 my-1">
+                            <select id="sls" name="sls" class="form-control" data-toggle="select"></select>
+                        </div>
+                        <div class="col-sm-12 col-md-3 my-1">
+                            <select id="assignment" name="assignment" class="form-control" data-toggle="select" required>
+                                <option value="0" disabled selected> -- Filter Assignment -- </option>
+                                <option value="all"> Semua </option>
+                                <option value="1">Sudah Diassign</option>
+                                <option value="0">Belum Diassign</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="card-body p-3">
-                        <div class="row mb-2">
-                            <div class="col-sm-12 col-md-3 my-1">
-                                <select id="status" name="status" class="form-control" data-toggle="select" required>
-                                    <option value="0" disabled selected> -- Filter Status -- </option>
-                                    <option value="all"> Semua </option>
-                                    @foreach($statuses as $status)
-                                    <option value="{{$status->id}}">{{$status->name}}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-sm-12 col-md-3 my-1">
-                                <select style="width: 100%;" id="subdistrict" name="subdistrict" class="form-control" data-toggle="select">
-                                    <option value="0" disabled selected> -- Filter Kecamatan -- </option>
-                                    @foreach ($subdistricts as $subdistrict)
-                                    <option value="{{ $subdistrict->id }}" {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
-                                        [{{ $subdistrict->short_code}}] {{ $subdistrict->name }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-sm-12 col-md-3 my-1">
-                                <select id="village" name="village" class="form-control" data-toggle="select" name="village"></select>
-                            </div>
-                            <div id="sls_div" class="col-sm-12 col-md-3 my-1">
-                                <select id="sls" name="sls" class="form-control" data-toggle="select"></select>
-                            </div>
-                            <div class="col-sm-12 col-md-3 my-1">
-                                <select id="assignment" name="assignment" class="form-control" data-toggle="select" required>
-                                    <option value="0" disabled selected> -- Filter Assignment -- </option>
-                                    <option value="all"> Semua </option>
-                                    <option value="1">Sudah Diassign</option>
-                                    <option value="0">Belum Diassign</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <table id="myTable" class="align-items-center mb-0 text-sm">
-                                <thead>
-                                    <tr>
-                                        <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Usaha</th>
-                                        <th class="text-uppercase text-small font-weight-bolder opacity-7">Wilayah</th>
-                                        <th class="text-uppercase text-small font-weight-bolder opacity-7">Status</th>
-                                        <th class="text-uppercase text-small font-weight-bolder opacity-7">PCL</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                    <div>
+                        <table id="myTable" class="align-items-center mb-0 text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Usaha</th>
+                                    <th class="text-uppercase text-small font-weight-bolder opacity-7">Wilayah</th>
+                                    <th class="text-uppercase text-small font-weight-bolder opacity-7">Status</th>
+                                    <th class="text-uppercase text-small font-weight-bolder opacity-7">PCL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
-                                </tbody>
-                            </table>
-                        </div>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
-        @include('layouts.footers.auth.footer')
     </div>
+    @include('layouts.footers.auth.footer')
     @endsection
 
     @push('js')
