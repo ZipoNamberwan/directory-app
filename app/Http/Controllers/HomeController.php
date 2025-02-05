@@ -63,57 +63,76 @@ class HomeController extends Controller
             $statuses = Status::all()->sortBy('order');
             $subdistricts = Subdistrict::where('regency_id', User::find(Auth::id())->regency_id)->get();
 
-            $slsBusinessStatusCounts = SlsBusiness::selectRaw('status_id, COUNT(*) as count')
-                ->groupBy('status_id')
-                ->get();
+            // $slsBusinessStatusCounts = SlsBusiness::selectRaw('status_id, COUNT(*) as count')
+            //     ->groupBy('status_id')
+            //     ->get();
 
-            $nonSlsBusinessStatusCounts = NonSlsBusiness::selectRaw('status_id, COUNT(*) as count')
-                ->groupBy('status_id')
-                ->get();
+            // $nonSlsBusinessStatusCounts = NonSlsBusiness::selectRaw('status_id, COUNT(*) as count')
+            //     ->groupBy('status_id')
+            //     ->get();
 
-            $data = [
-                'sls' => [],
-                'nonsls' => []
-            ];
+            // $data = [
+            //     'sls' => [],
+            //     'nonsls' => []
+            // ];
 
-            foreach (Status::orderBy('code')->get() as $status) {
-                // Initialize counts for both 'sls' and 'nonsls'
-                $slsCount = 0;
-                $nonslsCount = 0;
+            // foreach (Status::orderBy('code')->get() as $status) {
+            //     // Initialize counts for both 'sls' and 'nonsls'
+            //     $slsCount = 0;
+            //     $nonslsCount = 0;
 
-                // Check for matching status in slsBusinessStatusCounts
-                foreach ($slsBusinessStatusCounts as $b) {
-                    if ($b->status_id == $status->id) {
-                        $slsCount = $b->count;  // Update the count if match found
-                        break;
-                    }
-                }
+            //     // Check for matching status in slsBusinessStatusCounts
+            //     foreach ($slsBusinessStatusCounts as $b) {
+            //         if ($b->status_id == $status->id) {
+            //             $slsCount = $b->count;  // Update the count if match found
+            //             break;
+            //         }
+            //     }
 
-                // Check for matching status in nonSlsBusinessStatusCounts
-                foreach ($nonSlsBusinessStatusCounts as $b) {
-                    if ($b->status_id == $status->id) {
-                        $nonslsCount = $b->count;  // Update the count if match found
-                        break;
-                    }
-                }
+            //     // Check for matching status in nonSlsBusinessStatusCounts
+            //     foreach ($nonSlsBusinessStatusCounts as $b) {
+            //         if ($b->status_id == $status->id) {
+            //             $nonslsCount = $b->count;  // Update the count if match found
+            //             break;
+            //         }
+            //     }
 
-                // Add status with its count, even if it's 0
-                $data['sls'][] = [
-                    'status' => $status->name,
-                    'color' => $status->color,
-                    'count' => $slsCount
-                ];
+            //     // Add status with its count, even if it's 0
+            //     $data['sls'][] = [
+            //         'status' => $status->name,
+            //         'color' => $status->color,
+            //         'count' => $slsCount
+            //     ];
 
-                $data['nonsls'][] = [
-                    'status' => $status->name,
-                    'color' => $status->color,
-                    'count' => $nonslsCount
-                ];
-            }
+            //     $data['nonsls'][] = [
+            //         'status' => $status->name,
+            //         'color' => $status->color,
+            //         'count' => $nonslsCount
+            //     ];
+            // }
 
-            // dd($data);
+            // // dd($data);
 
             return view('adminkab.index', [
+                'total' => $total,
+                'not_done' => $not_done,
+                'active' => $active,
+                'not_active' => $not_active,
+                'new' => $new,
+                'statuses' => $statuses,
+                'subdistricts' => $subdistricts
+            ]);
+        } else if ($user->hasRole('pml')) {
+            $businessBase = NonSlsBusiness::where(['last_modified_by' => Auth::id()]);
+            $total = (clone $businessBase)->count();
+            $not_done = (clone $businessBase)->where(['status_id' => 1])->count();
+            $active = (clone $businessBase)->where(['status_id' => 2])->count();
+            $not_active = (clone $businessBase)->where(['status_id' => 3])->count();
+            $new = (clone $businessBase)->where(['status_id' => 4])->count();
+            $statuses = Status::all()->sortBy('order');
+            $subdistricts = Subdistrict::where('regency_id', User::find(Auth::id())->regency_id)->get();
+
+            return view('pml.index', [
                 'total' => $total,
                 'not_done' => $not_done,
                 'active' => $active,
@@ -262,8 +281,14 @@ class HomeController extends Controller
         $user = User::find(Auth::id());
         $records = null;
 
-        if ($user->hasRole('adminkab') || $user->hasRole('pml')) {
+        if ($user->hasRole('adminkab')) {
             $records = NonSlsBusiness::where('regency_id', $user->regency_id);
+        } else if ($user->hasRole('pml')) {
+            if ($request->pmltype == 'index') {
+                $records = NonSlsBusiness::where('last_modified_by', $user->id);
+            } else {
+                $records = NonSlsBusiness::where('regency_id', $user->regency_id);
+            }
         }
 
         if ($request->level === 'regency') {
@@ -329,7 +354,7 @@ class HomeController extends Controller
                 });
             }
         }
-        $samples = $records->with(['status', 'sls', 'village', 'subdistrict', 'regency', 'pml']);
+        $samples = $records->with(['status', 'sls', 'village', 'subdistrict', 'regency', 'pml', 'modifiedBy']);
 
         $recordsFiltered = $samples->count();
 

@@ -3,8 +3,6 @@
 @section('css')
 <link href="/assets/css/app.css" rel="stylesheet" />
 <link href="/vendor/select2/select2.min.css" rel="stylesheet" />
-<link href="/vendor/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
-<link href="/vendor/datatables/responsive.bootstrap5.min.css" rel="stylesheet" />
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="/vendor/fontawesome/css/all.min.css" rel="stylesheet">
 <style>
@@ -171,9 +169,11 @@
                     <select disabled style="width: 100%;" id="status" name="status" class="form-control" data-toggle="select">
                         <option value="0" disabled selected> -- Pilih Status -- </option>
                         @foreach ($statuses as $status)
+                        @if ($status->name != 'Baru')
                         <option value="{{ $status->id }}" {{ old('status') == $status->id ? 'selected' : '' }}>
                             [{{$status->code}}] {{ $status->name }}
                         </option>
+                        @endif
                         @endforeach
                     </select>
                 </div>
@@ -223,7 +223,7 @@
                                 <option value="0" disabled selected> -- Pilih Status -- </option>
                                 @foreach($statuses as $status)
                                 @if ($status->name != 'Baru')
-                                <option value="{{$status->id}}">[{{$status->code}}] {{$status->name}}</option>
+                                <option value="{{$status->id}}">{{$status->name}}</option>
                                 @endif
                                 @endforeach
                             </select>
@@ -238,7 +238,8 @@
                             <p class="mb-1 text-sm text-muted" id="villageUpdateLabel"></p>
                             <p class="mb-1 text-sm text-muted" id="slsUpdateLabel"></p>
                             <div id="switchAreaLabel" class="form-check form-switch mt-2">
-                                <input onchange="" class="form-check-input" type="checkbox" role="switch" id="switchArea">
+                                <input onchange="onChangeArea()" class="form-check-input" type="checkbox" role="switch"
+                                    name="switchArea" id="switchArea">
                                 <label class="form-check-label" for="flexSwitchCheckDefault">Ganti Wilayah</label>
                             </div>
                         </div>
@@ -286,20 +287,11 @@
 @push('js')
 <script src="/vendor/jquery/jquery-3.7.1.min.js"></script>
 <script src="/vendor/select2/select2.min.js"></script>
-<script src="/vendor/datatables/dataTables.min.js"></script>
-<script src="/vendor/datatables/dataTables.bootstrap5.min.js"></script>
-
-<script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
-<script src="/vendor/datatables/dataTables.responsive.min.js"></script>
-
-<!-- <script>
-    statuses = @json($statuses);
-</script> -->
 
 <script>
     directories = [];
 
-    [{
+    const selectConfigs = [{
             selector: '#subdistrict',
             placeholder: 'Pilih Kecamatan'
         },
@@ -335,54 +327,67 @@
             selector: '#slsUpdate',
             placeholder: 'Pilih SLS'
         },
-    ].forEach(config => {
-        $(config.selector).select2({
-            placeholder: config.placeholder,
-            allowClear: true,
+    ];
+
+    selectConfigs.forEach(({
+        selector,
+        placeholder
+    }) => {
+        $(selector).select2({
+            placeholder,
+            allowClear: true
         });
     });
 
-    $('#subdistrict').on('change', function() {
-        pagination.reset()
-        emptyDirectoryList();
-        loadVillage('', null, null);
-        renderView(null, null);
-    });
-    $('#village').on('change', function() {
-        emptyDirectoryList();
-        pagination.reset()
-        onVillageChange()
-        renderView(null, null);
-    });
-    $('#status').on('change', function() {
-        pagination.reset()
-        renderView(null, null);
-    });
-    $('#level').on('change', function() {
-        pagination.reset()
-        onLevelChange()
-    });
+    const eventHandlers = {
+        '#subdistrict': () => {
+            pagination.reset();
+            emptyDirectoryList();
+            onAreaFilterChange()
+            loadVillage('', null, null);
+            renderView(null, null);
+        },
+        '#village': () => {
+            pagination.reset();
+            emptyDirectoryList();
+            onAreaFilterChange();
+            renderView(null, null);
+        },
+        '#status': () => {
+            pagination.reset();
+            renderView(null, null);
+        },
+        '#level': () => {
+            pagination.reset();
+            onLevelChange();
+        },
+        '#subdistrictUpdate': () => {
+            loadVillage('Update', null, null);
+        },
+        '#villageUpdate': () => {
+            loadSls('Update', null, null);
+        },
+        '#statusUpdate': () => {
+            updateInputStates(selectedBusiness);
+        },
+    };
 
-    $('#subdistrictUpdate').on('change', function() {
-        loadVillage('Update', null, null);
-    });
-    $('#villageUpdate').on('change', function() {
-        loadSls('Update', null, null)
-    });
-    $('#statusUpdate').on('change', function() {
-        updateInputStates(selectedBusiness)
+    Object.entries(eventHandlers).forEach(([selector, handler]) => {
+        $(selector).on('change', handler);
     });
 
     function filterDisabled(subdistrict_enable, village_enable, status_enable) {
-        let subdistrict = document.getElementById('subdistrict')
-        let village = document.getElementById('village')
-        let status = document.getElementById('status')
-        let search = document.getElementById('search')
+        const elements = {
+            subdistrict: subdistrict_enable,
+            village: village_enable,
+            status: status_enable,
+            search: status_enable,
+        };
 
-        subdistrict.disabled = subdistrict_enable;
-        village.disabled = village_enable;
-        status.disabled = status_enable;
-        search.disabled = status_enable;
+        Object.entries(elements).forEach(([id, isDisabled]) => {
+            const element = document.getElementById(id);
+            if (element) element.disabled = isDisabled;
+        });
     }
 
     function onLevelChange() {
@@ -418,12 +423,19 @@
     function openUpdateDirectoryModal(item) {
         selectedBusiness = item
 
-        const areaDetail = getLocationDetails(item)
         $('#updateDirectoryModal').modal('show');
 
         document.getElementById('modaltitle').innerHTML = item.name
-        document.getElementById('modalsubtitle').innerHTML = "[" + areaDetail.long_code + "] " +
-            areaDetail.subdistrict + ", " + areaDetail.village
+
+        const areaDetail = getLocationDetails(item)
+        const details = [
+            areaDetail.subdistrict,
+            areaDetail.village,
+            areaDetail.sls
+        ].filter(value => value).join(", ");
+
+        document.getElementById('modalsubtitle').innerHTML = `[${areaDetail.long_code}] ${details}`;
+
         document.getElementById('business_id').value = item.id
 
         document.getElementById('update-error').style.display = 'none'
@@ -487,8 +499,33 @@
         }
     }
 
-    function onChangeArea(){
+    function onChangeArea() {
+        const statusCol = document.getElementById("statusUpdate");
+        const subdistrictCol = document.getElementById("subdistrictCol");
+        const villageCol = document.getElementById("villageCol");
+        const slsCol = document.getElementById("slsCol");
 
+        var isChecked = document.getElementById('switchArea').checked
+        const level = selectedBusiness.level;
+
+        if (isChecked) {
+            if (level === "regency") {
+                subdistrictCol.style.display = "block";
+                villageCol.style.display = "block";
+                slsCol.style.display = "block";
+            } else if (level === "subdistrict") {
+                villageCol.style.display = "block";
+                slsCol.style.display = "block";
+                loadVillage('Update', selectedBusiness.subdistrict_id, null)
+            } else if (level === "village") {
+                slsCol.style.display = "block";
+                loadSls('Update', selectedBusiness.village_id, null)
+            }
+        } else {
+            addressCol.style.display = "none";
+            villageCol.style.display = "none";
+            slsCol.style.display = "none";
+        }
     }
 
     function emptyDirectoryList() {
@@ -560,10 +597,13 @@
         }
     }
 
-    function onVillageChange() {
-        let id = $('#village').val();
-        document.getElementById('status').disabled = (id == 0 || id == null);
-        document.getElementById('search').disabled = (id == 0 || id == null);
+    function onAreaFilterChange() {
+        const level = document.getElementById('level').value;
+        const id = (level === 'subdistrict') ? $('#subdistrict').val() : (level === 'village') ? $('#village').val() : null;
+        const isDisabled = (id == 0 || id == null);
+
+        document.getElementById('status').disabled = isDisabled;
+        document.getElementById('search').disabled = isDisabled;
     }
 
     function getFilterUrl(filter) {
@@ -621,31 +661,29 @@
                     itemDiv.style = "cursor: pointer;"
 
                     let button = ''
-                    if (item.status.id != 4) {
-                        itemDiv.onclick = function() {
-                            openUpdateDirectoryModal(item)
-                        };
-                        button = `
+                    itemDiv.onclick = function() {
+                        openUpdateDirectoryModal(item)
+                    };
+                    button = `
                                 <button class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
                                     <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
                                 </button>
                             `
-                    } else {
-                        itemDiv.onclick = function() {
-                            openUpdateNewModal(item)
-                        };
-                        button = `
-                            <button onclick="onDeleteModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="button">
-                                <span class="btn-inner--icon"><i class="fas fa-trash-alt"></i></span>
-                            </button>
-                        `
-                    }
+
+                    const areaDetail = getLocationDetails(item)
+                    const details = [
+                        areaDetail.subdistrict,
+                        areaDetail.village,
+                        areaDetail.sls
+                    ].filter(value => value).join(", ");
 
                     itemDiv.innerHTML = `
                         <div class="border d-flex justify-content-between align-items-center px-3 py-2 border-radius-md">
                             <div>
                                 <p style="font-size: 0.875rem;" class="mb-1">${item.name}</p>
-                                <p style="font-size: 0.7rem;" class="mb-0">Status: <span class="badge bg-gradient-${item.status.color}">${item.status.name}</span></p>
+                                <p style="font-size: 0.7rem;" class="mb-2">Status: <span class="badge bg-gradient-${item.status.color}">${item.status.name}</span></p>
+                                ${item.sls_id ? `<p style="font-size: 0.7rem;" class="mb-0">[${areaDetail.long_code}] ${details}</p>` : ""}
+                                ${item.last_modified_by ? `<p style="font-size: 0.7rem;" class="mb-0">Terakhir diupdate oleh: ${item.modified_by.firstname}</p>` : ""}
                             </div>
                             ${button}
                         </div>
@@ -658,7 +696,7 @@
                     resultDiv.innerHTML = `<p class="text-small text-warning">No data</p>`
                 }
 
-                pagination.setTotalPages(Math.floor(response.recordsFiltered / pagination.pageLength))
+                pagination.setTotalPages(Math.ceil(response.recordsFiltered / pagination.pageLength))
                 pagination.show()
                 hideLoading()
             },
@@ -681,38 +719,39 @@
         let long_code = row.regency.long_code;
         let subdistrict = row.subdistrict ? row.subdistrict.name : '';
         let village = row.village ? row.village.name : '';
+        let sls = row.sls ? row.sls.name : '';
 
         if (row.subdistrict) long_code += row.subdistrict.short_code;
         if (row.village) long_code += row.village.short_code;
+        if (row.sls) long_code += row.sls.short_code;
 
         return {
             long_code,
             subdistrict,
-            village
+            village,
+            sls
         };
     }
 
     function validate() {
-        var status_valid = true
-        if (document.getElementById('statusUpdate').value == 0 ||
-            document.getElementById('statusUpdate').value == null
-        ) {
-            status_valid = false
-            document.getElementById('update-error').style.display = 'block'
-        } else {
-            if (document.getElementById('statusUpdate').value == "2" &&
-                (document.getElementById('addressUpdate').value == 0 ||
-                    document.getElementById('addressUpdate').value == null ||
-                    document.getElementById('slsUpdate').value == 0 ||
-                    document.getElementById('slsUpdate').value == null)) {
-                status_valid = false
-                document.getElementById('update-error').style.display = 'block'
-            } else {
-                document.getElementById('update-error').style.display = 'none'
+        let status_valid = true;
+        const statusUpdate = document.getElementById('statusUpdate')?.value;
+        const addressUpdate = document.getElementById('addressUpdate')?.value;
+        const slsUpdate = document.getElementById('slsUpdate')?.value;
+        const switchChecked = document.getElementById('switchArea')?.checked || false;
+        const updateError = document.getElementById('update-error');
+
+        if (!statusUpdate || statusUpdate == 0) {
+            status_valid = false;
+        } else if (statusUpdate == "2" && (!addressUpdate || addressUpdate == 0 || !slsUpdate || slsUpdate == 0)) {
+            if (selectedBusiness.sls_id !== null && !switchChecked) {
+                return true; // No need to show error in this case
             }
+            status_valid = false;
         }
 
-        return status_valid
+        updateError.style.display = status_valid ? 'none' : 'block';
+        return status_valid;
     }
 
     function onSave() {
@@ -728,6 +767,7 @@
                 village: document.getElementById('villageUpdate').value,
                 sls: document.getElementById('slsUpdate').value,
                 address: document.getElementById('addressUpdate').value,
+                switch: document.getElementById('switchArea').checked,
                 new: false
             };
 

@@ -32,29 +32,33 @@ class PclController extends Controller
 
     public function updateDirectory(Request $request, $type, $id)
     {
-        $business = null;
+        $business = ($type == 'sls') ? SlsBusiness::find($id) : NonSlsBusiness::find($id);
 
-        if ($type == 'sls') {
-            $business = SlsBusiness::find($id);
-        } else {
-            $business = NonSlsBusiness::find($id);
-            if ($business->level == 'regency') {
-                $business->subdistrict_id = $request->subdistrict == 0 ? null : $request->subdistrict;
+        if ($type !== 'sls') {
+            $switchChecked = filter_var($request->switch, FILTER_VALIDATE_BOOLEAN);
+
+            if ($switchChecked || (!$switchChecked && is_null($business->sls_id))) {
+                if ($business->level === 'regency') {
+                    $business->subdistrict_id = $request->subdistrict ?: null;
+                }
+                if (in_array($business->level, ['regency', 'subdistrict'])) {
+                    $business->village_id = $request->village ?: null;
+                }
+                if (in_array($business->level, ['regency', 'subdistrict', 'village'])) {
+                    $business->sls_id = $request->sls ?: null;
+                }
             }
-            if (in_array($business->level, ['regency', 'subdistrict'])) {
-                $business->village_id = $request->village == 0 ? null : $request->village;
-            }
-            if (in_array($business->level, ['regency', 'subdistrict', 'village'])) {
-                $business->sls_id = $request->sls == 0 ? null : $request->sls;
-            }
+
             if ($request->status == "2") {
                 $business->address = $request->address;
             } else {
-                $business->address = null;
+                $business->address = $business->sls_id = null;
             }
+
+            $business->last_modified_by = Auth::id();
         }
 
-        if ($request->new == "true") {
+        if ($request->new === "true") {
             $business->name = $request->name;
         } else {
             $business->status_id = $request->status;
@@ -64,6 +68,7 @@ class PclController extends Controller
 
         return response()->json($business);
     }
+
     public function addDirectory(Request $request)
     {
         $request->validate([

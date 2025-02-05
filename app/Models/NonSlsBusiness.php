@@ -48,4 +48,8 @@ class NonSlsBusiness extends Model
     {
         return $this->belongsTo(User::class, 'pml_id');
     }
+    public function modifiedBy()
+    {
+        return $this->belongsTo(User::class, 'last_modified_by');
+    }
 }
