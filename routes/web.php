@@ -10,7 +10,12 @@ use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\ResetPassword;
 use App\Http\Controllers\ChangePassword;
 use App\Http\Controllers\PclController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+
+Route::get('/info', function () {
+	return view('pages.info');
+})->middleware('guest')->name('register');
 
 Route::get('/register', [RegisterController::class, 'create'])->middleware('guest')->name('register');
 Route::post('/register', [RegisterController::class, 'store'])->middleware('guest')->name('register.perform');
@@ -28,24 +33,24 @@ Route::group(['middleware' => 'auth'], function () {
 
 	Route::get('/', [HomeController::class, 'index'])->name('home');
 	Route::get('/desa/{subdistrict_id}', [HomeController::class, 'getVillage']);
-    Route::get('/sls/{village_id}', [HomeController::class, 'getSls']);
-    Route::get('/sls-directory/{id_sls}', [HomeController::class, 'getSlsDirectory']);
+	Route::get('/sls/{village_id}', [HomeController::class, 'getSls']);
+	Route::get('/sls-directory/{id_sls}', [HomeController::class, 'getSlsDirectory']);
 
-	Route::post('/sls-directory', [PclController::class, 'addDirectory']);
-	Route::delete('/sls-directory/{id}', [PclController::class, 'deleteDirectory']);
-    Route::patch('/directory/edit/{type}/{id}', [PclController::class, 'updateDirectory']);
+	Route::post('/sls-directory', [HomeController::class, 'addDirectory']);
+	Route::delete('/sls-directory/{id}', [HomeController::class, 'deleteDirectory']);
+	Route::patch('/directory/edit/{type}/{id}', [HomeController::class, 'updateDirectory']);
 
 	Route::group(['middleware' => ['role:pcl|adminkab']], function () {
-		Route::get('/pemutakhiran-sls', [PclController::class, 'update'])->name('updating-sls');
+		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
 	});
 
 	Route::group(['middleware' => ['role:adminkab|pml']], function () {
-		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'update'])->name('updating-non-sls');
+		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'updatePage'])->name('updating-non-sls');
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {
 		Route::get('/assignment', [AdminKabController::class, 'showAssignment'])->name('assignment');
-		Route::get('/report', [AdminKabController::class, 'report'])->name('report');
+		Route::get('/report', [ReportController::class, 'index'])->name('report');
 
 		Route::get('/users/data', [UserController::class, 'getUserData']);
 		Route::resource('users', UserController::class);
@@ -59,7 +64,6 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('/sign-in-static', [PageController::class, 'signin'])->name('sign-in-static');
 	Route::get('/sign-up-static', [PageController::class, 'signup'])->name('sign-up-static');
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');
-
 
 	Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 });

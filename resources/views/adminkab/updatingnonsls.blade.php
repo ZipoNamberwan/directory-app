@@ -21,15 +21,14 @@
 @endsection
 
 @section('content')
-@include('layouts.navbars.auth.topnav', ['title' => 'Pemutakhiran'])
+@include('layouts.navbars.auth.topnav', ['title' => 'Tidak Sampai Level SLS'])
 <div class="full-screen-bg"></div>
 
 <div class="container-fluid">
     <div class="card">
-        <div class="card-header pb-0">
-            <div class="d-flex align-items-center">
-                <p class="mb-0">Pilih Wilayah</p>
-            </div>
+        <div class="card-header pb-0 pt-3 bg-transparent">
+            <h6 class="text-capitalize">Daftar Direktori Tidak Sampai Level SLS</h6>
+            <p class="mb-0 text-sm"><span>Pilih Wilayah</span></p>
         </div>
         <div class="card-body pt-1">
             <div class="row mb-1">
@@ -88,7 +87,7 @@
     <div class="card mt-2">
         <div class="card-header pb-0">
             <div class="d-flex align-items-center">
-                <p class="mb-0">Daftar Direktori Tidak Sampai Level SLS</p>
+                <p class="text-sm mb-0">Daftar Direktori</p>
                 <!-- <button id="add-button" onclick="openAddModal()" class="btn btn-primary btn-sm ms-auto p-2 m-0">Tambah</button> -->
             </div>
         </div>

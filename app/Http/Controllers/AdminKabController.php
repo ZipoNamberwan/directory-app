@@ -19,7 +19,7 @@ class AdminKabController extends Controller
         return view('adminkab.assignment');
     }
 
-    public function update()
+    public function updatePage()
     {
         $statuses = Status::orderBy('order', 'asc')->get();
 
@@ -33,10 +33,5 @@ class AdminKabController extends Controller
         }
 
         return abort(403);
-    }
-
-    public function report()
-    {
-        return 'coming soon';
     }
 }

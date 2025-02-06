@@ -369,7 +369,7 @@
                         itemDiv.style = "cursor: pointer;"
 
                         let button = ''
-                        if (item.status.id != 4) {
+                        if (!item.is_new) {
                             itemDiv.onclick = function() {
                                 openUpdateDirectoryModal(item)
                             };
@@ -383,7 +383,7 @@
                                 openUpdateNewModal(item)
                             };
                             button = `
-                            <button onclick="onDeleteModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="button">
+                            <button data-row='${JSON.stringify(item)}' onclick="onDeleteModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="button">
                                 <span class="btn-inner--icon"><i class="fas fa-trash-alt"></i></span>
                             </button>
                         `
@@ -447,9 +447,18 @@
         document.getElementById('name-new').value = item.name
     }
 
-    function getAreaName(input) {
-        const match = input.match(/\] (.+)/);
-        return match ? match[1] : "";
+    function onDeleteModal(itemString) {
+        const item = JSON.parse(itemString.getAttribute('data-row'));
+
+        event.stopPropagation()
+        $('#deleteModal').modal('show');
+        document.getElementById('loading-delete').style.visibility = 'hidden'
+
+        $('#deleteModal').modal('show');
+        document.getElementById('id-hidden').value = item.id;
+        document.getElementById('delete-name').innerHTML = item.name;
+        document.getElementById('delete-area').innerHTML = "[" + item.sls.long_code + "] " +
+            item.subdistrict.name + ", " + item.village.name + ", " + item.sls.name;
     }
 
     function openAddModal() {
@@ -477,16 +486,9 @@
         }
     }
 
-    function onDeleteModal(item) {
-        event.stopPropagation()
-        $('#deleteModal').modal('show');
-        document.getElementById('loading-delete').style.visibility = 'hidden'
-
-        $('#deleteModal').modal('show');
-        document.getElementById('id-hidden').value = item.id;
-        document.getElementById('delete-name').innerHTML = item.name;
-        document.getElementById('delete-area').innerHTML = "[" + item.sls.long_code + "] " +
-            item.subdistrict.name + ", " + item.village.name + ", " + item.sls.name;
+    function getAreaName(input) {
+        const match = input.match(/\] (.+)/);
+        return match ? match[1] : "";
     }
 
     function validate() {

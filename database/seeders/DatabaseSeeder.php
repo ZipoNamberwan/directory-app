@@ -14,9 +14,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        $this->call([RegencySeeder::class]);
+        $this->call([DummySeeder::class]);
         $this->call([AreaSeeder::class]);
         $this->call([SlsBusinessSeeder::class]);
         $this->call([NonSlsBusinessSeeder::class]);
-        $this->call([DummySeeder::class]);
+        $this->call([DummyAssignmentSeeder::class]);
     }
 }

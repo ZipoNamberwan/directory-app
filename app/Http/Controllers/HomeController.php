@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\NonSlsBusiness;
+use App\Models\ReportRegency;
 use App\Models\SlsBusiness;
 use App\Models\Sls;
 use App\Models\Status;
 use App\Models\Subdistrict;
 use App\Models\User;
 use App\Models\Village;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -54,71 +56,39 @@ class HomeController extends Controller
                 'subdistricts' => $subdistricts
             ]);
         } else if ($user->hasRole('adminkab')) {
-            $businessBase = SlsBusiness::where(['regency_id' => User::find(Auth::id())->regency_id]);
-            $total = (clone $businessBase)->count();
-            $not_done = (clone $businessBase)->where(['status_id' => 1])->count();
-            $active = (clone $businessBase)->where(['status_id' => 2])->count();
-            $not_active = (clone $businessBase)->where(['status_id' => 3])->count();
-            $new = (clone $businessBase)->where(['status_id' => 4])->count();
-            $statuses = Status::all()->sortBy('order');
-            $subdistricts = Subdistrict::where('regency_id', User::find(Auth::id())->regency_id)->get();
+            $regency_id = User::find(Auth::id())->regency_id;
+            $businessBase = SlsBusiness::where(['regency_id' => $regency_id]);
 
-            // $slsBusinessStatusCounts = SlsBusiness::selectRaw('status_id, COUNT(*) as count')
-            //     ->groupBy('status_id')
-            //     ->get();
+            $datetime = new DateTime();
+            $datetime->modify('+2 hours');
+            $today = $datetime->format('Y-m-d');
 
-            // $nonSlsBusinessStatusCounts = NonSlsBusiness::selectRaw('status_id, COUNT(*) as count')
-            //     ->groupBy('status_id')
-            //     ->get();
+            $reportTypes = ['sls', 'non_sls'];
+            $reportData = [];
 
-            // $data = [
-            //     'sls' => [],
-            //     'nonsls' => []
-            // ];
+            foreach ($reportTypes as $type) {
+                $report = ReportRegency::where([
+                    'regency_id' => $regency_id,
+                    'date' => $today,
+                    'type' => $type
+                ])->first();
 
-            // foreach (Status::orderBy('code')->get() as $status) {
-            //     // Initialize counts for both 'sls' and 'nonsls'
-            //     $slsCount = 0;
-            //     $nonslsCount = 0;
+                $updated = $report ? ($report->exist + $report->not_exist + $report->not_scope + $report->new) : 0;
+                $total = $report ? ($report->not_update + $updated) : 0;
+                $percentage = $total ? $this->safeDivide($updated, $total) * 100 : 0;
 
-            //     // Check for matching status in slsBusinessStatusCounts
-            //     foreach ($slsBusinessStatusCounts as $b) {
-            //         if ($b->status_id == $status->id) {
-            //             $slsCount = $b->count;  // Update the count if match found
-            //             break;
-            //         }
-            //     }
+                $reportData[$type] = [
+                    'updated' => $updated,
+                    'total' => $total,
+                    'percentage' => $percentage
+                ];
+            }
 
-            //     // Check for matching status in nonSlsBusinessStatusCounts
-            //     foreach ($nonSlsBusinessStatusCounts as $b) {
-            //         if ($b->status_id == $status->id) {
-            //             $nonslsCount = $b->count;  // Update the count if match found
-            //             break;
-            //         }
-            //     }
-
-            //     // Add status with its count, even if it's 0
-            //     $data['sls'][] = [
-            //         'status' => $status->name,
-            //         'color' => $status->color,
-            //         'count' => $slsCount
-            //     ];
-
-            //     $data['nonsls'][] = [
-            //         'status' => $status->name,
-            //         'color' => $status->color,
-            //         'count' => $nonslsCount
-            //     ];
-            // }
-
-            // // dd($data);
+            $statuses = Status::orderBy('order')->get();
+            $subdistricts = Subdistrict::where('regency_id', $regency_id)->get();
 
             return view('adminkab.index', [
-                'total' => $total,
-                'not_done' => $not_done,
-                'active' => $active,
-                'not_active' => $not_active,
-                'new' => $new,
+                'reportData' => $reportData,
                 'statuses' => $statuses,
                 'subdistricts' => $subdistricts
             ]);
@@ -377,5 +347,85 @@ class HomeController extends Controller
             "recordsFiltered" => $recordsFiltered,
             "data" => $samples
         ]);
+    }
+
+    public function updateDirectory(Request $request, $type, $id)
+    {
+        $business = ($type == 'sls') ? SlsBusiness::find($id) : NonSlsBusiness::find($id);
+
+        if ($type !== 'sls') {
+            $switchChecked = filter_var($request->switch, FILTER_VALIDATE_BOOLEAN);
+
+            if ($switchChecked || (!$switchChecked && is_null($business->sls_id))) {
+                if ($business->level === 'regency') {
+                    $business->subdistrict_id = $request->subdistrict ?: null;
+                }
+                if (in_array($business->level, ['regency', 'subdistrict'])) {
+                    $business->village_id = $request->village ?: null;
+                }
+                if (in_array($business->level, ['regency', 'subdistrict', 'village'])) {
+                    $business->sls_id = $request->sls ?: null;
+                }
+            }
+
+            if ($request->status == "2") {
+                $business->address = $request->address;
+            } else {
+                $business->address = $business->sls_id = null;
+            }
+
+            $business->last_modified_by = Auth::id();
+        }
+
+        if ($request->new === "true") {
+            $business->name = $request->name;
+        } else {
+            $business->status_id = $request->status;
+        }
+
+        $business->save();
+
+        return response()->json($business);
+    }
+
+    public function addDirectory(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'subdistrict' => 'required',
+            'village' => 'required',
+            'sls' => 'required',
+        ]);
+
+        $user = User::find(Auth::id());
+
+        $business = new SlsBusiness();
+        $business->name = $request->name;
+        $business->regency_id = User::find(Auth::id())->regency_id;
+        $business->subdistrict_id = $request->subdistrict;
+        $business->village_id = $request->village;
+        $business->sls_id = $request->sls;
+        $business->status_id = 90;
+        $business->is_new = true;
+        $business->pcl_id = $user->hasRole('pcl') ? $user->id : null;
+        $business->save();
+
+        return response()->json($business);
+    }
+
+    public function deleteDirectory(string $id)
+    {
+        $business = SlsBusiness::find($id);
+        $business->delete();
+
+        return response()->json($business);
+    }
+
+    protected function safeDivide($numerator, $denominator)
+    {
+        if ($denominator == 0) {
+            return "Error: Division by zero!";
+        }
+        return number_format($numerator / $denominator, 4);
     }
 }
