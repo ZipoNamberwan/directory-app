@@ -59,28 +59,64 @@ class HomeController extends Controller
             $regency_id = User::find(Auth::id())->regency_id;
             $businessBase = SlsBusiness::where(['regency_id' => $regency_id]);
 
-            $datetime = new DateTime();
-            $datetime->modify('+2 hours');
-            $today = $datetime->format('Y-m-d');
+            // $datetime = new DateTime();
+            // $datetime->modify('+2 hours');
+            // $today = $datetime->format('Y-m-d');
 
             $reportTypes = ['sls', 'non_sls'];
-            $reportData = [];
+            $cardData = [];
+            $chartData = [];
+            $tableData = [];
+            $lastUpdateDate = '';
 
             foreach ($reportTypes as $type) {
-                $report = ReportRegency::where([
-                    'regency_id' => $regency_id,
-                    'date' => $today,
-                    'type' => $type
-                ])->first();
 
-                $updated = $report ? ($report->exist + $report->not_exist + $report->not_scope + $report->new) : 0;
-                $total = $report ? ($report->not_update + $updated) : 0;
+                $reports = ReportRegency::where([
+                    'regency_id' => $regency_id,
+                    'type' => $type
+                ])->orderByDesc('date')->limit(5)->get();
+
+                $lastUpdateDate = count($reports) > 0 ? $reports[0]->date : '';
+
+                $updated = count($reports) > 0 ? ($reports[0]->exist + $reports[0]->not_exist + $reports[0]->not_scope + $reports[0]->new) : 0;
+                $total = count($reports) > 0 ? ($reports[0]->not_update + $updated) : 0;
                 $percentage = $total ? $this->safeDivide($updated, $total) * 100 : 0;
 
-                $reportData[$type] = [
+                $cardData[$type] = [
                     'updated' => $updated,
                     'total' => $total,
                     'percentage' => $percentage
+                ];
+
+                $percentages = $reports->map(function ($report) {
+                    $up = $report ? ($report->exist + $report->not_exist + $report->not_scope + $report->new) : 0;
+                    $t = $report ? ($report->not_update + $up) : 0;
+                    return $t ? $this->safeDivide($up, $t) * 100 : 0;
+                });
+
+                $chartData[$type] = ['data' => ($percentages)->reverse()->values(), 'dates' => ($reports->pluck('date'))->reverse()->values()];
+
+                $tableData[$type]['regency'] = ReportRegency::where([
+                    'date' => $lastUpdateDate,
+                    'type' => $type
+                ])->orderBy('regency_id')->with('regency')->get()->map(function ($report) {
+                    $up = $report ? ($report->exist + $report->not_exist + $report->not_scope + $report->new) : 0;
+                    $t = $report ? ($report->not_update + $up) : 0;
+
+                    $report->updated = $up;
+                    $report->total = $t;
+                    $report->percentage = $t ? $this->safeDivide($up, $t) * 100 : 0;
+                    return $report;
+                });
+
+                $up = $tableData[$type]['regency']->sum('updated');
+                $t = $tableData[$type]['regency']->sum('total');
+                $tableData[$type]['province']= [
+                    'code' => '3500',
+                    'name' => 'Provinsi Jawa Timur',
+                    'updated' => $up,
+                    'total' => $t,
+                    'percentage' => $t ? $this->safeDivide($up, $t) * 100 : 0
                 ];
             }
 
@@ -88,7 +124,10 @@ class HomeController extends Controller
             $subdistricts = Subdistrict::where('regency_id', $regency_id)->get();
 
             return view('adminkab.index', [
-                'reportData' => $reportData,
+                'cardData' => $cardData,
+                'chartData' => $chartData,
+                'tableData' => $tableData,
+                'lastUpdateDate' => date("j M Y", strtotime($lastUpdateDate)),
                 'statuses' => $statuses,
                 'subdistricts' => $subdistricts
             ]);

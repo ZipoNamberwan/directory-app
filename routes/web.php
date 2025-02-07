@@ -54,6 +54,8 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/users/data', [UserController::class, 'getUserData']);
 		Route::resource('users', UserController::class);
+
+		// Route::get('/test', [AdminKabController::class, 'test'])->name('test');
 	});
 
 	Route::get('/virtual-reality', [PageController::class, 'vr'])->name('virtual-reality');
