@@ -6,29 +6,44 @@ services:
     image: directory-app-laravel-image
     container_name: directory-app
     networks:
-      - laravel_network  
+      - laravel_network
     ports:
       - "8888:8000"
     volumes:
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./docker/supervisor/laravel-queue.conf:/etc/supervisor/conf.d/laravel-queue.conf
       # - /var/www/vendor
-    # ports:
-    #   - "8085:8000"
+      # ports:
+      #   - "8085:8000"
 
-  # web:
-  #   image: nginx:alpine
-  #   container_name: directory-app-web
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8888:80"
-  #   volumes:
-  #     - ./:/var/www
-  #     - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-  #   networks:
-  #     - laravel_network
-  #   depends_on:
-  #     - app
+      # web:
+      #   image: nginx:alpine
+      #   container_name: directory-app-web
+      #   restart: unless-stopped
+      #   ports:
+      #     - "8888:80"
+      #   volumes:
+      #     - ./:/var/www
+      #     - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      #   networks:
+      #     - laravel_network
+      #   depends_on:
+      #     - app
+
+  supervisor:
+    image: directory-app-laravel-image
+    container_name: directory-app
+    networks:
+      - laravel_network
+    ports:
+      - "8888:8000"
+    depends_on:
+      - app
+    volumes:
+      - ./docker/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+      - ./docker/supervisor/laravel-queue.conf:/etc/supervisor/conf.d/laravel-queue.conf
+    command: ["supervisord", "-c", "/etc/supervisor/conf.d/laravel-queue.conf"]
 
   db:
     image: mysql:8.0
@@ -38,7 +53,7 @@ services:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     volumes:
       - dbdata:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
