@@ -3,18 +3,15 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-      args:
-        user: sammy
-        uid: 1000
-    image: laravel_app
+    image: directory-app-laravel-image
     container_name: directory-app
     networks:
-      - laravel_network    
+      - laravel_network  
     ports:
       - "8888:8000"
     volumes:
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
-      # - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
       # - /var/www/vendor
     # ports:
     #   - "8085:8000"

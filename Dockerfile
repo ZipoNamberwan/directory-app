@@ -20,14 +20,14 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www
 
-COPY . /var/www
+COPY --chown=www-data:www-data . /var/www
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --optimize-autoloader --no-dev
 
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/public\
-    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/public
+# RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/public\
+#     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/public
 
 USER www-data
  
-ENTRYPOINT ["php", "artisan", "octane:frankenphp", "--workers=12", "--https", "--http-redirect"]
+ENTRYPOINT ["php", "artisan", "octane:frankenphp", "--workers=12"]
