@@ -23,10 +23,10 @@ yarn-error.log
 /.zed
 /python_script/result
 /python_script/usaha/*
-**/caddy
+# **/caddy
 frankenphp
 frankenphp-worker.php
 
-**/caddy
+# **/caddy
 frankenphp
 frankenphp-worker.php
