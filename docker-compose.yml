@@ -10,9 +10,9 @@ services:
     ports:
       - "8888:8000"
     volumes:
+      - ./:/var/www
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
-      - ./docker/supervisor/laravel-queue.conf:/etc/supervisor/conf.d/laravel-queue.conf
       # - /var/www/vendor
       # ports:
       #   - "8085:8000"
@@ -32,18 +32,20 @@ services:
       #     - app
 
   supervisor:
-    image: directory-app-laravel-image
-    container_name: directory-app
+    build:
+      context: ./
+      dockerfile: supervisor.Dockerfile
+    image: directory-app-supervisor-image
+    container_name: directory-app-supervisor
     networks:
       - laravel_network
-    ports:
-      - "8888:8000"
     depends_on:
       - app
     volumes:
+      - ./:/var/www
       - ./docker/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/supervisor/laravel-queue.conf:/etc/supervisor/conf.d/laravel-queue.conf
-    command: ["supervisord", "-c", "/etc/supervisor/conf.d/laravel-queue.conf"]
+    command: [ "supervisord", "-c", "/etc/supervisor/conf.d/laravel-queue.conf" ]
 
   db:
     image: mysql:8.0
