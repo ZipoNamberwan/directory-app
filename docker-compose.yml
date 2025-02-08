@@ -13,8 +13,8 @@ services:
     ports:
       - "8888:8000"
     volumes:
-      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
-      - ./docker/caddy/Caddyfile:/usr/local/etc/caddy/Caddyfile
+      - ./docker/php/php.ini:/etc/php/php.ini
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
       # - /var/www/vendor
     # ports:
     #   - "8085:8000"
