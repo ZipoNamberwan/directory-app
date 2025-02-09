@@ -1,0 +1,7 @@
+2025-02-09 02:27:05,795 INFO supervisord started with pid 87
+2025-02-09 02:27:06,798 INFO spawnerr: unknown error making dispatchers for 'laravel-queue': EACCES
+2025-02-09 02:27:07,801 INFO spawnerr: unknown error making dispatchers for 'laravel-queue': EACCES
+2025-02-09 02:27:09,809 INFO spawnerr: unknown error making dispatchers for 'laravel-queue': EACCES
+2025-02-09 02:27:12,815 INFO spawnerr: unknown error making dispatchers for 'laravel-queue': EACCES
+2025-02-09 02:27:12,818 INFO gave up: laravel-queue entered FATAL state, too many start retries too quickly
+2025-02-09 02:27:48,864 WARN received SIGINT indicating exit request

@@ -23,11 +23,11 @@ WORKDIR /var/www
 
 COPY --chown=www-data:www-data . /var/www
 
+COPY --chown=www-data:www-data ./docker/supervisor/laravel-workers.conf /etc/supervisor/conf.d/laravel-workers.conf
+COPY --chown=www-data:www-data ./docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --optimize-autoloader --no-dev
-
-# RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/public\
-#     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/public
 
 USER www-data
  
