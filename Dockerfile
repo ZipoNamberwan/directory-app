@@ -31,4 +31,4 @@ RUN composer install --optimize-autoloader --no-dev
 
 USER www-data
  
-ENTRYPOINT ["php", "artisan", "octane:frankenphp", "--workers=12"]
+ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
