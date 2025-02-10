@@ -31,7 +31,7 @@
                                                 sudah dimutakhirkan.</span>
                                         </p>
                                         <p class="text-xs text-secondary mb-0">
-                                            Kondisi tanggal {{ $lastUpdateDate }}
+                                            Kondisi tanggal {{ $lastUpdateFormatted }}
                                         </p>
                                     </div>
                                 </div>
@@ -91,7 +91,8 @@
                                         @foreach ($tableData[$type]['regency'] as $reg)
                                             <tr>
                                                 <td>
-                                                    <a href="/report/kec/{{ $reg->regency->long_code }}">
+                                                    <a target="_blank"
+                                                        href="/report/{{$lastUpdate}}/{{ $type }}/kec/{{ $reg->regency->long_code }}">
                                                         <div class="d-flex gap-3 align-items-center">
                                                             <i class="fas fa-square-arrow-up-right text-lg opacity-10"
                                                                 aria-hidden="true">
@@ -153,286 +154,287 @@
         </div>
 
         @include('layouts.footers.auth.footer')
-    @endsection
+    </div>
+@endsection
 
-    @push('js')
-        <script src="/vendor/jquery/jquery-3.7.1.min.js"></script>
-        <script src="/vendor/select2/select2.min.js"></script>
-        <script src="/vendor/datatables/dataTables.min.js"></script>
-        <script src="/vendor/datatables/dataTables.bootstrap5.min.js"></script>
+@push('js')
+    <script src="/vendor/jquery/jquery-3.7.1.min.js"></script>
+    <script src="/vendor/select2/select2.min.js"></script>
+    <script src="/vendor/datatables/dataTables.min.js"></script>
+    <script src="/vendor/datatables/dataTables.bootstrap5.min.js"></script>
 
-        <script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
-        <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
+    <script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
+    <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
 
-        <script src="/vendor/chart.js/chart.js"></script>
-        <script src="/vendor/chart.js/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="/vendor/chart.js/chart.js"></script>
+    <script src="/vendor/chart.js/chartjs-plugin-datalabels@2.0.0"></script>
 
-        <script>
-            [{
-                    selector: '#subdistrict',
-                    placeholder: 'Filter Kecamatan'
-                },
-                {
-                    selector: '#village',
-                    placeholder: 'Filter Desa'
-                },
-                {
-                    selector: '#sls',
-                    placeholder: 'Filter SLS'
-                },
-                {
-                    selector: '#status',
-                    placeholder: 'Filter Status'
-                },
-                {
-                    selector: '#assignment',
-                    placeholder: 'Filter Assingment'
-                },
-            ].forEach(config => {
-                $(config.selector).select2({
-                    placeholder: config.placeholder,
-                    allowClear: true,
-                });
+    <script>
+        [{
+                selector: '#subdistrict',
+                placeholder: 'Filter Kecamatan'
+            },
+            {
+                selector: '#village',
+                placeholder: 'Filter Desa'
+            },
+            {
+                selector: '#sls',
+                placeholder: 'Filter SLS'
+            },
+            {
+                selector: '#status',
+                placeholder: 'Filter Status'
+            },
+            {
+                selector: '#assignment',
+                placeholder: 'Filter Assingment'
+            },
+        ].forEach(config => {
+            $(config.selector).select2({
+                placeholder: config.placeholder,
+                allowClear: true,
             });
+        });
 
-            $('#subdistrict').on('change', function() {
-                loadVillage(null, null);
-                renderTable();
-            });
-            $('#village').on('change', function() {
-                loadSls(null, null);
-                renderTable();
-            });
-            $('#sls').on('change', function() {
-                renderTable();
-            });
-            $('#status').on('change', function() {
-                renderTable();
-            });
-            $('#assignment').on('change', function() {
-                renderTable();
-            });
+        $('#subdistrict').on('change', function() {
+            loadVillage(null, null);
+            renderTable();
+        });
+        $('#village').on('change', function() {
+            loadSls(null, null);
+            renderTable();
+        });
+        $('#sls').on('change', function() {
+            renderTable();
+        });
+        $('#status').on('change', function() {
+            renderTable();
+        });
+        $('#assignment').on('change', function() {
+            renderTable();
+        });
 
-            function getFilterUrl(filter) {
-                var filterUrl = ''
-                var e = document.getElementById(filter);
-                var filterselected = e.options[e.selectedIndex];
-                if (filterselected != null) {
-                    var filterid = filterselected.value
-                    if (filterid != 0) {
-                        filterUrl = `&${filter}=` + filterid
-                    }
-                }
-
-                return filterUrl
-            }
-
-            function renderTable() {
-                filterUrl = ''
-                filterTypes = ['status', 'subdistrict', 'village', 'sls', 'assignment']
-                filterTypes.forEach(f => {
-                    filterUrl += getFilterUrl(f)
-                });
-
-                table.ajax.url('/sls-directory/data?' + filterUrl).load();
-            }
-
-            function loadVillage(subdistrictid = null, selectedvillage = null) {
-                let id = $('#subdistrict').val();
-                if (subdistrictid != null) {
-                    id = subdistrictid;
-                }
-                $('#village').empty();
-                $('#village').append(`<option value="0" disabled selected>Processing...</option>`);
-                if (id != null) {
-                    $.ajax({
-                        type: 'GET',
-                        url: '/desa/' + id,
-                        success: function(response) {
-
-                            $('#village').empty();
-                            $('#village').append(
-                                `<option value="0" disabled selected> -- Filter Desa -- </option>`);
-                            $('#sls').empty();
-                            $('#sls').append(`<option value="0" disabled selected> -- Filter SLS -- </option>`);
-                            response.forEach(element => {
-                                if (selectedvillage == String(element.id)) {
-                                    $('#village').append('<option value=\"' + element.id + '\" selected>' +
-                                        '[' + element.short_code + '] ' + element.name + '</option>');
-                                } else {
-                                    $('#village').append('<option value=\"' + element.id + '\">' + '[' +
-                                        element.short_code + '] ' + element.name + '</option>');
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    $('#village').empty();
-                    $('#village').append(`<option value="0" disabled> -- Filter Desa -- </option>`);
-                    $('#sls').empty();
-                    $('#sls').append(`<option value="0" disabled> -- Filter SLS -- </option>`);
+        function getFilterUrl(filter) {
+            var filterUrl = ''
+            var e = document.getElementById(filter);
+            var filterselected = e.options[e.selectedIndex];
+            if (filterselected != null) {
+                var filterid = filterselected.value
+                if (filterid != 0) {
+                    filterUrl = `&${filter}=` + filterid
                 }
             }
 
-            function loadSls(villageid = null, selectedsls = null) {
-                let id = $('#village').val();
-                if (villageid != null) {
-                    id = villageid;
-                }
+            return filterUrl
+        }
 
-                $('#sls').empty();
-                $('#sls').append(`<option value="0" disabled selected>Processing...</option>`);
-                if (id != null) {
-                    $.ajax({
-                        type: 'GET',
-                        url: '/sls/' + id,
-                        success: function(response) {
+        function renderTable() {
+            filterUrl = ''
+            filterTypes = ['status', 'subdistrict', 'village', 'sls', 'assignment']
+            filterTypes.forEach(f => {
+                filterUrl += getFilterUrl(f)
+            });
 
-                            $('#sls').empty();
-                            $('#sls').append(`<option value="0" disabled selected> -- Pilih SLS -- </option>`);
-                            response.forEach(element => {
-                                if (selectedsls == String(element.id)) {
-                                    $('#sls').append('<option value=\"' + element.id + '\" selected>' +
-                                        '[' + element.short_code + '] ' + element.name + '</option>');
-                                } else {
-                                    $('#sls').append('<option value=\"' + element.id + '\">' +
-                                        '[' + element.short_code + '] ' + element.name + '</option>');
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    $('#sls').empty();
-                    $('#sls').append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
-                }
+            table.ajax.url('/sls-directory/data?' + filterUrl).load();
+        }
+
+        function loadVillage(subdistrictid = null, selectedvillage = null) {
+            let id = $('#subdistrict').val();
+            if (subdistrictid != null) {
+                id = subdistrictid;
             }
-
-            let table = new DataTable('#myTable', {
-                order: [],
-                serverSide: true,
-                processing: true,
-                // deferLoading: 0,
-                ajax: {
-                    url: '/sls-directory/data',
+            $('#village').empty();
+            $('#village').append(`<option value="0" disabled selected>Processing...</option>`);
+            if (id != null) {
+                $.ajax({
                     type: 'GET',
+                    url: '/desa/' + id,
+                    success: function(response) {
+
+                        $('#village').empty();
+                        $('#village').append(
+                            `<option value="0" disabled selected> -- Filter Desa -- </option>`);
+                        $('#sls').empty();
+                        $('#sls').append(`<option value="0" disabled selected> -- Filter SLS -- </option>`);
+                        response.forEach(element => {
+                            if (selectedvillage == String(element.id)) {
+                                $('#village').append('<option value=\"' + element.id + '\" selected>' +
+                                    '[' + element.short_code + '] ' + element.name + '</option>');
+                            } else {
+                                $('#village').append('<option value=\"' + element.id + '\">' + '[' +
+                                    element.short_code + '] ' + element.name + '</option>');
+                            }
+                        });
+                    }
+                });
+            } else {
+                $('#village').empty();
+                $('#village').append(`<option value="0" disabled> -- Filter Desa -- </option>`);
+                $('#sls').empty();
+                $('#sls').append(`<option value="0" disabled> -- Filter SLS -- </option>`);
+            }
+        }
+
+        function loadSls(villageid = null, selectedsls = null) {
+            let id = $('#village').val();
+            if (villageid != null) {
+                id = villageid;
+            }
+
+            $('#sls').empty();
+            $('#sls').append(`<option value="0" disabled selected>Processing...</option>`);
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/sls/' + id,
+                    success: function(response) {
+
+                        $('#sls').empty();
+                        $('#sls').append(`<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                        response.forEach(element => {
+                            if (selectedsls == String(element.id)) {
+                                $('#sls').append('<option value=\"' + element.id + '\" selected>' +
+                                    '[' + element.short_code + '] ' + element.name + '</option>');
+                            } else {
+                                $('#sls').append('<option value=\"' + element.id + '\">' +
+                                    '[' + element.short_code + '] ' + element.name + '</option>');
+                            }
+                        });
+                    }
+                });
+            } else {
+                $('#sls').empty();
+                $('#sls').append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
+
+        let table = new DataTable('#myTable', {
+            order: [],
+            serverSide: true,
+            processing: true,
+            // deferLoading: 0,
+            ajax: {
+                url: '/sls-directory/data',
+                type: 'GET',
+            },
+            responsive: true,
+            columns: [{
+                    responsivePriority: 1,
+                    width: "10%",
+                    data: "name",
+                    type: "text",
                 },
-                responsive: true,
-                columns: [{
-                        responsivePriority: 1,
-                        width: "10%",
-                        data: "name",
-                        type: "text",
-                    },
-                    {
-                        responsivePriority: 2,
-                        width: "10%",
-                        data: "sls",
-                        type: "text",
-                        render: function(data, type, row) {
-                            if (type === 'display') {
-                                return `<div class="my-1"> 
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "sls",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            return `<div class="my-1"> 
                         <p style='font-size: 0.7rem' class='text-secondary mb-0'>${data.long_code}</p>                    
                         <p style='font-size: 0.7rem' class='text-secondary mb-0'>${row.subdistrict.name}</p>                                        
                         <p style='font-size: 0.7rem' class='text-secondary mb-0'>${row.village.name}</p>                                        
                         <p style='font-size: 0.7rem' class='text-secondary mb-0'>${row.sls.name}</p>                                        
                     </div>`
-                            }
-                            return data.id
                         }
-                    },
-                    {
-                        responsivePriority: 3,
-                        width: "10%",
-                        data: "status",
-                        type: "text",
-                        render: function(data, type, row) {
-                            if (type === 'display') {
-                                return '<p class="mb-0"><span class="badge bg-gradient-' + data.color + '">' +
-                                    data.name + '</span></p>';
-                            }
-                            return data.id;
-                        }
-                    },
-                    {
-                        responsivePriority: 4,
-                        width: "10%",
-                        data: "pcl",
-                        type: "text",
-                        render: function(data, type, row) {
-                            if (type === 'display') {
-                                if (data == null) {
-                                    return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>-</p>`;
-                                } else {
-                                    return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>${data.firstname}</p>`;
-                                }
-                            }
-                            return data.id;
-                        }
-                    },
-                ],
-                language: {
-                    paginate: {
-                        previous: '<i class="fas fa-angle-left"></i>',
-                        next: '<i class="fas fa-angle-right"></i>'
+                        return data.id
                     }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "status",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            return '<p class="mb-0"><span class="badge bg-gradient-' + data.color + '">' +
+                                data.name + '</span></p>';
+                        }
+                        return data.id;
+                    }
+                },
+                {
+                    responsivePriority: 4,
+                    width: "10%",
+                    data: "pcl",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            if (data == null) {
+                                return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>-</p>`;
+                            } else {
+                                return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>${data.firstname}</p>`;
+                            }
+                        }
+                        return data.id;
+                    }
+                },
+            ],
+            language: {
+                paginate: {
+                    previous: '<i class="fas fa-angle-left"></i>',
+                    next: '<i class="fas fa-angle-right"></i>'
                 }
-            });
-        </script>
+            }
+        });
+    </script>
 
-        <script>
-            function createChart(elementId, labels, data) {
-                var ctx = document.getElementById(elementId).getContext('2d');
-                return new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Progres Pemutakhiran',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            data: data
-                        }]
+    <script>
+        function createChart(elementId, labels, data) {
+            var ctx = document.getElementById(elementId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Progres Pemutakhiran',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        data: data
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        datalabels: {
+                            display: true,
+                            align: 'top',
+                            anchor: 'end',
+                            formatter: (value) => value,
+                            font: {
+                                weight: 'bold'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: (ctx) => 'Point Style: ' + ctx.chart.data.datasets[0].pointStyle,
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            datalabels: {
-                                display: true,
-                                align: 'top',
-                                anchor: 'end',
-                                formatter: (value) => value,
-                                font: {
-                                    weight: 'bold'
-                                }
-                            },
+                    scales: {
+                        x: {
+                            display: true,
                             title: {
                                 display: true,
-                                text: (ctx) => 'Point Style: ' + ctx.chart.data.datasets[0].pointStyle,
+                                text: 'Tanggal'
                             }
                         },
-                        scales: {
-                            x: {
+                        y: {
+                            display: true,
+                            title: {
                                 display: true,
-                                title: {
-                                    display: true,
-                                    text: 'Tanggal'
-                                }
-                            },
-                            y: {
-                                display: true,
-                                title: {
-                                    display: true,
-                                    text: 'Persentase'
-                                }
+                                text: 'Persentase'
                             }
-                        },
-                        plugins: [ChartDataLabels]
-                    }
-                });
-            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                }
+            });
+        }
 
-            // Create charts
-            createChart('sls_chart', @json($chartData['sls']['dates']), @json($chartData['sls']['data']));
-            createChart('non_sls_chart', @json($chartData['non_sls']['dates']), @json($chartData['non_sls']['data']));
-        </script>
-    @endpush
+        // Create charts
+        createChart('sls_chart', @json($chartData['sls']['dates']), @json($chartData['sls']['data']));
+        createChart('non_sls_chart', @json($chartData['non_sls']['dates']), @json($chartData['non_sls']['data']));
+    </script>
+@endpush

@@ -67,7 +67,7 @@ class HomeController extends Controller
             $cardData = [];
             $chartData = [];
             $tableData = [];
-            $lastUpdateDate = '';
+            $lastUpdate = '';
 
             foreach ($reportTypes as $type) {
 
@@ -76,7 +76,7 @@ class HomeController extends Controller
                     'type' => $type
                 ])->orderByDesc('date')->limit(5)->get();
 
-                $lastUpdateDate = count($reports) > 0 ? $reports[0]->date : '';
+                $lastUpdate = count($reports) > 0 ? $reports[0]->date : '';
 
                 $updated = count($reports) > 0 ? ($reports[0]->exist + $reports[0]->not_exist + $reports[0]->not_scope + $reports[0]->new) : 0;
                 $total = count($reports) > 0 ? ($reports[0]->not_update + $updated) : 0;
@@ -97,7 +97,7 @@ class HomeController extends Controller
                 $chartData[$type] = ['data' => ($percentages)->reverse()->values(), 'dates' => ($reports->pluck('date'))->reverse()->values()];
 
                 $tableData[$type]['regency'] = ReportRegency::where([
-                    'date' => $lastUpdateDate,
+                    'date' => $lastUpdate,
                     'type' => $type
                 ])->orderBy('regency_id')->with('regency')->get()->map(function ($report) {
                     $up = $report ? ($report->exist + $report->not_exist + $report->not_scope + $report->new) : 0;
@@ -127,7 +127,8 @@ class HomeController extends Controller
                 'cardData' => $cardData,
                 'chartData' => $chartData,
                 'tableData' => $tableData,
-                'lastUpdateDate' => date("j M Y", strtotime($lastUpdateDate)),
+                'lastUpdate' => $lastUpdate,
+                'lastUpdateFormatted' => date("j M Y", strtotime($lastUpdate)),
                 'statuses' => $statuses,
                 'subdistricts' => $subdistricts
             ]);

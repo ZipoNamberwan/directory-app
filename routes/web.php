@@ -13,9 +13,9 @@ use App\Http\Controllers\PclController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 
-Route::get('/info', function () {
-	return view('pages.info');
-})->middleware('guest')->name('register');
+// Route::get('/info', function () {
+// 	return view('pages.info');
+// })->middleware('guest')->name('register');
 
 Route::get('/register', [RegisterController::class, 'create'])->middleware('guest')->name('register');
 Route::post('/register', [RegisterController::class, 'store'])->middleware('guest')->name('register.perform');
@@ -54,6 +54,8 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/users/data', [UserController::class, 'getUserData']);
 		Route::resource('users', UserController::class);
+
+		Route::get('/report/{date}/{type}/{level}/{id}', [ReportController::class, 'getReport']);
 
 		// Route::get('/test', [AdminKabController::class, 'test'])->name('test');
 	});
