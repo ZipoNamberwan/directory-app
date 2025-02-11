@@ -676,11 +676,13 @@
                         areaDetail.village,
                         areaDetail.sls
                     ].filter(value => value).join(", ");
+                    
+                    var owner = item.owner ? ` (${item.owner})` : ''
 
                     itemDiv.innerHTML = `
                         <div class="border d-flex justify-content-between align-items-center px-3 py-2 border-radius-md">
                             <div>
-                                <p style="font-size: 0.875rem;" class="mb-1">${item.name}</p>
+                                <p style="font-size: 0.875rem;" class="mb-1">${item.name}${owner}</p>
                                 <p style="font-size: 0.7rem;" class="mb-2">Status: <span class="badge bg-gradient-${item.status.color}">${item.status.name}</span></p>
                                 ${item.sls_id ? `<p style="font-size: 0.7rem;" class="mb-0">[${areaDetail.long_code}] ${details}</p>` : ""}
                                 ${item.last_modified_by ? `<p style="font-size: 0.7rem;" class="mb-0">Terakhir diupdate oleh: ${item.modified_by.firstname}</p>` : ""}

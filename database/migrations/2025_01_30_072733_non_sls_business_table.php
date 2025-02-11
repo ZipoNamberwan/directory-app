@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('owner')->nullable();
             $table->string('address')->nullable();
+            $table->string('source');
 
             $table->string('regency_id');
             $table->foreign('regency_id')->references('id')->on('regencies');

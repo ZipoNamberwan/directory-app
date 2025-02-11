@@ -18,11 +18,11 @@ for file_path in folder_path.iterdir():
     if file_path.is_file():  # Check if it's a file
         df = pd.read_excel(file_path, dtype=str)
 
-        filtered_df = df[df['sumber'].str.contains("snapwangi", case=False, na=False)]
+        # filtered_df = df[df['sumber'].str.contains("snapwangi", case=False, na=False)]
         
         # Split the file into smaller files
         output_directory = "./python_script/result/usaha"
         os.makedirs(output_directory, exist_ok=True)
 
         records_per_file = 1000
-        split_csv(filtered_df, records_per_file=1000, output_dir=output_directory)
+        split_csv(df, records_per_file=1000, output_dir=output_directory)

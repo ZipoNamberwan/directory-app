@@ -17,8 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([RegencySeeder::class]);
         $this->call([DummySeeder::class]);
         $this->call([AreaSeeder::class]);
-        $this->call([SlsBusinessSeeder::class]);
-        $this->call([NonSlsBusinessSeeder::class]);
+        $this->call([BusinessSeeder::class]);
         $this->call([DummyAssignmentSeeder::class]);
     }
 }
