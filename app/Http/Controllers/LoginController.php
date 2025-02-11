@@ -20,8 +20,6 @@ class LoginController extends Controller
      */
     public function show()
     {
-        // (new SlsAssignmentExport('3501'))->queue('test.xlsx');
-
         return view('auth.login');
     }
 
@@ -34,6 +32,10 @@ class LoginController extends Controller
 
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $request->session()->regenerate();
+
+            if (Auth::user()->must_change_password){
+                return redirect('/change-password');
+            }
 
             return redirect('/');
         }

@@ -16,27 +16,38 @@
                         <div class="col-xl-4 col-lg-5 col-md-7 d-flex flex-column mx-lg-0 mx-auto">
                             <div class="card card-plain">
                                 <div class="card-header pb-0 text-start">
-                                    <h4 class="font-weight-bolder">Change password</h4>
-                                    <p class="mb-0">Set a new password for your email</p>
+                                    <h4 class="font-weight-bolder">Ubah Password Default</h4>
+                                    <p class="mb-0">Sebelum menggunakan, Anda perlu mengganti password default. Ketikkan password baru Anda</p>
                                 </div>
                                 <div class="card-body">
                                     <form role="form" method="POST" action="{{ route('change.perform') }}">
                                         @csrf
 
+                                        {{-- <div class="flex flex-col mb-3">
+                                            <input type="email" name="email" class="form-control form-control-lg"
+                                                placeholder="Email" value="{{ old('email') }}" aria-label="Email">
+                                            @error('email')
+                                                <p class="text-danger text-xs pt-1"> {{ $message }} </p>
+                                            @enderror
+                                        </div> --}}
                                         <div class="flex flex-col mb-3">
-                                            <input type="email" name="email" class="form-control form-control-lg" placeholder="Email" value="{{ old('email') }}" aria-label="Email">
-                                            @error('email') <p class="text-danger text-xs pt-1"> {{$message}} </p>@enderror
+                                            <input type="password" name="password" class="form-control form-control-lg"
+                                                placeholder="Password" aria-label="Password">
+                                            @error('password')
+                                                <p class="text-danger text-xs pt-1"> {{ $message }} </p>
+                                            @enderror
                                         </div>
                                         <div class="flex flex-col mb-3">
-                                            <input type="password" name="password" class="form-control form-control-lg" placeholder="Password" aria-label="Password" >
-                                            @error('password') <p class="text-danger text-xs pt-1"> {{$message}} </p>@enderror
-                                        </div>
-                                        <div class="flex flex-col mb-3">
-                                            <input type="password" name="confirm-password" class="form-control form-control-lg" placeholder="Password" aria-label="Password"  >
-                                            @error('confirm-password') <p class="text-danger text-xs pt-1"> {{$message}} </p>@enderror
+                                            <input type="password" name="confirm-password"
+                                                class="form-control form-control-lg" placeholder="Password"
+                                                aria-label="Password">
+                                            @error('confirm-password')
+                                                <p class="text-danger text-xs pt-1"> {{ $message }} </p>
+                                            @enderror
                                         </div>
                                         <div class="text-center">
-                                            <button type="submit" class="btn btn-lg btn-primary btn-lg w-100 mt-4 mb-0">Send Reset Link</button>
+                                            <button type="submit"
+                                                class="btn btn-lg btn-primary btn-lg w-100 mt-4 mb-0">Ubah Password</button>
                                         </div>
                                     </form>
                                 </div>
@@ -51,10 +62,9 @@
                                 style="background-image: url('https://raw.githubusercontent.com/creativetimofficial/public-assets/master/argon-dashboard-pro/assets/img/signin-ill.jpg');
               background-size: cover;">
                                 <span class="mask bg-gradient-primary opacity-6"></span>
-                                <h4 class="mt-5 text-white font-weight-bolder position-relative">"Attention is the new
-                                    currency"</h4>
-                                <p class="text-white position-relative">The more effortless the writing looks, the more
-                                    effort the writer actually put into the process.</p>
+                                <h1 class="mt-5 text-white font-weight-bolder position-relative">"Ken Dedes"</h1>
+                                <h4 class="text-white position-relative">Kendali Direktori Ekonomi</h4>
+                                <h4 class="text-white position-relative">Di Level Satuan Lingkungan Setempat Terkecil</h4>
                             </div>
                         </div>
                     </div>

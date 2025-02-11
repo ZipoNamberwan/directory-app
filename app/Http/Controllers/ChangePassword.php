@@ -3,21 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Password;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class ChangePassword extends Controller
 {
-
-    protected $user;
-
-    public function __construct()
-    {
-        Auth::logout();
-
-        $id = intval(request()->id);
-        $this->user = User::find($id);
-    }
 
     public function show()
     {
@@ -27,15 +19,15 @@ class ChangePassword extends Controller
     public function update(Request $request)
     {
         $attributes = $request->validate([
-            'email' => ['required'],
-            'password' => ['required', 'min:5'],
+            'password' => ['required', Password::min(8)->mixedCase(),],
             'confirm-password' => ['same:password']
         ]);
 
-        $existingUser = User::where('email', $attributes['email'])->first();
+        $existingUser = User::where('email', Auth::user()->email)->first();
         if ($existingUser) {
             $existingUser->update([
-                'password' => $attributes['password']
+                'password' => Hash::make($attributes['password']),
+                'must_change_password' => false,
             ]);
             return redirect('login');
         } else {

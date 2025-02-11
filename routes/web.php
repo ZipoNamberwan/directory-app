@@ -23,10 +23,11 @@ Route::get('/login', [LoginController::class, 'show'])->middleware('guest')->nam
 Route::post('/login', [LoginController::class, 'login'])->middleware('guest')->name('login.perform');
 Route::get('/reset-password', [ResetPassword::class, 'show'])->middleware('guest')->name('reset-password');
 Route::post('/reset-password', [ResetPassword::class, 'send'])->middleware('guest')->name('reset.perform');
-Route::get('/change-password', [ChangePassword::class, 'show'])->middleware('guest')->name('change-password');
-Route::post('/change-password', [ChangePassword::class, 'update'])->middleware('guest')->name('change.perform');
 
 Route::group(['middleware' => 'auth'], function () {
+
+	Route::get('/change-password', [ChangePassword::class, 'show'])->name('change-password');
+	Route::post('/change-password', [ChangePassword::class, 'update'])->name('change.perform');
 
 	Route::get('/sls-directory/data', [HomeController::class, 'getSlsDirectoryTables']);
 	Route::get('/non-sls-directory/data', [HomeController::class, 'getNonSlsDirectoryTables']);
@@ -60,13 +61,6 @@ Route::group(['middleware' => 'auth'], function () {
 		// Route::get('/test', [AdminKabController::class, 'test'])->name('test');
 	});
 
-	Route::get('/virtual-reality', [PageController::class, 'vr'])->name('virtual-reality');
-	Route::get('/rtl', [PageController::class, 'rtl'])->name('rtl');
-	Route::get('/profile', [UserProfileController::class, 'show'])->name('profile');
-	Route::post('/profile', [UserProfileController::class, 'update'])->name('profile.update');
-	Route::get('/profile-static', [PageController::class, 'profile'])->name('profile-static');
-	Route::get('/sign-in-static', [PageController::class, 'signin'])->name('sign-in-static');
-	Route::get('/sign-up-static', [PageController::class, 'signup'])->name('sign-up-static');
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');
 
 	Route::post('logout', [LoginController::class, 'logout'])->name('logout');
