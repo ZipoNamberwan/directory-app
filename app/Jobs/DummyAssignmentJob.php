@@ -24,8 +24,8 @@ class DummyAssignmentJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $pcl = User::where('email', 'pcl01@gmail.com')->first();
-        $ids = SlsBusiness::where('regency_id', $pcl->regency_id)->skip(0)->take(1000)->pluck('id');
-        SlsBusiness::whereIn('id', $ids)->update(['pcl_id' => $pcl->id]);
+        // $pcl = User::where('email', 'pcl01@gmail.com')->first();
+        // $ids = SlsBusiness::where('regency_id', $pcl->regency_id)->skip(0)->take(1000)->pluck('id');
+        // SlsBusiness::whereIn('id', $ids)->update(['pcl_id' => $pcl->id]);
     }
 }
