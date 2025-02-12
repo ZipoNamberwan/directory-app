@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\NonSlsBusiness;
+use App\Models\ReportProvince;
 use App\Models\ReportRegency;
 use App\Models\SlsBusiness;
 use App\Models\Sls;
@@ -111,7 +112,7 @@ class HomeController extends Controller
 
                 $up = $tableData[$type]['regency']->sum('updated');
                 $t = $tableData[$type]['regency']->sum('total');
-                $tableData[$type]['province']= [
+                $tableData[$type]['province'] = [
                     'code' => '3500',
                     'name' => 'Provinsi Jawa Timur',
                     'updated' => $up,
@@ -148,6 +149,82 @@ class HomeController extends Controller
                 'active' => $active,
                 'not_active' => $not_active,
                 'new' => $new,
+                'statuses' => $statuses,
+                'subdistricts' => $subdistricts
+            ]);
+        } else if ($user->hasRole('adminprov')) {
+            $regency_id = User::find(Auth::id())->regency_id;
+            $businessBase = SlsBusiness::where(['regency_id' => $regency_id]);
+
+            // $datetime = new DateTime();
+            // $datetime->modify('+2 hours');
+            // $today = $datetime->format('Y-m-d');
+
+            $reportTypes = ['sls', 'non_sls'];
+            $cardData = [];
+            $chartData = [];
+            $tableData = [];
+            $lastUpdate = '';
+
+            foreach ($reportTypes as $type) {
+
+                $reports = ReportProvince::where([
+                    'type' => $type
+                ])->orderByDesc('date')->limit(5)->get();
+
+                $lastUpdate = count($reports) > 0 ? $reports[0]->date : '';
+
+                $updated = count($reports) > 0 ? ($reports[0]->exist + $reports[0]->not_exist + $reports[0]->not_scope + $reports[0]->new) : 0;
+                $total = count($reports) > 0 ? ($reports[0]->not_update + $updated) : 0;
+                $percentage = $total ? $this->safeDivide($updated, $total) * 100 : 0;
+
+                $cardData[$type] = [
+                    'updated' => $updated,
+                    'total' => $total,
+                    'percentage' => $percentage
+                ];
+
+                $percentages = $reports->map(function ($report) {
+                    $up = $report ? ($report->exist + $report->not_exist + $report->not_scope + $report->new) : 0;
+                    $t = $report ? ($report->not_update + $up) : 0;
+                    return $t ? $this->safeDivide($up, $t) * 100 : 0;
+                });
+
+                $chartData[$type] = ['data' => ($percentages)->reverse()->values(), 'dates' => ($reports->pluck('date'))->reverse()->values()];
+                
+                $tableData[$type]['regency'] = ReportRegency::where([
+                    'date' => $lastUpdate,
+                    'type' => $type
+                ])->orderBy('regency_id')->with('regency')->get()->map(function ($report) {
+                    $up = $report ? ($report->exist + $report->not_exist + $report->not_scope + $report->new) : 0;
+                    $t = $report ? ($report->not_update + $up) : 0;
+
+                    $report->updated = $up;
+                    $report->total = $t;
+                    $report->percentage = $t ? $this->safeDivide($up, $t) * 100 : 0;
+                    return $report;
+                });
+
+                $up = $tableData[$type]['regency']->sum('updated');
+                $t = $tableData[$type]['regency']->sum('total');
+                $tableData[$type]['province'] = [
+                    'code' => '3500',
+                    'name' => 'Provinsi Jawa Timur',
+                    'updated' => $up,
+                    'total' => $t,
+                    'percentage' => $t ? $this->safeDivide($up, $t) * 100 : 0
+                ];
+            }
+
+            $statuses = Status::orderBy('order')->get();
+            $subdistricts = Subdistrict::where('regency_id', $regency_id)->get();
+
+            return view('adminprov.index', [
+                'cardData' => $cardData,
+                'chartData' => $chartData,
+                'tableData' => $tableData,
+                'lastUpdate' => $lastUpdate,
+                'lastUpdateFormatted' => date("j M Y", strtotime($lastUpdate)),
                 'statuses' => $statuses,
                 'subdistricts' => $subdistricts
             ]);

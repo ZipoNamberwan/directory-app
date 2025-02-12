@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Regency;
 use App\Models\User;
-use Exception;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -25,7 +27,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('user.create', ['user' => null]);
+        $regencies = Regency::all();
+        return view('user.create', ['user' => null, 'regencies' => $regencies]);
     }
 
     /**
@@ -33,21 +36,28 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $admin = User::find(Auth::id());
+
+        $validateArray = [
             'firstname' => 'required',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required',
-            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl'])]
-        ]);
+            'password' => ['required', Password::min(8)->mixedCase()],
+            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl'])],
+        ];
+        if ($admin->hasRole('adminprov')) {
+            $validateArray['regency'] = 'required';
+        }
 
-        $admin = User::find(Auth::user()->id);
+        $request->validate($validateArray);
+
         $user = User::create([
             'id' =>  (string) Str::uuid(),
             'firstname' => $request->firstname,
             'email' => $request->email,
             'username' => $request->email,
             'password' => Hash::make($request->password),
-            'regency_id' => $admin->regency->id
+            'regency_id' => $admin->hasRole('adminprov') ? $request->regency : $admin->regency->id,
+            'must_change_password' => false
         ]);
         $user->assignRole($request->role);
 
@@ -67,7 +77,8 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
-        return view('user.create', ['user' => User::find($id)]);
+        $regencies = Regency::all();
+        return view('user.create', ['user' => User::find($id), 'regencies' => $regencies]);
     }
 
     /**
@@ -75,18 +86,24 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $request->validate([
+        $admin = User::find(Auth::id());
+
+        $validateArray = [
             'firstname' => 'required',
             'email' => [
                 'required',
                 'email',
                 Rule::unique('users')->ignore($id),
             ],
-            'password' => 'required',
-            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl'])]
-        ]);
+            'password' => ['required', Password::min(8)->mixedCase()],
+            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl'])],
+        ];
+        if ($admin->hasRole('adminprov')) {
+            $validateArray['regency'] = 'required';
+        }
 
-        $admin = User::find(Auth::user()->id);
+        $request->validate($validateArray);
+
         $user = User::find($id);
         $user->update([
             'id' =>  (string) Str::uuid(),
@@ -94,7 +111,6 @@ class UserController extends Controller
             'email' => $request->email,
             'username' => $request->email,
             'password' => $request->password != $user->password ? Hash::make($request->password) : $user->password,
-            'regency_id' => $admin->regency->id
         ]);
         $user->syncRoles([$request->role]);
 
@@ -126,12 +142,12 @@ class UserController extends Controller
         if ($user->hasRole('adminkab')) {
             $records = User::where(['regency_id' => $user->regency_id]);
         } else if ($user->hasRole('adminprov')) {
-            $records = User::all();
+            $records = User::query();
         }
 
         $recordsTotal = $records->count();
 
-        $orderColumn = 'name';
+        $orderColumn = 'firstname';
         $orderDir = 'desc';
         if ($request->order != null) {
             if ($request->order[0]['dir'] == 'asc') {
@@ -140,33 +156,31 @@ class UserController extends Controller
                 $orderDir = 'desc';
             }
             if ($request->order[0]['column'] == '0') {
-                $orderColumn = 'name';
+                $orderColumn = 'firstname';
             } else if ($request->order[0]['column'] == '1') {
                 $orderColumn = 'email';
             }
         }
 
         $searchkeyword = $request->search['value'];
-        $data = $records->with('roles')->get();
+        $data = $records->with(['roles', 'regency']);
         if ($searchkeyword != null) {
-            $data = $data->filter(function ($q) use (
-                $searchkeyword
-            ) {
-                return Str::contains(strtolower($q->name), strtolower($searchkeyword)) ||
-                    Str::contains(strtolower($q->email), strtolower($searchkeyword));
+            $data->where(function ($query) use ($searchkeyword) {
+                $query->whereRaw('LOWER(firstname) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                    ->orWhereRaw('LOWER(email) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
             });
         }
         $recordsFiltered = $data->count();
 
         if ($orderDir == 'asc') {
-            $data = $data->sortBy($orderColumn);
+            $data = $data->orderBy($orderColumn);
         } else {
-            $data = $data->sortByDesc($orderColumn);
+            $data = $data->orderByDesc($orderColumn);
         }
 
         if ($request->length != -1) {
             $data = $data->skip($request->start)
-                ->take($request->length);
+                ->take($request->length)->get();
         }
 
         $data = $data->values();

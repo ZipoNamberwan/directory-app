@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminKabController;
+use App\Http\Controllers\AdminProvController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
@@ -52,13 +53,16 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::group(['middleware' => ['role:adminkab']], function () {
 		Route::get('/assignment', [AdminKabController::class, 'showAssignment'])->name('assignment');
 		Route::get('/report', [ReportController::class, 'index'])->name('report');
+	});
 
+	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
+		Route::get('/report/{date}/{type}/{level}/{id}', [ReportController::class, 'getReport']);
 		Route::get('/users/data', [UserController::class, 'getUserData']);
 		Route::resource('users', UserController::class);
+	});
 
-		Route::get('/report/{date}/{type}/{level}/{id}', [ReportController::class, 'getReport']);
-
-		// Route::get('/test', [AdminKabController::class, 'test'])->name('test');
+	Route::group(['middleware' => ['role:adminprov']], function () {
+		Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);	
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');

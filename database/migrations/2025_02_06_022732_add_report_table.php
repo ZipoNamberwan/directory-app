@@ -55,6 +55,18 @@ return new class extends Migration
             $table->date('date');
             $table->enum('type', ['sls', 'non_sls']);
         });
+
+        Schema::create('report_province', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->integer('not_update')->default(0);
+            $table->integer('exist')->default(0);
+            $table->integer('not_exist')->default(0);
+            $table->integer('not_scope')->default(0);
+            $table->integer('new')->default(0);
+            // $table->integer('total')->default(0);
+            $table->date('date');
+            $table->enum('type', ['sls', 'non_sls']);
+        });
     }
 
     /**

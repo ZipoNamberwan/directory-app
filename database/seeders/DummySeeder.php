@@ -41,7 +41,8 @@ class DummySeeder extends Seeder
             'username' => 'admin3500@gmail.com',
             'email' => 'admin3500@gmail.com',
             'firstname' => 'Admin Prov',
-            'password' => Hash::make('123456'),
+            'password' => Hash::make('inYourDre4m'),
+            'must_change_password' => false
         ]);
         $adminprov->assignRole('adminprov');
 

@@ -2,14 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\SlsAssignmentExport;
-use App\Jobs\AssignmentNotificationJob;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
 {
