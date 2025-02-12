@@ -110,6 +110,7 @@ class UserController extends Controller
             'firstname' => $request->firstname,
             'email' => $request->email,
             'username' => $request->email,
+            'regency_id' => $admin->hasRole('adminprov') ? $request->regency : $admin->regency->id,
             'password' => $request->password != $user->password ? Hash::make($request->password) : $user->password,
         ]);
         $user->syncRoles([$request->role]);
