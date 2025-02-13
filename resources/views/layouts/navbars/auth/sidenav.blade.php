@@ -124,12 +124,16 @@
                 </li>
             @endhasrole
             @impersonating($guard = null)
-                <li class="nav-item px-3">
+                <li class="nav-item px-3 mt-2">
                     <a href="{{ route('impersonate.leave') }}" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary w-100"
                         role="button">
                         <span class="btn-inner--icon"><i class="fas fa-stop"></i></span>
                         <span class="btn-inner--text">Stop Personifikasi</span>
                     </a>
+                </li>
+                <li class="nav-item px-3 mt-2">
+                    <p class="text-xs text-muted"><span>Personifikasi sbg:
+                            <strong>{{ Auth::user()->firstname }}</strong></span></p>
                 </li>
             @endImpersonating
         </ul>
