@@ -8,6 +8,6 @@ use Illuminate\Support\Facades\Schedule;
 //     $this->comment(Inspiring::quote());
 // })->purpose('Display an inspiring quote')->hourly();
 
-Schedule::command('app:generate-report')->everyMinute();
+Schedule::command('app:generate-report')->dailyAt('04:30');
 // Schedule::command('app:generate-report')->everyMinute();
 
