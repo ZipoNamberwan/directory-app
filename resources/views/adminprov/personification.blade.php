@@ -64,13 +64,15 @@
                         itemDiv.className = 'col-md-4 col-sm-6 col-xs-12 p-1';
                         itemDiv.style = "cursor: pointer;"
 
+                        const link = `{{route('impersonate', ':id' )}}`.replace(':id', user.id);
+
                         itemDiv.innerHTML = `
                         <div class="border d-flex justify-content-between align-items-center px-3 py-2 border-radius-md">
                             <div>
                                 <p style="font-size: 0.875rem;" class="mb-1">${user.firstname}</p>
                                 <p style="font-size: 0.875rem;" class="mb-1">${user.email}</p>
                             </div>
-                            <a href="/impersonate/${user.id}" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" role="button">
+                            <a href="${link}" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" role="button">
                                 <span class="btn-inner--icon"><i class="fas fa-arrow-pointer"></i></span>
                             </a>
                         </div>

@@ -93,7 +93,10 @@
                     </a>
                 </li>
             @endhasrole
-            {{-- @hasrole('adminprov')
+            @hasrole('adminprov')
+                <li class="nav-item mt-3">
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Personifikasi</h6>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link {{ str_contains(request()->url(), 'personifikasi') == true ? 'active' : '' }}"
                         href="/personifikasi">
@@ -104,7 +107,7 @@
                         <span class="nav-link-text ms-1">Personifikasi</span>
                     </a>
                 </li>
-            @endhasrole --}}
+            @endhasrole
             @hasrole('adminkab|adminprov')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Petugas</h6>
@@ -120,7 +123,15 @@
                     </a>
                 </li>
             @endhasrole
-
+            @impersonating($guard = null)
+                <li class="nav-item px-3">
+                    <a href="{{ route('impersonate.leave') }}" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary w-100"
+                        role="button">
+                        <span class="btn-inner--icon"><i class="fas fa-stop"></i></span>
+                        <span class="btn-inner--text">Stop Personifikasi</span>
+                    </a>
+                </li>
+            @endImpersonating
         </ul>
     </div>
 </aside>

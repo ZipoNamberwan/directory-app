@@ -27,6 +27,8 @@ Route::post('/reset-password', [ResetPassword::class, 'send'])->middleware('gues
 
 Route::group(['middleware' => 'auth'], function () {
 
+	Route::impersonate();
+
 	Route::get('/change-password', [ChangePassword::class, 'show'])->name('change-password');
 	Route::post('/change-password', [ChangePassword::class, 'update'])->name('change.perform');
 
@@ -57,11 +59,8 @@ Route::group(['middleware' => 'auth'], function () {
 	});
 
 	Route::group(['middleware' => ['role:adminprov']], function () {
-		// Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);
+		Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);
 		Route::get('/users/search', [UserController::class, 'searchUser']);
-
-		// Route::get('/impersonate/{userId}', [AdminProvController::class, 'startImpersonation'])->name('impersonate.start');
-		// Route::get('/impersonate/stop', [AdminProvController::class, 'stopImpersonation'])->name('impersonate.stop');
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
