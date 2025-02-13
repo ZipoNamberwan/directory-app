@@ -140,8 +140,8 @@
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                                                            <span aria-hidden="true">&times;</span>
-                                                                        </button> -->
+                                                                                            <span aria-hidden="true">&times;</span>
+                                                                                        </button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -229,6 +229,10 @@
 
         <script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
         <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
+
+        <script>
+            const roles = @json(Auth::user()->getRoleNames());
+        </script>
 
         <script>
             directories = [];
@@ -438,6 +442,9 @@
                             subdistrictCol.style.display = "block";
                             villageCol.style.display = "block";
                             slsCol.style.display = "block";
+                            if (roles.includes("adminprov")) {
+                                loadSubdistrict('Update', item.regency_id, null)
+                            }
                         } else if (level === "subdistrict") {
                             villageCol.style.display = "block";
                             slsCol.style.display = "block";
@@ -464,6 +471,9 @@
                         subdistrictCol.style.display = "block";
                         villageCol.style.display = "block";
                         slsCol.style.display = "block";
+                        if (roles.includes("adminprov")) {
+                            loadSubdistrict('Update', selectedBusiness.regency_id, null)
+                        }
                     } else if (level === "subdistrict") {
                         villageCol.style.display = "block";
                         slsCol.style.display = "block";
@@ -474,6 +484,7 @@
                     }
                 } else {
                     addressCol.style.display = "none";
+                    subdistrictCol.style.display = "none";
                     villageCol.style.display = "none";
                     slsCol.style.display = "none";
                 }
