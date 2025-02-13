@@ -29,7 +29,7 @@ services:
       - dbdata:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
     ports:
-      - "3306:3306"
+      - "3307:3306"
     networks:
       - laravel_network
 
