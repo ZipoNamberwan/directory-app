@@ -191,7 +191,7 @@ class HomeController extends Controller
                 });
 
                 $chartData[$type] = ['data' => ($percentages)->reverse()->values(), 'dates' => ($reports->pluck('date'))->reverse()->values()];
-                
+
                 $tableData[$type]['regency'] = ReportRegency::where([
                     'date' => $lastUpdate,
                     'type' => $type
@@ -233,6 +233,12 @@ class HomeController extends Controller
         return view('pages.dashboard');
     }
 
+    public function getSubdistrict($regency_id)
+    {
+        $subdistricts = Subdistrict::where('regency_id', $regency_id)->get();
+
+        return response()->json($subdistricts);
+    }
     public function getVillage($subdistrict_id)
     {
         $user = User::find(Auth::id());
@@ -244,7 +250,7 @@ class HomeController extends Controller
                 'id',
                 $user->slsBusiness()->select('village_id')->where('village_id', 'like', "{$subdistrict_id}%")->distinct()->pluck('village_id')
             )->get();
-        } else if ($user->hasRole('adminkab') || $user->hasRole('pml')) {
+        } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml')) {
             $village = Village::where('subdistrict_id', $subdistrict_id)->get();
         }
 
@@ -260,7 +266,7 @@ class HomeController extends Controller
                 'id',
                 $user->slsBusiness()->select('sls_id')->where('sls_id', 'like', "{$village_id}%")->distinct()->pluck('sls_id')
             )->get();
-        } else if ($user->hasRole('adminkab') || $user->hasRole('pml')) {
+        } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml')) {
             $sls = Sls::where('village_id', $village_id)->get();
         }
 
@@ -273,7 +279,7 @@ class HomeController extends Controller
 
         if ($user->hasRole('pcl')) {
             $business = $user->slsBusiness()->where('sls_id', '=', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();
-        } else if ($user->hasRole('adminkab')) {
+        } else if ($user->hasRole('adminkab') || $user->hasRole('adminprov')) {
             $business = SlsBusiness::where('sls_id', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();;
         }
         return response()->json($business);
@@ -288,11 +294,17 @@ class HomeController extends Controller
             $records = $user->slsBusiness();
         } elseif ($user->hasRole('adminkab')) {
             $records = SlsBusiness::where('regency_id', $user->regency_id);
+        } else if ($user->hasRole('adminprov')) {
+            $records = SlsBusiness::query();
         }
 
         // Apply filters
         if ($request->status && $request->status !== 'all') {
             $records->where('status_id', $request->status);
+        }
+
+        if ($request->regency && $request->regency !== 'all') {
+            $records->where('regency_id', $request->regency);
         }
 
         if ($request->subdistrict && $request->subdistrict !== 'all') {
@@ -376,18 +388,32 @@ class HomeController extends Controller
             } else {
                 $records = NonSlsBusiness::where('regency_id', $user->regency_id);
             }
+        } else if ($user->hasRole('adminprov')) {
+            $records = NonSlsBusiness::query();
         }
 
         if ($request->level === 'regency') {
             $records->where('level', 'regency');
+
+            if (!empty($request->regency) && $request->regency !== 'all') {
+                $records->where('regency_id', $request->regency);
+            }
         } elseif ($request->level === 'subdistrict') {
             $records->where('level', 'subdistrict');
+
+            if (!empty($request->regency) && $request->regency !== 'all') {
+                $records->where('regency_id', $request->regency);
+            }
 
             if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
                 $records->where('subdistrict_id', $request->subdistrict);
             }
         } elseif ($request->level === 'village') {
             $records->where('level', 'village');
+
+            if (!empty($request->regency) && $request->regency !== 'all') {
+                $records->where('regency_id', $request->regency);
+            }
 
             if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
                 $records->where('subdistrict_id', $request->subdistrict);
@@ -518,13 +544,14 @@ class HomeController extends Controller
 
         $business = new SlsBusiness();
         $business->name = $request->name;
-        $business->regency_id = User::find(Auth::id())->regency_id;
+        $business->regency_id = $user->hasRole('adminprov') ? $request->regency : User::find(Auth::id())->regency_id;
         $business->subdistrict_id = $request->subdistrict;
         $business->village_id = $request->village;
         $business->sls_id = $request->sls;
         $business->status_id = 90;
         $business->is_new = true;
         $business->pcl_id = $user->hasRole('pcl') ? $user->id : null;
+        $business->source = 'Tambah Baru';
         $business->save();
 
         return response()->json($business);

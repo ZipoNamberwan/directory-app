@@ -193,4 +193,20 @@ class UserController extends Controller
             "data" => $data
         ]);
     }
+
+    public function searchUser(Request $request)
+    {
+        $query = $request->query('search');
+
+        if (!$query) {
+            return response()->json([]);
+        }
+
+        $users = User::where('firstname', 'LIKE', "%{$query}%")
+            ->orWhere('email', 'LIKE', "%{$query}%")
+            ->orderBy('firstname')
+            ->get();
+
+        return response()->json($users);
+    }
 }

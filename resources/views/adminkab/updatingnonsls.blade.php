@@ -34,8 +34,7 @@
                 <div class="row mb-1">
                     <div class="col-md-3">
                         <label class="form-control-label">Level <span class="text-danger">*</span></label>
-                        <select style="width: 100%;" id="level" name="level" class="form-control"
-                            data-toggle="select">
+                        <select id="level" name="level" class="form-control" data-toggle="select">
                             <option value="0" disabled selected> -- Pilih level -- </option>
                             <option value="regency">
                                 Kabupaten
@@ -50,10 +49,22 @@
                     </div>
                 </div>
                 <div class="row">
+                    @hasrole('adminprov')
+                        <div class="col-md-3">
+                            <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
+                            <select disabled id="regency" name="regency" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
+                                @foreach ($regencies as $regency)
+                                    <option value="{{ $regency->id }}" {{ old('regency') == $regency->id ? 'selected' : '' }}>
+                                        [{{ $regency->short_code }}] {{ $regency->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endhasrole
                     <div class="col-md-3">
                         <label class="form-control-label">Kecamatan <span class="text-danger">*</span></label>
-                        <select disabled style="width: 100%;" id="subdistrict" name="subdistrict" class="form-control"
-                            data-toggle="select">
+                        <select disabled id="subdistrict" name="subdistrict" class="form-control" data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Kecamatan -- </option>
                             @foreach ($subdistricts as $subdistrict)
                                 <option value="{{ $subdistrict->id }}"
@@ -70,8 +81,7 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-control-label">Status <span class="text-danger">*</span></label>
-                        <select disabled style="width: 100%;" id="status" name="status" class="form-control"
-                            data-toggle="select">
+                        <select disabled id="status" name="status" class="form-control" data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Status -- </option>
                             @foreach ($statuses as $status)
                                 @if ($status->name != 'Baru')
@@ -130,8 +140,8 @@
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button> -->
+                                                                            <span aria-hidden="true">&times;</span>
+                                                                        </button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -156,6 +166,7 @@
                             </div>
                             <div id="slsColFiled" class="col-12 my-2">
                                 <label class="form-control-label" id="areaUpdateLabel"></label>
+                                <p class="mb-1 text-sm text-muted" id="regencyUpdateLabel"></p>
                                 <p class="mb-1 text-sm text-muted" id="subdistrictUpdateLabel"></p>
                                 <p class="mb-1 text-sm text-muted" id="villageUpdateLabel"></p>
                                 <p class="mb-1 text-sm text-muted" id="slsUpdateLabel"></p>
@@ -223,6 +234,10 @@
             directories = [];
 
             const selectConfigs = [{
+                    selector: '#regency',
+                    placeholder: 'Pilih Kabupaten'
+                },
+                {
                     selector: '#subdistrict',
                     placeholder: 'Pilih Kecamatan'
                 },
@@ -271,6 +286,12 @@
             });
 
             const eventHandlers = {
+                '#regency': () => {
+                    emptyDirectoryList();
+                    onAreaFilterChange()
+                    loadSubdistrict('', null, null);
+                    renderTable();
+                },
                 '#subdistrict': () => {
                     emptyDirectoryList();
                     onAreaFilterChange()
@@ -303,8 +324,9 @@
                 $(selector).on('change', handler);
             });
 
-            function filterDisabled(subdistrict_enable, village_enable, status_enable) {
+            function filterDisabled(regency_enable, subdistrict_enable, village_enable, status_enable) {
                 const elements = {
+                    regency: regency_enable,
                     subdistrict: subdistrict_enable,
                     village: village_enable,
                     status: status_enable,
@@ -329,15 +351,15 @@
                 // $('#status').val(null).trigger('change');
 
                 if (level === 'regency') {
-                    filterDisabled(true, true, false);
+                    filterDisabled(false, true, true, false);
                     renderTable();
                 } else if (level === 'subdistrict') {
-                    filterDisabled(false, true, subdistrict == 0);
+                    filterDisabled(false, false, true, subdistrict == 0);
                     if (subdistrict != 0) {
                         renderTable();
                     }
                 } else if (level === 'village') {
-                    filterDisabled(false, false, village == 0);
+                    filterDisabled(false, false, false, village == 0);
                     if (subdistrict != 0 && (level !== 'village' || village != 0)) {
                         renderTable();
                     }
@@ -462,6 +484,48 @@
                 resultDiv.innerHTML = '';
             }
 
+            function loadSubdistrict(group = '', regencyid = null, selectedvillage = null) {
+
+                let regencySelector = `#regency${group}`;
+                let subdistrictSelector = `#subdistrict${group}`;
+                let villageSelector = `#village${group}`;
+                let slsSelector = `#sls${group}`;
+
+                let id = $(regencySelector).val();
+                if (regencyid != null) {
+                    id = regencyid;
+                }
+
+                $(subdistrictSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+                $(villageSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+                $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+                if (id != null) {
+                    $.ajax({
+                        type: 'GET',
+                        url: '/kec/' + id,
+                        success: function(response) {
+                            $(subdistrictSelector).empty().append(
+                                `<option value="0" disabled selected> -- Pilih Kecamatan -- </option>`);
+                            $(villageSelector).empty().append(
+                                `<option value="0" disabled selected> -- Pilih Desa -- </option>`);
+                            $(slsSelector).empty().append(
+                                `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                            response.forEach(element => {
+                                let selected = selectedvillage == String(element.id) ? 'selected' : '';
+                                $(subdistrictSelector).append(
+                                    `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
+                                );
+                            });
+                        }
+                    });
+                } else {
+                    $(subdistrictSelector).empty().append(`<option value="0" disabled> -- Pilih Kecamatan -- </option>`);
+                    $(villageSelector).empty().append(`<option value="0" disabled> -- Pilih Desa -- </option>`);
+                    $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+                }
+            }
+
             function loadVillage(group = '', subdistrictid = null, selectedvillage = null) {
 
                 let subdistrictSelector = `#subdistrict${group}`;
@@ -533,7 +597,8 @@
 
             function onAreaFilterChange() {
                 const level = document.getElementById('level').value;
-                const id = (level === 'subdistrict') ? $('#subdistrict').val() : (level === 'village') ? $('#village').val() :
+                const id = (level === 'regency') ? $('#regency').val() : (level === 'subdistrict') ? $('#subdistrict').val() : (
+                        level === 'village') ? $('#village').val() :
                     null;
                 const isDisabled = (id == 0 || id == null);
 
@@ -544,11 +609,13 @@
             function getFilterUrl(filter) {
                 var filterUrl = ''
                 var e = document.getElementById(filter);
-                var filterselected = e.options[e.selectedIndex];
-                if (filterselected != null) {
-                    var filterid = filterselected.value
-                    if (filterid != 0) {
-                        filterUrl = `&${filter}=` + filterid
+                if (e != null) {
+                    var filterselected = e.options[e.selectedIndex];
+                    if (filterselected != null) {
+                        var filterid = filterselected.value
+                        if (filterid != 0) {
+                            filterUrl = `&${filter}=` + filterid
+                        }
                     }
                 }
 
@@ -557,7 +624,7 @@
 
             function renderTable() {
                 filterUrl = ''
-                filterTypes = ['level', 'subdistrict', 'village', 'status']
+                filterTypes = ['level', 'regency', 'subdistrict', 'village', 'status']
                 filterTypes.forEach(f => {
                     filterUrl += getFilterUrl(f)
                 });

@@ -34,6 +34,7 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('/non-sls-directory/data', [HomeController::class, 'getNonSlsDirectoryTables']);
 
 	Route::get('/', [HomeController::class, 'index'])->name('home');
+	Route::get('/kec/{regency_id}', [HomeController::class, 'getSubdistrict']);
 	Route::get('/desa/{subdistrict_id}', [HomeController::class, 'getVillage']);
 	Route::get('/sls/{village_id}', [HomeController::class, 'getSls']);
 	Route::get('/sls-directory/{id_sls}', [HomeController::class, 'getSlsDirectory']);
@@ -42,11 +43,11 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::delete('/sls-directory/{id}', [HomeController::class, 'deleteDirectory']);
 	Route::patch('/directory/edit/{type}/{id}', [HomeController::class, 'updateDirectory']);
 
-	Route::group(['middleware' => ['role:pcl|adminkab']], function () {
+	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
 	});
 
-	Route::group(['middleware' => ['role:adminkab|pml']], function () {
+	Route::group(['middleware' => ['role:pml|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'updatePage'])->name('updating-non-sls');
 	});
 
@@ -55,14 +56,18 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/report', [ReportController::class, 'index'])->name('report');
 	});
 
+	Route::group(['middleware' => ['role:adminprov']], function () {
+		// Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);
+		Route::get('/users/search', [UserController::class, 'searchUser']);
+
+		// Route::get('/impersonate/{userId}', [AdminProvController::class, 'startImpersonation'])->name('impersonate.start');
+		// Route::get('/impersonate/stop', [AdminProvController::class, 'stopImpersonation'])->name('impersonate.stop');
+	});
+
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
 		Route::get('/report/{date}/{type}/{level}/{id}', [ReportController::class, 'getReport']);
 		Route::get('/users/data', [UserController::class, 'getUserData']);
 		Route::resource('users', UserController::class);
-	});
-
-	Route::group(['middleware' => ['role:adminprov']], function () {
-		Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);	
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');
