@@ -117,8 +117,8 @@
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button> -->
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -195,17 +195,17 @@
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
                         <div class="row">
                             @hasrole('adminprov')
-                            <div class="col-md-12">
-                                <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
-                                <select id="regencyAdd" name="regencyAdd" class="form-control" data-toggle="select">
-                                    <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
-                                    @foreach ($regencies as $regency)
-                                        <option value="{{ $regency->id }}">
-                                            [{{ $regency->short_code }}] {{ $regency->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                                <div class="col-md-12">
+                                    <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
+                                    <select id="regencyAdd" name="regencyAdd" class="form-control" data-toggle="select">
+                                        <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
+                                        @foreach ($regencies as $regency)
+                                            <option value="{{ $regency->id }}">
+                                                [{{ $regency->short_code }}] {{ $regency->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             @endhasrole
                             <div class="col-md-12">
                                 <label class="form-control-label">Kecamatan <span class="text-danger">*</span></label>
@@ -790,15 +790,15 @@
                             if (type === 'display') {
                                 if (!row.is_new) {
                                     return `
-                                <button data-row='${JSON.stringify(row)}' onclick="openUpdateDirectoryModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
+                                <button data-row='${escapeJsonForHtml(JSON.stringify(row))}' onclick="openUpdateDirectoryModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
                                     <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
                                 </button>`;
                                 } else {
                                     return `
-                            <button data-row='${JSON.stringify(row)}' onclick="openUpdateNewModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
+                            <button data-row='${escapeJsonForHtml(JSON.stringify(row))}' onclick="openUpdateNewModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
                                 <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
                             </button>
-                            <button data-row='${JSON.stringify(row)}' onclick="openDeleteModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="button">
+                            <button data-row='${escapeJsonForHtml(JSON.stringify(row))}' onclick="openDeleteModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="button">
                                 <span class="btn-inner--icon"><i class="fas fa-trash-alt"></i></span>
                             </button>
                             `;
@@ -815,6 +815,12 @@
                     }
                 }
             });
+
+            function escapeJsonForHtml(jsonString) {
+                return jsonString
+                    .replace(/"/g, '&quot;') // Escape double quotes
+                    .replace(/'/g, '&#39;'); // Escape single quotes
+            }
         </script>
     @endpush
 @endsection

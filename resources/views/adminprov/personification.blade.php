@@ -62,7 +62,6 @@
 
                         const itemDiv = document.createElement('div');
                         itemDiv.className = 'col-md-4 col-sm-6 col-xs-12 p-1';
-                        itemDiv.style = "cursor: pointer;"
 
                         const link = `{{route('impersonate', ':id' )}}`.replace(':id', user.id);
 
