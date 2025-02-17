@@ -51,12 +51,20 @@ class BusinessJob implements ShouldQueue
                 $subdistrictId = null;
                 $regencyId = null;
                 if (strlen($record['iddesa']) == 7) {
-                    $level = 'subdistrict';
-                    $subdistrictId = substr($record['iddesa'], 0, 7);
+                    if (substr($record['iddesa'], -3) == '000' || substr($record['iddesa'], -3) == '999') {
+                        $level = 'regency';
+                    } else {
+                        $level = 'subdistrict';
+                        $subdistrictId = substr($record['iddesa'], 0, 7);
+                    }
                 } else if (strlen($record['iddesa']) == 10) {
-                    $level = 'village';
                     $subdistrictId = substr($record['iddesa'], 0, 7);
-                    $villageId = substr($record['iddesa'], 0, 10);
+                    if (substr($record['iddesa'], -3) == '000' || substr($record['iddesa'], -3) == '999') {
+                        $level = 'subdistrict';
+                    } else {
+                        $level = 'village';
+                        $villageId = substr($record['iddesa'], 0, 10);
+                    }
                 }
 
                 $regencyId = "35" . substr($record['kab'], 1, 2);
@@ -78,7 +86,7 @@ class BusinessJob implements ShouldQueue
         if (count($dataSls) > 0) {
             SlsBusiness::insert($dataSls);
         }
-        if (count($dataNonSls) > 0){
+        if (count($dataNonSls) > 0) {
             NonSlsBusiness::insert($dataNonSls);
         }
     }
