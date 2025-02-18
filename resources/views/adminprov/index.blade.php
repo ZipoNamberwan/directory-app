@@ -16,9 +16,13 @@
                             <div class="row">
                                 <div class="col-8">
                                     <div class="numbers">
-                                        <p class="text-sm mb-2 text-uppercase font-weight-bold">Pemutakhiran Direktori
-                                            Sampai
-                                            Level SLS</p>
+                                        <p class="text-sm mb-2 text-uppercase font-weight-bold">
+                                            @if ($type == 'sls')
+                                                Progress Pemutakhiran Direktori Sampai Level SLS
+                                            @else
+                                                Progress Pemutakhiran Direktori Tidak Sampai Level SLS
+                                            @endif
+                                        </p>
                                         <h5 class="font-weight-bolder">
                                             {{ $cardData[$type]['percentage'] }}%
                                         </h5>

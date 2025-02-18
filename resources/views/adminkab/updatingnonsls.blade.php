@@ -378,7 +378,7 @@
 
                 $('#updateDirectoryModal').modal('show');
 
-                document.getElementById('modaltitle').innerHTML = item.name
+                document.getElementById('modaltitle').innerHTML = item.name + (item.owner ? ' (' + item.owner + ')' : '')
 
                 const areaDetail = getLocationDetails(item)
                 const details = [
@@ -710,7 +710,8 @@
                             $('#updateDirectoryModal').modal('hide');
                             document.getElementById('loading-save').style.visibility = 'hidden'
 
-                            renderTable()
+                            // renderTable()
+                            table.ajax.reload(null, false)
                         },
                         error: function(xhr, status, error) {
                             document.getElementById('loading-save').style.visibility = 'hidden'

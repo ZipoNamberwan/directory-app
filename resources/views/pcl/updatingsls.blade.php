@@ -79,8 +79,8 @@
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button> -->
+                                    <span aria-hidden="true">&times;</span>
+                                </button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -438,7 +438,7 @@
             function openUpdateDirectoryModal(item) {
                 $('#updateDirectoryModal').modal('show');
 
-                document.getElementById('modaltitle').innerHTML = item.name
+                document.getElementById('modaltitle').innerHTML = item.name + (item.owner ? ' (' + item.owner + ')' : '')
                 document.getElementById('modalsubtitle').innerHTML = "[" + item.sls.id + "] " +
                     item.subdistrict.name + ", " + item.village.name + ", " + item.sls.name
                 document.getElementById('business_id').value = item.id
@@ -451,7 +451,7 @@
             function openUpdateNewModal(item) {
                 $('#updateNewModal').modal('show');
 
-                document.getElementById('modaltitle-new').innerHTML = item.name
+                document.getElementById('modaltitle-new').innerHTML = item.name + (item.owner ? ' (' + item.owner + ')' : '')
                 document.getElementById('modalsubtitle-new').innerHTML = "[" + item.sls.id + "] " +
                     item.subdistrict.name + ", " + item.village.name + ", " + item.sls.name
                 document.getElementById('business_id_new').value = item.id
