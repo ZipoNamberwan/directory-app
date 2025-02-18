@@ -219,8 +219,8 @@
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button> -->
+                                <span aria-hidden="true">&times;</span>
+                            </button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -449,7 +449,14 @@
                     areaDetail.sls
                 ].filter(value => value).join(", ");
 
-                document.getElementById('modalsubtitle').innerHTML = `[${areaDetail.long_code}] ${details}`;
+                const detailsArray = [
+                    `[${areaDetail.long_code}] ${details}`,
+                    item.initial_address && `Alamat awal: ${item.initial_address}`,
+                    item.kbli && `KBLI: ${item.kbli}`,
+                    item.category && `Kategori: ${item.category}`
+                ].filter(Boolean);
+
+                document.getElementById('modalsubtitle').innerHTML = detailsArray.join('<br>');
 
                 document.getElementById('business_id').value = item.id
 
@@ -579,7 +586,7 @@
                                 let selected = selectedvillage == String(element.id) ? 'selected' : '';
                                 $(villageSelector).append(
                                     `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
-                                    );
+                                );
                             });
                         }
                     });
@@ -612,7 +619,7 @@
                                 let selected = selectedsls == String(element.id) ? 'selected' : '';
                                 $(slsSelector).append(
                                     `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
-                                    );
+                                );
                             });
                         }
                     });

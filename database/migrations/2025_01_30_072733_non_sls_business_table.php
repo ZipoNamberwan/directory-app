@@ -15,8 +15,12 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('owner')->nullable();
-            $table->string('address')->nullable();
+            $table->text('address')->nullable();
             $table->string('source');
+            $table->text('initial_address')->nullable();
+            $table->string('category')->nullable();
+            $table->string('kbli')->nullable();
+            $table->string('idsbr')->nullable();
 
             $table->string('regency_id');
             $table->foreign('regency_id')->references('id')->on('regencies');

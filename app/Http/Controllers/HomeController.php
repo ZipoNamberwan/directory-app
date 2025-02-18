@@ -347,7 +347,7 @@ class HomeController extends Controller
                 $searchkeyword = $request->search['value'];
                 $records->where(function ($query) use ($searchkeyword) {
                     $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                        ->orWhereRaw('LOWER(sls_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+                        ->orWhereRaw('LOWER(owner) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
                 });
             }
         }
@@ -461,9 +461,7 @@ class HomeController extends Controller
                 $searchkeyword = $request->search['value'];
                 $records->where(function ($query) use ($searchkeyword) {
                     $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                        ->orWhereRaw('LOWER(village_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                        ->orWhereRaw('LOWER(subdistrict_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                        ->orWhereRaw('LOWER(regency_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+                        ->orWhereRaw('LOWER(owner) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
                 });
             }
         }

@@ -43,7 +43,12 @@ class BusinessJob implements ShouldQueue
                     'regency_id' => substr($record['idsls'], 0, 4),
                     'status_id' => 1,
                     'owner' => $record['nmpengusaha'],
-                    'source' => $record['sumber']
+                    'source' => $record['sumber'],
+                    'initial_address' => $record['Alamat'],
+                    'category' => $record['kategori'],
+                    'kbli' => $record['kbli'],
+                    'lat' => $record['latitude'],
+                    'long' => $record['longitude'],
                 ];
             } else {
                 $level = 'regency';
@@ -79,7 +84,11 @@ class BusinessJob implements ShouldQueue
                     'status_id' => 1,
                     'level' => $level,
                     'owner' => $record['nmpengusaha'],
-                    'source' => $record['sumber']
+                    'source' => $record['sumber'],
+                    'initial_address' => $record['Alamat'],
+                    'category' => $record['kategori'],
+                    'kbli' => $record['kbli'],
+                    'idsbr' => $record['idsbr'],
                 ];
             }
         }

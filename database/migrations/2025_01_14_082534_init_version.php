@@ -56,6 +56,11 @@ return new class extends Migration
             $table->string('name');
             $table->string('owner')->nullable();
             $table->string('source');
+            $table->text('initial_address')->nullable();
+            $table->string('category')->nullable();
+            $table->string('kbli')->nullable();
+            $table->double('lat')->nullable();
+            $table->double('long')->nullable();
 
             $table->string('regency_id');
             $table->foreign('regency_id')->references('id')->on('regencies');
@@ -78,6 +83,7 @@ return new class extends Migration
             $table->index('subdistrict_id');
             $table->index('village_id');
             $table->index('sls_id');
+            $table->index('status_id');
             $table->fullText('name');
         });
 

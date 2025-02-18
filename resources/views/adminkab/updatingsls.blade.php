@@ -511,8 +511,18 @@
                 $('#updateDirectoryModal').modal('show');
 
                 document.getElementById('modaltitle').innerHTML = item.name + (item.owner ? ' (' + item.owner + ')' : '')
-                document.getElementById('modalsubtitle').innerHTML = "[" + item.sls.id + "] " +
+                
+                const areaDetail = "[" + item.sls.id + "] " +
                     item.subdistrict.name + ", " + item.village.name + ", " + item.sls.name
+                const detailsArray = [
+                    `${areaDetail}`,
+                    // item.initial_address && `Alamat awal: ${item.initial_address}`,
+                    item.kbli && `KBLI: ${item.kbli}`,
+                    item.category && `Kategori: ${item.category}`
+                ].filter(Boolean);
+
+                document.getElementById('modalsubtitle').innerHTML = detailsArray.join('<br>');
+
                 document.getElementById('business_id').value = item.id
 
                 document.getElementById('status_error').style.display = 'none'
@@ -525,8 +535,18 @@
                 $('#updateNewModal').modal('show');
 
                 document.getElementById('modaltitle-new').innerHTML = item.name + (item.owner ? ' (' + item.owner + ')' : '')
-                document.getElementById('modalsubtitle-new').innerHTML = "[" + item.sls.id + "] " +
+                
+                const areaDetail = "[" + item.sls.id + "] " +
                     item.subdistrict.name + ", " + item.village.name + ", " + item.sls.name
+                const detailsArray = [
+                    `${areaDetail}`,
+                    // item.initial_address && `Alamat awal: ${item.initial_address}`,
+                    item.kbli && `KBLI: ${item.kbli}`,
+                    item.category && `Kategori: ${item.category}`
+                ].filter(Boolean);
+
+                document.getElementById('modalsubtitle-new').innerHTML = detailsArray.join('<br>');
+
                 document.getElementById('business_id_new').value = item.id
 
                 document.getElementById('status_error_new').style.display = 'none'
