@@ -59,8 +59,8 @@ return new class extends Migration
             $table->text('initial_address')->nullable();
             $table->string('category')->nullable();
             $table->string('kbli')->nullable();
-            $table->double('lat', 4, 10)->nullable();
-            $table->double('long', 4, 10)->nullable();
+            $table->string('lat')->nullable();
+            $table->string('long')->nullable();
 
             $table->string('regency_id');
             $table->foreign('regency_id')->references('id')->on('regencies');
