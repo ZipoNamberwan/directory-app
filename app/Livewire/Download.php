@@ -5,12 +5,15 @@ namespace App\Livewire;
 use App\Exports\NonSlsBusinessExport;
 use App\Exports\SlsBusinessExport;
 use App\Jobs\AssignmentNotificationJob;
+use App\Jobs\BusinessExportJob;
 use App\Models\AssignmentStatus;
+use App\Models\SlsBusiness;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Illuminate\Support\Str;
+use League\Csv\Writer;
 
 class Download extends Component
 {
@@ -22,6 +25,7 @@ class Download extends Component
 
     public function download()
     {
+
         $userId = Auth::id();
         $typeKey = $this->type === 'sls' ? 'download-sls-business' : 'download-non-sls-business';
 
@@ -48,16 +52,13 @@ class Download extends Component
         ]);
 
         $regencyId = User::find($userId)->regency_id;
-        $exportClass = $this->type === 'sls' ? SlsBusinessExport::class : NonSlsBusinessExport::class;
 
-        (new $exportClass($regencyId, $uuid))
-            ->store("{$uuid}.xlsx")
-            ->chain([new AssignmentNotificationJob($uuid)]);
+        BusinessExportJob::dispatch($regencyId, $uuid, $typeKey);
     }
 
     public function downloadExport()
     {
-        return Storage::download($this->uuid . '.xlsx');
+        return Storage::download($this->uuid . '.csv');
     }
 
     public function updateExportProgress()
