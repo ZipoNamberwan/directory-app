@@ -43,3 +43,12 @@
 
         php_server
 }
+
+{$SERVER_NAME:cathajatim.id} {
+       root * public/
+       encode zstd br gzip
+       reverse_proxy localhost:8000
+       {$CADDY_SERVER_EXTRA_DIRECTIVES}
+
+       php_server
+}
