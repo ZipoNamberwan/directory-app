@@ -26,8 +26,8 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('adminprov');
         });
 
-        if (config('app.env') === 'production') {
-            URL::forceScheme('https');
-        }
+        // if (config('app.env') === 'production') {
+        //     URL::forceScheme('https');
+        // }
     }
 }
