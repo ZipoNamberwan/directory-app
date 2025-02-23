@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\NonSlsBusinessExport;
+use App\Exports\SlsBusinessExport;
 use App\Models\Regency;
 use App\Models\SlsBusiness;
 use App\Models\Status;

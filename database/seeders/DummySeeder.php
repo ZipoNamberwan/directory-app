@@ -18,6 +18,7 @@ class DummySeeder extends Seeder
         Role::create(['name' => 'adminkab']);
         Role::create(['name' => 'pcl']);
         Role::create(['name' => 'pml']);
+        Role::create(['name' => 'operator']);
 
         $pcl = User::create([
             'username' => 'pcl01@gmail.com',

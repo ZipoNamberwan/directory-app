@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('assignment_status', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->enum('status', ['start', 'loading', 'success', 'failed', 'success with error']);
-            $table->enum('type', ['export', 'import']);
+            $table->enum('type', ['export', 'import', 'download-sls-business', 'download-non-sls-business', 'import-business']);
             $table->foreignUuid('user_id')->constrained('users');
             $table->text('message')->nullable();
             $table->timestamps();

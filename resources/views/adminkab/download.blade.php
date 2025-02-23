@@ -15,11 +15,6 @@
                         <p class="text-sm mb-0">
                             <span>Menu ini digunakan untuk melakukan unduh direktori usaha</span>
                         </p>
-                        <p class="text-sm mb-0">
-                            <span>Karena besarnya data yang perlu diproses, proses download direktori usaha akan melalui
-                                proses antrian. Sehingga data mungkin akan diproses beberapa waktu setelah upload.
-                                Perkiraan waktu yang dibutuhkan 1000 record adalah 1 detik</span>
-                        </p>
                     </div>
                     <div class="card-body p-3">
 
@@ -27,17 +22,39 @@
                             <div class="col-md-6 col-sm-12 p-2">
                                 <div class="bg-light p-4 rounded">
                                     <h6 class="mb-3 d-flex align-items-center">
-                                        <span class="badge bg-info me-2">1</span>
-                                        Generate Template
+                                        <span class="badge bg-success me-2">*</span>
+                                        Unduh Direktori Sampai Level SLS
                                     </h6>
                                     <p class="text-muted small mb-3">
-                                        Menu ini digunakan untuk membuat template assignment. Proses pembuatan template akan
-                                        masuk antrian, sehingga mungkin akan memakan waktu beberapa saat.
+                                        Menu ini digunakan untuk mengunduh raw data <strong>direktori usaha sampai level
+                                            SLS</strong>. Karena besarnya data yang perlu diproses, download direktori usaha
+                                        akan melalui
+                                        antrian. Sehingga data mungkin akan diproses beberapa waktu setelah upload.
+                                        Perkiraan waktu yang dibutuhkan untuk memproses 1000 record adalah 1 detik.
                                     </p>
                                     <p class="text-muted small mb-3">
                                         Tombol status digunakan untuk melihat status proses unduh data.
                                     </p>
-
+                                    @livewire('download', ['type' => 'sls', 'color' => 'success'])
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-sm-12 p-2">
+                                <div class="bg-light p-4 rounded">
+                                    <h6 class="mb-3 d-flex align-items-center">
+                                        <span class="badge bg-danger me-2">*</span>
+                                        Unduh Direktori Tidak Sampai Level SLS
+                                    </h6>
+                                    <p class="text-muted small mb-3">
+                                        Menu ini digunakan untuk mengunduh raw data <strong>direktori usaha tidak sampai
+                                            level SLS</strong>. Karena besarnya data yang perlu diproses, download direktori
+                                        usaha akan melalui
+                                        antrian. Sehingga data mungkin akan diproses beberapa waktu setelah upload.
+                                        Perkiraan waktu yang dibutuhkan untuk memproses 1000 record adalah 1 detik.
+                                    </p>
+                                    <p class="text-muted small mb-3">
+                                        Tombol status digunakan untuk melihat status proses unduh data.
+                                    </p>
+                                    @livewire('download', ['type' => 'non-sls', 'color' => 'danger'])
                                 </div>
                             </div>
                         </div>

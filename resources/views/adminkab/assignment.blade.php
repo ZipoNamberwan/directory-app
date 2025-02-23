@@ -12,9 +12,9 @@
         <div class="col-lg-12 mb-lg-0 mb-4">
             <div class="card z-index-2 h-100">
                 <div class="card-header pb-0 pt-3 bg-transparent">
-                    <h6 class="text-capitalize">Assignment Direktori Usaha</h6>
+                    <h6 class="text-capitalize">Assignment Direktori Usaha Sampai Level SLS</h6>
                     <p class="text-sm mb-0">
-                        <span>Menu ini digunakan untuk melakukan assignment direktori usaha</span>
+                        <span>Menu ini digunakan untuk melakukan assignment <strong>direktori usaha sampai level SLS</strong></span>
                     </p>
                     <p class="text-sm mb-0">
                         <span>Karena besarnya data yang perlu diproses, proses download template dan upload assignment akan melalui proses antrian. Sehingga data assignment mungkin akan diproses beberapa waktu setelah upload</span>
