@@ -42,7 +42,7 @@ class UserController extends Controller
             'firstname' => 'required',
             'email' => 'required|email|unique:users,email',
             'password' => ['required', Password::min(8)->mixedCase()],
-            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl'])],
+            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl', 'operator'])],
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['regency'] = 'required';
@@ -96,7 +96,7 @@ class UserController extends Controller
                 Rule::unique('users')->ignore($id),
             ],
             'password' => ['required', Password::min(8)->mixedCase()],
-            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl'])],
+            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl', 'operator'])],
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['regency'] = 'required';

@@ -69,6 +69,12 @@
                                     <label class="custom-control-label" for="customRadio1">Admin Kab</label>
                                 </div>
                                 <div class="form-check">
+                                    <input class="form-check-input" type="radio" value="operator" name="role"
+                                        id="customRadio2"
+                                        {{ old('role', $user != null ? $user->hasRole('operator') : '') == 'operator' ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="customRadio2">Operator/Organik</label>
+                                </div>
+                                <div class="form-check">
                                     <input class="form-check-input" type="radio" value="pml" name="role"
                                         id="customRadio2"
                                         {{ old('role', $user != null ? $user->hasRole('pml') : '') == 'pml' ? 'checked' : '' }}>

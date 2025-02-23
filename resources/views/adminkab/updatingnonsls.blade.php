@@ -93,11 +93,11 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    {{-- <div class="col-md-3">
                         <label class="form-control-label" for="search">Nama <span class="text-danger">*</span></label>
                         <input disabled type="text" name="search" class="form-control mb-0" id="search"
                             placeholder="Cari...">
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>
@@ -140,8 +140,8 @@
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                                                                                                <span aria-hidden="true">&times;</span>
-                                                                                                            </button> -->
+                                                                                                                                        <span aria-hidden="true">&times;</span>
+                                                                                                                                    </button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -351,7 +351,7 @@
                 let village = document.getElementById('village').value;
 
                 // TODO
-                document.getElementById("search").value = "";
+                // document.getElementById("search").value = "";
                 // $('#status').val(null).trigger('change');
 
                 if (level === 'regency') {
@@ -442,24 +442,34 @@
                         document.getElementById('slsUpdateLabel').innerHTML = "[" + item.sls.short_code + "] " + item.sls.name
                         document.getElementById('areaUpdateLabel').innerHTML = 'Wilayah'
                         document.getElementById('slsColFiled').style.display = 'block'
+                        addressCol.style.display = "block";
+
                     } else {
                         addressCol.style.display = "block";
 
-                        if (level === "regency") {
-                            subdistrictCol.style.display = "block";
-                            villageCol.style.display = "block";
-                            slsCol.style.display = "block";
-                            if (roles.includes("adminprov")) {
-                                loadSubdistrict('Update', item.regency_id, null)
-                            }
-                        } else if (level === "subdistrict") {
-                            villageCol.style.display = "block";
-                            slsCol.style.display = "block";
-                            loadVillage('Update', item.subdistrict_id, null)
-                        } else if (level === "village") {
-                            slsCol.style.display = "block";
-                            loadSls('Update', item.village_id, null)
+                        subdistrictCol.style.display = "block";
+                        villageCol.style.display = "block";
+                        slsCol.style.display = "block";
+
+                        if (roles.includes("adminprov")) {
+                            loadSubdistrict('Update', item.regency_id, item.subdistrict_id)
                         }
+
+                        // if (level === "regency") {
+                        //     subdistrictCol.style.display = "block";
+                        //     villageCol.style.display = "block";
+                        //     slsCol.style.display = "block";
+                        //     if (roles.includes("adminprov")) {
+                        //         loadSubdistrict('Update', item.regency_id, null)
+                        //     }
+                        // } else if (level === "subdistrict") {
+                        //     villageCol.style.display = "block";
+                        //     slsCol.style.display = "block";
+                        //     loadVillage('Update', item.subdistrict_id, null)
+                        // } else if (level === "village") {
+                        //     slsCol.style.display = "block";
+                        //     loadSls('Update', item.village_id, null)
+                        // }
                     }
                 }
             }
@@ -474,23 +484,31 @@
                 const level = selectedBusiness.level;
 
                 if (isChecked) {
-                    if (level === "regency") {
-                        subdistrictCol.style.display = "block";
-                        villageCol.style.display = "block";
-                        slsCol.style.display = "block";
-                        if (roles.includes("adminprov")) {
-                            loadSubdistrict('Update', selectedBusiness.regency_id, null)
-                        }
-                    } else if (level === "subdistrict") {
-                        villageCol.style.display = "block";
-                        slsCol.style.display = "block";
-                        loadVillage('Update', selectedBusiness.subdistrict_id, null)
-                    } else if (level === "village") {
-                        slsCol.style.display = "block";
-                        loadSls('Update', selectedBusiness.village_id, null)
+                    subdistrictCol.style.display = "block";
+                    villageCol.style.display = "block";
+                    slsCol.style.display = "block";
+                    
+                    if (roles.includes("adminprov")) {
+                        loadSubdistrict('Update', selectedBusiness.regency_id, null)
                     }
+
+                    // if (level === "regency") {
+                    //     subdistrictCol.style.display = "block";
+                    //     villageCol.style.display = "block";
+                    //     slsCol.style.display = "block";
+                    //     if (roles.includes("adminprov")) {
+                    //         loadSubdistrict('Update', selectedBusiness.regency_id, null)
+                    //     }
+                    // } else if (level === "subdistrict") {
+                    //     villageCol.style.display = "block";
+                    //     slsCol.style.display = "block";
+                    //     loadVillage('Update', selectedBusiness.subdistrict_id, null)
+                    // } else if (level === "village") {
+                    //     slsCol.style.display = "block";
+                    //     loadSls('Update', selectedBusiness.village_id, null)
+                    // }
                 } else {
-                    addressCol.style.display = "none";
+                    // addressCol.style.display = "none";
                     subdistrictCol.style.display = "none";
                     villageCol.style.display = "none";
                     slsCol.style.display = "none";
@@ -621,7 +639,7 @@
                 const isDisabled = (id == 0 || id == null);
 
                 document.getElementById('status').disabled = isDisabled;
-                document.getElementById('search').disabled = isDisabled;
+                // document.getElementById("search").disabled = isDisabled;
             }
 
             function getFilterUrl(filter) {
@@ -739,11 +757,10 @@
                 renderTable()
             }
 
-            const searchInput = document.getElementById("search");
-            searchInput.addEventListener("input", debounce((event) => {
-                searchByKeyword(event.target.value);
-            }, 500));
-
+            // const searchInput = document.getElementById("search");
+            // searchInput.addEventListener("input", debounce((event) => {
+            //     searchByKeyword(event.target.value);
+            // }, 500));
 
             let table = new DataTable('#myTable', {
                 order: [],

@@ -17,7 +17,7 @@ class RegencySeeder extends Seeder
         Status::create(['name' => 'Belum Dimutakhirkan', 'color' => 'secondary', 'order' => 1, 'code' => '-']);
         Status::create(['name' => 'Ada', 'color' => 'success', 'order' => 2, 'code' => '1']);
         Status::create(['name' => 'Tidak Ada', 'color' => 'danger', 'order' => 3, 'code' => '2']);
-        Status::create(['name' => 'Pindah ke SLS lain', 'color' => 'danger', 'order' => 4, 'code' => '2']);
+        Status::create(['name' => 'Pindah ke SLS lain', 'color' => 'danger', 'order' => 4, 'code' => '3']);
         Status::create(['name' => 'Bukan Cakupan SE', 'color' => 'danger', 'order' => 5, 'code' => '7']);
         Status::create(['id' => 90, 'name' => 'Baru', 'color' => 'info', 'order' => 6, 'code' => '8']);
         // Status::create(['name' => 'Tidak Tahu', 'color' => 'danger', 'order' => 6, 'code' => '9']);

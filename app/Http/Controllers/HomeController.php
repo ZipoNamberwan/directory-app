@@ -133,7 +133,7 @@ class HomeController extends Controller
                 'statuses' => $statuses,
                 'subdistricts' => $subdistricts
             ]);
-        } else if ($user->hasRole('pml')) {
+        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $businessBase = NonSlsBusiness::where(['last_modified_by' => Auth::id()]);
             $total = (clone $businessBase)->count();
             $not_done = (clone $businessBase)->where(['status_id' => 1])->count();
@@ -250,7 +250,7 @@ class HomeController extends Controller
                 'id',
                 $user->slsBusiness()->select('village_id')->where('village_id', 'like', "{$subdistrict_id}%")->distinct()->pluck('village_id')
             )->get();
-        } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml')) {
+        } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml') || $user->hasRole('operator')) {
             $village = Village::where('subdistrict_id', $subdistrict_id)->get();
         }
 
@@ -266,7 +266,7 @@ class HomeController extends Controller
                 'id',
                 $user->slsBusiness()->select('sls_id')->where('sls_id', 'like', "{$village_id}%")->distinct()->pluck('sls_id')
             )->get();
-        } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml')) {
+        } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml') || $user->hasRole('operator')) {
             $sls = Sls::where('village_id', $village_id)->get();
         }
 
@@ -382,7 +382,7 @@ class HomeController extends Controller
 
         if ($user->hasRole('adminkab')) {
             $records = NonSlsBusiness::where('regency_id', $user->regency_id);
-        } else if ($user->hasRole('pml')) {
+        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             if ($request->pmltype == 'index') {
                 $records = NonSlsBusiness::where('last_modified_by', $user->id);
             } else {
@@ -475,6 +475,10 @@ class HomeController extends Controller
             $samples = $samples->orderByDesc($orderColumn);
         }
 
+        // $sql = vsprintf(str_replace('?', "'%s'", $samples->toSql()), $samples->getBindings());
+
+        // dd($sql);
+
         if ($request->length != -1) {
             $samples = $samples->skip($request->start ?? 0)
                 ->take($request->length ?? 10)->get();
@@ -549,7 +553,7 @@ class HomeController extends Controller
         $business->status_id = 90;
         $business->is_new = true;
         $business->pcl_id = $user->hasRole('pcl') ? $user->id : null;
-        $business->source = 'Tambah Baru';
+        $business->source = 'Hasil Lapangan';
         $business->save();
 
         return response()->json($business);

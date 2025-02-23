@@ -45,7 +45,7 @@ class AdminKabController extends Controller
         if ($user->hasRole('adminkab')) {
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
             return view('adminkab.updatingnonsls', ['regencies' => [], 'subdistricts' => $subdistricts, 'statuses' => $statuses]);
-        } else if ($user->hasRole('pml')) {
+        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
             return view('pml.updatingnonsls', ['regencies' => [], 'subdistricts' => $subdistricts, 'statuses' => $statuses]);
         } else if ($user->hasRole('adminprov')) {

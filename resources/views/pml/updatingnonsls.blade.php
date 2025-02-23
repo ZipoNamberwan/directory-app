@@ -219,8 +219,8 @@
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button> -->
+                                    <span aria-hidden="true">&times;</span>
+                                </button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -504,21 +504,26 @@
                         document.getElementById('slsUpdateLabel').innerHTML = "[" + item.sls.short_code + "] " + item.sls.name
                         document.getElementById('areaUpdateLabel').innerHTML = 'Wilayah'
                         document.getElementById('slsColFiled').style.display = 'block'
+                        addressCol.style.display = "block";
                     } else {
                         addressCol.style.display = "block";
 
-                        if (level === "regency") {
-                            subdistrictCol.style.display = "block";
-                            villageCol.style.display = "block";
-                            slsCol.style.display = "block";
-                        } else if (level === "subdistrict") {
-                            villageCol.style.display = "block";
-                            slsCol.style.display = "block";
-                            loadVillage('Update', item.subdistrict_id, null)
-                        } else if (level === "village") {
-                            slsCol.style.display = "block";
-                            loadSls('Update', item.village_id, null)
-                        }
+                        subdistrictCol.style.display = "block";
+                        villageCol.style.display = "block";
+                        slsCol.style.display = "block";
+
+                        // if (level === "regency") {
+                        //     subdistrictCol.style.display = "block";
+                        //     villageCol.style.display = "block";
+                        //     slsCol.style.display = "block";
+                        // } else if (level === "subdistrict") {
+                        //     villageCol.style.display = "block";
+                        //     slsCol.style.display = "block";
+                        //     loadVillage('Update', item.subdistrict_id, null)
+                        // } else if (level === "village") {
+                        //     slsCol.style.display = "block";
+                        //     loadSls('Update', item.village_id, null)
+                        // }
                     }
                 }
             }
@@ -533,20 +538,24 @@
                 const level = selectedBusiness.level;
 
                 if (isChecked) {
-                    if (level === "regency") {
-                        subdistrictCol.style.display = "block";
-                        villageCol.style.display = "block";
-                        slsCol.style.display = "block";
-                    } else if (level === "subdistrict") {
-                        villageCol.style.display = "block";
-                        slsCol.style.display = "block";
-                        loadVillage('Update', selectedBusiness.subdistrict_id, null)
-                    } else if (level === "village") {
-                        slsCol.style.display = "block";
-                        loadSls('Update', selectedBusiness.village_id, null)
-                    }
+                    subdistrictCol.style.display = "block";
+                    villageCol.style.display = "block";
+                    slsCol.style.display = "block";
+                    
+                    // if (level === "regency") {
+                    //     subdistrictCol.style.display = "block";
+                    //     villageCol.style.display = "block";
+                    //     slsCol.style.display = "block";
+                    // } else if (level === "subdistrict") {
+                    //     villageCol.style.display = "block";
+                    //     slsCol.style.display = "block";
+                    //     loadVillage('Update', selectedBusiness.subdistrict_id, null)
+                    // } else if (level === "village") {
+                    //     slsCol.style.display = "block";
+                    //     loadSls('Update', selectedBusiness.village_id, null)
+                    // }
                 } else {
-                    addressCol.style.display = "none";
+                    // addressCol.style.display = "none";
                     villageCol.style.display = "none";
                     slsCol.style.display = "none";
                 }
@@ -716,6 +725,7 @@
                             <div>
                                 <p style="font-size: 0.875rem;" class="mb-1">${item.name}${owner}</p>
                                 <p style="font-size: 0.7rem;" class="mb-2">Status: <span class="badge bg-gradient-${item.status.color}">${item.status.name}</span></p>
+                                ${item.source ? `<p style="font-size: 0.7rem;" class="mb-0">Sumber: ${item.source}</p>` : ""}                               
                                 ${item.sls_id ? `<p style="font-size: 0.7rem;" class="mb-0">[${areaDetail.long_code}] ${details}</p>` : ""}
                                 ${item.last_modified_by ? `<p style="font-size: 0.7rem;" class="mb-0">Terakhir diupdate oleh: ${item.modified_by.firstname}</p>` : ""}
                             </div>
@@ -737,9 +747,11 @@
                     error: function(xhr, status, error) {
                         const resultDiv = document.getElementById('directorylist');
                         resultDiv.innerHTML = `
-                        <div class="d-flex">
-                            <span class="mr-2">Gagal Menampilkan Sampel</span>
-                            <button onclick="loadSample(null)" class="btn btn-sm btn-outline-primary">Muat Ulang</button>
+                        <div>
+                            <p>
+                                <span class="mr-2 text-sm text-danger">Gagal Menampilkan Sampel</span>    
+                            </p>
+                            <button onclick="refresh()" class="btn btn-sm btn-outline-primary">Muat Ulang</button>
                         </div>`;
 
                         hideLoading()
@@ -834,13 +846,17 @@
             }
 
             function searchByKeyword(query) {
-                renderView(pagination.currentPage, pagination.pageLength)
+                renderView(pagination.currentPage - 1, pagination.pageLength)
             }
 
             const searchInput = document.getElementById("search");
             searchInput.addEventListener("input", debounce((event) => {
                 searchByKeyword(event.target.value);
             }, 500));
+
+            function refresh(){
+                renderView(pagination.currentPage - 1, pagination.pageLength)
+            }
         </script>
 
         <script>

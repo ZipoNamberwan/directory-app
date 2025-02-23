@@ -49,7 +49,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
 	});
 
-	Route::group(['middleware' => ['role:pml|adminkab|adminprov']], function () {
+	Route::group(['middleware' => ['role:pml|operator|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'updatePage'])->name('updating-non-sls');
 		Route::get('/tambah-direktori', [AdminKabController::class, 'showAddition'])->name('tambah-direktori');
 	});
