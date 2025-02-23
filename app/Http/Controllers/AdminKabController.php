@@ -25,6 +25,16 @@ class AdminKabController extends Controller
         return view('adminkab.assignment');
     }
 
+    public function showDownload()
+    {
+        return view('adminkab.download');
+    }
+
+    public function showAddition()
+    {
+        return view('adminkab.directory-addition');
+    }
+
     public function updatePage()
     {
         $statuses = Status::orderBy('order', 'asc')->get();

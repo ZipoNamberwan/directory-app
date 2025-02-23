@@ -77,6 +77,16 @@
                         <span class="nav-link-text ms-1">Tidak Sampai Level SLS</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ Route::currentRouteName() == 'tambah-direktori' ? 'active' : '' }}"
+                        href="{{ route('tambah-direktori') }}">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-plus text-info text-sm opacity-10"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Tambah Direktori Usaha</span>
+                    </a>
+                </li>
             @endhasrole
             @hasrole('adminkab')
                 <li class="nav-item mt-3">
@@ -90,6 +100,19 @@
                             <i class="fas fa-file-lines text-success text-sm opacity-10"></i>
                         </div>
                         <span class="nav-link-text ms-1">Assignment</span>
+                    </a>
+                </li>
+                <li class="nav-item mt-3">
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Unduh</h6>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'download') == true ? 'active' : '' }}"
+                        href="{{ route('download') }}">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-file text-warning text-sm opacity-10"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Unduh</span>
                     </a>
                 </li>
             @endhasrole

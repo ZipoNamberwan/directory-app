@@ -51,10 +51,12 @@ Route::group(['middleware' => 'auth'], function () {
 
 	Route::group(['middleware' => ['role:pml|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'updatePage'])->name('updating-non-sls');
+		Route::get('/tambah-direktori', [AdminKabController::class, 'showAddition'])->name('tambah-direktori');
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {
 		Route::get('/assignment', [AdminKabController::class, 'showAssignment'])->name('assignment');
+		Route::get('/download', [AdminKabController::class, 'showDownload'])->name('download');
 		Route::get('/report', [ReportController::class, 'index'])->name('report');
 	});
 
