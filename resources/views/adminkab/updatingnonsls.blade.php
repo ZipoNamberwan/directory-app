@@ -66,6 +66,7 @@
                         <label class="form-control-label">Kecamatan <span class="text-danger">*</span></label>
                         <select disabled id="subdistrict" name="subdistrict" class="form-control" data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Kecamatan -- </option>
+                            <option value="all"> Semua Kecamatan </option>
                             @foreach ($subdistricts as $subdistrict)
                                 <option value="{{ $subdistrict->id }}"
                                     {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
@@ -140,8 +141,8 @@
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                                                                                                                        <span aria-hidden="true">&times;</span>
-                                                                                                                                    </button> -->
+                                                                                                                                                    <span aria-hidden="true">&times;</span>
+                                                                                                                                                </button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -487,7 +488,7 @@
                     subdistrictCol.style.display = "block";
                     villageCol.style.display = "block";
                     slsCol.style.display = "block";
-                    
+
                     if (roles.includes("adminprov")) {
                         loadSubdistrict('Update', selectedBusiness.regency_id, null)
                     }
@@ -547,6 +548,11 @@
                                 `<option value="0" disabled selected> -- Pilih Desa -- </option>`);
                             $(slsSelector).empty().append(
                                 `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                            if (group == '') {
+                                $(subdistrictSelector).append(
+                                    `<option value="all">Semua Kecamatan</option>`
+                                );
+                            }
                             response.forEach(element => {
                                 let selected = selectedvillage == String(element.id) ? 'selected' : '';
                                 $(subdistrictSelector).append(
@@ -585,6 +591,11 @@
                                 `<option value="0" disabled selected> -- Pilih Desa -- </option>`);
                             $(slsSelector).empty().append(
                                 `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                            if (group == '') {
+                                $(villageSelector).append(
+                                    `<option value="all">Semua Desa</option>`
+                                );
+                            }
                             response.forEach(element => {
                                 let selected = selectedvillage == String(element.id) ? 'selected' : '';
                                 $(villageSelector).append(

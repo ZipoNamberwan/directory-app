@@ -392,35 +392,66 @@ class HomeController extends Controller
             $records = NonSlsBusiness::query();
         }
 
-        if ($request->level === 'regency') {
-            $records->where('level', 'regency');
+        // $regencyId = $user->regency->id ?? $request->regency;
+        // if ($request->level === 'regency') {
+        //     $records->where('level', 'regency');
 
-            if (!empty($request->regency) && $request->regency !== 'all') {
-                $records->where('regency_id', $request->regency);
-            }
-        } elseif ($request->level === 'subdistrict') {
-            $records->where('level', 'subdistrict');
+        //     if (!empty($request->regency) && $request->regency !== 'all') {
+        //         $records->where('regency_id', $request->regency);
+        //     }
+        // } elseif ($request->level === 'subdistrict') {
+        //     $records->where('level', 'subdistrict');
 
-            if (!empty($request->regency) && $request->regency !== 'all') {
-                $records->where('regency_id', $request->regency);
-            }
+        //     if (!empty($request->regency) && $request->regency !== 'all') {
+        //         $records->where('regency_id', $request->regency);
+        //     }
 
+        //     if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
+        //         $records->where('subdistrict_id', $request->subdistrict);
+        //     } else if ($request->subdistrict == 'all') {
+        //         $records->where('subdistrict_id', 'like', "{$regencyId}%");
+        //     }
+        // } elseif ($request->level === 'village') {
+        //     $records->where('level', 'village');
+
+        //     if (!empty($request->regency) && $request->regency !== 'all') {
+        //         $records->where('regency_id', $request->regency);
+        //     }
+
+        //     if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
+        //         $records->where('subdistrict_id', $request->subdistrict);
+        //     } else if ($request->subdistrict == 'all') {
+        //         $records->where('village_id', 'like', "{$regencyId}%");
+        //     }
+
+        //     if (!empty($request->village) && $request->village !== 'all') {
+        //         $records->where('village_id', $request->village);
+        //     } else if ($request->village == 'all') {
+        //         $records->where('village_id', 'like', "{$regencyId}%");
+        //     }
+        // }
+
+        $regencyId = $user->regency->id ?? $request->regency;
+
+        $records->where('level', $request->level);
+
+        if (!empty($request->regency) && $request->regency !== 'all') {
+            $records->where('regency_id', $request->regency);
+        }
+
+        if (in_array($request->level, ['subdistrict', 'village'])) {
             if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
                 $records->where('subdistrict_id', $request->subdistrict);
+            } elseif ($request->subdistrict == 'all') {
+                $records->where('subdistrict_id', 'like', "{$regencyId}%");
             }
-        } elseif ($request->level === 'village') {
-            $records->where('level', 'village');
+        }
 
-            if (!empty($request->regency) && $request->regency !== 'all') {
-                $records->where('regency_id', $request->regency);
-            }
-
-            if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
-                $records->where('subdistrict_id', $request->subdistrict);
-            }
-
+        if ($request->level === 'village') {
             if (!empty($request->village) && $request->village !== 'all') {
                 $records->where('village_id', $request->village);
+            } elseif ($request->village == 'all') {
+                $records->where('village_id', 'like', "{$regencyId}%");
             }
         }
 
