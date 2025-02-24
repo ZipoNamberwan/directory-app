@@ -525,69 +525,118 @@ class HomeController extends Controller
         ]);
     }
 
+    // public function updateNonSlsDirectory(Request $request, $id)
+    // {
+    //     $business = NonSlsBusiness::find($id);
+    //     $validationArray = [
+    //         'address' => 'required_if:status,2|required_if:status,90',
+    //         'name' => 'required_if:status,90',
+    //         'owner' => 'required_if:status,90',
+    //         'source' => 'required_if:status,90',
+    //     ];
+
+    //     if ($business->status_id != 90) {
+    //         $validationArray['status'] = 'required';
+    //     }
+
+    //     if ($business->sls == null) {
+    //         $validationArray['sls'] = 'required_if:status,2';
+    //     }
+    //     $switchChecked = filter_var($request->switch, FILTER_VALIDATE_BOOLEAN);
+    //     if ($switchChecked) {
+    //         $validationArray['sls'] = 'required';
+    //     }
+
+    //     $request->validate($validationArray);
+
+    //     if ($switchChecked || (!$switchChecked && is_null($business->sls_id))) {
+    //         if ($business->level === 'regency') {
+    //             $business->subdistrict_id = $request->subdistrict ?: null;
+    //         }
+    //         if (in_array($business->level, ['regency', 'subdistrict'])) {
+    //             $business->village_id = $request->village ?: null;
+    //         }
+    //         if (in_array($business->level, ['regency', 'subdistrict', 'village'])) {
+    //             $business->sls_id = $request->sls ?: null;
+    //         }
+    //     }
+
+    //     if ($request->status == "2" || $business->status_id == 90) {
+    //         $business->address = $request->address;
+    //     } else {
+    //         $business->address = null;
+
+    //         if ($business->level === 'regency') {
+    //             $business->subdistrict_id = null;
+    //             $business->village_id = null;
+    //             $business->sls_id = null;
+    //         } elseif ($business->level === 'subdistrict') {
+    //             $business->village_id = null;
+    //             $business->sls_id = null;
+    //         } elseif ($business->level === 'village') {
+    //             $business->sls_id = null;
+    //         }
+    //     }
+
+    //     $business->last_modified_by = Auth::id();
+    //     $business->status_id = $request->status ?? $business->status_id;
+    //     if ($business->status_id == 90) {
+    //         $business->name = $request->name;
+    //         $business->owner = $request->owner;
+    //         $business->source = $request->source;
+    //     }
+
+    //     $business->save();
+
+    //     return response()->json($business);
+    // }
+
     public function updateNonSlsDirectory(Request $request, $id)
     {
+        //not included validation yet
         $business = NonSlsBusiness::find($id);
-        $validationArray = [
-            'address' => 'required_if:status,2|required_if:status,90',
-            'name' => 'required_if:status,90',
-            'owner' => 'required_if:status,90',
-            'source' => 'required_if:status,90',
-        ];
 
-        if ($business->status_id != 90) {
-            $validationArray['status'] = 'required';
-        }
+        if ($request->status) {
+            $business->status_id = $request->status;
 
-        if ($business->sls == null) {
-            $validationArray['sls'] = 'required_if:status,2';
-        }
-        $switchChecked = filter_var($request->switch, FILTER_VALIDATE_BOOLEAN);
-        if ($switchChecked) {
-            $validationArray['sls'] = 'required';
-        }
+            if ($request->status == 2 || $request->status == 90) {
+                //if found
+                if ($request->sls != null && $request->sls != "0") {
+                    $business->subdistrict_id = substr($request->sls, 0, 7);
+                    $business->village_id = substr($request->sls, 0, 10);
+                    $business->sls_id = $request->sls;
+                }
 
-        $request->validate($validationArray);
-
-        if ($switchChecked || (!$switchChecked && is_null($business->sls_id))) {
-            if ($business->level === 'regency') {
-                $business->subdistrict_id = $request->subdistrict ?: null;
+                $business->address = $request->address;
+            } else {
+                //if not found
+                if ($business->level === 'regency') {
+                    $business->subdistrict_id = null;
+                    $business->village_id = null;
+                    $business->sls_id = null;
+                } elseif ($business->level === 'subdistrict') {
+                    $business->village_id = null;
+                    $business->sls_id = null;
+                } elseif ($business->level === 'village') {
+                    $business->sls_id = null;
+                }
+                $business->address = null;
             }
-            if (in_array($business->level, ['regency', 'subdistrict'])) {
-                $business->village_id = $request->village ?: null;
-            }
-            if (in_array($business->level, ['regency', 'subdistrict', 'village'])) {
-                $business->sls_id = $request->sls ?: null;
-            }
-        }
-
-        if ($request->status == "2" || $business->status_id == 90) {
-            $business->address = $request->address;
         } else {
-            $business->address = null;
-
-            if ($business->level === 'regency') {
-                $business->subdistrict_id = null;
-                $business->village_id = null;
-                $business->sls_id = null;
-            } elseif ($business->level === 'subdistrict') {
-                $business->village_id = null;
-                $business->sls_id = null;
-            } elseif ($business->level === 'village') {
-                $business->sls_id = null;
+            //if edit new
+            if ($request->sls != null && $request->sls != "0") {
+                $business->subdistrict_id = substr($request->sls, 0, 7);
+                $business->village_id = substr($request->sls, 0, 10);
+                $business->sls_id = $request->sls;
             }
-        }
 
-        $business->last_modified_by = Auth::id();
-        $business->status_id = $request->status ?? $business->status_id;
-        if ($business->status_id == 90) {
             $business->name = $request->name;
             $business->owner = $request->owner;
+            $business->address = $request->address;
             $business->source = $request->source;
         }
 
         $business->save();
-
         return response()->json($business);
     }
 

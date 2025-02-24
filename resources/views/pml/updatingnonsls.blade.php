@@ -174,12 +174,9 @@
                             data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Status -- </option>
                             @foreach ($statuses as $status)
-                                @if ($status->name != 'Baru')
-                                    <option value="{{ $status->id }}"
-                                        {{ old('status') == $status->id ? 'selected' : '' }}>
-                                        [{{ $status->code }}] {{ $status->name }}
-                                    </option>
-                                @endif
+                                <option value="{{ $status->id }}" {{ old('status') == $status->id ? 'selected' : '' }}>
+                                    [{{ $status->code }}] {{ $status->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -195,7 +192,8 @@
             <div class="card-header pb-0">
                 <div class="d-flex align-items-center">
                     <p class="mb-0">Daftar Direktori Tidak Sampai Level SLS</p>
-                    <!-- <button id="add-button" onclick="openAddModal()" class="btn btn-primary btn-sm ms-auto p-2 m-0">Tambah</button> -->
+                    <button id="add-button" onclick="openAddModal()"
+                        class="btn btn-primary btn-sm ms-auto p-2 m-0">Tambah</button>
                 </div>
             </div>
             <div class="card-body">
@@ -218,11 +216,8 @@
                             <h5 id="modaltitle">Modal title</h5>
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
-                        <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button> -->
                     </div>
-                    <input type="hidden" id="business_id" />
+                    <input type="hidden" id="businessId" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
                         <div class="row">
                             <div id="statusCol" class="col-12">
@@ -237,11 +232,29 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div id="nameCol" class="col-12">
+                                <label class="form-control-label" for="nameUpdate">Nama Usaha <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="nameUpdate" class="form-control mb-0" id="nameUpdate"
+                                    placeholder="Nama Usaha">
+                            </div>
+                            <div id="ownerCol" class="col-12">
+                                <label class="form-control-label" for="ownerUpdate">Pemilik Usaha <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="ownerUpdate" class="form-control mb-0" id="ownerUpdate"
+                                    placeholder="Pemilik Usaha">
+                            </div>
                             <div id="addressCol" class="col-12">
                                 <label class="form-control-label" for="addressUpdate">Alamat Lengkap <span
                                         class="text-danger">*</span></label>
                                 <input type="text" name="addressUpdate" class="form-control mb-0" id="addressUpdate"
                                     placeholder="Alamat Lengkap">
+                            </div>
+                            <div id="sourceCol" class="col-12">
+                                <label class="form-control-label" for="sourceUpdate">Sumber Data <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="sourceUpdate" class="form-control mb-0" id="sourceUpdate"
+                                    placeholder="Sumber Data">
                             </div>
                             <div id="slsColFiled" class="col-12 my-2">
                                 <label class="form-control-label" id="areaUpdateLabel"></label>
@@ -296,6 +309,117 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="addDirectoryModal" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header pb-1">
+                        <div>
+                            <h5 id="modaltitle">Tambah Usaha</h5>
+                            <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Menu tambah usaha
+                                baru</span>
+                        </div>
+                        <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> -->
+                    </div>
+                    <div class="modal-body pt-0 mt-2" style="height: auto;">
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="form-control-label" for="nameAdd">Nama Usaha <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="nameAdd" class="form-control mb-0" id="nameAdd"
+                                    placeholder="Nama Usaha">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label" for="ownerAdd">Nama Pemilik/Pengusaha <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="ownerAdd" class="form-control mb-0" id="ownerAdd"
+                                    placeholder="Nama Pemilik/Pengusaha">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label" for="addressAdd">Alamat Lengkap <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="addressAdd" class="form-control mb-0" id="addressAdd"
+                                    placeholder="Alamat Lengkap">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label" for="sourceAdd">Sumber <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="sourceAdd" class="form-control mb-0" id="sourceAdd"
+                                    placeholder="Sumber Data">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label">Kecamatan <span class="text-danger">*</span></label>
+                                <select id="subdistrictAdd" name="subdistrictAdd" class="form-control"
+                                    data-toggle="select">
+                                    <option value="0" disabled selected> -- Pilih Kecamatan -- </option>
+                                    @foreach ($subdistricts as $subdistrict)
+                                        <option value="{{ $subdistrict->id }}"
+                                            {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
+                                            [{{ $subdistrict->short_code }}] {{ $subdistrict->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label">Desa <span class="text-danger">*</span></label>
+                                <select id="villageAdd" name="villageAdd" class="form-control" data-toggle="select"
+                                    name="village"></select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label">SLS <span class="text-danger">*</span></label>
+                                <select id="slsAdd" name="slsAdd" class="form-control"
+                                    data-toggle="select"></select>
+                            </div>
+                        </div>
+
+                        <div id="add-error">
+                            <p class="error-feedback mb-0 mt-2">
+                                Ada yang Belum diisi
+                            </p>
+                        </div>
+                        <div>
+                            <p id="loading-add" style="visibility: hidden;" class="text-warning mt-3">Loading...</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer pt-0">
+                        <button type="button" class="btn btn-secondary mb-0" data-bs-dismiss="modal">Batal</button>
+                        <button onclick="onAdd()" type="button" class="btn btn-primary mb-0">Simpan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header pb-1">
+                        <div>
+                            <h5>Hapus Usaha Berikut?</h5>
+                        </div>
+                    </div>
+                    <div class="modal-body pt-0 mt-2" style="height: auto;">
+                        <div class="row">
+                            <div class="col-12">
+                                <h4 id="delete-name"></h4>
+                                <p style="font-size: 0.875rem;" id="delete-area"></p>
+                            </div>
+                        </div>
+                        <input type="hidden" id="id-hidden" name="id-hidden">
+                        <div>
+                            <p id="loading-delete" class="text-warning mt-3">Loading...</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer pt-0">
+                        <button type="button" class="btn btn-secondary mb-0" data-bs-dismiss="modal">Batal</button>
+                        <button onclick="onDelete()" type="button" class="btn btn-danger mb-0">Hapus</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         @include('layouts.footers.auth.footer')
     </div>
 
@@ -342,6 +466,22 @@
                     selector: '#slsUpdate',
                     placeholder: 'Pilih SLS'
                 },
+                {
+                    selector: '#regencyAdd',
+                    placeholder: 'Pilih Kabupaten'
+                },
+                {
+                    selector: '#subdistrictAdd',
+                    placeholder: 'Pilih Kecamatan'
+                },
+                {
+                    selector: '#villageAdd',
+                    placeholder: 'Pilih Desa'
+                },
+                {
+                    selector: '#slsAdd',
+                    placeholder: 'Pilih SLS'
+                },
             ];
 
             selectConfigs.forEach(({
@@ -381,6 +521,15 @@
                 },
                 '#villageUpdate': () => {
                     loadSls('Update', null, null);
+                },
+                '#regencyAdd': () => {
+                    loadSubdistrict('Add', null, null);
+                },
+                '#subdistrictAdd': () => {
+                    loadVillage('Add', null, null);
+                },
+                '#villageAdd': () => {
+                    loadSls('Add', null, null);
                 },
                 '#statusUpdate': () => {
                     updateInputStates(selectedBusiness);
@@ -458,7 +607,7 @@
 
                 document.getElementById('modalsubtitle').innerHTML = detailsArray.join('<br>');
 
-                document.getElementById('business_id').value = item.id
+                document.getElementById('businessId').value = item.id
 
                 document.getElementById('update-error').style.display = 'none'
 
@@ -470,7 +619,42 @@
                 updateInputStates(item)
             }
 
+            function openAddModal() {
+                $('#addDirectoryModal').modal('show');
+
+                document.getElementById('nameAdd').value = null
+                document.getElementById('ownerAdd').value = null
+                document.getElementById('addressAdd').value = null
+                document.getElementById('sourceAdd').value = null
+
+                $('#regencyAdd').val(null).trigger('change');
+                $('#subdistrictAdd').val(null).trigger('change');
+                $('#villageAdd').val(null).trigger('change');
+                $('#slsAdd').val(null).trigger('change');
+
+                document.getElementById('add-error').style.display = 'none'
+                document.getElementById('loading-add').style.display = 'none'
+
+            }
+
+            function onDeleteModal(itemString) {
+                const item = JSON.parse(itemString.getAttribute('data-row'));
+                event.stopPropagation()
+                $('#deleteModal').modal('show');
+                document.getElementById('loading-delete').style.visibility = 'hidden'
+
+                $('#deleteModal').modal('show');
+                document.getElementById('id-hidden').value = item.id;
+                document.getElementById('delete-name').innerHTML = item.name;
+                document.getElementById('delete-area').innerHTML = "[" + item.sls.long_code + "] " +
+                    item.subdistrict.name + ", " + item.village.name + ", " + item.sls.name;
+            }
+
             function updateInputStates(item) {
+                const statusCol = document.getElementById("statusCol");
+                const nameCol = document.getElementById("nameCol");
+                const ownerCol = document.getElementById("ownerCol");
+                const sourceCol = document.getElementById("sourceCol");
                 const statusUpdate = document.getElementById("statusUpdate");
                 const addressCol = document.getElementById("addressCol");
                 const subdistrictCol = document.getElementById("subdistrictCol");
@@ -484,7 +668,7 @@
                 document.getElementById('slsColFiled').style.display = 'none'
                 document.getElementById('switchArea').checked = false
 
-                const isActive = statusUpdate.value === "2";
+                const isActive = statusUpdate.value === "2" || item.status.id == 90;
                 const level = item.level;
 
                 // Default all inputs to be hidden
@@ -492,6 +676,10 @@
                 subdistrictCol.style.display = "none";
                 villageCol.style.display = "none";
                 slsCol.style.display = "none";
+                statusCol.style.display = item.status.id === 90 ? "none" : "block";
+                nameCol.style.display = item.status.id != 90 ? "none" : "block";
+                ownerCol.style.display = item.status.id != 90 ? "none" : "block";
+                sourceCol.style.display = item.status.id != 90 ? "none" : "block";
 
                 document.getElementById('addressUpdate').value = item.address
 
@@ -505,25 +693,23 @@
                         document.getElementById('areaUpdateLabel').innerHTML = 'Wilayah'
                         document.getElementById('slsColFiled').style.display = 'block'
                         addressCol.style.display = "block";
+
                     } else {
                         addressCol.style.display = "block";
 
                         subdistrictCol.style.display = "block";
                         villageCol.style.display = "block";
                         slsCol.style.display = "block";
+                    }
 
-                        // if (level === "regency") {
-                        //     subdistrictCol.style.display = "block";
-                        //     villageCol.style.display = "block";
-                        //     slsCol.style.display = "block";
-                        // } else if (level === "subdistrict") {
-                        //     villageCol.style.display = "block";
-                        //     slsCol.style.display = "block";
-                        //     loadVillage('Update', item.subdistrict_id, null)
-                        // } else if (level === "village") {
-                        //     slsCol.style.display = "block";
-                        //     loadSls('Update', item.village_id, null)
-                        // }
+                    if (item.status.id == 90) {
+                        document.getElementById('nameUpdate').value = item.name
+                        document.getElementById('ownerUpdate').value = item.owner
+                        document.getElementById('sourceUpdate').value = item.source
+                    } else {
+                        document.getElementById('nameUpdate').value = null
+                        document.getElementById('ownerUpdate').value = null
+                        document.getElementById('sourceUpdate').value = null
                     }
                 }
             }
@@ -542,20 +728,9 @@
                     villageCol.style.display = "block";
                     slsCol.style.display = "block";
 
-                    // if (level === "regency") {
-                    //     subdistrictCol.style.display = "block";
-                    //     villageCol.style.display = "block";
-                    //     slsCol.style.display = "block";
-                    // } else if (level === "subdistrict") {
-                    //     villageCol.style.display = "block";
-                    //     slsCol.style.display = "block";
-                    //     loadVillage('Update', selectedBusiness.subdistrict_id, null)
-                    // } else if (level === "village") {
-                    //     slsCol.style.display = "block";
-                    //     loadSls('Update', selectedBusiness.village_id, null)
-                    // }
                 } else {
                     // addressCol.style.display = "none";
+                    subdistrictCol.style.display = "none";
                     villageCol.style.display = "none";
                     slsCol.style.display = "none";
                 }
@@ -711,6 +886,12 @@
                                 </button>
                             `
 
+                            if (item.is_new) {
+                                button = button + `<button data-row='${escapeJsonForHtml(JSON.stringify(item))}' onclick="onDeleteModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="button">
+                                        <span class="btn-inner--icon"><i class="fas fa-trash-alt"></i></span>
+                                    </button>`
+                            }
+
                             const areaDetail = getLocationDetails(item)
                             const details = [
                                 areaDetail.subdistrict,
@@ -780,25 +961,76 @@
             }
 
             function validate() {
-                let statusValid = true;
+
                 const statusUpdate = document.getElementById('statusUpdate')?.value;
                 const addressUpdate = document.getElementById('addressUpdate')?.value;
                 const slsUpdate = document.getElementById('slsUpdate')?.value;
                 const switchChecked = document.getElementById('switchArea')?.checked || false;
                 const updateError = document.getElementById('update-error');
 
-                if (!statusUpdate || statusUpdate == 0) {
-                    statusValid = false;
-                } else if (statusUpdate == "2" || statusUpdate == "90") {
-                    if (!addressUpdate) {
-                        statusValid = false;
-                    } else if (slsUpdate) {
-                        statusValid = true;
-                    } else if (selectedBusiness.sls_id !== null && switchChecked) {
-                        statusValid = true;
-                    } else {
+                const nameUpdate = document.getElementById('nameUpdate')?.value;
+                const ownerUpdate = document.getElementById('ownerUpdate')?.value;
+                const sourceUpdate = document.getElementById('sourceUpdate')?.value;
+
+                let nameValid = true
+                let ownerValid = true
+                let sourceValid = true
+                let statusValid = true
+                let addressValid = true
+
+                if (selectedBusiness.status.id == 90) {
+                    if (!nameUpdate) {
+                        nameValid = false;
+                    }
+                    if (!ownerUpdate) {
+                        ownerValid = false;
+                    }
+                    if (!sourceUpdate) {
+                        sourceValid = false;
+                    }
+                } else {
+                    if (!statusUpdate) {
                         statusValid = false;
                     }
+                }
+
+                if (statusUpdate == "2" || selectedBusiness.status.id == 90) {
+                    if (!addressUpdate) {
+                        addressValid = false;
+                    }
+                }
+
+                let slsValid1 = true
+                if (statusUpdate === '2' && (!slsUpdate || slsUpdate == '0')) {
+                    if (selectedBusiness.sls_id != null && !switchChecked) {
+                        slsValid1 = true
+                    } else {
+                        slsValid1 = false
+                    }
+                }
+
+                let slsValid2 = true
+                if (selectedBusiness.status.id == 90 && switchChecked && (!slsUpdate || slsUpdate == '0')) {
+                    slsValid2 = false
+                }
+
+                let valid = statusValid && nameValid && ownerValid && sourceValid && addressValid && slsValid1 && slsValid2;
+                updateError.style.display = valid ? 'none' : 'block';
+                return valid;
+            }
+
+            function validateAdd() {
+                let statusValid = true;
+                const nameAdd = document.getElementById('nameAdd')?.value;
+                const ownerAdd = document.getElementById('ownerAdd')?.value;
+                const addressAdd = document.getElementById('addressAdd')?.value;
+                const sourceAdd = document.getElementById('sourceAdd')?.value;
+
+                const slsAdd = document.getElementById('slsAdd')?.value;
+                const updateError = document.getElementById('add-error');
+
+                if (!nameAdd || !ownerAdd || !addressAdd || !sourceAdd || !slsAdd || slsAdd == 0) {
+                    statusValid = false;
                 }
 
                 updateError.style.display = statusValid ? 'none' : 'block';
@@ -811,7 +1043,7 @@
                 if (validate()) {
                     document.getElementById('loading-save').style.visibility = 'visible'
 
-                    id = document.getElementById('business_id').value
+                    id = document.getElementById('businessId').value
                     var updateData = {
                         status: document.getElementById('statusUpdate').value,
                         subdistrict: document.getElementById('subdistrictUpdate').value,
@@ -819,7 +1051,9 @@
                         sls: document.getElementById('slsUpdate').value,
                         address: document.getElementById('addressUpdate').value,
                         switch: document.getElementById('switchArea').checked,
-                        new: false
+                        name: document.getElementById('nameUpdate').value,
+                        owner: document.getElementById('ownerUpdate').value,
+                        source: document.getElementById('sourceUpdate').value,
                     };
 
                     $.ajax({
@@ -840,6 +1074,57 @@
                         }
                     });
                 }
+            }
+
+            function onAdd() {
+                document.getElementById('add-error').style.display = 'none'
+                if (validateAdd()) {
+                    var addData = {
+                        name: document.getElementById('nameAdd').value,
+                        owner: document.getElementById('ownerAdd').value,
+                        address: document.getElementById('addressAdd').value,
+                        source: document.getElementById('sourceAdd').value,
+                        sls: document.getElementById('slsAdd').value,
+                    };
+                    $.ajax({
+                        url: `/non-sls-directory`,
+                        type: 'POST',
+                        data: addData,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            $('#addDirectoryModal').modal('hide');
+                            document.getElementById('loading-add').style.visibility = 'hidden'
+
+                            // renderTable()
+                            renderView(pagination.currentPage - 1, pagination.pageLength)
+                        },
+                        error: function(xhr, status, error) {
+                            document.getElementById('loading-add').style.visibility = 'hidden'
+                        }
+                    });
+                }
+            }
+
+            function onDelete() {
+                document.getElementById('loading-delete').style.visibility = 'visible'
+
+                $.ajax({
+                    url: `/non-sls-directory/${document.getElementById('id-hidden').value}`,
+                    type: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        renderView(pagination.currentPage - 1, pagination.pageLength)
+                        $('#deleteModal').modal('hide');
+                        document.getElementById('loading-delete').style.visibility = 'hidden'
+                    },
+                    error: function(xhr, status, error) {
+                        document.getElementById('loading-delete').innerHTML = 'Gagal menghapus usaha'
+                    }
+                });
             }
 
             function debounce(func, delay) {
@@ -1132,6 +1417,12 @@
             }
 
             pagination.hide()
+
+            function escapeJsonForHtml(jsonString) {
+                return jsonString
+                    .replace(/"/g, '&quot;') // Escape double quotes
+                    .replace(/'/g, '&#39;'); // Escape single quotes
+            }
         </script>
     @endpush
 @endsection

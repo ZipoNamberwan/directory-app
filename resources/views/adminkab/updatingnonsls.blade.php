@@ -138,7 +138,6 @@
                             <h5 id="modaltitle">Modal title</h5>
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
-                        <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> -->
                     </div>
                     <input type="hidden" id="businessId" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -895,7 +894,6 @@
                 let sourceValid = true
                 let statusValid = true
                 let addressValid = true
-                let slsValid = true
 
                 if (selectedBusiness.status.id == 90) {
                     if (!nameUpdate) {
@@ -919,14 +917,21 @@
                     }
                 }
 
-                // if (!((selectedBusiness.sls_id !== null && !switchChecked) ||
-                //         (switchChecked && !!slsUpdate) ||
-                //         (selectedBusiness.sls_id === null && !!slsUpdate) ||
-                //         (statusUpdate !== "2" && selectedBusiness.sls_id !== 90))) {
-                //     slsValid = false;
-                // }
+                let slsValid1 = true
+                if (statusUpdate === '2' && (!slsUpdate || slsUpdate == '0')) {
+                    if (selectedBusiness.sls_id != null && !switchChecked) {
+                        slsValid1 = true
+                    } else {
+                        slsValid1 = false
+                    }
+                }
 
-                let valid = statusValid && nameValid && ownerValid && sourceValid && addressValid && slsValid;
+                let slsValid2 = true
+                if (selectedBusiness.status.id == 90 && switchChecked && (!slsUpdate || slsUpdate == '0')) {
+                    slsValid2 = false
+                }
+
+                let valid = statusValid && nameValid && ownerValid && sourceValid && addressValid && slsValid1 && slsValid2;
                 updateError.style.display = valid ? 'none' : 'block';
                 return valid;
             }
