@@ -525,34 +525,74 @@ class HomeController extends Controller
         ]);
     }
 
-    public function updateDirectory(Request $request, $type, $id)
+    public function updateNonSlsDirectory(Request $request, $id)
     {
-        $business = ($type == 'sls') ? SlsBusiness::find($id) : NonSlsBusiness::find($id);
+        $business = NonSlsBusiness::find($id);
+        $validationArray = [
+            'status' => 'required',
+            'address' => 'required_if:status,2',
+        ];
 
-        if ($type !== 'sls') {
-            $switchChecked = filter_var($request->switch, FILTER_VALIDATE_BOOLEAN);
-
-            if ($switchChecked || (!$switchChecked && is_null($business->sls_id))) {
-                if ($business->level === 'regency') {
-                    $business->subdistrict_id = $request->subdistrict ?: null;
-                }
-                if (in_array($business->level, ['regency', 'subdistrict'])) {
-                    $business->village_id = $request->village ?: null;
-                }
-                if (in_array($business->level, ['regency', 'subdistrict', 'village'])) {
-                    $business->sls_id = $request->sls ?: null;
-                }
-            }
-
-            if ($request->status == "2") {
-                $business->address = $request->address;
-            } else {
-                $business->address = $business->sls_id = null;
-            }
-
-            $business->last_modified_by = Auth::id();
+        if ($business->sls == null) {
+            $validationArray['sls'] = 'required_if:status,2';
+        }
+        $switchChecked = filter_var($request->switch, FILTER_VALIDATE_BOOLEAN);
+        if ($switchChecked) {
+            $validationArray['sls'] = 'required';
         }
 
+        $request->validate($validationArray);
+
+        if ($switchChecked || (!$switchChecked && is_null($business->sls_id))) {
+            if ($business->level === 'regency') {
+                $business->subdistrict_id = $request->subdistrict ?: null;
+            }
+            if (in_array($business->level, ['regency', 'subdistrict'])) {
+                $business->village_id = $request->village ?: null;
+            }
+            if (in_array($business->level, ['regency', 'subdistrict', 'village'])) {
+                $business->sls_id = $request->sls ?: null;
+            }
+        }
+
+        if ($request->status == "2" || $request->status == "90") {
+            $business->address = $request->address;
+        } else {
+            $business->address = null;
+
+            if ($business->level === 'regency') {
+                $business->subdistrict_id = null;
+                $business->village_id = null;
+                $business->sls_id = null;
+            } elseif ($business->level === 'subdistrict') {
+                $business->village_id = null;
+                $business->sls_id = null;
+            } elseif ($business->level === 'village') {
+                $business->sls_id = null;
+            }
+        }
+
+        $business->last_modified_by = Auth::id();
+        $business->status_id = $request->status;
+
+        $business->save();
+
+        return response()->json($business);
+    }
+
+    public function updateSlsDirectory(Request $request, $id)
+    {
+        if ($request->new === "true") {
+            $request->validate([
+                'name' => 'required',
+            ]);
+        } else {
+            $request->validate([
+                'status' => 'required',
+            ]);
+        }
+
+        $business = SlsBusiness::find($id);
         if ($request->new === "true") {
             $business->name = $request->name;
         } else {
@@ -564,7 +604,7 @@ class HomeController extends Controller
         return response()->json($business);
     }
 
-    public function addDirectory(Request $request)
+    public function addSlsDirectory(Request $request)
     {
         $request->validate([
             'name' => 'required',
@@ -590,9 +630,51 @@ class HomeController extends Controller
         return response()->json($business);
     }
 
-    public function deleteDirectory(string $id)
+    public function addNonSlsDirectory(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'owner' => 'required',
+            'address' => 'required',
+            'source' => 'required',
+            'sls' => 'required',
+        ]);
+
+        $user = User::find(Auth::id());
+
+        $business = new NonSlsBusiness();
+        $business->name = $request->name;
+        $business->owner = $request->owner;
+        $business->address = $request->address;
+        $business->source = $request->source;
+
+        $business->initial_address = $request->address;
+        $business->is_new = true;
+        $business->status_id = 90;
+        $business->last_modified_by = $user->id;
+        $business->level = 'village';
+
+        $business->regency_id = substr($request->sls, 0, 4);
+        $business->subdistrict_id = substr($request->sls, 0, 7);
+        $business->village_id = substr($request->sls, 0, 10);
+        $business->sls_id = $request->sls;
+
+        $business->save();
+
+        return response()->json($business);
+    }
+
+    public function deleteSlsDirectory(string $id)
     {
         $business = SlsBusiness::find($id);
+        $business->delete();
+
+        return response()->json($business);
+    }
+
+    public function deleteNonSlsDirectory(string $id)
+    {
+        $business = NonSlsBusiness::find($id);
         $business->delete();
 
         return response()->json($business);

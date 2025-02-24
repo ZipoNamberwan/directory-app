@@ -219,8 +219,8 @@
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button> -->
+                                            <span aria-hidden="true">&times;</span>
+                                        </button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -541,7 +541,7 @@
                     subdistrictCol.style.display = "block";
                     villageCol.style.display = "block";
                     slsCol.style.display = "block";
-                    
+
                     // if (level === "regency") {
                     //     subdistrictCol.style.display = "block";
                     //     villageCol.style.display = "block";
@@ -780,7 +780,7 @@
             }
 
             function validate() {
-                let status_valid = true;
+                let statusValid = true;
                 const statusUpdate = document.getElementById('statusUpdate')?.value;
                 const addressUpdate = document.getElementById('addressUpdate')?.value;
                 const slsUpdate = document.getElementById('slsUpdate')?.value;
@@ -788,16 +788,21 @@
                 const updateError = document.getElementById('update-error');
 
                 if (!statusUpdate || statusUpdate == 0) {
-                    status_valid = false;
-                } else if (statusUpdate == "2" && (!addressUpdate || addressUpdate == 0 || !slsUpdate || slsUpdate == 0)) {
-                    if (selectedBusiness.sls_id !== null && !switchChecked) {
-                        return true; // No need to show error in this case
+                    statusValid = false;
+                } else if (statusUpdate == "2" || statusUpdate == "90") {
+                    if (!addressUpdate) {
+                        statusValid = false;
+                    } else if (slsUpdate) {
+                        statusValid = true;
+                    } else if (selectedBusiness.sls_id !== null && switchChecked) {
+                        statusValid = true;
+                    } else {
+                        statusValid = false;
                     }
-                    status_valid = false;
                 }
 
-                updateError.style.display = status_valid ? 'none' : 'block';
-                return status_valid;
+                updateError.style.display = statusValid ? 'none' : 'block';
+                return statusValid;
             }
 
             function onSave() {
@@ -854,7 +859,7 @@
                 searchByKeyword(event.target.value);
             }, 500));
 
-            function refresh(){
+            function refresh() {
                 renderView(pagination.currentPage - 1, pagination.pageLength)
             }
         </script>

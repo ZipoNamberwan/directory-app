@@ -85,12 +85,9 @@
                         <select disabled id="status" name="status" class="form-control" data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Status -- </option>
                             @foreach ($statuses as $status)
-                                @if ($status->name != 'Baru')
-                                    <option value="{{ $status->id }}"
-                                        {{ old('status') == $status->id ? 'selected' : '' }}>
-                                        [{{ $status->code }}] {{ $status->name }}
-                                    </option>
-                                @endif
+                                <option value="{{ $status->id }}" {{ old('status') == $status->id ? 'selected' : '' }}>
+                                    [{{ $status->code }}] {{ $status->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -106,7 +103,8 @@
             <div class="card-header pb-0">
                 <div class="d-flex align-items-center">
                     <p class="text-sm mb-0">Daftar Direktori</p>
-                    <!-- <button id="add-button" onclick="openAddModal()" class="btn btn-primary btn-sm ms-auto p-2 m-0">Tambah</button> -->
+                    <button id="add-button" onclick="openAddModal()"
+                        class="btn btn-primary btn-sm ms-auto p-2 m-0">Tambah</button>
                 </div>
             </div>
             <div class="card-body">
@@ -140,9 +138,7 @@
                             <h5 id="modaltitle">Modal title</h5>
                             <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
                         </div>
-                        <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                                                                                                                                    <span aria-hidden="true">&times;</span>
-                                                                                                                                                </button> -->
+                        <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> -->
                     </div>
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
@@ -219,6 +215,132 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="addDirectoryModal" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header pb-1">
+                        <div>
+                            <h5 id="modaltitle">Tambah Usaha</h5>
+                            <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Menu tambah usaha
+                                baru</span>
+                        </div>
+                        <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> -->
+                    </div>
+                    <input type="hidden" id="business_id" />
+                    <div class="modal-body pt-0 mt-2" style="height: auto;">
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="form-control-label" for="nameAdd">Nama Usaha <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="nameAdd" class="form-control mb-0" id="nameAdd"
+                                    placeholder="Nama Usaha">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label" for="ownerAdd">Nama Pemilik/Pengusaha <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="ownerAdd" class="form-control mb-0" id="ownerAdd"
+                                    placeholder="Nama Pemilik/Pengusaha">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label" for="addressAdd">Alamat Lengkap <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="addressAdd" class="form-control mb-0" id="addressAdd"
+                                    placeholder="Alamat Lengkap">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label" for="sourceAdd">Sumber <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="sourceAdd" class="form-control mb-0" id="sourceAdd"
+                                    placeholder="Sumber Data">
+                            </div>
+                            @hasrole('adminprov')
+                                <div class="col-12">
+                                    <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
+                                    <select id="regencyAdd" name="regencyAdd" class="form-control" data-toggle="select">
+                                        <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
+                                        @foreach ($regencies as $regency)
+                                            <option value="{{ $regency->id }}"
+                                                {{ old('regency') == $regency->id ? 'selected' : '' }}>
+                                                [{{ $regency->short_code }}] {{ $regency->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endhasrole
+                            <div class="col-12">
+                                <label class="form-control-label">Kecamatan <span class="text-danger">*</span></label>
+                                <select id="subdistrictAdd" name="subdistrictAdd" class="form-control"
+                                    data-toggle="select">
+                                    <option value="0" disabled selected> -- Pilih Kecamatan -- </option>
+                                    @foreach ($subdistricts as $subdistrict)
+                                        <option value="{{ $subdistrict->id }}"
+                                            {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
+                                            [{{ $subdistrict->short_code }}] {{ $subdistrict->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label">Desa <span class="text-danger">*</span></label>
+                                <select id="villageAdd" name="villageAdd" class="form-control" data-toggle="select"
+                                    name="village"></select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label">SLS <span class="text-danger">*</span></label>
+                                <select id="slsAdd" name="slsAdd" class="form-control"
+                                    data-toggle="select"></select>
+                            </div>
+                        </div>
+
+                        <div id="add-error">
+                            <p class="error-feedback mb-0 mt-2">
+                                Ada yang Belum diisi
+                            </p>
+                        </div>
+                        <div>
+                            <p id="loading-add" style="visibility: hidden;" class="text-warning mt-3">Loading...</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer pt-0">
+                        <button type="button" class="btn btn-secondary mb-0" data-bs-dismiss="modal">Batal</button>
+                        <button onclick="onAdd()" type="button" class="btn btn-primary mb-0">Simpan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header pb-1">
+                        <div>
+                            <h5>Hapus Usaha Berikut?</h5>
+                        </div>
+                    </div>
+                    <div class="modal-body pt-0 mt-2" style="height: auto;">
+                        <div class="row">
+                            <div class="col-12">
+                                <h4 id="delete-name"></h4>
+                                <p style="font-size: 0.875rem;" id="delete-area"></p>
+                            </div>
+                        </div>
+                        <input type="hidden" id="id-hidden" name="id-hidden">
+                        <div>
+                            <p id="loading-delete" class="text-warning mt-3">Loading...</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer pt-0">
+                        <button type="button" class="btn btn-secondary mb-0" data-bs-dismiss="modal">Batal</button>
+                        <button onclick="onDelete()" type="button" class="btn btn-danger mb-0">Hapus</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         @include('layouts.footers.auth.footer')
     </div>
 
@@ -278,6 +400,22 @@
                     selector: '#slsUpdate',
                     placeholder: 'Pilih SLS'
                 },
+                {
+                    selector: '#regencyAdd',
+                    placeholder: 'Pilih Kabupaten'
+                },
+                {
+                    selector: '#subdistrictAdd',
+                    placeholder: 'Pilih Kecamatan'
+                },
+                {
+                    selector: '#villageAdd',
+                    placeholder: 'Pilih Desa'
+                },
+                {
+                    selector: '#slsAdd',
+                    placeholder: 'Pilih SLS'
+                },
             ];
 
             selectConfigs.forEach(({
@@ -319,6 +457,15 @@
                 },
                 '#villageUpdate': () => {
                     loadSls('Update', null, null);
+                },
+                '#regencyAdd': () => {
+                    loadSubdistrict('Add', null, null);
+                },
+                '#subdistrictAdd': () => {
+                    loadVillage('Add', null, null);
+                },
+                '#villageAdd': () => {
+                    loadSls('Add', null, null);
                 },
                 '#statusUpdate': () => {
                     updateInputStates(selectedBusiness);
@@ -409,6 +556,37 @@
                 updateInputStates(item)
             }
 
+            function openAddModal() {
+                $('#addDirectoryModal').modal('show');
+
+                document.getElementById('nameAdd').value = null
+                document.getElementById('ownerAdd').value = null
+                document.getElementById('addressAdd').value = null
+                document.getElementById('sourceAdd').value = null
+
+                $('#regencyAdd').val(null).trigger('change');
+                $('#subdistrictAdd').val(null).trigger('change');
+                $('#villageAdd').val(null).trigger('change');
+                $('#slsAdd').val(null).trigger('change');
+
+                document.getElementById('add-error').style.display = 'none'
+                document.getElementById('loading-add').style.display = 'none'
+
+            }
+
+            function onDeleteModal(itemString) {
+                const item = JSON.parse(itemString.getAttribute('data-row'));
+                event.stopPropagation()
+                $('#deleteModal').modal('show');
+                document.getElementById('loading-delete').style.visibility = 'hidden'
+
+                $('#deleteModal').modal('show');
+                document.getElementById('id-hidden').value = item.id;
+                document.getElementById('delete-name').innerHTML = item.name;
+                document.getElementById('delete-area').innerHTML = "[" + item.sls.long_code + "] " +
+                    item.subdistrict.name + ", " + item.village.name + ", " + item.sls.name;
+            }
+
             function updateInputStates(item) {
                 const statusCol = document.getElementById("statusUpdate");
                 const addressCol = document.getElementById("addressCol");
@@ -453,7 +631,7 @@
                         slsCol.style.display = "block";
 
                         if (roles.includes("adminprov")) {
-                            loadSubdistrict('Update', item.regency_id, item.subdistrict_id)
+                            loadSubdistrict('Update', item.regency_id, null)
                         }
 
                         // if (level === "regency") {
@@ -698,7 +876,7 @@
             }
 
             function validate() {
-                let status_valid = true;
+                let statusValid = true;
                 const statusUpdate = document.getElementById('statusUpdate')?.value;
                 const addressUpdate = document.getElementById('addressUpdate')?.value;
                 const slsUpdate = document.getElementById('slsUpdate')?.value;
@@ -706,16 +884,39 @@
                 const updateError = document.getElementById('update-error');
 
                 if (!statusUpdate || statusUpdate == 0) {
-                    status_valid = false;
-                } else if (statusUpdate == "2" && (!addressUpdate || addressUpdate == 0 || !slsUpdate || slsUpdate == 0)) {
-                    if (selectedBusiness.sls_id !== null && !switchChecked) {
-                        return true; // No need to show error in this case
+                    statusValid = false;
+                } else if (statusUpdate == "2" || statusUpdate == "90") {
+                    if (!addressUpdate) {
+                        statusValid = false;
+                    } else if (slsUpdate) {
+                        statusValid = true;
+                    } else if (selectedBusiness.sls_id !== null && switchChecked) {
+                        statusValid = true;
+                    } else {
+                        statusValid = false;
                     }
-                    status_valid = false;
                 }
 
-                updateError.style.display = status_valid ? 'none' : 'block';
-                return status_valid;
+                updateError.style.display = statusValid ? 'none' : 'block';
+                return statusValid;
+            }
+
+            function validateAdd() {
+                let statusValid = true;
+                const nameAdd = document.getElementById('nameAdd')?.value;
+                const ownerAdd = document.getElementById('ownerAdd')?.value;
+                const addressAdd = document.getElementById('addressAdd')?.value;
+                const sourceAdd = document.getElementById('sourceAdd')?.value;
+
+                const slsAdd = document.getElementById('slsAdd')?.value;
+                const updateError = document.getElementById('add-error');
+
+                if (!nameAdd || !ownerAdd || !addressAdd || !sourceAdd || !slsAdd || slsAdd == 0) {
+                    statusValid = false;
+                }
+
+                updateError.style.display = statusValid ? 'none' : 'block';
+                return statusValid;
             }
 
             function onSave() {
@@ -732,7 +933,6 @@
                         sls: document.getElementById('slsUpdate').value,
                         address: document.getElementById('addressUpdate').value,
                         switch: document.getElementById('switchArea').checked,
-                        new: false
                     };
 
                     $.ajax({
@@ -754,6 +954,57 @@
                         }
                     });
                 }
+            }
+
+            function onAdd() {
+                document.getElementById('add-error').style.display = 'none'
+                if (validateAdd()) {
+                    var addData = {
+                        name: document.getElementById('nameAdd').value,
+                        owner: document.getElementById('ownerAdd').value,
+                        address: document.getElementById('addressAdd').value,
+                        source: document.getElementById('sourceAdd').value,
+                        sls: document.getElementById('slsAdd').value,
+                    };
+                    $.ajax({
+                        url: `/non-sls-directory`,
+                        type: 'POST',
+                        data: addData,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            $('#addDirectoryModal').modal('hide');
+                            document.getElementById('loading-add').style.visibility = 'hidden'
+
+                            // renderTable()
+                            table.ajax.reload(null, false)
+                        },
+                        error: function(xhr, status, error) {
+                            document.getElementById('loading-add').style.visibility = 'hidden'
+                        }
+                    });
+                }
+            }
+
+            function onDelete() {
+                document.getElementById('loading-delete').style.visibility = 'visible'
+
+                $.ajax({
+                    url: `/non-sls-directory/${document.getElementById('id-hidden').value}`,
+                    type: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        table.ajax.reload(null, false)
+                        $('#deleteModal').modal('hide');
+                        document.getElementById('loading-delete').style.visibility = 'hidden'
+                    },
+                    error: function(xhr, status, error) {
+                        document.getElementById('loading-delete').innerHTML = 'Gagal menghapus usaha'
+                    }
+                });
             }
 
             function debounce(func, delay) {
@@ -806,10 +1057,11 @@
 
                             if (type === 'display') {
                                 return `<div class="my-1"> 
-                        <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.long_code}</p>
-                        <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.subdistrict}</p>
-                        <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.village}</p>
-                    </div>`
+                                            <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.long_code}</p>
+                                            <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.subdistrict}</p>
+                                            <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.village}</p>
+                                            <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.sls}</p>
+                                        </div>`
                             }
                             return data.id
                         }
@@ -856,9 +1108,18 @@
                         type: "text",
                         render: function(data, type, row) {
                             if (type === 'display') {
+                                let newButton = ''
+                                if (row.is_new) {
+                                    newButton = `
+                                    <button data-row='${escapeJsonForHtml(JSON.stringify(row))}' onclick="onDeleteModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="button">
+                                        <span class="btn-inner--icon"><i class="fas fa-trash-alt"></i></span>
+                                    </button>`
+                                }
                                 return `<button data-row='${escapeJsonForHtml(JSON.stringify(row))}' onclick="openUpdateDirectoryModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
-                                    <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
-                                </button>`
+                                            <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
+                                        </button>
+                                        ${newButton}
+                                `
                             }
                             return data;
                         }

@@ -41,9 +41,12 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('/sls/{village_id}', [HomeController::class, 'getSls']);
 	Route::get('/sls-directory/{id_sls}', [HomeController::class, 'getSlsDirectory']);
 
-	Route::post('/sls-directory', [HomeController::class, 'addDirectory']);
-	Route::delete('/sls-directory/{id}', [HomeController::class, 'deleteDirectory']);
-	Route::patch('/directory/edit/{type}/{id}', [HomeController::class, 'updateDirectory']);
+	Route::post('/sls-directory', [HomeController::class, 'addSlsDirectory']);
+	Route::post('/non-sls-directory', [HomeController::class, 'addNonSlsDirectory']);
+	Route::delete('/sls-directory/{id}', [HomeController::class, 'deleteSlsDirectory']);
+	Route::delete('/non-sls-directory/{id}', [HomeController::class, 'deleteNonSlsDirectory']);
+	Route::patch('/directory/edit/sls/{id}', [HomeController::class, 'updateSlsDirectory']);
+	Route::patch('/directory/edit/non-sls/{id}', [HomeController::class, 'updateNonSlsDirectory']);
 
 	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
