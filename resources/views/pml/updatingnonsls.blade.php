@@ -225,7 +225,7 @@
                     <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
                         <div class="row">
-                            <div class="col-12">
+                            <div id="statusCol" class="col-12">
                                 <label class="form-control-label">Status <span class="text-danger">*</span></label>
                                 <select id="statusUpdate" name="status" class="form-control" data-toggle="select"
                                     required>
@@ -471,7 +471,7 @@
             }
 
             function updateInputStates(item) {
-                const statusCol = document.getElementById("statusUpdate");
+                const statusUpdate = document.getElementById("statusUpdate");
                 const addressCol = document.getElementById("addressCol");
                 const subdistrictCol = document.getElementById("subdistrictCol");
                 const villageCol = document.getElementById("villageCol");
@@ -484,7 +484,7 @@
                 document.getElementById('slsColFiled').style.display = 'none'
                 document.getElementById('switchArea').checked = false
 
-                const isActive = statusCol.value === "2";
+                const isActive = statusUpdate.value === "2";
                 const level = item.level;
 
                 // Default all inputs to be hidden
@@ -529,7 +529,7 @@
             }
 
             function onChangeArea() {
-                const statusCol = document.getElementById("statusUpdate");
+                const statusUpdate = document.getElementById("statusUpdate");
                 const subdistrictCol = document.getElementById("subdistrictCol");
                 const villageCol = document.getElementById("villageCol");
                 const slsCol = document.getElementById("slsCol");

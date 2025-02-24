@@ -140,10 +140,10 @@
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> -->
                     </div>
-                    <input type="hidden" id="business_id" />
+                    <input type="hidden" id="businessId" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
                         <div class="row">
-                            <div class="col-12">
+                            <div id="statusCol" class="col-12">
                                 <label class="form-control-label">Status <span class="text-danger">*</span></label>
                                 <select id="statusUpdate" name="status" class="form-control" data-toggle="select"
                                     required>
@@ -155,11 +155,29 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div id="nameCol" class="col-12">
+                                <label class="form-control-label" for="nameUpdate">Nama Usaha <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="nameUpdate" class="form-control mb-0" id="nameUpdate"
+                                    placeholder="Nama Usaha">
+                            </div>
+                            <div id="ownerCol" class="col-12">
+                                <label class="form-control-label" for="ownerUpdate">Pemilik Usaha <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="ownerUpdate" class="form-control mb-0" id="ownerUpdate"
+                                    placeholder="Pemilik Usaha">
+                            </div>
                             <div id="addressCol" class="col-12">
                                 <label class="form-control-label" for="addressUpdate">Alamat Lengkap <span
                                         class="text-danger">*</span></label>
                                 <input type="text" name="addressUpdate" class="form-control mb-0" id="addressUpdate"
                                     placeholder="Alamat Lengkap">
+                            </div>
+                            <div id="sourceCol" class="col-12">
+                                <label class="form-control-label" for="sourceUpdate">Sumber Data <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="sourceUpdate" class="form-control mb-0" id="sourceUpdate"
+                                    placeholder="Sumber Data">
                             </div>
                             <div id="slsColFiled" class="col-12 my-2">
                                 <label class="form-control-label" id="areaUpdateLabel"></label>
@@ -228,7 +246,6 @@
                         </div>
                         <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> -->
                     </div>
-                    <input type="hidden" id="business_id" />
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
                         <div class="row">
                             <div class="col-12">
@@ -544,7 +561,7 @@
 
                 document.getElementById('modalsubtitle').innerHTML = detailsArray.join('<br>');
 
-                document.getElementById('business_id').value = item.id
+                document.getElementById('businessId').value = item.id
 
                 document.getElementById('update-error').style.display = 'none'
 
@@ -588,7 +605,11 @@
             }
 
             function updateInputStates(item) {
-                const statusCol = document.getElementById("statusUpdate");
+                const statusCol = document.getElementById("statusCol");
+                const nameCol = document.getElementById("nameCol");
+                const ownerCol = document.getElementById("ownerCol");
+                const sourceCol = document.getElementById("sourceCol");
+                const statusUpdate = document.getElementById("statusUpdate");
                 const addressCol = document.getElementById("addressCol");
                 const subdistrictCol = document.getElementById("subdistrictCol");
                 const villageCol = document.getElementById("villageCol");
@@ -601,7 +622,7 @@
                 document.getElementById('slsColFiled').style.display = 'none'
                 document.getElementById('switchArea').checked = false
 
-                const isActive = statusCol.value === "2";
+                const isActive = statusUpdate.value === "2" || item.status.id == 90;
                 const level = item.level;
 
                 // Default all inputs to be hidden
@@ -609,6 +630,10 @@
                 subdistrictCol.style.display = "none";
                 villageCol.style.display = "none";
                 slsCol.style.display = "none";
+                statusCol.style.display = item.status.id === 90 ? "none" : "block";
+                nameCol.style.display = item.status.id != 90 ? "none" : "block";
+                ownerCol.style.display = item.status.id != 90 ? "none" : "block";
+                sourceCol.style.display = item.status.id != 90 ? "none" : "block";
 
                 document.getElementById('addressUpdate').value = item.address
 
@@ -633,28 +658,22 @@
                         if (roles.includes("adminprov")) {
                             loadSubdistrict('Update', item.regency_id, null)
                         }
+                    }
 
-                        // if (level === "regency") {
-                        //     subdistrictCol.style.display = "block";
-                        //     villageCol.style.display = "block";
-                        //     slsCol.style.display = "block";
-                        //     if (roles.includes("adminprov")) {
-                        //         loadSubdistrict('Update', item.regency_id, null)
-                        //     }
-                        // } else if (level === "subdistrict") {
-                        //     villageCol.style.display = "block";
-                        //     slsCol.style.display = "block";
-                        //     loadVillage('Update', item.subdistrict_id, null)
-                        // } else if (level === "village") {
-                        //     slsCol.style.display = "block";
-                        //     loadSls('Update', item.village_id, null)
-                        // }
+                    if (item.status.id == 90) {
+                        document.getElementById('nameUpdate').value = item.name
+                        document.getElementById('ownerUpdate').value = item.owner
+                        document.getElementById('sourceUpdate').value = item.source
+                    } else {
+                        document.getElementById('nameUpdate').value = null
+                        document.getElementById('ownerUpdate').value = null
+                        document.getElementById('sourceUpdate').value = null
                     }
                 }
             }
 
             function onChangeArea() {
-                const statusCol = document.getElementById("statusUpdate");
+                const statusUpdate = document.getElementById("statusUpdate");
                 const subdistrictCol = document.getElementById("subdistrictCol");
                 const villageCol = document.getElementById("villageCol");
                 const slsCol = document.getElementById("slsCol");
@@ -670,22 +689,6 @@
                     if (roles.includes("adminprov")) {
                         loadSubdistrict('Update', selectedBusiness.regency_id, null)
                     }
-
-                    // if (level === "regency") {
-                    //     subdistrictCol.style.display = "block";
-                    //     villageCol.style.display = "block";
-                    //     slsCol.style.display = "block";
-                    //     if (roles.includes("adminprov")) {
-                    //         loadSubdistrict('Update', selectedBusiness.regency_id, null)
-                    //     }
-                    // } else if (level === "subdistrict") {
-                    //     villageCol.style.display = "block";
-                    //     slsCol.style.display = "block";
-                    //     loadVillage('Update', selectedBusiness.subdistrict_id, null)
-                    // } else if (level === "village") {
-                    //     slsCol.style.display = "block";
-                    //     loadSls('Update', selectedBusiness.village_id, null)
-                    // }
                 } else {
                     // addressCol.style.display = "none";
                     subdistrictCol.style.display = "none";
@@ -876,29 +879,56 @@
             }
 
             function validate() {
-                let statusValid = true;
+
                 const statusUpdate = document.getElementById('statusUpdate')?.value;
                 const addressUpdate = document.getElementById('addressUpdate')?.value;
                 const slsUpdate = document.getElementById('slsUpdate')?.value;
                 const switchChecked = document.getElementById('switchArea')?.checked || false;
                 const updateError = document.getElementById('update-error');
 
-                if (!statusUpdate || statusUpdate == 0) {
-                    statusValid = false;
-                } else if (statusUpdate == "2" || statusUpdate == "90") {
-                    if (!addressUpdate) {
-                        statusValid = false;
-                    } else if (slsUpdate) {
-                        statusValid = true;
-                    } else if (selectedBusiness.sls_id !== null && switchChecked) {
-                        statusValid = true;
-                    } else {
+                const nameUpdate = document.getElementById('nameUpdate')?.value;
+                const ownerUpdate = document.getElementById('ownerUpdate')?.value;
+                const sourceUpdate = document.getElementById('sourceUpdate')?.value;
+
+                let nameValid = true
+                let ownerValid = true
+                let sourceValid = true
+                let statusValid = true
+                let addressValid = true
+                let slsValid = true
+
+                if (selectedBusiness.status.id == 90) {
+                    if (!nameUpdate) {
+                        nameValid = false;
+                    }
+                    if (!ownerUpdate) {
+                        ownerValid = false;
+                    }
+                    if (!sourceUpdate) {
+                        sourceValid = false;
+                    }
+                } else {
+                    if (!statusUpdate) {
                         statusValid = false;
                     }
                 }
 
-                updateError.style.display = statusValid ? 'none' : 'block';
-                return statusValid;
+                if (statusUpdate == "2" || selectedBusiness.status.id == 90) {
+                    if (!addressUpdate) {
+                        addressValid = false;
+                    }
+                }
+
+                // if (!((selectedBusiness.sls_id !== null && !switchChecked) ||
+                //         (switchChecked && !!slsUpdate) ||
+                //         (selectedBusiness.sls_id === null && !!slsUpdate) ||
+                //         (statusUpdate !== "2" && selectedBusiness.sls_id !== 90))) {
+                //     slsValid = false;
+                // }
+
+                let valid = statusValid && nameValid && ownerValid && sourceValid && addressValid && slsValid;
+                updateError.style.display = valid ? 'none' : 'block';
+                return valid;
             }
 
             function validateAdd() {
@@ -925,7 +955,7 @@
                 if (validate()) {
                     document.getElementById('loading-save').style.visibility = 'visible'
 
-                    id = document.getElementById('business_id').value
+                    id = document.getElementById('businessId').value
                     var updateData = {
                         status: document.getElementById('statusUpdate').value,
                         subdistrict: document.getElementById('subdistrictUpdate').value,
@@ -933,6 +963,9 @@
                         sls: document.getElementById('slsUpdate').value,
                         address: document.getElementById('addressUpdate').value,
                         switch: document.getElementById('switchArea').checked,
+                        name: document.getElementById('nameUpdate').value,
+                        owner: document.getElementById('ownerUpdate').value,
+                        source: document.getElementById('sourceUpdate').value,
                     };
 
                     $.ajax({
@@ -1018,11 +1051,6 @@
             function searchByKeyword(query) {
                 renderTable()
             }
-
-            // const searchInput = document.getElementById("search");
-            // searchInput.addEventListener("input", debounce((event) => {
-            //     searchByKeyword(event.target.value);
-            // }, 500));
 
             let table = new DataTable('#myTable', {
                 order: [],

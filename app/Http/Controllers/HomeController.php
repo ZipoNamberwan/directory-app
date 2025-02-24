@@ -529,9 +529,15 @@ class HomeController extends Controller
     {
         $business = NonSlsBusiness::find($id);
         $validationArray = [
-            'status' => 'required',
-            'address' => 'required_if:status,2',
+            'address' => 'required_if:status,2|required_if:status,90',
+            'name' => 'required_if:status,90',
+            'owner' => 'required_if:status,90',
+            'source' => 'required_if:status,90',
         ];
+
+        if ($business->status_id != 90) {
+            $validationArray['status'] = 'required';
+        }
 
         if ($business->sls == null) {
             $validationArray['sls'] = 'required_if:status,2';
@@ -555,7 +561,7 @@ class HomeController extends Controller
             }
         }
 
-        if ($request->status == "2" || $request->status == "90") {
+        if ($request->status == "2" || $business->status_id == 90) {
             $business->address = $request->address;
         } else {
             $business->address = null;
@@ -573,7 +579,12 @@ class HomeController extends Controller
         }
 
         $business->last_modified_by = Auth::id();
-        $business->status_id = $request->status;
+        $business->status_id = $request->status ?? $business->status_id;
+        if ($business->status_id == 90) {
+            $business->name = $request->name;
+            $business->owner = $request->owner;
+            $business->source = $request->source;
+        }
 
         $business->save();
 
