@@ -636,6 +636,7 @@ class HomeController extends Controller
             $business->source = $request->source;
         }
 
+        $business->last_modified_by = Auth::id();
         $business->save();
         return response()->json($business);
     }
@@ -727,7 +728,9 @@ class HomeController extends Controller
     public function deleteSlsDirectory(string $id)
     {
         $business = SlsBusiness::find($id);
-        $business->delete();
+        if ($business->is_new) {
+            $business->delete();
+        }
 
         return response()->json($business);
     }
@@ -735,7 +738,9 @@ class HomeController extends Controller
     public function deleteNonSlsDirectory(string $id)
     {
         $business = NonSlsBusiness::find($id);
-        $business->delete();
+        if ($business->is_new) {
+            $business->delete();
+        }
 
         return response()->json($business);
     }

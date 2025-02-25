@@ -155,6 +155,7 @@
                         <select disabled style="width: 100%;" id="subdistrict" name="subdistrict" class="form-control"
                             data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Kecamatan -- </option>
+                            <option value="all">Semua Kecamatan</option>
                             @foreach ($subdistricts as $subdistrict)
                                 <option value="{{ $subdistrict->id }}"
                                     {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
@@ -467,10 +468,6 @@
                     placeholder: 'Pilih SLS'
                 },
                 {
-                    selector: '#regencyAdd',
-                    placeholder: 'Pilih Kabupaten'
-                },
-                {
                     selector: '#subdistrictAdd',
                     placeholder: 'Pilih Kecamatan'
                 },
@@ -521,9 +518,6 @@
                 },
                 '#villageUpdate': () => {
                     loadSls('Update', null, null);
-                },
-                '#regencyAdd': () => {
-                    loadSubdistrict('Add', null, null);
                 },
                 '#subdistrictAdd': () => {
                     loadVillage('Add', null, null);
@@ -627,7 +621,6 @@
                 document.getElementById('addressAdd').value = null
                 document.getElementById('sourceAdd').value = null
 
-                $('#regencyAdd').val(null).trigger('change');
                 $('#subdistrictAdd').val(null).trigger('change');
                 $('#villageAdd').val(null).trigger('change');
                 $('#slsAdd').val(null).trigger('change');
@@ -766,6 +759,11 @@
                                 `<option value="0" disabled selected> -- Pilih Desa -- </option>`);
                             $(slsSelector).empty().append(
                                 `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                            if (group == '') {
+                                $(villageSelector).append(
+                                    `<option value="all">Semua Desa</option>`
+                                );
+                            }
                             response.forEach(element => {
                                 let selected = selectedvillage == String(element.id) ? 'selected' : '';
                                 $(villageSelector).append(

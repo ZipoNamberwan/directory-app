@@ -10,7 +10,7 @@
         <div class="row">
             <div class="col-lg-12 mb-lg-0 mb-4">
                 <div class="card z-index-2 h-100">
-                    <div class="card-header pb-0 pt-3 bg-light">
+                    <div class="card-header pb-0 pt-3">
                         <h4 class="text-capitalize">Unduh Raw Data</h4>
                         <p class="text-muted small mb-3">
                             Menu ini digunakan untuk mengunduh <strong>raw data direktori usaha</strong>. Karena besarnya

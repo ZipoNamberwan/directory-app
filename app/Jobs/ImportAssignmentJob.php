@@ -3,11 +3,9 @@
 namespace App\Jobs;
 
 use App\Models\AssignmentStatus;
-use App\Models\SlsBusiness;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 

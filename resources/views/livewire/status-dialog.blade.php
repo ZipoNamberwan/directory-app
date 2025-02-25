@@ -27,7 +27,7 @@
                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                             Status
                         </th>
-                        @if ($type == 'import')
+                        @if ($type == 'import' || $type == 'import-business')
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                                 Pesan
                             </th>
@@ -59,7 +59,7 @@
                                 <td>
                                     <p class="text-xs text-secondary mb-0">{{ $item->status }}</p>
                                 </td>
-                                @if ($type == 'import')
+                                @if ($type == 'import' || $type == 'import-business')
                                     <td>
                                         <p>
                                             <span class="text-xs text-secondary mb-0">{!! $item->message !!}</span>
