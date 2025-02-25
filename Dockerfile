@@ -40,5 +40,10 @@ RUN chmod 0644 /etc/cron.d/laravel-cron && \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN cd /var/www && composer install --optimize-autoloader --no-dev
 
+# Setup Caddy permission
+RUN mkdir -p /data/caddy && \
+    chown -R www-data:www-data /data/caddy && \
+    chmod -R 755 /data/caddy
+
 # Set working directory for every command after this, for example docker exec -it will start from this directory
 WORKDIR /var/www
