@@ -44,6 +44,10 @@
         php_server
 }
 
+kendedes.cathajatim.id {
+    reverse_proxy app:8000
+}
+
 # {$SERVER_NAME:cathajatim.id} {
 #        root * public/
 #        encode zstd br gzip
