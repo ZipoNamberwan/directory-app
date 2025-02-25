@@ -8,11 +8,12 @@ services:
     networks:
       - laravel_network
     ports:
-      - "8888:443"
+      - "443:443"
+      - "80:80"
     entrypoint: ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
     volumes:
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
-      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
+      # - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
     depends_on:
       - db
 
