@@ -8,6 +8,7 @@ use App\Imports\SlsAssignmentImport;
 use App\Jobs\AssignmentNotificationJob;
 use App\Models\AssignmentStatus;
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
 use Illuminate\Support\Str;
@@ -26,7 +27,7 @@ class ImportAdditional extends Component
     public function import()
     {
         $this->validate([
-            'importFile' => 'required',
+            'importFile' => 'required|mimes:xlsx,csv|max:2048',
         ]);
 
         $status = AssignmentStatus::where('user_id', Auth::id())
@@ -47,9 +48,15 @@ class ImportAdditional extends Component
                 'type' => 'import-business',
             ]);
 
-            (new AdditionalImport(User::find(Auth::id())->regency_id, $uuid, Auth::id()))->queue($this->importFilePath)->chain([
-                new AssignmentNotificationJob($uuid),
-            ]);
+            try {
+                (new AdditionalImport(User::find(Auth::id())->regency_id, $uuid, Auth::id()))->queue($this->importFilePath)->chain([
+                    new AssignmentNotificationJob($uuid),
+                ]);
+            } catch (Exception $e) {
+                AssignmentStatus::find($uuid)->update([
+                    'status' => 'failed',
+                ]);
+            }
         }
     }
 

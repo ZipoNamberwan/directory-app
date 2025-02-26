@@ -39,9 +39,9 @@
 	}
 }
 
-kendedes.cathajatim.id {
-        reverse_proxy app:8000
-}
+# kendedes.cathajatim.id {
+#         reverse_proxy app:8000
+# }
 
 # {$SERVER_NAME:cathajatim.id} {
 #        root * public/

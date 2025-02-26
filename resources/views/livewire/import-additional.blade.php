@@ -3,7 +3,7 @@
         @csrf
         <div class="d-flex align-items-center flex-wrap gap-2">
             <div>
-                <input type="file" wire:model="importFile" class="form-control">
+                <input type="file" wire:model="importFile" class="form-control" accept=".xlsx,.csv">
             </div>
             <div>
                 <button type="submit" class="btn btn-success my-0">
@@ -22,29 +22,30 @@
     </form>
 
 
-    @if($importing && !$importFinished)
-    <div wire:poll="updateImportProgress" class="mt-3">
-        <div>
-            <p class="small">
-                <strong>Sedang mengimport</strong>... Tab bisa ditutup karena proses import berjalan di <strong>background</strong> <br>
-                Gunakan tombol status untuk melihat <strong>status import</strong>
-            </p>
+    @if ($importing && !$importFinished)
+        <div wire:poll="updateImportProgress" class="mt-3">
+            <div>
+                <p class="small">
+                    <strong>Sedang mengimport</strong>... Tab bisa ditutup karena proses import berjalan di
+                    <strong>background</strong> <br>
+                    Gunakan tombol status untuk melihat <strong>status import</strong>
+                </p>
+            </div>
         </div>
-    </div>
     @endif
 
-    @if($importFinished)
-    @if($status == 'success')
-    <div class="mt-3">
-        <p class="small">
-            Sukses melakukan import
-        </p>
-    </div>
-    @elseif($status == 'success with error')
-    <div class="mt-3">
-        <p class="small">
-            Sukses melakukan import, namun beberapa baris gagal. Gunakan tombol status untuk melihat detail.
-        </p>
-    </div>
-    @endif
+    @if ($importFinished)
+        @if ($status == 'success')
+            <div class="mt-3">
+                <p class="small">
+                    Sukses melakukan import
+                </p>
+            </div>
+        @elseif($status == 'success with error')
+            <div class="mt-3">
+                <p class="small">
+                    Sukses melakukan import, namun beberapa baris gagal. Gunakan tombol status untuk melihat detail.
+                </p>
+            </div>
+        @endif
     @endif

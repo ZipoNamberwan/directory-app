@@ -23,7 +23,7 @@ class StatusDialog extends Component
 
     public function downloadExport($file)
     {
-        if ($this->type == 'export' || $this->type == 'import') {
+        if ($this->type == 'export') {
             return Storage::download($file . '.xlsx');
         } else if ($this->type == 'download-sls-business' || $this->type == 'download-non-sls-business') {
             return Storage::download($file . '.csv');

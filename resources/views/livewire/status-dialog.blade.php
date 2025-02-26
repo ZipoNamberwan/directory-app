@@ -19,7 +19,7 @@
             <table class="table align-items-center mb-0">
                 <thead>
                     <tr>
-                        @if ($type == 'export' || $type == 'download-sls-business' || 'download-non-sls-business')
+                        @if ($type == 'export' || $type == 'download-sls-business' || $type == 'download-non-sls-business')
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                 File
                             </th>
@@ -41,7 +41,7 @@
                     @if ($data)
                         @foreach ($data as $item)
                             <tr>
-                                @if ($type == 'export' || $type == 'download-sls-business' || 'download-non-sls-business')
+                                @if ($type == 'export' || $type == 'download-sls-business' || $type == 'download-non-sls-business')
                                     <td class="align-center">
                                         @if ($item->status == 'success')
                                             <button wire:click="downloadExport('{{ $item->id }}')"

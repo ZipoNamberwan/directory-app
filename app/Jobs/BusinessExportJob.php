@@ -25,6 +25,8 @@ class BusinessExportJob implements ShouldQueue
         $this->regencyId = $regencyId;
         $this->uuid = $uuid;
         $this->type = $type;
+
+        AssignmentStatus::find($this->uuid)->update(['status' => 'loading',]);
     }
 
     /**
