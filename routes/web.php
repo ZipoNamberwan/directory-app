@@ -10,6 +10,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\ResetPassword;
 use App\Http\Controllers\ChangePassword;
+use App\Http\Controllers\FileUploadController;
 use App\Http\Controllers\PclController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
@@ -26,6 +27,9 @@ Route::get('/reset-password', [ResetPassword::class, 'show'])->middleware('guest
 Route::post('/reset-password', [ResetPassword::class, 'send'])->middleware('guest')->name('reset.perform');
 
 Route::group(['middleware' => 'auth'], function () {
+
+	Route::get('/upload', [FileUploadController::class, 'showForm']);
+	Route::post('/upload', [FileUploadController::class, 'uploadFile'])->name('upload.file');
 
 	Route::impersonate();
 
