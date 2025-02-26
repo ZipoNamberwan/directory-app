@@ -39,6 +39,13 @@
 	}
 }
 
+124.158.151.238 {
+
+        handle {
+            abort
+        }
+    }
+
 # kendedes.cathajatim.id {
 #         reverse_proxy app:8000
 # }

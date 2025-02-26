@@ -38,7 +38,7 @@
         @if ($status == 'success')
             <div class="mt-3">
                 <p class="small">
-                    Sukses melakukan import
+                    Sukses melakukan import. Silakan <a href="/tambah-direktori">refresh</a> halaman ini.
                 </p>
             </div>
         @elseif($status == 'success with error')
