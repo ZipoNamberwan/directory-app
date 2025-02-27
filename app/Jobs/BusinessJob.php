@@ -75,6 +75,9 @@ class BusinessJob implements ShouldQueue
                 }
 
                 $regencyId = "35" . substr($record['kab'], 1, 2);
+                if ($regencyId == "35"){
+                    $regencyId = substr($record['iddesa'], 0, 4);
+                }
 
                 $dataNonSls[] = [
                     'id' => (string) Str::uuid(),
