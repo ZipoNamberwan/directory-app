@@ -2,9 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Models\FailedBusiness;
 use App\Models\NonSlsBusiness;
 use App\Models\SlsBusiness;
 use App\Models\Sls;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Str;
@@ -92,19 +94,27 @@ class BusinessJob implements ShouldQueue
                 ];
             }
         }
-        if (count($dataSls) > 0) {
-            SlsBusiness::insert($dataSls);
-        }
-        if (count($dataNonSls) > 0) {
-            NonSlsBusiness::insert($dataNonSls);
-        }
-
-        // foreach ($dataSls as $data) {
-        //     SlsBusiness::create($data);
+        // if (count($dataSls) > 0) {
+        //     SlsBusiness::insert($dataSls);
+        // }
+        // if (count($dataNonSls) > 0) {
+        //     NonSlsBusiness::insert($dataNonSls);
         // }
 
-        // foreach ($dataNonSls as $data) {
-        //     NonSlsBusiness::create($data);
-        // }
+        foreach ($dataSls as $data) {
+            try {
+                SlsBusiness::create($data);
+            } catch (Exception $e) {
+                FailedBusiness::create(['record' => json_encode($data)]);
+            }
+        }
+
+        foreach ($dataNonSls as $data) {
+            try {
+                NonSlsBusiness::create($data);
+            } catch (Exception $e) {
+                FailedBusiness::create(['record' => json_encode($data)]);
+            }
+        }
     }
 }
