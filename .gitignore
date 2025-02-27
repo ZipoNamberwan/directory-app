@@ -21,7 +21,10 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-/python_script/result
+/python_script/result/des/*
+/python_script/result/kec/*
+/python_script/result/sls/*
+/python_script/result/usaha/*
 /python_script/usaha/*
 # **/caddy
 frankenphp
