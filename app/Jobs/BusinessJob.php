@@ -92,11 +92,19 @@ class BusinessJob implements ShouldQueue
                 ];
             }
         }
-        if (count($dataSls) > 0) {
-            SlsBusiness::insert($dataSls);
+        // if (count($dataSls) > 0) {
+        //     SlsBusiness::insert($dataSls);
+        // }
+        // if (count($dataNonSls) > 0) {
+        //     NonSlsBusiness::insert($dataNonSls);
+        // }
+
+        foreach ($dataSls as $data) {
+            SlsBusiness::create($data);
         }
-        if (count($dataNonSls) > 0) {
-            NonSlsBusiness::insert($dataNonSls);
+
+        foreach ($dataNonSls as $data) {
+            NonSlsBusiness::create($data);
         }
     }
 }

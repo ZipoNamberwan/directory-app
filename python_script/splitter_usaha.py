@@ -11,7 +11,7 @@ def split_csv(df, records_per_file, output_dir):
         chunk.to_csv(output_file, index=False)
                 
 # Specify the folder path
-folder_path = Path("./python_script/usaha")
+folder_path = Path("./python_script/level/desa")
 
 # Loop through files in the folder
 for file_path in folder_path.iterdir():
