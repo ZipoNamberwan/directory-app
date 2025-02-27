@@ -1,6 +1,6 @@
 # Base image
 FROM dunglas/frankenphp
- 
+
 # Install dependency like git, vim, supervisor and cron
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     supervisor \
     cron \
+    default-mysql-client \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

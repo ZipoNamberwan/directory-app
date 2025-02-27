@@ -22,3 +22,4 @@ yarn-error.log
 /.zed
 # /python_script/result
 # /python_script/usaha/*
+/backup/*
