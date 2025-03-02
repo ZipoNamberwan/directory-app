@@ -17,7 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
-        $middleware->trustProxies(at: '*');
+        if (config('app.env') === 'production') {
+            // $middleware->trustProxies(at: '*');
+            $middleware->trustProxies(at: [explode(',', env('TRUSTED_PROXIES'))]);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
