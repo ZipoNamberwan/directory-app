@@ -209,13 +209,31 @@
         </div>
 
         <div class="modal fade" id="updateDirectoryModal" tabindex="-1" role="dialog"
-            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            aria-labelledby="exampleModalCenterTitle">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header pb-1">
-                        <div>
-                            <h5 id="modaltitle">Modal title</h5>
-                            <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal title</span>
+                        <div class="row">
+                            {{-- <div class="col-12">
+                                <h5 id="modaltitle">Modal title</h5>
+                            </div> --}}
+                            <div class="col-12">
+                                <label class="form-control-label">Nama Usaha <span class="text-danger">*</span></label>
+                                <input type="text" id="nameUpdate" name="nameUpdate" class="form-control mb-0"
+                                    placeholder="Nama Usaha">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label">Nama Pemilik/Pengusaha</label>
+                                <input type="text" id="ownerUpdate" name="ownerUpdate" class="form-control mb-0"
+                                    placeholder="Nama Pemilik/Pengusaha">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-control-label">Alamat</label>
+                                <div>
+                                    <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Modal
+                                        title</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <input type="hidden" id="businessId" />
@@ -232,18 +250,6 @@
                                         @endif
                                     @endforeach
                                 </select>
-                            </div>
-                            <div id="nameCol" class="col-12">
-                                <label class="form-control-label" for="nameUpdate">Nama Usaha <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" name="nameUpdate" class="form-control mb-0" id="nameUpdate"
-                                    placeholder="Nama Usaha">
-                            </div>
-                            <div id="ownerCol" class="col-12">
-                                <label class="form-control-label" for="ownerUpdate">Pemilik Usaha <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" name="ownerUpdate" class="form-control mb-0" id="ownerUpdate"
-                                    placeholder="Pemilik Usaha">
                             </div>
                             <div id="addressCol" class="col-12">
                                 <label class="form-control-label" for="addressUpdate">Alamat Lengkap <span
@@ -295,7 +301,7 @@
 
                         <div id="update-error">
                             <p class="error-feedback mb-0 mt-2">
-                                Ada yang Belum diisi
+                                Ada yang keliru
                             </p>
                         </div>
                         <div>
@@ -312,16 +318,15 @@
         </div>
 
         <div class="modal fade" id="addDirectoryModal" tabindex="-1" role="dialog"
-            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            aria-labelledby="exampleModalCenterTitle">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header pb-1">
                         <div>
-                            <h5 id="modaltitle">Tambah Usaha</h5>
-                            <span class="mb-0" style="font-size: 0.75rem;" id="modalsubtitle">Menu tambah usaha
-                                baru</span>
+                            <h5>Tambah Usaha</h5>
+                            <span class="mb-0" style="font-size: 0.75rem;">Menu tambah usaha baru</span>
                         </div>
-                        <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> -->
+                        <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span>&times;</span></button> -->
                     </div>
                     <div class="modal-body pt-0 mt-2" style="height: auto;">
                         <div class="row">
@@ -393,7 +398,7 @@
         </div>
 
         <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog"
-            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            aria-labelledby="exampleModalCenterTitle">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header pb-1">
@@ -583,7 +588,10 @@
 
                 $('#updateDirectoryModal').modal('show');
 
-                document.getElementById('modaltitle').innerHTML = item.name + (item.owner ? ' (' + item.owner + ')' : '')
+                // document.getElementById('modaltitle').innerHTML = item.name + (item.owner ? ' (' + item.owner + ')' : '')
+
+                document.getElementById('nameUpdate').value = item.name
+                document.getElementById('ownerUpdate').value = item.owner
 
                 const areaDetail = getLocationDetails(item)
                 const details = [
@@ -645,8 +653,6 @@
 
             function updateInputStates(item) {
                 const statusCol = document.getElementById("statusCol");
-                const nameCol = document.getElementById("nameCol");
-                const ownerCol = document.getElementById("ownerCol");
                 const sourceCol = document.getElementById("sourceCol");
                 const statusUpdate = document.getElementById("statusUpdate");
                 const addressCol = document.getElementById("addressCol");
@@ -670,8 +676,6 @@
                 villageCol.style.display = "none";
                 slsCol.style.display = "none";
                 statusCol.style.display = item.status.id === 90 ? "none" : "block";
-                nameCol.style.display = item.status.id != 90 ? "none" : "block";
-                ownerCol.style.display = item.status.id != 90 ? "none" : "block";
                 sourceCol.style.display = item.status.id != 90 ? "none" : "block";
 
                 document.getElementById('addressUpdate').value = item.address
@@ -696,12 +700,8 @@
                     }
 
                     if (item.status.id == 90) {
-                        document.getElementById('nameUpdate').value = item.name
-                        document.getElementById('ownerUpdate').value = item.owner
                         document.getElementById('sourceUpdate').value = item.source
                     } else {
-                        document.getElementById('nameUpdate').value = null
-                        document.getElementById('ownerUpdate').value = null
                         document.getElementById('sourceUpdate').value = null
                     }
                 }
@@ -976,14 +976,15 @@
                 let statusValid = true
                 let addressValid = true
 
+                if (!nameUpdate || nameUpdate.length < 4) {
+                    nameValid = false;
+                }
+
                 if (selectedBusiness.status.id == 90) {
-                    if (!nameUpdate) {
-                        nameValid = false;
-                    }
-                    if (!ownerUpdate) {
+                    if (!ownerUpdate || ownerUpdate.length < 4) {
                         ownerValid = false;
                     }
-                    if (!sourceUpdate) {
+                    if (!sourceUpdate || sourceUpdate.length < 4) {
                         sourceValid = false;
                     }
                 } else {
@@ -993,7 +994,7 @@
                 }
 
                 if (statusUpdate == "2" || selectedBusiness.status.id == 90) {
-                    if (!addressUpdate) {
+                    if (!addressUpdate || addressUpdate.length < 4) {
                         addressValid = false;
                     }
                 }

@@ -637,12 +637,13 @@ class HomeController extends Controller
                 $business->sls_id = $request->sls;
             }
 
-            $business->name = $request->name;
-            $business->owner = $request->owner;
+
             $business->address = $request->address;
             $business->source = $request->source;
         }
 
+        $business->name = $request->name;
+        $business->owner = $request->owner;
         $business->last_modified_by = Auth::id();
         $business->save();
         return response()->json($business);
