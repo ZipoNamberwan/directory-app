@@ -36,4 +36,5 @@ frankenphp-worker.php
 /backup/*
 /python_script/level/desa/*
 /python_script/level/other/*
+/python_script/level/processed_other/*
 /python_script/level/*.xlsx
