@@ -1077,7 +1077,7 @@
                             if (type === 'display') {
                                 return data + (row.owner ? ' (' + row.owner + ')' : '');
                             }
-                            return data.id
+                            return data
                         }
                     },
                     {
@@ -1096,7 +1096,7 @@
                                             <p style='font-size: 0.7rem' class='text-secondary mb-0'>${areaDetail.sls}</p>
                                         </div>`
                             }
-                            return data.id
+                            return data
                         }
                     },
                     {
@@ -1109,7 +1109,7 @@
                                 return '<p class="mb-0"><span class="badge bg-gradient-' + data.color + '">' +
                                     data.name + '</span></p>';
                             }
-                            return data.id;
+                            return data;
                         }
                     },
                     {
@@ -1125,7 +1125,7 @@
                                     return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>${data.firstname}</p>`;
                                 }
                             }
-                            return data.id;
+                            return data;
                         }
                     },
                     {

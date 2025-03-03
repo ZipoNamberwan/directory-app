@@ -325,8 +325,8 @@ class HomeController extends Controller
 
         $recordsTotal = $records->count();
 
-        $orderColumn = 'sls_id';
-        $orderDir = 'desc';
+        $orderColumn = 'name';
+        $orderDir = 'asc';
         if ($request->order != null) {
             if ($request->order[0]['dir'] == 'asc') {
                 $orderDir = 'asc';
@@ -470,8 +470,8 @@ class HomeController extends Controller
 
         $recordsTotal = $records->count();
 
-        $orderColumn = 'id';
-        $orderDir = 'desc';
+        $orderColumn = 'name';
+        $orderDir = 'asc';
         if ($request->order != null) {
             if ($request->order[0]['dir'] == 'asc') {
                 $orderDir = 'asc';
@@ -479,9 +479,15 @@ class HomeController extends Controller
                 $orderDir = 'desc';
             }
             if ($request->order[0]['column'] == '0') {
-                $orderColumn = 'sls_id';
-            } else if ($request->order[0]['column'] == '1') {
                 $orderColumn = 'name';
+            } else if ($request->order[0]['column'] == '1') {
+                if ($request->level === 'regency') {
+                    $orderColumn = 'regency_id';
+                } else if ($request->level === 'subdistrict') {
+                    $orderColumn = 'subdistrict_id';
+                } else if ($request->level === 'village') {
+                    $orderColumn = 'village_id';
+                }
             } else if ($request->order[0]['column'] == '2') {
                 $orderColumn = 'status_id';
             }
@@ -492,7 +498,8 @@ class HomeController extends Controller
                 $searchkeyword = $request->search['value'];
                 $records->where(function ($query) use ($searchkeyword) {
                     $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                        ->orWhereRaw('LOWER(owner) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+                        ->orWhereRaw('LOWER(owner) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                        ->orWhereRaw('LOWER(source) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
                 });
             }
         }
