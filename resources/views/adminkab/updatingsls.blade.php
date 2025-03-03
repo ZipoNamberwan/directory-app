@@ -773,7 +773,7 @@
                         <p style='font-size: 0.7rem' class='text-secondary mb-0'>${row.sls.name}</p>                                        
                     </div>`
                             }
-                            return data.id
+                            return data
                         }
                     },
                     {
@@ -786,7 +786,7 @@
                                 return '<p class="mb-0"><span class="badge bg-gradient-' + data.color + '">' +
                                     data.name + '</span></p>';
                             }
-                            return data.id;
+                            return data;
                         }
                     },
                     {
@@ -802,7 +802,7 @@
                                     return `<p style='font-size: 0.7rem' class='text-secondary mb-0'>${data.firstname}</p>`;
                                 }
                             }
-                            return data.id;
+                            return data;
                         }
                     },
                     {
@@ -828,7 +828,7 @@
                             `;
                                 }
                             }
-                            return data.id;
+                            return data;
                         }
                     },
                 ],

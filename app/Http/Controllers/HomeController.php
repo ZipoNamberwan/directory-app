@@ -334,9 +334,9 @@ class HomeController extends Controller
                 $orderDir = 'desc';
             }
             if ($request->order[0]['column'] == '0') {
-                $orderColumn = 'sls_id';
-            } else if ($request->order[0]['column'] == '1') {
                 $orderColumn = 'name';
+            } else if ($request->order[0]['column'] == '1') {
+                $orderColumn = 'sls_id';
             } else if ($request->order[0]['column'] == '2') {
                 $orderColumn = 'status_id';
             }
