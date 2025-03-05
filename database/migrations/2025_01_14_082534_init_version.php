@@ -77,7 +77,7 @@ return new class extends Migration
             $table->foreignUuid('pcl_id')->nullable()->constrained('users')->onDelete('set null');
 
             $table->boolean('is_new')->default(false);
-            $table->softDeletes(); 
+            $table->softDeletes();
 
             $table->index('regency_id');
             $table->index('subdistrict_id');
@@ -98,9 +98,41 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('regencies');
-        Schema::dropIfExists('subdistricts');
-        Schema::dropIfExists('villages');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['regency_id']);
+            $table->dropColumn('regency_id');
+        });
+
+        Schema::table('sls_business', function (Blueprint $table) {
+            $table->dropForeign(['regency_id']);
+            $table->dropForeign(['subdistrict_id']);
+            $table->dropForeign(['village_id']);
+            $table->dropForeign(['sls_id']);
+            $table->dropForeign(['status_id']);
+            $table->dropForeign(['pml_id']);
+            $table->dropForeign(['pcl_id']);
+        });
+
+        Schema::dropIfExists('sls_business');
+        Schema::dropIfExists('statuses');
+
+        Schema::table('sls', function (Blueprint $table) {
+            $table->dropForeign(['village_id']);
+        });
+
         Schema::dropIfExists('sls');
+
+        Schema::table('villages', function (Blueprint $table) {
+            $table->dropForeign(['subdistrict_id']);
+        });
+
+        Schema::dropIfExists('villages');
+
+        Schema::table('subdistricts', function (Blueprint $table) {
+            $table->dropForeign(['regency_id']);
+        });
+
+        Schema::dropIfExists('subdistricts');
+        Schema::dropIfExists('regencies');
     }
 };

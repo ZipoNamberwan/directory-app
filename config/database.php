@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_MAIN_CONNECTION', 'sqlite'),
 
     /*
     |--------------------------------------------------------------------------
@@ -42,17 +42,57 @@ return [
             'synchronous' => null,
         ],
 
-        'mysql' => [
+        'mysql_main' => [
             'driver' => 'mysql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'url' => env('DB_MAIN_URL'),
+            'host' => env('DB_MAIN_HOST', '127.0.0.1'),
+            'port' => env('DB_MAIN_PORT', '3306'),
+            'database' => env('DB_MAIN_DATABASE', 'laravel'),
+            'username' => env('DB_MAIN_USERNAME', 'root'),
+            'password' => env('DB_MAIN_PASSWORD', ''),
+            'unix_socket' => env('DB_MAIN_SOCKET', ''),
+            'charset' => env('DB_MAIN_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_MAIN_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
+        'mysql_2' => [
+            'driver' => 'mysql',
+            'url' => env('DB_2_URL'),
+            'host' => env('DB_2_HOST', '127.0.0.1'),
+            'port' => env('DB_2_PORT', '3306'),
+            'database' => env('DB_2_DATABASE', 'laravel'),
+            'username' => env('DB_2_USERNAME', 'root'),
+            'password' => env('DB_2_PASSWORD', ''),
+            'unix_socket' => env('DB_2_SOCKET', ''),
+            'charset' => env('DB_2_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_2_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
+        'mysql_3' => [
+            'driver' => 'mysql',
+            'url' => env('DB_3_URL'),
+            'host' => env('DB_3_HOST', '127.0.0.1'),
+            'port' => env('DB_3_PORT', '3306'),
+            'database' => env('DB_3_DATABASE', 'laravel'),
+            'username' => env('DB_3_USERNAME', 'root'),
+            'password' => env('DB_3_PASSWORD', ''),
+            'unix_socket' => env('DB_3_SOCKET', ''),
+            'charset' => env('DB_3_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_3_COLLATION', 'utf8mb4_unicode_ci'),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,

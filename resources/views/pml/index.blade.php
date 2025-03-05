@@ -165,7 +165,7 @@
                                         <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Usaha</th>
                                         <th class="text-uppercase text-small font-weight-bolder opacity-7">Wilayah</th>
                                         <th class="text-uppercase text-small font-weight-bolder opacity-7">Status</th>
-                                        <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
+                                        {{-- <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th> --}}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -228,6 +228,75 @@
         $('#status').on('change', function() {
             renderTable();
         });
+
+        function loadVillage(subdistrictid = null, selectedvillage = null) {
+
+            let subdistrictSelector = `#subdistrict`;
+            let villageSelector = `#village`;
+            let slsSelector = `#sls`;
+
+            let id = $(subdistrictSelector).val();
+            if (subdistrictid != null) {
+                id = subdistrictid;
+            }
+
+            $(villageSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+            $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/desa/' + id,
+                    success: function(response) {
+                        $(villageSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Desa -- </option>`);
+                        $(slsSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                        response.forEach(element => {
+                            let selected = selectedvillage == String(element.id) ? 'selected' : '';
+                            $(villageSelector).append(
+                                `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(villageSelector).empty().append(`<option value="0" disabled> -- Pilih Desa -- </option>`);
+                $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
+
+        function loadSls(villageid = null, selectedsls = null) {
+
+            let villageSelector = `#village`;
+            let slsSelector = `#sls`;
+
+            let id = $(villageSelector).val();
+            if (villageid != null) {
+                id = villageid;
+            }
+
+            $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/sls/' + id,
+                    success: function(response) {
+                        $(slsSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                        response.forEach(element => {
+                            let selected = selectedsls == String(element.id) ? 'selected' : '';
+                            $(slsSelector).append(
+                                `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
 
         function getFilterUrl(filter) {
             var filterUrl = ''
@@ -319,20 +388,20 @@
                         return data.id;
                     }
                 },
-                {
-                    responsivePriority: 4,
-                    width: "10%",
-                    data: "id",
-                    type: "text",
-                    render: function(data, type, row) {
-                        if (type === 'display') {
-                            return `<button data-row='${escapeJsonForHtml(JSON.stringify(row))}' onclick="openUpdateDirectoryModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
-                                    <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
-                                </button>`
-                        }
-                        return data;
-                    }
-                },
+                // {
+                //     responsivePriority: 4,
+                //     width: "10%",
+                //     data: "id",
+                //     type: "text",
+                //     render: function(data, type, row) {
+                //         if (type === 'display') {
+                //             return `<button data-row='${escapeJsonForHtml(JSON.stringify(row))}' onclick="openUpdateDirectoryModal(this)" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary btn-sm" type="button">
+            //                     <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
+            //                 </button>`
+                //         }
+                //         return data;
+                //     }
+                // },
             ],
             language: {
                 paginate: {

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Helpers\DatabaseSelector;
 use App\Models\Subdistrict;
 use App\Models\Village;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -27,16 +28,18 @@ class VillageJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $data = [];
-        foreach ($this->records as $record) {
-            $data[] = [
-                'id' => $record['prov'] . $record['kab'] . $record['kec'] . $record['des'],
-                'short_code' => $record['des'],
-                'long_code' => $record['prov'] . $record['kab'] . $record['kec'] . $record['des'],
-                'name' => $record['des_name'],
-                'subdistrict_id' => Subdistrict::find($record['prov'] . $record['kab'] . $record['kec'])->id,
-            ];
+        foreach (DatabaseSelector::getListConnections() as $connection) {
+            $data = [];
+            foreach ($this->records as $record) {
+                $data[] = [
+                    'id' => $record['prov'] . $record['kab'] . $record['kec'] . $record['des'],
+                    'short_code' => $record['des'],
+                    'long_code' => $record['prov'] . $record['kab'] . $record['kec'] . $record['des'],
+                    'name' => $record['des_name'],
+                    'subdistrict_id' => Subdistrict::find($record['prov'] . $record['kab'] . $record['kec'])->id,
+                ];
+            }
+            Village::on($connection)->insert($data);
         }
-        Village::insert($data);
     }
 }

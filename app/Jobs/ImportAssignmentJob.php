@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Helpers\DatabaseSelector;
 use App\Models\AssignmentStatus;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -96,7 +97,7 @@ class ImportAssignmentJob implements ShouldQueue
                     $bindings[] = $update['sls_id'];
                 }
 
-                DB::statement($query, $bindings);
+                DB::on(DatabaseSelector::getConnection($this->regency))->statement($query, $bindings);
             });
 
             // DB::transaction(function () use ($updates) {

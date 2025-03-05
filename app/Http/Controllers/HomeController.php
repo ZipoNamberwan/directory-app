@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\DatabaseSelector;
 use App\Models\NonSlsBusiness;
 use App\Models\ReportProvince;
 use App\Models\ReportRegency;
@@ -38,7 +39,7 @@ class HomeController extends Controller
         $user = User::find(Auth::id());
 
         if ($user->hasRole('pcl')) {
-            $businessBase = SlsBusiness::where(['pcl_id' => Auth::id()]);
+            $businessBase = SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where(['pcl_id' => Auth::id()]);
             $total = (clone $businessBase)->count();
             $not_done = (clone $businessBase)->where(['status_id' => 1])->count();
             $active = (clone $businessBase)->where(['status_id' => 2])->count();
@@ -58,7 +59,6 @@ class HomeController extends Controller
             ]);
         } else if ($user->hasRole('adminkab')) {
             $regency_id = User::find(Auth::id())->regency_id;
-            $businessBase = SlsBusiness::where(['regency_id' => $regency_id]);
 
             // $datetime = new DateTime();
             // $datetime->modify('+2 hours');
@@ -134,7 +134,7 @@ class HomeController extends Controller
                 'subdistricts' => $subdistricts
             ]);
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
-            $businessBase = NonSlsBusiness::where(['last_modified_by' => Auth::id()]);
+            $businessBase = NonSlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where(['last_modified_by' => Auth::id()]);
             $total = (clone $businessBase)->count();
             $not_done = (clone $businessBase)->where(['status_id' => 1])->count();
             $active = (clone $businessBase)->where(['status_id' => 2])->count();
@@ -154,7 +154,6 @@ class HomeController extends Controller
             ]);
         } else if ($user->hasRole('adminprov')) {
             $regency_id = User::find(Auth::id())->regency_id;
-            $businessBase = SlsBusiness::where(['regency_id' => $regency_id]);
 
             // $datetime = new DateTime();
             // $datetime->modify('+2 hours');
@@ -248,7 +247,7 @@ class HomeController extends Controller
         if ($user->hasRole('pcl')) {
             $village = Village::whereIn(
                 'id',
-                $user->slsBusiness()->select('village_id')->where('village_id', 'like', "{$subdistrict_id}%")->distinct()->pluck('village_id')
+                SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->select('village_id')->where('pcl_id', $user->id)->where('village_id', 'like', "{$subdistrict_id}%")->distinct()->pluck('village_id')
             )->get();
         } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml') || $user->hasRole('operator')) {
             $village = Village::where('subdistrict_id', $subdistrict_id)->get();
@@ -264,7 +263,7 @@ class HomeController extends Controller
         if ($user->hasRole('pcl')) {
             $sls = Sls::whereIn(
                 'id',
-                $user->slsBusiness()->select('sls_id')->where('sls_id', 'like', "{$village_id}%")->distinct()->pluck('sls_id')
+                SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->select('sls_id')->where('pcl_id', $user->id)->where('sls_id', 'like', "{$village_id}%")->distinct()->pluck('sls_id')
             )->get();
         } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml') || $user->hasRole('operator')) {
             $sls = Sls::where('village_id', $village_id)->get();
@@ -278,9 +277,11 @@ class HomeController extends Controller
         $business = [];
 
         if ($user->hasRole('pcl')) {
-            $business = $user->slsBusiness()->where('sls_id', '=', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();
-        } else if ($user->hasRole('adminkab') || $user->hasRole('adminprov')) {
-            $business = SlsBusiness::where('sls_id', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();;
+            $business = SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where(['sls_id' => $id_sls, 'pcl_id' => $user->id])->with(['status', 'sls', 'village', 'subdistrict'])->get();
+        } else if ($user->hasRole('adminkab')) {
+            $business = SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where('sls_id', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();;
+        } else if ($user->hasRole('adminprov')) {
+            $business = SlsBusiness::on(DatabaseSelector::getConnection(substr(Sls::find($id_sls)->id, 0, 4)))->where('sls_id', $id_sls)->with(['status', 'sls', 'village', 'subdistrict'])->get();;
         }
         return response()->json($business);
     }
@@ -291,11 +292,21 @@ class HomeController extends Controller
         $records = null;
 
         if ($user->hasRole('pcl')) {
-            $records = $user->slsBusiness();
+            $records = SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where('pcl_id', $user->id);
         } elseif ($user->hasRole('adminkab')) {
-            $records = SlsBusiness::where('regency_id', $user->regency_id);
+            $records = SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where('regency_id', $user->regency_id);
         } else if ($user->hasRole('adminprov')) {
-            $records = SlsBusiness::query();
+            if ($request->regency && $request->regency !== 'all') {
+                $records = SlsBusiness::on(DatabaseSelector::getConnection($request->regency))
+                    ->where('regency_id', $request->regency);
+            } else {
+                return response()->json([
+                    "draw" => $request->draw,
+                    "recordsTotal" => 0,
+                    "recordsFiltered" => 0,
+                    "data" => []
+                ]);
+            }
         }
 
         // Apply filters
@@ -303,7 +314,7 @@ class HomeController extends Controller
             $records->where('status_id', $request->status);
         }
 
-        if ($request->regency && $request->regency !== 'all') {
+        if (!$user->hasRole('adminprov') && $request->regency && $request->regency !== 'all') {
             $records->where('regency_id', $request->regency);
         }
 
@@ -325,7 +336,7 @@ class HomeController extends Controller
 
         $recordsTotal = $records->count();
 
-        $orderColumn = 'name';
+        $orderColumn = 'id';
         $orderDir = 'asc';
         if ($request->order != null) {
             if ($request->order[0]['dir'] == 'asc') {
@@ -381,61 +392,34 @@ class HomeController extends Controller
         $records = null;
 
         if ($user->hasRole('adminkab')) {
-            $records = NonSlsBusiness::where('regency_id', $user->regency_id);
+            $records = NonSlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where('regency_id', $user->regency_id);
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             if ($request->pmltype == 'index') {
-                $records = NonSlsBusiness::where('last_modified_by', $user->id);
+                $records = NonSlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where('last_modified_by', $user->id);
             } else {
-                $records = NonSlsBusiness::where('regency_id', $user->regency_id);
+                $records = NonSlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where('regency_id', $user->regency_id);
             }
         } else if ($user->hasRole('adminprov')) {
-            $records = NonSlsBusiness::query();
+            if (empty($request->regency) || $request->regency === 'all') {
+                return response()->json([
+                    "draw" => $request->draw,
+                    "recordsTotal" => 0,
+                    "recordsFiltered" => 0,
+                    "data" => []
+                ]);
+            }
+
+            $records = NonSlsBusiness::on(DatabaseSelector::getConnection($request->regency))
+                ->where('regency_id', $request->regency);
         }
-
-        // $regencyId = $user->regency->id ?? $request->regency;
-        // if ($request->level === 'regency') {
-        //     $records->where('level', 'regency');
-
-        //     if (!empty($request->regency) && $request->regency !== 'all') {
-        //         $records->where('regency_id', $request->regency);
-        //     }
-        // } elseif ($request->level === 'subdistrict') {
-        //     $records->where('level', 'subdistrict');
-
-        //     if (!empty($request->regency) && $request->regency !== 'all') {
-        //         $records->where('regency_id', $request->regency);
-        //     }
-
-        //     if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
-        //         $records->where('subdistrict_id', $request->subdistrict);
-        //     } else if ($request->subdistrict == 'all') {
-        //         $records->where('subdistrict_id', 'like', "{$regencyId}%");
-        //     }
-        // } elseif ($request->level === 'village') {
-        //     $records->where('level', 'village');
-
-        //     if (!empty($request->regency) && $request->regency !== 'all') {
-        //         $records->where('regency_id', $request->regency);
-        //     }
-
-        //     if (!empty($request->subdistrict) && $request->subdistrict !== 'all') {
-        //         $records->where('subdistrict_id', $request->subdistrict);
-        //     } else if ($request->subdistrict == 'all') {
-        //         $records->where('village_id', 'like', "{$regencyId}%");
-        //     }
-
-        //     if (!empty($request->village) && $request->village !== 'all') {
-        //         $records->where('village_id', $request->village);
-        //     } else if ($request->village == 'all') {
-        //         $records->where('village_id', 'like', "{$regencyId}%");
-        //     }
-        // }
 
         $regencyId = $user->regency->id ?? $request->regency;
 
-        $records->where('level', $request->level);
-
-        if (!empty($request->regency) && $request->regency !== 'all') {
+        if (!empty($request->level) && $request->level !== 'all') {
+            $records->where('level', $request->level);
+        }
+        
+        if (!$user->hasRole('adminprov') && !empty($request->regency) && $request->regency !== 'all') {
             $records->where('regency_id', $request->regency);
         }
 
@@ -460,17 +444,9 @@ class HomeController extends Controller
             $records->where('status_id', $request->status);
         }
 
-        // if ($request->sls && $request->sls !== 'all') {
-        //     $records->where('sls_id', $request->sls);
-        // }
-
-        // if ($request->assignment !== null) {
-        //     $records->where('pml_id', $request->assignment == '1' ? '!=' : '=', null);
-        // }
-
         $recordsTotal = $records->count();
 
-        $orderColumn = 'name';
+        $orderColumn = 'id';
         $orderDir = 'asc';
         if ($request->order != null) {
             if ($request->order[0]['dir'] == 'asc') {
@@ -513,10 +489,6 @@ class HomeController extends Controller
             $samples = $samples->orderByDesc($orderColumn);
         }
 
-        // $sql = vsprintf(str_replace('?', "'%s'", $samples->toSql()), $samples->getBindings());
-
-        // dd($sql);
-
         if ($request->length != -1) {
             $samples = $samples->skip($request->start ?? 0)
                 ->take($request->length ?? 10)->get();
@@ -532,76 +504,21 @@ class HomeController extends Controller
         ]);
     }
 
-    // public function updateNonSlsDirectory(Request $request, $id)
-    // {
-    //     $business = NonSlsBusiness::find($id);
-    //     $validationArray = [
-    //         'address' => 'required_if:status,2|required_if:status,90',
-    //         'name' => 'required_if:status,90',
-    //         'owner' => 'required_if:status,90',
-    //         'source' => 'required_if:status,90',
-    //     ];
-
-    //     if ($business->status_id != 90) {
-    //         $validationArray['status'] = 'required';
-    //     }
-
-    //     if ($business->sls == null) {
-    //         $validationArray['sls'] = 'required_if:status,2';
-    //     }
-    //     $switchChecked = filter_var($request->switch, FILTER_VALIDATE_BOOLEAN);
-    //     if ($switchChecked) {
-    //         $validationArray['sls'] = 'required';
-    //     }
-
-    //     $request->validate($validationArray);
-
-    //     if ($switchChecked || (!$switchChecked && is_null($business->sls_id))) {
-    //         if ($business->level === 'regency') {
-    //             $business->subdistrict_id = $request->subdistrict ?: null;
-    //         }
-    //         if (in_array($business->level, ['regency', 'subdistrict'])) {
-    //             $business->village_id = $request->village ?: null;
-    //         }
-    //         if (in_array($business->level, ['regency', 'subdistrict', 'village'])) {
-    //             $business->sls_id = $request->sls ?: null;
-    //         }
-    //     }
-
-    //     if ($request->status == "2" || $business->status_id == 90) {
-    //         $business->address = $request->address;
-    //     } else {
-    //         $business->address = null;
-
-    //         if ($business->level === 'regency') {
-    //             $business->subdistrict_id = null;
-    //             $business->village_id = null;
-    //             $business->sls_id = null;
-    //         } elseif ($business->level === 'subdistrict') {
-    //             $business->village_id = null;
-    //             $business->sls_id = null;
-    //         } elseif ($business->level === 'village') {
-    //             $business->sls_id = null;
-    //         }
-    //     }
-
-    //     $business->last_modified_by = Auth::id();
-    //     $business->status_id = $request->status ?? $business->status_id;
-    //     if ($business->status_id == 90) {
-    //         $business->name = $request->name;
-    //         $business->owner = $request->owner;
-    //         $business->source = $request->source;
-    //     }
-
-    //     $business->save();
-
-    //     return response()->json($business);
-    // }
-
     public function updateNonSlsDirectory(Request $request, $id)
     {
         //not included validation yet
-        $business = NonSlsBusiness::find($id);
+        $user = User::find(Auth::id());
+        $business = null;
+        if ($user->regency_id) {
+            $business = NonSlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->find($id);
+        } else {
+            foreach (DatabaseSelector::getListConnections() as $connection) {
+                $business = NonSlsBusiness::on($connection)->find($id);
+                if ($business) {
+                    break;
+                }
+            }
+        }
 
         if ($request->status) {
             $business->status_id = $request->status;
@@ -661,7 +578,18 @@ class HomeController extends Controller
             ]);
         }
 
-        $business = SlsBusiness::find($id);
+        $user = User::find(Auth::id());
+        $business = null;
+        if ($user->regency_id) {
+            $business = SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->find($id);
+        } else {
+            foreach (DatabaseSelector::getListConnections() as $connection) {
+                $business = SlsBusiness::on($connection)->find($id);
+                if ($business) {
+                    break;
+                }
+            }
+        }
         if ($request->new === "true") {
             $business->name = $request->name;
         } else {
@@ -684,17 +612,18 @@ class HomeController extends Controller
 
         $user = User::find(Auth::id());
 
-        $business = new SlsBusiness();
-        $business->name = $request->name;
-        $business->regency_id = $user->hasRole('adminprov') ? $request->regency : User::find(Auth::id())->regency_id;
-        $business->subdistrict_id = $request->subdistrict;
-        $business->village_id = $request->village;
-        $business->sls_id = $request->sls;
-        $business->status_id = 90;
-        $business->is_new = true;
-        $business->pcl_id = $user->hasRole('pcl') ? $user->id : null;
-        $business->source = 'Hasil Lapangan';
-        $business->save();
+        $regencyId = $user->hasRole('adminprov') ? $request->regency : User::find(Auth::id())->regency_id;
+        $business = SlsBusiness::on(DatabaseSelector::getConnection($regencyId))->create([
+            'name' => $request->name,
+            'regency_id' => $regencyId,
+            'subdistrict_id' => $request->subdistrict,
+            'village_id' => $request->village,
+            'sls_id' => $request->sls,
+            'status_id' => 90,
+            'is_new' => true,
+            'pcl_id' => $user->hasRole('pcl') ? $user->id : null,
+            'source' => 'Hasil Lapangan'
+        ]);
 
         return response()->json($business);
     }
@@ -711,31 +640,42 @@ class HomeController extends Controller
 
         $user = User::find(Auth::id());
 
-        $business = new NonSlsBusiness();
-        $business->name = $request->name;
-        $business->owner = $request->owner;
-        $business->address = $request->address;
-        $business->source = $request->source;
+        $regencyId = substr($request->sls, 0, 4);
 
-        $business->initial_address = $request->address;
-        $business->is_new = true;
-        $business->status_id = 90;
-        $business->last_modified_by = $user->id;
-        $business->level = 'village';
-
-        $business->regency_id = substr($request->sls, 0, 4);
-        $business->subdistrict_id = substr($request->sls, 0, 7);
-        $business->village_id = substr($request->sls, 0, 10);
-        $business->sls_id = $request->sls;
-
-        $business->save();
+        $business = NonSlsBusiness::on(DatabaseSelector::getConnection($regencyId))->create([
+            'name' => $request->name,
+            'owner' => $request->owner,
+            'address' => $request->address,
+            'source' => $request->source,
+            'initial_address' => $request->address,
+            'is_new' => true,
+            'status_id' => 90,
+            'last_modified_by' => $user->id,
+            'level' => 'village',
+            'regency_id' => $regencyId,
+            'subdistrict_id' => substr($request->sls, 0, 7),
+            'village_id' => substr($request->sls, 0, 10),
+            'sls_id' => $request->sls
+        ]);
 
         return response()->json($business);
     }
 
     public function deleteSlsDirectory(string $id)
     {
-        $business = SlsBusiness::find($id);
+        $user = User::find(Auth::id());
+        $business = null;
+        if ($user->regency_id) {
+            $business = SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->find($id);
+        } else {
+            foreach (DatabaseSelector::getListConnections() as $connection) {
+                $business = SlsBusiness::on($connection)->find($id);
+                if ($business) {
+                    break;
+                }
+            }
+        }
+
         if ($business->is_new) {
             $business->delete();
         }
@@ -745,7 +685,18 @@ class HomeController extends Controller
 
     public function deleteNonSlsDirectory(string $id)
     {
-        $business = NonSlsBusiness::find($id);
+        $user = User::find(Auth::id());
+        $business = null;
+        if ($user->regency_id) {
+            $business = NonSlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->find($id);
+        } else {
+            foreach (DatabaseSelector::getListConnections() as $connection) {
+                $business = NonSlsBusiness::on($connection)->find($id);
+                if ($business) {
+                    break;
+                }
+            }
+        }
         if ($business->is_new) {
             $business->delete();
         }

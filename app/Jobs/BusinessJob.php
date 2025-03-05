@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Helpers\DatabaseSelector;
 use App\Models\FailedBusiness;
 use App\Models\NonSlsBusiness;
 use App\Models\SlsBusiness;
@@ -75,7 +76,7 @@ class BusinessJob implements ShouldQueue
                 }
 
                 $regencyId = "35" . substr($record['kab'], 1, 2);
-                if ($regencyId == "35"){
+                if ($regencyId == "35") {
                     $regencyId = substr($record['iddesa'], 0, 4);
                 }
 
@@ -97,27 +98,27 @@ class BusinessJob implements ShouldQueue
                 ];
             }
         }
-        // if (count($dataSls) > 0) {
-        //     SlsBusiness::insert($dataSls);
-        // }
-        // if (count($dataNonSls) > 0) {
-        //     NonSlsBusiness::insert($dataNonSls);
-        // }
-
-        foreach ($dataSls as $data) {
-            try {
-                SlsBusiness::create($data);
-            } catch (Exception $e) {
-                FailedBusiness::create(['record' => json_encode($data)]);
-            }
+        if (count($dataSls) > 0) {
+            SlsBusiness::on(DatabaseSelector::getConnection($dataSls[0]['regency_id']))->insert($dataSls);
+        }
+        if (count($dataNonSls) > 0) {
+            NonSlsBusiness::on(DatabaseSelector::getConnection($dataNonSls[0]['regency_id']))->insert($dataNonSls);
         }
 
-        foreach ($dataNonSls as $data) {
-            try {
-                NonSlsBusiness::create($data);
-            } catch (Exception $e) {
-                FailedBusiness::create(['record' => json_encode($data)]);
-            }
-        }
+        // foreach ($dataSls as $data) {
+        //     try {
+        //         SlsBusiness::on(DatabaseSelector::getConnection($data['regency_id']))->create($data);
+        //     } catch (Exception $e) {
+        //         FailedBusiness::create(['record' => json_encode($data)]);
+        //     }
+        // }
+
+        // foreach ($dataNonSls as $data) {
+        //     try {
+        //         NonSlsBusiness::on(DatabaseSelector::getConnection($data['regency_id']))->create($data);
+        //     } catch (Exception $e) {
+        //         FailedBusiness::create(['record' => json_encode($data)]);
+        //     }
+        // }
     }
 }

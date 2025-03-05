@@ -18,6 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call([DummySeeder::class]);
         $this->call([AreaSeeder::class]);
         $this->call([BusinessSeeder::class]);
-        $this->call([DummyAssignmentSeeder::class]);
+        // $this->call([DummyAssignmentSeeder::class]);
     }
 }

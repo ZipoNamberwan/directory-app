@@ -2,18 +2,13 @@
 
 namespace App\Livewire;
 
-use App\Exports\NonSlsBusinessExport;
-use App\Exports\SlsBusinessExport;
-use App\Jobs\AssignmentNotificationJob;
 use App\Jobs\BusinessExportJob;
 use App\Models\AssignmentStatus;
-use App\Models\SlsBusiness;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Illuminate\Support\Str;
-use League\Csv\Writer;
 
 class Download extends Component
 {

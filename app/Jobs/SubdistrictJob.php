@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Helpers\DatabaseSelector;
 use App\Models\Regency;
 use App\Models\Subdistrict;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -27,17 +28,18 @@ class SubdistrictJob implements ShouldQueue
      */
     public function handle(): void
     {
-
-        $data = [];
-        foreach ($this->records as $record) {
-            $data[] = [
-                'id' => $record['prov'] . $record['kab'] . $record['kec'],
-                'short_code' => $record['kec'],
-                'long_code' => $record['prov'] . $record['kab'] . $record['kec'],
-                'name' => $record['kec_name'],
-                'regency_id' => Regency::find($record['prov'] . $record['kab'])->id,
-            ];
+        foreach (DatabaseSelector::getListConnections() as $connection) {
+            $data = [];
+            foreach ($this->records as $record) {
+                $data[] = [
+                    'id' => $record['prov'] . $record['kab'] . $record['kec'],
+                    'short_code' => $record['kec'],
+                    'long_code' => $record['prov'] . $record['kab'] . $record['kec'],
+                    'name' => $record['kec_name'],
+                    'regency_id' => Regency::find($record['prov'] . $record['kab'])->id,
+                ];
+            }
+            Subdistrict::on($connection)->insert($data);
         }
-        Subdistrict::insert($data);
     }
 }

@@ -13,14 +13,6 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminKabController extends Controller
 {
-    // public function test()
-    // {
-    //     $pcl = User::where('email', 'pcl01@gmail.com')->first();
-    //     $ids = SlsBusiness::where(['regency_id' => $pcl->regency_id, 'status_id' => 1])->skip(0)->take(1000)->pluck('id');
-    //     SlsBusiness::whereIn('id', $ids)->update(['status_id' => 2]);
-
-    //     return 'test';
-    // }
 
     public function showAssignment()
     {

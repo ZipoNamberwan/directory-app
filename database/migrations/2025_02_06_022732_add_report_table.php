@@ -74,8 +74,24 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('report_village');
-        Schema::dropIfExists('report_subdistrict');
+        Schema::table('report_village', function (Blueprint $table) {
+            $table->dropForeign(['village_id']);
+            $table->dropIndex(['village_id']);
+        });
+    
+        Schema::table('report_subdistrict', function (Blueprint $table) {
+            $table->dropForeign(['subdistrict_id']);
+            $table->dropIndex(['subdistrict_id']);
+        });
+    
+        Schema::table('report_regency', function (Blueprint $table) {
+            $table->dropForeign(['regency_id']);
+            $table->dropIndex(['regency_id']);
+        });
+    
+        Schema::dropIfExists('report_province');
         Schema::dropIfExists('report_regency');
+        Schema::dropIfExists('report_subdistrict');
+        Schema::dropIfExists('report_village');
     }
 };

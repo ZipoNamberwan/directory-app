@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Helpers\DatabaseSelector;
 use App\Models\AssignmentStatus;
 use App\Models\NonSlsBusiness;
 use App\Models\SlsBusiness;
@@ -57,7 +58,7 @@ class BusinessExportJob implements ShouldQueue
                 'PCL',
             ]);
 
-            SlsBusiness::where(['regency_id' => $this->regencyId])
+            SlsBusiness::on(DatabaseSelector::getConnection($this->regencyId))->where(['regency_id' => $this->regencyId])
                 ->with(['regency', 'subdistrict', 'village', 'sls', 'pcl', 'status'])
                 ->chunk(1000, function ($businesses) use ($csv) {
                     foreach ($businesses as $row) {
@@ -93,7 +94,7 @@ class BusinessExportJob implements ShouldQueue
                 'PCL',
             ]);
 
-            NonSlsBusiness::where(['regency_id' => $this->regencyId])
+            NonSlsBusiness::on(DatabaseSelector::getConnection($this->regencyId))->where(['regency_id' => $this->regencyId])
                 ->with(['regency', 'subdistrict', 'village', 'sls', 'pcl', 'status'])
                 ->chunk(1000, function ($businesses) use ($csv) {
                     foreach ($businesses as $row) {

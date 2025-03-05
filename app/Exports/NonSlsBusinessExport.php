@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Helpers\DatabaseSelector;
 use App\Models\AssignmentStatus;
 use App\Models\NonSlsBusiness;
 use Illuminate\Bus\Queueable;
@@ -35,7 +36,7 @@ implements FromQuery, ShouldQueue, WithHeadings, WithMapping, WithChunkReading
      */
     public function query()
     {
-        return NonSlsBusiness::query()->where('regency_id', '=', $this->regency);
+        return NonSlsBusiness::on(DatabaseSelector::getConnection($this->regency))->query()->where('regency_id', '=', $this->regency);
     }
 
     public function headings(): array
