@@ -97,7 +97,7 @@ class ImportAssignmentJob implements ShouldQueue
                     $bindings[] = $update['sls_id'];
                 }
 
-                DB::on(DatabaseSelector::getConnection($this->regency))->statement($query, $bindings);
+                DB::connection(DatabaseSelector::getConnection($this->regency))->statement($query, $bindings);
             });
 
             // DB::transaction(function () use ($updates) {
