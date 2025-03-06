@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Helpers\DatabaseSelector;
 use App\Models\AssignmentStatus;
 use App\Models\NonSlsBusiness;
 use App\Models\Sls;
@@ -59,7 +60,7 @@ class ImportAdditionalJob implements ShouldQueue
             if (!empty($rowErrors)) {
                 $errors[$rowNumber] = $rowErrors;
             } else {
-                NonSlsBusiness::create([
+                NonSlsBusiness::on(DatabaseSelector::getConnection(substr($record[0], 0, 4)))->create([
                     'regency_id' => substr($record[0], 0, 4),
                     'subdistrict_id' => substr($record[0], 0, 7),
                     'village_id' => substr($record[0], 0, 10),

@@ -931,6 +931,27 @@
                 if (selectedBusiness.status.id == 90 && switchChecked && (!slsUpdate || slsUpdate == '0')) {
                     slsValid2 = false
                 }
+                console.log({
+                    statusValid
+                })
+                console.log({
+                    nameValid
+                })
+                console.log({
+                    ownerValid
+                })
+                console.log({
+                    sourceValid
+                })
+                console.log({
+                    addressValid
+                })
+                console.log({
+                    slsValid1
+                })
+                console.log({
+                    slsValid2
+                })
 
                 let valid = statusValid && nameValid && ownerValid && sourceValid && addressValid && slsValid1 && slsValid2;
                 updateError.style.display = valid ? 'none' : 'block';

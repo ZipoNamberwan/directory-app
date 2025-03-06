@@ -51,7 +51,6 @@ class UserController extends Controller
         $request->validate($validateArray);
 
         $user = User::create([
-            'id' =>  (string) Str::uuid(),
             'firstname' => $request->firstname,
             'email' => $request->email,
             'username' => $request->email,
@@ -59,7 +58,7 @@ class UserController extends Controller
             'regency_id' => $admin->hasRole('adminprov') ? $request->regency : $admin->regency->id,
             'must_change_password' => false
         ]);
-        $user->assignRole($request->role);
+        $user->assignRoleAllDatabase($request->role);
 
         return redirect('/users')->with('success-create', 'Petugas telah ditambah!');
     }
@@ -113,7 +112,8 @@ class UserController extends Controller
             'regency_id' => $admin->hasRole('adminprov') ? $request->regency : $admin->regency->id,
             'password' => $request->password != $user->password ? Hash::make($request->password) : $user->password,
         ]);
-        $user->syncRoles([$request->role]);
+        // $user->syncRoles([$request->role]);
+        $user->assignRoleAllDatabase($request->role);
 
         return redirect('/users')->with('success-edit', 'Petugas telah diubah!');
     }

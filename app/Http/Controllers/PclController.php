@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\DatabaseSelector;
 use App\Models\NonSlsBusiness;
 use App\Models\Regency;
 use App\Models\SlsBusiness;
@@ -22,7 +23,7 @@ class PclController extends Controller
             $statuses = Status::where('name', '!=', 'Baru')->orderBy('order', 'asc')->get();
             $subdistricts = Subdistrict::whereIn(
                 'id',
-                User::find(Auth::id())->slsBusiness()->select('subdistrict_id')->distinct()->pluck('subdistrict_id')
+                SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->select('subdistrict_id')->where('pcl_id', $user->id)->distinct()->pluck('subdistrict_id')
             )->get();
 
             return view('pcl.updatingsls', ['subdistricts' => $subdistricts, 'statuses' => $statuses]);

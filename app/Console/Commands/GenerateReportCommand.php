@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\DatabaseSelector;
 use Illuminate\Console\Command;
 use App\Jobs\ReportJob;
 use DateTime;
@@ -42,44 +43,49 @@ class GenerateReportCommand extends Command
             $insertData = [];
 
             foreach (['sls', 'non_sls'] as $type) {
-                $typeBusinessTable = $type . '_business';
 
-                if ($level !== 'province') {
-                    $query = DB::table($levelTable)->leftJoin($typeBusinessTable, $levelTable . '.id', '=', $typeBusinessTable . '.' . $level . '_id');
-                } else {
-                    $query = DB::table($typeBusinessTable);
-                }
-                
-                $query->select([
-                    DB::raw($level !== 'province' ? "$levelTable.id AS id" : "NULL AS id"),
-                    DB::raw('COUNT(CASE WHEN status_id = 1 THEN 1 END) AS not_update'),
-                    DB::raw('COUNT(CASE WHEN status_id = 2 THEN 1 END) AS exist'),
-                    DB::raw('COUNT(CASE WHEN status_id = 3 THEN 1 END) AS not_exist'),
-                    DB::raw('COUNT(CASE WHEN status_id = 4 THEN 1 END) AS not_scope'),
-                    DB::raw('COUNT(CASE WHEN status_id = 90 THEN 1 END) AS new')
-                ]);
-                if ($level !== 'province') {
-                    $query->groupBy($levelTable . ".id");
-                }
+                foreach (DatabaseSelector::getListConnections() as $connection) {
+                    $typeBusinessTable = $type . '_business';
 
-                $reports = $query->get();
-
-                foreach ($reports as $report) {
-                    $dt =  [
-                        'id' => (string) Str::uuid(),
-                        'not_update' => $report->not_update,
-                        'exist' => $report->exist,
-                        'not_exist' => $report->not_exist,
-                        'not_scope' => $report->not_scope,
-                        'new' => $report->new,
-                        'date' => $today,
-                        'type' => $type
-                    ];
                     if ($level !== 'province') {
-                        $dt[$level . '_id'] =  $report->id;
+                        $query = DB::connection($connection)->table($levelTable)->leftJoin($typeBusinessTable, $levelTable . '.id', '=', $typeBusinessTable . '.' . $level . '_id');
+                    } else {
+                        $query = DB::connection($connection)->table($typeBusinessTable);
                     }
 
-                    $insertData[] = $dt;
+                    $query->whereIn($typeBusinessTable . '.regency_id', DatabaseSelector::getRegenciesForConnection($connection));
+
+                    $query->select([
+                        DB::raw($level !== 'province' ? "$levelTable.id AS id" : "NULL AS id"),
+                        DB::raw('COUNT(CASE WHEN status_id = 1 THEN 1 END) AS not_update'),
+                        DB::raw('COUNT(CASE WHEN status_id = 2 THEN 1 END) AS exist'),
+                        DB::raw('COUNT(CASE WHEN status_id = 3 THEN 1 END) AS not_exist'),
+                        DB::raw('COUNT(CASE WHEN status_id = 4 THEN 1 END) AS not_scope'),
+                        DB::raw('COUNT(CASE WHEN status_id = 90 THEN 1 END) AS new')
+                    ]);
+                    if ($level !== 'province') {
+                        $query->groupBy($levelTable . ".id");
+                    }
+
+                    $reports = $query->get();
+
+                    foreach ($reports as $report) {
+                        $dt =  [
+                            'id' => (string) Str::uuid(),
+                            'not_update' => $report->not_update,
+                            'exist' => $report->exist,
+                            'not_exist' => $report->not_exist,
+                            'not_scope' => $report->not_scope,
+                            'new' => $report->new,
+                            'date' => $today,
+                            'type' => $type
+                        ];
+                        if ($level !== 'province') {
+                            $dt[$level . '_id'] =  $report->id;
+                        }
+
+                        $insertData[] = $dt;
+                    }
                 }
             }
 
