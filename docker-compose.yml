@@ -22,10 +22,10 @@ services:
     container_name: directory-app-db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_MAIN_DATABASE}
+      MYSQL_USER: ${DB_MAIN_USERNAME}
+      MYSQL_PASSWORD: ${DB_MAIN_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_MAIN_PASSWORD}
     volumes:
       - dbdata:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
