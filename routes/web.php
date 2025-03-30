@@ -9,6 +9,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ResetPassword;
 use App\Http\Controllers\ChangePassword;
+use App\Http\Controllers\MarketController;
 use App\Http\Controllers\PclController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
@@ -54,6 +55,8 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::group(['middleware' => ['role:pml|operator|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'updatePage'])->name('updating-non-sls');
 		Route::get('/tambah-direktori', [AdminKabController::class, 'showAddition'])->name('tambah-direktori');
+
+		Route::get('/sentra', [MarketController::class, 'show'])->name('market');
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {

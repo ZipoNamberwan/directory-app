@@ -88,6 +88,21 @@
                     </a>
                 </li>
             @endhasrole
+            @hasrole('pml|operator|adminkab|adminprov')
+                <li class="nav-item mt-3">
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Sentra Ekonomi</h6>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ Route::currentRouteName() == 'market' ? 'active' : '' }}"
+                        href="{{ route('market') }}">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-store text-danger text-sm opacity-10"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Pasar</span>
+                    </a>
+                </li>
+            @endhasrole
             @hasrole('adminkab')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Assignment</h6>
