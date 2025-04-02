@@ -56,7 +56,8 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'updatePage'])->name('updating-non-sls');
 		Route::get('/tambah-direktori', [AdminKabController::class, 'showAddition'])->name('tambah-direktori');
 
-		Route::get('/sentra', [MarketController::class, 'show'])->name('market');
+		Route::get('/pasar', [MarketController::class, 'show'])->name('market');
+		Route::get('/pasar-upload/data', [MarketController::class, 'getUploadData']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {
