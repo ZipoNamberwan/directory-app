@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('address');
             $table->string('regency_id');
             $table->foreign('regency_id')->references('id')->on('regencies');
-            $table->string('subdistrict_id');
+            $table->string('subdistrict_id')->nullable();
             $table->foreign('subdistrict_id')->references('id')->on('subdistricts');
             $table->timestamps();
             $table->softDeletes();
@@ -27,9 +27,13 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('owner')->nullable();
+            $table->string('note')->nullable();
             $table->string('latitude');
             $table->string('longitude');
             $table->foreignUuid('market_id')->constrained('markets');
+            $table->foreignUuid('user_id')->constrained('users');
+            $table->string('regency_id');
+            $table->foreign('regency_id')->references('id')->on('regencies');
             $table->timestamps();
             $table->softDeletes();
         });

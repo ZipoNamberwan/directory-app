@@ -11,4 +11,10 @@ class Market extends Model
     protected $guarded = [];
     public $timestamps = false;
     protected $table = 'markets';
+    public $incrementing = false;
+
+    public function regency()
+    {
+        return $this->belongsTo(Regency::class, 'regency_id');
+    }
 }

@@ -14,11 +14,20 @@ return new class extends Migration
         Schema::create('market_upload_status', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('filename');
+            $table->text('message')->nullable();
             $table->enum('status', ['start', 'loading', 'processing', 'success', 'failed', 'success with error']);
             $table->foreignUuid('user_id')->constrained('users');
             $table->foreignUuid('market_id')->constrained('markets');
-            $table->text('message')->nullable();
+            $table->string('regency_id');
+            $table->foreign('regency_id')->references('id')->on('regencies');
+            $table->string('user_firstname');
+            $table->string('market_name');
+            $table->string('regency_name');
             $table->timestamps();
+        });
+
+        Schema::table('market_business', function (Blueprint $table) {
+            $table->foreignUuid('upload_id')->constrained('market_upload_status');
         });
     }
 
@@ -27,6 +36,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('market_business', function (Blueprint $table) {
+            $table->dropForeign(['upload_id']);
+            $table->dropColumn('upload_id');
+        });
+
+        Schema::dropIfExists('market_upload_status');
     }
 };

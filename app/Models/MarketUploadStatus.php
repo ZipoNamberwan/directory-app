@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,6 +11,7 @@ class MarketUploadStatus extends Model
     use HasFactory;
     protected $guarded = [];
     protected $table = 'market_upload_status';
+    public $incrementing = false;
 
     public function user()
     {
