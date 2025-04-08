@@ -88,10 +88,44 @@
                 </a>
             </li>
             @endhasrole
+            @hasrole('adminkab')
+            <li class="nav-item">
+                <a class="nav-link {{ Route::currentRouteName() == 'assignment' ? 'active' : '' }}"
+                    href="{{ route('assignment') }}">
+                    <div
+                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-file-lines text-success text-sm opacity-10"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Assignment</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ str_contains(request()->url(), 'download') == true ? 'active' : '' }}"
+                    href="{{ route('download') }}">
+                    <div
+                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-file text-warning text-sm opacity-10"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Unduh</span>
+                </a>
+            </li>
+            @endhasrole
             @hasrole('pml|operator|adminkab|adminprov')
             <li class="nav-item mt-3">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Pasar</h6>
             </li>
+            @hasrole('adminkab')
+            <li class="nav-item">
+                <a class="nav-link {{ Route::currentRouteName() == 'market-assignment' ? 'active' : '' }}"
+                    href="{{ route('market-assignment') }}">
+                    <div
+                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-square-poll-horizontal text-warning text-sm opacity-10"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Assignment</span>
+                </a>
+            </li>
+            @endhasrole
             <li class="nav-item">
                 <a class="nav-link {{ Route::currentRouteName() == 'market' ? 'active' : '' }}"
                     href="{{ route('market') }}">
@@ -110,34 +144,6 @@
                         <i class="fas fa-store text-danger text-sm opacity-10"></i>
                     </div>
                     <span class="nav-link-text ms-1">Upload</span>
-                </a>
-            </li>
-            @endhasrole
-            @hasrole('adminkab')
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Assignment</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ str_contains(request()->url(), 'assignment') == true ? 'active' : '' }}"
-                    href="{{ route('assignment') }}">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-file-lines text-success text-sm opacity-10"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Assignment</span>
-                </a>
-            </li>
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Unduh</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ str_contains(request()->url(), 'download') == true ? 'active' : '' }}"
-                    href="{{ route('download') }}">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-file text-warning text-sm opacity-10"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Unduh</span>
                 </a>
             </li>
             @endhasrole

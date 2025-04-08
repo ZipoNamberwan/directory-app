@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-@include('layouts.navbars.auth.topnav', ['title' => 'Upload Direktori Pasar'])
+@include('layouts.navbars.auth.topnav', ['title' => 'Daftar Direktori Usaha Pasar'])
 <div class="container-fluid py-4">
 
     <div class="card mt-2">

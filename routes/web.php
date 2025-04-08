@@ -71,6 +71,11 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/assignment', [AdminKabController::class, 'showAssignment'])->name('assignment');
 		Route::get('/download', [AdminKabController::class, 'showDownload'])->name('download');
 		Route::get('/report', [ReportController::class, 'index'])->name('report');
+
+		Route::get('/pasar-assignment', [MarketController::class, 'assignment'])->name('market-assignment');
+		Route::get('/pasar-assignment/pivot', [MarketController::class, 'getUserMarketMappings']);
+		Route::post('/pasar-assignment/upload', [MarketController::class, 'assignmentUpload']);
+		Route::post('/pasar-assignment/download', [MarketController::class, 'assignmentDownload']);
 	});
 
 	Route::group(['middleware' => ['role:adminprov']], function () {

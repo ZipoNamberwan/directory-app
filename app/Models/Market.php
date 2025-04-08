@@ -17,4 +17,11 @@ class Market extends Model
     {
         return $this->belongsTo(Regency::class, 'regency_id');
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class)
+            ->withPivot('user_firstname', 'market_name')
+            ->withTimestamps();
+    }
 }

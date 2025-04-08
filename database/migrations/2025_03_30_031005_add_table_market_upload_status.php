@@ -26,8 +26,25 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('market_assignment_status', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->enum('status', ['start', 'loading', 'success', 'failed', 'success with error']);
+            $table->foreignUuid('user_id')->constrained('users');
+            $table->text('message')->nullable();
+            $table->timestamps();
+        });
+
         Schema::table('market_business', function (Blueprint $table) {
             $table->foreignUuid('upload_id')->constrained('market_upload_status');
+        });
+
+        Schema::create('market_user', function (Blueprint $table) {
+            $table->id();
+            $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('market_id')->constrained()->onDelete('cascade');
+            $table->string('user_firstname');
+            $table->string('market_name');
+            $table->timestamps();
         });
     }
 
@@ -42,5 +59,7 @@ return new class extends Migration
         });
 
         Schema::dropIfExists('market_upload_status');
+        Schema::dropIfExists('market_assignment_status');
+        Schema::dropIfExists('market_user');
     }
 };

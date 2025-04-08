@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\MarketAssignmentExport;
+use App\Exports\SlsAssignmentExport;
+use App\Imports\MarketAssignmentImport;
 use App\Imports\MarketBusinessImport;
+use App\Jobs\MarketAssignmentNotificationJob;
 use App\Jobs\MarketUploadNotificationJob;
+use App\Models\AssignmentStatus;
 use App\Models\Market;
+use App\Models\MarketAssignmentStatus;
 use App\Models\MarketBusiness;
 use App\Models\MarketUploadStatus;
 use App\Models\Regency;
@@ -12,8 +18,10 @@ use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MarketController extends Controller
 {
@@ -33,9 +41,62 @@ class MarketController extends Controller
         return view('market.index', ['regencies' => $regencies, 'markets' => $markets]);
     }
 
+    public function assignment()
+    {
+        return view('market.assignment');
+    }
+
+    public function assignmentUpload(Request $request)
+    {
+        $validateArray = [
+            'file' => 'required|file|mimes:xlsx|max:2048',
+        ];
+        $request->validate($validateArray);
+
+        if ($request->hasFile('file')) {
+
+            $status = MarketAssignmentStatus::where('user_id', Auth::id())
+                ->where(function ($query) {
+                    $query->where('status', 'start')
+                        ->orWhere('status', 'loading');
+                })->first();
+
+            if ($status == null) {
+                $file = $request->file('file');
+
+                $uuid = Str::uuid();
+                MarketAssignmentStatus::create([
+                    'id' => $uuid,
+                    'user_id' => Auth::id(),
+                    'status' => 'start',
+                ]);
+
+                try {
+                    (new MarketAssignmentImport(User::find(Auth::id())->regency_id, $uuid))->queue($file)->chain([
+                        new MarketAssignmentNotificationJob($uuid),
+                    ]);
+
+                    return redirect('/pasar-assignment')->with('success-upload', 'File telah diupload, cek status pada tabel di bawah!');
+                } catch (Exception $e) {
+                    MarketAssignmentStatus::find($uuid)->update([
+                        'status' => 'failed',
+                    ]);
+
+                    return redirect('/pasar-assignment')->with('failed-upload', 'File telah diupload, error telah disimpan di log');
+                }
+            }
+        }
+    }
+
+    public function assignmentDownload(Request $request)
+    {
+        $user = User::find(Auth::id());
+        $uuid = Str::uuid();
+        return Excel::download(new MarketAssignmentExport($user->regency_id), $uuid . '.xlsx');
+    }
+
     public function show()
     {
-
         $user = User::find(Auth::id());
         $markets = [];
         if ($user->hasRole('adminprov')) {
@@ -63,7 +124,7 @@ class MarketController extends Controller
         if ($request->hasFile('file') && $market != null) {
             $file = $request->file('file');
             $extension = $file->getClientOriginalExtension();
-            $customFileName = $user->firstname . '_' . $market->name . '_' . now()->format('Ymd_His') . Str::random(4) . '.' . $extension;
+            $customFileName = $user->firstname . '_' . $market->name . '_' . now()->format('Ymd_His') . '_' . Str::random(4) . '.' . $extension;
 
             $file->storeAs('/upload_swmaps', $customFileName);
 
@@ -253,5 +314,90 @@ class MarketController extends Controller
         $markets = Market::where('regency_id', $regency)->get();
 
         return response()->json($markets);
+    }
+
+    public function getUserMarketMappings(Request $request)
+    {
+        $user = User::find(Auth::id());
+
+        // Base query
+        $records = DB::table('market_user')
+            ->join('users', 'market_user.user_id', '=', 'users.id')
+            ->join('markets', 'market_user.market_id', '=', 'markets.id')
+            ->select(
+                'market_user.user_id',
+                'market_user.user_firstname',
+                'market_user.market_id',
+                'market_user.market_name',
+                'users.regency_id', // for regional filtering
+                'market_user.created_at'
+            );
+
+        // Filter by role
+        if ($user->hasRole('adminkab')) {
+            $records->where('users.regency_id', $user->regency_id);
+        } elseif (!$user->hasRole('adminprov')) {
+            $records->where('market_user.user_id', $user->id);
+        }
+
+        // Total count before filters
+        $recordsTotal = $records->count();
+
+        // Handle ordering
+        $orderColumn = 'market_user.created_at';
+        $orderDir = 'desc';
+
+        if (!empty($request->order)) {
+            $columnIndex = $request->order[0]['column'];
+            $direction = $request->order[0]['dir'] === 'asc' ? 'asc' : 'desc';
+
+            // You can map column index from frontend to actual DB columns here
+            switch ($columnIndex) {
+                case '0':
+                    $orderColumn = 'market_user.market_name';
+                    break;
+                case '1':
+                    $orderColumn = 'market_user.user_firstname';
+                    break;
+                case '2':
+                    $orderColumn = 'users.regency_id';
+                    break;
+                default:
+                    $orderColumn = 'market_user.created_at';
+            }
+
+            $orderDir = $direction;
+        }
+
+        // Search
+        $searchkeyword = $request->search['value'] ?? null;
+
+        if (!empty($searchkeyword)) {
+            $records->where(function ($query) use ($searchkeyword) {
+                $query->whereRaw('LOWER(market_user.market_name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                    ->orWhereRaw('LOWER(market_user.user_firstname) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                    ->orWhereRaw('CAST(users.regency_id AS CHAR) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+            });
+        }
+
+        $recordsFiltered = $records->count();
+
+        // Pagination
+        if ($request->length != -1) {
+            $records->skip($request->start)
+                ->take($request->length);
+        }
+
+        // Order
+        $records->orderBy($orderColumn, $orderDir);
+
+        $data = $records->get();
+
+        return response()->json([
+            "draw" => $request->draw,
+            "recordsTotal" => $recordsTotal,
+            "recordsFiltered" => $recordsFiltered,
+            "data" => $data
+        ]);
     }
 }

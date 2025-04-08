@@ -108,7 +108,7 @@ class User extends Authenticatable
                 $data['id'] = $this->id;
                 $data['created_at'] = now();
                 $data['updated_at'] = now();
-                
+
                 DB::connection($db)->table('users')->insert($data);
             }
         }
@@ -141,5 +141,12 @@ class User extends Authenticatable
                 $userInOtherDb->syncRoles($roles);
             }
         }
+    }
+
+    public function markets()
+    {
+        return $this->belongsToMany(Market::class)
+            ->withPivot('user_firstname', 'market_name')
+            ->withTimestamps();
     }
 }
