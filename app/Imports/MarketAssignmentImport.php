@@ -49,7 +49,7 @@ class MarketAssignmentImportSheet implements ToCollection, WithChunkReading, Wit
             }
 
             if (!$market) {
-                $errors[] = "Row {$rowNumber}: Market (ID: {$marketId}) tidak ditemukan.";
+                $errors[] = "Baris ke {$rowNumber}: Market (ID: {$marketId}) tidak ditemukan.";
                 continue;
             }
 

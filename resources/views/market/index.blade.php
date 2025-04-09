@@ -15,11 +15,11 @@
     <div class="card mt-2">
         <div class="card-header pb-0">
             <div class="d-flex align-items-center">
-                <h6 class="text-capitalize">Daftar Usaha</h6>
+                <h6 class="text-capitalize">Daftar Usaha yang Telah Diupload</h6>
             </div>
         </div>
         <div class="card-body">
-            <div class="row">
+            <div class="row mb-3">
                 @hasrole('adminprov')
                 <div class="col-md-3">
                     <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
@@ -36,6 +36,7 @@
                 <div class="col-md-3">
                     <label class="form-control-label">Pasar <span class="text-danger">*</span></label>
                     <select id="market" name="market" class="form-control" data-toggle="select">
+                        <option value="0" disabled selected> -- Pilih Pasar -- </option>
                         @foreach ($markets as $market)
                         <option value="{{ $market->id }}" {{ old('market') == $market->id ? 'selected' : '' }}>
                             {{ $market->name }}

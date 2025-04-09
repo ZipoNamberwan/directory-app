@@ -186,14 +186,13 @@
                 width: "10%",
                 data: "id",
                 type: "text",
-                className: "text-center",
                 render: function(data, type, row) {
                     if (type === 'display') {
                         return `
                         <form class="my-2" action="/download-file-pasar" method="POST">
                             @csrf
                             <input type="hidden" name="id" value="${data}"> 
-                            <button class="btn btn-primary btn-sm ms-auto p-2 m-0" type="submit">
+                            <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
                                 <i class="fas fa-download mx-1"></i>
                             </button>
                         </form>

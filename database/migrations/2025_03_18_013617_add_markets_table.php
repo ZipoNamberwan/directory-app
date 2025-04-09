@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('markets', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->text('address');
+            $table->text('address')->nullable();
             $table->string('regency_id');
             $table->foreign('regency_id')->references('id')->on('regencies');
             $table->string('subdistrict_id')->nullable();

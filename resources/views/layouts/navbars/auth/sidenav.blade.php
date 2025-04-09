@@ -89,7 +89,7 @@
             </li>
             @endhasrole
             @hasrole('adminkab')
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link {{ Route::currentRouteName() == 'assignment' ? 'active' : '' }}"
                     href="{{ route('assignment') }}">
                     <div
@@ -98,7 +98,7 @@
                     </div>
                     <span class="nav-link-text ms-1">Assignment</span>
                 </a>
-            </li>
+            </li> --}}
             <li class="nav-item">
                 <a class="nav-link {{ str_contains(request()->url(), 'download') == true ? 'active' : '' }}"
                     href="{{ route('download') }}">
@@ -120,9 +120,9 @@
                     href="{{ route('market-assignment') }}">
                     <div
                         class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-square-poll-horizontal text-warning text-sm opacity-10"></i>
+                        <i class="fas fa-square-poll-horizontal text-info text-sm opacity-10"></i>
                     </div>
-                    <span class="nav-link-text ms-1">Assignment</span>
+                    <span class="nav-link-text ms-1">Assignment Pasar</span>
                 </a>
             </li>
             @endhasrole

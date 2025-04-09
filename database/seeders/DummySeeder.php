@@ -40,6 +40,14 @@ class DummySeeder extends Seeder
             'regency_id' => '3501',
         ]);
         $pml->assignRoleAllDatabase('pml');
+        $pml = User::create([
+            'username' => 'pml02@gmail.com',
+            'email' => 'pml02@gmail.com',
+            'firstname' => 'PML 02',
+            'password' => Hash::make('123456'),
+            'regency_id' => '3502',
+        ]);
+        $pml->assignRoleAllDatabase('pml');
 
         $adminprov = User::create([
             'username' => 'admin3500@gmail.com',

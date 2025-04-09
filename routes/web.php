@@ -58,12 +58,12 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/pasar-upload', [MarketController::class, 'show'])->name('market-upload');
 		Route::post('/pasar-upload', [MarketController::class, 'upload']);
-		Route::get('/pasar-upload/data', [MarketController::class, 'getUploadData']);
+		Route::get('/pasar-upload/data', [MarketController::class, 'getUploadStatusData']);
+
 		Route::post('/download-file-pasar', [MarketController::class, 'download']);
 
 		Route::get('/pasar', [MarketController::class, 'index'])->name('market');
 		Route::get('/pasar/data', [MarketController::class, 'getMarketData']);
-
 		Route::get('/pasar/kab/{regency}', [MarketController::class, 'getMarketByRegency']);
 	});
 
@@ -74,8 +74,15 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/pasar-assignment', [MarketController::class, 'assignment'])->name('market-assignment');
 		Route::get('/pasar-assignment/pivot', [MarketController::class, 'getUserMarketMappings']);
+		Route::get('/pasar-assignment/data', [MarketController::class, 'getAssignmentStatusData']);
+		Route::get('/pasar-assignment/list', [MarketController::class, 'showAssignmentList']);
+		Route::get('/pasar-assignment/create', [MarketController::class, 'assignmentCreate']);
+		Route::post('/pasar-assignment/store', [MarketController::class, 'assignmentStore']);
 		Route::post('/pasar-assignment/upload', [MarketController::class, 'assignmentUpload']);
 		Route::post('/pasar-assignment/download', [MarketController::class, 'assignmentDownload']);
+		Route::delete('/pasar-assignment/{id}', [MarketController::class, 'assignmentDelete']);
+
+		Route::post('/download-file-assignment', [MarketController::class, 'downloadUploadedAssignment']);
 	});
 
 	Route::group(['middleware' => ['role:adminprov']], function () {
