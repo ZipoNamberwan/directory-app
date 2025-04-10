@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\MarketBusiness;
 use App\Models\MarketUploadStatus;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Collection;
@@ -33,47 +34,59 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
      */
     public function collection(Collection $records)
     {
-        $errors = [];
-        $rowNumber = 1;
+        try {
+            $errors = [];
+            $rowNumber = 1;
 
-        foreach ($records as $record) {
-            $rowErrors = [];
+            foreach ($records as $record) {
+                $rowErrors = [];
 
-            for ($i = 21; $i <= 22; $i++) {
-                if (empty($record[$i])) {
-                    $rowErrors[] = "Kolom " . ($i + 1) . " kosong pada baris $rowNumber.";
+                //validation
+                for ($i = 21; $i <= 24; $i++) {
+                    if (empty($record[$i])) {
+                        $rowErrors[] = "Kolom " . ($i + 1) . " kosong pada baris $rowNumber.";
+                    }
                 }
+                if (empty($record[26])) {
+                    $rowErrors[] = "Kolom 26 kosong pada baris $rowNumber.";
+                }
+
+                if (!empty($rowErrors)) {
+                    $errors[$rowNumber] = $rowErrors;
+                } else {
+                    MarketBusiness::create([
+                        'name' => $record[21],
+                        'status' => $record[22],
+                        'address' => $record[23],
+                        'description' => $record[24],
+                        'sector' => $record[26],
+                        'note' => $record[25],
+
+                        'latitude' => $record[4],
+                        'longitude' => $record[5],
+                        'market_id' => $this->status->market_id,
+                        'user_id' => $this->status->user_id,
+                        'upload_id' => $this->status->id,
+                        'regency_id' => $this->status->regency_id
+                    ]);
+                }
+
+                $rowNumber++;
             }
 
-            if (!empty($rowErrors)) {
-                $errors[$rowNumber] = $rowErrors;
-            } else {
-                MarketBusiness::create([
-                    'name' => $record[21],
-                    'owner' => $record[22],
-                    'note' => $record[23],
-                    'latitude' => $record[4],
-                    'longitude' => $record[5],
-                    'market_id' => $this->status->market_id,
-                    'user_id' => $this->status->user_id,
-                    'upload_id' => $this->status->id,
-                    'regency_id' => $this->status->regency_id
+            if (count($errors) > 0) {
+                $errorMessages = [];
+                foreach ($errors as $row => $messages) {
+                    foreach ($messages as $message) {
+                        $errorMessages[] = $message;
+                    }
+                }
+                $this->status = $this->status->update([
+                    'message' => $this->status->message . implode("<br>", $errorMessages) . "<br>",
                 ]);
             }
-
-            $rowNumber++;
-        }
-
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $row => $messages) {
-                foreach ($messages as $message) {
-                    $errorMessages[] = $message;
-                }
-            }
-            $this->status = $this->status->update([
-                'message' => $this->status->message . implode("<br>", $errorMessages) . "<br>",
-            ]);
+        } catch (Exception $e) {
+            dd($e);
         }
     }
 

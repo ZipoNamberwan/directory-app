@@ -19,6 +19,8 @@ return new class extends Migration
             $table->foreign('regency_id')->references('id')->on('regencies');
             $table->string('subdistrict_id')->nullable();
             $table->foreign('subdistrict_id')->references('id')->on('subdistricts');
+            $table->string('village_id')->nullable();
+            $table->foreign('village_id')->references('id')->on('villages');
             $table->timestamps();
             $table->softDeletes();
         });
@@ -26,8 +28,12 @@ return new class extends Migration
         Schema::create('market_business', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->string('owner')->nullable();
+            $table->string('status')->nullable();
+            $table->string('address')->nullable();
+            $table->string('description')->nullable();
+            $table->string('sector')->nullable();
             $table->string('note')->nullable();
+
             $table->string('latitude');
             $table->string('longitude');
             $table->foreignUuid('market_id')->constrained('markets');

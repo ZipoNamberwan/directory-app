@@ -82,7 +82,10 @@
                     <thead>
                         <tr>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Usaha</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Pemilik</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Status Bangunan</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Alamat Lengkap</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Deskripsi</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Sektor</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Catatan</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Pasar</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Kabupaten</th>
@@ -290,7 +293,25 @@
                 {
                     responsivePriority: 2,
                     width: "10%",
-                    data: "owner",
+                    data: "status",
+                    type: "text",
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "address",
+                    type: "text",
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "description",
+                    type: "text",
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "sector",
                     type: "text",
                 },
                 {

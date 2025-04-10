@@ -13,36 +13,36 @@ class DummyMarketSeeder extends Seeder
      */
     public function run(): void
     {
-        $id = Str::uuid();
-        Market::create([
-            'id' => $id,
-            'name' => 'Pasar 3501_1',
-            'address' => 'Address 1',
-            'regency_id' => '3501',
-        ]);
+        // $id = Str::uuid();
+        // Market::create([
+        //     'id' => $id,
+        //     'name' => 'Pasar 3501_1',
+        //     'address' => 'Address 1',
+        //     'regency_id' => '3501',
+        // ]);
 
-        $id = Str::uuid();
-        Market::create([
-            'id' => $id,
-            'name' => 'Pasar 3501_2',
-            'address' => 'Address 2',
-            'regency_id' => '3501',
-        ]);
+        // $id = Str::uuid();
+        // Market::create([
+        //     'id' => $id,
+        //     'name' => 'Pasar 3501_2',
+        //     'address' => 'Address 2',
+        //     'regency_id' => '3501',
+        // ]);
 
-        $id = Str::uuid();
-        Market::create([
-            'id' => $id,
-            'name' => 'Pasar 3502_1',
-            'address' => 'Address 2',
-            'regency_id' => '3502',
-        ]);
+        // $id = Str::uuid();
+        // Market::create([
+        //     'id' => $id,
+        //     'name' => 'Pasar 3502_1',
+        //     'address' => 'Address 2',
+        //     'regency_id' => '3502',
+        // ]);
 
-        $id = Str::uuid();
-        Market::create([
-            'id' => $id,
-            'name' => 'Pasar 3503_1',
-            'address' => 'Address 2',
-            'regency_id' => '3503',
-        ]);
+        // $id = Str::uuid();
+        // Market::create([
+        //     'id' => $id,
+        //     'name' => 'Pasar 3503_1',
+        //     'address' => 'Address 2',
+        //     'regency_id' => '3503',
+        // ]);
     }
 }
