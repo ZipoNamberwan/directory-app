@@ -31,7 +31,7 @@ class GenerateReportCommand extends Command
     public function handle()
     {
         $datetime = new DateTime();
-        $datetime->modify('+7 hours');
+        // $datetime->modify('+7 hours');
         $today = $datetime->format('Y-m-d');
 
         foreach (['village', 'subdistrict', 'regency', 'province'] as $level) {

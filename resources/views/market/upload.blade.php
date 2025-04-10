@@ -40,7 +40,7 @@
                 </p> --}}
         </div>
         <div class="card-body p-3">
-            <form id="formupdate" autocomplete="off" method="post" action="/pasar-upload" class="needs-validation"
+            <form id="formupdate" autocomplete="off" method="post" action="/pasar/upload" class="needs-validation"
                 enctype="multipart/form-data" novalidate>
                 @csrf
 
@@ -132,7 +132,7 @@
 
 <script>
     function renderTable() {
-        table.ajax.url('/pasar-upload/data').load();
+        table.ajax.url('/pasar/upload/data').load();
     }
 
     function formatDate(isoString) {
@@ -156,7 +156,7 @@
         processing: true,
         // deferLoading: 0,
         ajax: {
-            url: '/pasar-upload/data',
+            url: '/pasar/upload/data',
             type: 'GET',
         },
         responsive: true,
@@ -189,7 +189,7 @@
                 render: function(data, type, row) {
                     if (type === 'display') {
                         return `
-                        <form class="my-2" action="/download-file-pasar" method="POST">
+                        <form class="my-2" action="/pasar/download/swmap" method="POST">
                             @csrf
                             <input type="hidden" name="id" value="${data}"> 
                             <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">

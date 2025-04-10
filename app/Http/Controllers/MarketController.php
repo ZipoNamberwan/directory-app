@@ -6,9 +6,10 @@ use App\Exports\MarketAssignmentExport;
 use App\Imports\MarketAssignmentImport;
 use App\Imports\MarketBusinessImport;
 use App\Jobs\MarketAssignmentNotificationJob;
+use App\Jobs\MarketBusinessExportJob;
 use App\Jobs\MarketUploadNotificationJob;
+use App\Models\AssignmentStatus;
 use App\Models\Market;
-use App\Models\MarketAssignmentStatus;
 use App\Models\MarketBusiness;
 use App\Models\MarketUploadStatus;
 use App\Models\MarketUserPivot;
@@ -17,7 +18,6 @@ use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
@@ -54,11 +54,9 @@ class MarketController extends Controller
 
         if ($request->hasFile('file')) {
 
-            $status = MarketAssignmentStatus::where('user_id', Auth::id())
-                ->where(function ($query) {
-                    $query->where('status', 'start')
-                        ->orWhere('status', 'loading');
-                })->first();
+            $status = AssignmentStatus::where('user_id', Auth::id())
+                ->where('type', 'upload-market-assignment')
+                ->whereIn('status', ['start', 'loading'])->first();
 
             if ($status == null) {
                 $uuid = Str::uuid();
@@ -69,10 +67,11 @@ class MarketController extends Controller
 
                 $file->storeAs('/upload_market_assignment', $customFileName);
 
-                $status = MarketAssignmentStatus::create([
+                $status = AssignmentStatus::create([
                     'id' => $uuid,
                     'user_id' => Auth::id(),
                     'status' => 'start',
+                    'type' => 'upload-market-assignment',
                 ]);
 
                 try {
@@ -160,13 +159,13 @@ class MarketController extends Controller
                 ]);
             }
 
-            return redirect('/pasar-upload')->with('success-upload', 'File telah diupload, cek status pada tabel di bawah!');
+            return redirect('/pasar/upload')->with('success-upload', 'File telah diupload, cek status pada tabel di bawah!');
         }
 
-        return redirect('/pasar-upload')->with('failed-upload', 'File gagal diupload, menyimpan log');
+        return redirect('/pasar/upload')->with('failed-upload', 'File gagal diupload, menyimpan log');
     }
 
-    public function download(Request $request)
+    public function downloadSwmapsExport(Request $request)
     {
         $status = MarketUploadStatus::find($request->id);
         return Storage::download('/upload_swmaps/' . $status->filename);
@@ -174,7 +173,7 @@ class MarketController extends Controller
 
     public function downloadUploadedAssignment(Request $request)
     {
-        $status = MarketAssignmentStatus::find($request->id);
+        $status = AssignmentStatus::find($request->id);
         return Storage::download('/upload_market_assignment/' . $status->id . '.xlsx');
     }
 
@@ -402,9 +401,12 @@ class MarketController extends Controller
         $records = null;
 
         if ($user->hasRole('adminprov')) {
-            $records = MarketAssignmentStatus::query();
+            $records = AssignmentStatus::where('type', 'upload-market-assignment');
         } else if ($user->hasRole('adminkab')) {
-            $records = MarketAssignmentStatus::where('user_id', $user->id);
+            $records = AssignmentStatus::where([
+                'user_id' => $user->id,
+                'type' => 'upload-market-assignment'
+            ]);
         }
 
         $recordsTotal = $records->count();
@@ -541,5 +543,112 @@ class MarketController extends Controller
             "recordsFiltered" => $recordsFiltered,
             "data" => $data
         ]);
+    }
+
+    public function downloadUploadedData(Request $request)
+    {
+
+        $user = User::find(Auth::id());
+        $uuid = Str::uuid();
+
+        $status = AssignmentStatus::where('user_id', Auth::id())
+            ->where('type', 'download-market-raw')
+            ->whereIn('status', ['start', 'loading'])->first();
+
+        if ($status == null) {
+            $status = AssignmentStatus::create([
+                'id' => $uuid,
+                'status' => 'start',
+                'user_id' => $user->id,
+                'type' => 'download-market-raw',
+            ]);
+
+            try {
+                MarketBusinessExportJob::dispatch($request->regency, $uuid);
+            } catch (Exception $e) {
+                $status->update([
+                    'status' => 'failed',
+                    'message' => $e->getMessage(),
+                ]);
+
+                return redirect('/pasar')->with('failed-upload', 'Download gagal diproses, log sudah disimpan');
+            }
+            return redirect('/pasar')->with('success-upload', 'Download telah di proses, cek status pada tombol status');
+        } else {
+            return redirect('/pasar')->with('failed-upload', 'Download tidak diproses karena masih ada proses download yang belum selesai');
+        }
+    }
+
+    public function getMarketBusinessDownloadStatus(Request $request)
+    {
+        $user = User::find(Auth::id());
+
+        $records = null;
+
+        if ($user->hasRole('adminprov')) {
+            $records = AssignmentStatus::where('type', 'download-market-raw');
+        } else if ($user->hasRole('adminkab')) {
+            $records = AssignmentStatus::where(['user_id' => $user->id, 'type' => 'download-market-raw']);
+        }
+
+        $recordsTotal = $records->count();
+
+        $orderColumn = 'created_at';
+        $orderDir = 'desc';
+
+        if (!empty($request->order)) {
+            $columnIndex = $request->order[0]['column'];
+            $direction = $request->order[0]['dir'] === 'asc' ? 'asc' : 'desc';
+
+            // You can map column index from frontend to actual DB columns here
+            switch ($columnIndex) {
+                case '0':
+                    $orderColumn = 'id';
+                    break;
+                case '1':
+                    $orderColumn = 'status';
+                    break;
+                default:
+                    $orderColumn = 'created_at';
+            }
+
+            $orderDir = $direction;
+        }
+
+        // Search
+        $searchkeyword = $request->search['value'] ?? null;
+
+        if (!empty($searchkeyword)) {
+            $records->where(function ($query) use ($searchkeyword) {
+                $query->whereRaw('LOWER(status) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                    ->orWhereRaw('LOWER(message) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+            });
+        }
+
+        $recordsFiltered = $records->count();
+
+        // Pagination
+        if ($request->length != -1) {
+            $records->skip($request->start)
+                ->take($request->length);
+        }
+
+        // Order
+        $records->orderBy($orderColumn, $orderDir);
+
+        $data = $records->get();
+
+        return response()->json([
+            "draw" => $request->draw,
+            "recordsTotal" => $recordsTotal,
+            "recordsFiltered" => $recordsFiltered,
+            "data" => $data
+        ]);
+    }
+
+    public function downloadMarketBusinessFile(Request $request)
+    {
+        $status = AssignmentStatus::find($request->id);
+        return Storage::download('/market_business_raw/' . $status->id . '.csv');
     }
 }

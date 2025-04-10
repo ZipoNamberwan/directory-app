@@ -56,14 +56,16 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'updatePage'])->name('updating-non-sls');
 		Route::get('/tambah-direktori', [AdminKabController::class, 'showAddition'])->name('tambah-direktori');
 
-		Route::get('/pasar-upload', [MarketController::class, 'show'])->name('market-upload');
-		Route::post('/pasar-upload', [MarketController::class, 'upload']);
-		Route::get('/pasar-upload/data', [MarketController::class, 'getUploadStatusData']);
-
-		Route::post('/download-file-pasar', [MarketController::class, 'download']);
+		Route::get('/pasar/upload', [MarketController::class, 'show'])->name('market-upload');
+		Route::post('/pasar/upload', [MarketController::class, 'upload']);
+		Route::get('/pasar/upload/data', [MarketController::class, 'getUploadStatusData']);
 
 		Route::get('/pasar', [MarketController::class, 'index'])->name('market');
 		Route::get('/pasar/data', [MarketController::class, 'getMarketData']);
+		Route::post('/pasar/download', [MarketController::class, 'downloadUploadedData']);
+		Route::post('/pasar/download/swmap', [MarketController::class, 'downloadSwmapsExport']);
+		Route::post('/pasar/download/business', [MarketController::class, 'downloadMarketBusinessFile']);
+		Route::get('/pasar/download/status', [MarketController::class, 'getMarketBusinessDownloadStatus']);
 		Route::get('/pasar/kab/{regency}', [MarketController::class, 'getMarketByRegency']);
 	});
 
@@ -82,7 +84,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::post('/pasar-assignment/download', [MarketController::class, 'assignmentDownload']);
 		Route::delete('/pasar-assignment/{id}', [MarketController::class, 'assignmentDelete']);
 
-		Route::post('/download-file-assignment', [MarketController::class, 'downloadUploadedAssignment']);
+		Route::post('/pasar-assignment/download/file', [MarketController::class, 'downloadUploadedAssignment']);
 	});
 
 	Route::group(['middleware' => ['role:adminprov']], function () {

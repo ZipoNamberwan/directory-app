@@ -12,4 +12,9 @@ class AssignmentStatus extends Model
     protected $table = 'assignment_status';
     protected $keyType = 'string';
     public $incrementing = false;
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

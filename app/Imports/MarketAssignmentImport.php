@@ -2,7 +2,7 @@
 
 namespace App\Imports;
 
-use App\Models\MarketAssignmentStatus;
+use App\Models\AssignmentStatus;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Maatwebsite\Excel\Concerns\Importable;
@@ -62,7 +62,7 @@ class MarketAssignmentImportSheet implements ToCollection, WithChunkReading, Wit
         }
 
         if (count($errors)) {
-            $status = MarketAssignmentStatus::find($this->uuid);
+            $status = AssignmentStatus::find($this->uuid);
             $status->update([
                 'message' => $status->message . implode("<br>", $errors) . "<br>",
             ]);
@@ -93,7 +93,7 @@ class MarketAssignmentImport implements WithMultipleSheets, ShouldQueue, WithChu
         $this->uuid = $uuid;
         $this->regency = $regency;
 
-        MarketAssignmentStatus::find($uuid)->update([
+        AssignmentStatus::find($uuid)->update([
             'status' => 'loading',
         ]);
     }

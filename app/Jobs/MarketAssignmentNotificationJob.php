@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\MarketAssignmentStatus;
+use App\Models\AssignmentStatus;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -24,7 +24,7 @@ class MarketAssignmentNotificationJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $status = MarketAssignmentStatus::find($this->uuid);
+        $status = AssignmentStatus::find($this->uuid);
         if ($status->message != null) {
             $status->update([
                 'status' => 'success with error',

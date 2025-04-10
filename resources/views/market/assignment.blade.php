@@ -277,7 +277,7 @@
                     render: function(data, type, row) {
                         if (type === 'display') {
                             return `
-                        <form class="my-2" action="/download-file-assignment" method="POST">
+                        <form class="my-2" action="/pasar-assignment/download/file" method="POST">
                             @csrf
                             <input type="hidden" name="id" value="${data}"> 
                             <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
@@ -294,9 +294,7 @@
                     width: "5%",
                     data: "created_at",
                     type: "text",
-                    render: function(data, type, row) {
-                        return formatDate(data)
-                    }
+                    gg
                 },
                 {
                     responsivePriority: 3,
