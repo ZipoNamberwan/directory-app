@@ -34,7 +34,7 @@ class MarketController extends Controller
         } else if ($user->hasRole('adminkab')) {
             $markets = Market::where('regency_id', $user->regency_id)->get();
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
-            $markets = Market::where('regency_id', $user->regency_id)->get();
+            $markets = $user->markets;
         }
 
         return view('market.index', ['regencies' => $regencies, 'markets' => $markets]);
@@ -587,7 +587,7 @@ class MarketController extends Controller
 
         if ($user->hasRole('adminprov')) {
             $records = AssignmentStatus::where('type', 'download-market-raw');
-        } else if ($user->hasRole('adminkab')) {
+        } else if ($user->hasRole('adminkab') || $user->hasRole('pml') || $user->hasRole('operator')) {
             $records = AssignmentStatus::where(['user_id' => $user->id, 'type' => 'download-market-raw']);
         }
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ResetPassword;
 use App\Http\Controllers\ChangePassword;
+use App\Http\Controllers\MajapahitLoginController;
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\PclController;
 use App\Http\Controllers\ReportController;
@@ -18,12 +19,9 @@ use App\Http\Controllers\UserController;
 // 	return view('pages.info');
 // })->middleware('guest')->name('register');
 
-Route::get('/register', [RegisterController::class, 'create'])->middleware('guest')->name('register');
-Route::post('/register', [RegisterController::class, 'store'])->middleware('guest')->name('register.perform');
 Route::get('/login', [LoginController::class, 'show'])->middleware('guest')->name('login');
 Route::post('/login', [LoginController::class, 'login'])->middleware('guest')->name('login.perform');
-Route::get('/reset-password', [ResetPassword::class, 'show'])->middleware('guest')->name('reset-password');
-Route::post('/reset-password', [ResetPassword::class, 'send'])->middleware('guest')->name('reset.perform');
+Route::get('/majapahit', [MajapahitLoginController::class, 'login']);
 
 Route::group(['middleware' => 'auth'], function () {
 

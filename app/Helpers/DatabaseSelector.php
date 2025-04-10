@@ -12,9 +12,9 @@ class DatabaseSelector
     private static function connectionMapping()
     {
         return [
-            1 => env('DB_MAIN_CONNECTION', 'mysql_main'),
-            2 => env('DB_2_CONNECTION', 'mysql_2'),
-            3 => env('DB_3_CONNECTION', 'mysql_3'),
+            1 => 'mysql_main',
+            2 => 'mysql_2',
+            3 => 'mysql_3',
         ];
     }
 
@@ -114,5 +114,10 @@ class DatabaseSelector
         $dbIdentifier = $connectionMap[$connection] ?? 1; // Default to 1 (Main DB)
 
         return array_keys(array_filter(self::regencyMapping(), fn($id) => $id === $dbIdentifier));
+    }
+
+    public static function getDefaultConnection()
+    {
+        return self::connectionMapping()[1];
     }
 }

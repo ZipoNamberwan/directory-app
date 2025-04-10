@@ -20,5 +20,6 @@ class DatabaseSeeder extends Seeder
         $this->call([BusinessSeeder::class]);
         // $this->call([DummyAssignmentSeeder::class]);
         $this->call([DummyMarketSeeder::class]);
+        // $this->call([UserSeeder::class]);
     }
 }

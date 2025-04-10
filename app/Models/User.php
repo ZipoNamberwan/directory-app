@@ -54,19 +54,19 @@ class User extends Authenticatable
         parent::boot();
 
         static::created(function ($user) {
-            if ($user->getConnectionName() === env('MAIN_DB_CONNECTION', 'mysql_main')) {
+            if ($user->getConnectionName() === DatabaseSelector::getDefaultConnection()) {
                 $user->syncToOtherDatabases();
             }
         });
 
         static::updated(function ($user) {
-            if ($user->getConnectionName() === env('MAIN_DB_CONNECTION', 'mysql_main')) {
+            if ($user->getConnectionName() === DatabaseSelector::getDefaultConnection()) {
                 $user->syncToOtherDatabases();
             }
         });
 
         static::deleted(function ($user) {
-            if ($user->getConnectionName() === env('MAIN_DB_CONNECTION', 'mysql_main')) {
+            if ($user->getConnectionName() === DatabaseSelector::getDefaultConnection()) {
                 $user->deleteFromOtherDatabases();
             }
         });
