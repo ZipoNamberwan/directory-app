@@ -110,7 +110,7 @@ class MarketController extends Controller
         } else if ($user->hasRole('adminkab')) {
             $markets = Market::where('regency_id', $user->regency_id)->get();
         } else {
-            $markets = Market::where('regency_id', $user->regency_id)->get();
+            $markets = $user->markets;
         }
 
         return view('market.upload', ['markets' => $markets]);
@@ -260,7 +260,8 @@ class MarketController extends Controller
         } else if ($user->hasRole('adminkab')) {
             $records = MarketBusiness::where('regency_id', $user->regency_id);
         } else {
-            $records = MarketBusiness::where('user_id', $user->id);
+            $marketIds = $user->markets->pluck('id'); 
+            $records = MarketBusiness::whereIn('market_id', $marketIds);
         }
 
         if ($request->regency && $request->regency !== 'all') {
