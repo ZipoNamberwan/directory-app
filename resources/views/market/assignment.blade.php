@@ -50,7 +50,8 @@
                 <div class="border p-3">
                     <h6>* Assignment Menggunakan Template</h6>
                     <p class="text-sm">
-                        <span>Gunakan menu ini untuk melakukan assignment sekaligus. Proses download template dan upload assignment akan
+                        <span>Gunakan menu ini untuk melakukan assignment sekaligus. Proses download template dan upload
+                            assignment akan
                             melalui proses antrian. Sehingga data assignment mungkin akan diproses beberapa waktu setelah
                             upload</span>
                     </p>
@@ -294,7 +295,10 @@
                     width: "5%",
                     data: "created_at",
                     type: "text",
-                    gg
+                    render: function(data, type, row) {
+                        return formatDate(data)
+                    }
+
                 },
                 {
                     responsivePriority: 3,
