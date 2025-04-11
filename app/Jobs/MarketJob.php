@@ -31,19 +31,23 @@ class MarketJob implements ShouldQueue
     public function handle(): void
     {
         foreach ($this->records as $record) {
-            $regency = Regency::find(substr($record['ID Desa'], 0, 4));
-            $subdistrict = Subdistrict::find(substr($record['ID Desa'], 0, 7));
-            $village = Village::find(substr($record['ID Desa'], 0, 10));
+            try {
+                $regency = Regency::find(substr($record['iddesa'], 0, 4));
+                $subdistrict = Subdistrict::find(substr($record['iddesa'], 0, 7));
+                $village = Village::find(substr($record['iddesa'], 0, 10));
 
-            if ($regency != null && $subdistrict != null && $village != null) {
-                $uuid = Str::uuid();
-                Market::create([
-                    'id' => $uuid,
-                    'name' => $record['Nama Pasar'],
-                    'regency_id' => $regency->id,
-                    'subdistrict_id' => $subdistrict->id,
-                    'village_id' => $village->id,
-                ]);
+                if ($regency != null && $subdistrict != null && $village != null) {
+                    $uuid = Str::uuid();
+                    Market::create([
+                        'id' => $uuid,
+                        'name' => $record['Nama Pasar'],
+                        'regency_id' => $regency->id,
+                        'subdistrict_id' => $subdistrict->id,
+                        'village_id' => $village->id,
+                    ]);
+                }
+            } catch (Exception $e) {
+                dd($e);
             }
         }
     }
