@@ -46,6 +46,22 @@
             </div>
             <div class="card-body p-3">
                 <div class="row mb-3">
+                    @hasrole('adminprov')
+                        <div class="col-md-3">
+                            <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
+                            <select id="regency" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
+                                <option value="3500">
+                                    [00] Provinsi Jawa Timur
+                                </option>
+                                @foreach ($regencies as $regency)
+                                    <option value="{{ $regency->id }}">
+                                        [{{ $regency->short_code }}] {{ $regency->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endhasrole
                     <div class="col-md-3">
                         <label class="form-control-label">Pasar <span class="text-danger">*</span></label>
                         <select id="market" name="market" class="form-control" data-toggle="select">
@@ -105,6 +121,10 @@
                 selector: '#user',
                 placeholder: 'Pilih User'
             },
+            {
+                selector: '#regency',
+                placeholder: 'Pilih Kabupaten'
+            },
         ];
 
         selectConfigs.forEach(({
@@ -122,6 +142,11 @@
                 renderTable()
             },
             '#user': () => {
+                renderTable()
+            },
+            '#regency': () => {
+                loadMarket(null, null)
+                loadUser(null, null)
                 renderTable()
             },
         };
@@ -149,12 +174,76 @@
 
         function renderTable() {
             filterUrl = ''
-            filterTypes = ['market', 'user']
+            filterTypes = ['market', 'user', 'regency']
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
             });
 
             table.ajax.url('/pasar-assignment/pivot?' + filterUrl).load();
+        }
+
+        function loadMarket(regencyid = null, selectedmarket = null) {
+
+            let regencySelector = `#regency`;
+            let marketSelector = `#market`;
+
+            let id = $(regencySelector).val();
+            if (regencyid != null) {
+                id = regencyid;
+            }
+
+            $(marketSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/pasar/kab/' + id,
+                    success: function(response) {
+                        $(marketSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Pasar -- </option>`);
+                        response.forEach(element => {
+                            let selected = selectedmarket == String(element.id) ? 'selected' : '';
+                            $(marketSelector).append(
+                                `<option value="${element.id}" ${selected}>${element.name}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Pasar -- </option>`);
+            }
+        }
+
+        function loadUser(regencyid = null, selecteduser = null) {
+
+            let regencySelector = `#regency`;
+            let userSelector = `#user`;
+
+            let id = $(regencySelector).val();
+            if (regencyid != null) {
+                id = regencyid;
+            }
+
+            $(userSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/users/kab/' + id,
+                    success: function(response) {
+                        $(userSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih User -- </option>`);
+                        response.forEach(element => {
+                            let selected = selecteduser == String(element.id) ? 'selected' : '';
+                            $(userSelector).append(
+                                `<option value="${element.id}" ${selected}>${element.firstname}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(userSelector).empty().append(`<option value="0" disabled> -- Pilih User -- </option>`);
+            }
         }
 
         let table = new DataTable('#myTable', {

@@ -47,6 +47,36 @@
             </div>
             <div class="card-body pt-1">
                 <div>
+                    <div class="row mb-3">
+                        @hasrole('adminprov')
+                            <div class="col-md-3">
+                                <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
+                                <select id="regency" class="form-control" data-toggle="select">
+                                    <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
+                                    <option value="3500">
+                                        [00] Provinsi Jawa Timur
+                                    </option>
+                                    @foreach ($regencies as $regency)
+                                        <option value="{{ $regency->id }}">
+                                            [{{ $regency->short_code }}] {{ $regency->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endhasrole
+                        <div class="col-md-3">
+                            <label class="form-control-label">Role <span class="text-danger">*</span></label>
+                            <select id="role" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Role -- </option>
+                                <option value="pcl">PCL</option>
+                                <option value="pml">PML</option>
+                                <option value="operator">Operator</option>
+                                <option value="adminkab">Admin Kabupaten</option>
+                                <option value="adminprov">Admin Provinsi</option>
+                                <option value="viewer">Viewer</option>
+                            </select>
+                        </div>
+                    </div>
                     <table id="myTable" class="align-items-center mb-0 text-sm">
                         <thead>
                             <tr>
@@ -77,6 +107,64 @@
         <script src="/vendor/sweetalert2/sweetalert2.js"></script>
 
         <script>
+            const selectConfigs = [{
+                selector: '#role',
+                placeholder: 'Pilih Peran'
+            }, {
+                selector: '#regency',
+                placeholder: 'Pilih Kabupaten'
+            }, ];
+
+            selectConfigs.forEach(({
+                selector,
+                placeholder
+            }) => {
+                $(selector).select2({
+                    placeholder,
+                    allowClear: true
+                });
+            });
+
+            const eventHandlers = {
+                '#role': () => {
+                    renderTable()
+                },
+                '#regency': () => {
+                    renderTable()
+                },
+            };
+
+            Object.entries(eventHandlers).forEach(([selector, handler]) => {
+                $(selector).on('change', handler);
+            });
+
+            function getFilterUrl(filter) {
+                var filterUrl = ''
+                var e = document.getElementById(filter);
+                if (e != null) {
+                    var filterselected = e.options[e.selectedIndex];
+                    if (filterselected != null) {
+                        var filterid = filterselected.value
+                        if (filterid != 0) {
+                            filterUrl = `&${filter}=` + filterid
+                        }
+                    }
+                }
+
+                return filterUrl
+            }
+
+            function renderTable() {
+                filterUrl = ''
+                filterTypes = ['role', 'regency']
+                filterTypes.forEach(f => {
+                    filterUrl += getFilterUrl(f)
+                });
+
+                table.ajax.url('/users/data?' + filterUrl).load();
+            }
+        </script>
+        <script>
             let table = new DataTable('#myTable', {
                 order: [],
                 serverSide: true,
@@ -89,18 +177,18 @@
                 columns: [{
                         responsivePriority: 1,
                         width: "10%",
-                        data: "email",
+                        data: "firstname",
                         type: "text",
                         render: function(data, type, row) {
                             if (type === 'display') {
                                 return `
-                        <div class="d-flex flex-column justify-content-center my-2">
-                            <h6 class="mb-0 text-sm">${row.firstname}</h6>
-                            <p class="text-xs text-secondary mb-0">${data}</p>
-                        </div>
-                        `
+                                    <div class="d-flex flex-column justify-content-center my-2">
+                                        <h6 class="mb-0 text-sm">${data}</h6>
+                                        <p class="text-xs text-secondary mb-0">${row.email}</p>
+                                    </div>
+                                `
                             }
-                            return data[0].name
+                            return data
                         }
                     },
                     {

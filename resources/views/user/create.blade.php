@@ -62,6 +62,14 @@
                         <div class="col-md-6 mt-3">
                             <label class="form-control-label" for="pml">Role <span class="text-danger">*</span></label>
                             <div class="d-flex flex-column gap-2">
+                                @hasrole('adminprov')
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" value="adminprov" name="role"
+                                            id="customRadio4"
+                                            {{ old('role', $user != null ? $user->hasRole('adminprov') : '') == 'adminprov' ? 'checked' : '' }}>
+                                        <label class="custom-control-label" for="customRadio4">Admin Prov</label>
+                                    </div>
+                                @endhasrole
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" value="adminkab" name="role"
                                         id="customRadio1"
@@ -101,9 +109,13 @@
                                 <select style="width: 100%;" id="regency" name="regency" class="form-control"
                                     data-toggle="select">
                                     <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
+                                    <option value="3500"
+                                        {{ old('regency', $user != null ? '3500' : null) == '3500' ? 'selected' : '' }}>
+                                        [00] Provinsi
+                                    </option>
                                     @foreach ($regencies as $regency)
                                         <option value="{{ $regency->id }}"
-                                            {{ old('regency', $user != null ? $user->regency->id : null) == $regency->id ? 'selected' : '' }}>
+                                            {{ old('regency', $user != null ? ($user->regency != null ? $user->regency->id : null) : null) == $regency->id ? 'selected' : '' }}>
                                             [{{ $regency->short_code }}] {{ $regency->name }}
                                         </option>
                                     @endforeach

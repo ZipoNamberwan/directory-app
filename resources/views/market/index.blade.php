@@ -229,7 +229,7 @@
                     }
                 });
             } else {
-                $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+                $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Pasar -- </option>`);
             }
         }
 

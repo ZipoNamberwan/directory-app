@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-file_path = "./python_script/market/alokasi pasar.xlsx"
+file_path = "./python_script/market/market.xlsx"
 xls = pd.ExcelFile(file_path)
 
 # Prepare a list to hold data from all sheets
@@ -55,6 +55,6 @@ def split_csv(df, records_per_file, output_dir):
 output_directory = "./python_script/result/market/"
 os.makedirs(output_directory, exist_ok=True)
 
-records_per_file = 1000
+records_per_file = 100
 final_df = pd.concat(combined_data, ignore_index=True)
 split_csv(final_df, records_per_file=records_per_file, output_dir=output_directory)

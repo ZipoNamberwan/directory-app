@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -19,7 +20,12 @@ class UserController extends Controller
      */
     public function index()
     {
-        return view('user.index');
+        $user = User::find(Auth::id());
+        $regencies = [];
+        if ($user->hasRole('adminprov')) {
+            $regencies = Regency::all();
+        }
+        return view('user.index', ['regencies' => $regencies]);
     }
 
     /**
@@ -42,20 +48,32 @@ class UserController extends Controller
             'firstname' => 'required',
             'email' => 'required|email|unique:users,email',
             'password' => ['required', Password::min(8)->mixedCase()],
-            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl', 'operator'])],
+            'role' => ['required', Rule::in(['adminprov', 'adminkab', 'pml', 'pcl', 'operator'])],
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['regency'] = 'required';
         }
 
-        $request->validate($validateArray);
+        $validator = Validator::make($request->all(), $validateArray);
+
+        $validator->after(function ($validator) use ($request) {
+            if ($request->role === 'adminprov' && $request->regency !== '3500') {
+                $validator->errors()->add('regency', 'Harus 3500 untuk adminprov.');
+            }
+
+            if ($request->role === 'adminkab' && $request->regency === '3500') {
+                $validator->errors()->add('regency', 'Tidak Boleh 3500 untuk adminkab.');
+            }
+        });
+
+        $validator->validate();
 
         $user = User::create([
             'firstname' => $request->firstname,
             'email' => $request->email,
             'username' => $request->email,
             'password' => Hash::make($request->password),
-            'regency_id' => $admin->hasRole('adminprov') ? $request->regency : $admin->regency->id,
+            'regency_id' => $admin->hasRole('adminprov') ? ($request->regency != '3500' ? $request->regency : null) : $admin->regency->id,
             'must_change_password' => false
         ]);
         $user->assignRoleAllDatabase($request->role);
@@ -95,13 +113,25 @@ class UserController extends Controller
                 Rule::unique('users')->ignore($id),
             ],
             'password' => ['required', Password::min(8)->mixedCase()],
-            'role' => ['required', Rule::in(['adminkab', 'pml', 'pcl', 'operator'])],
+            'role' => ['required', Rule::in(['adminprov', 'adminkab', 'pml', 'pcl', 'operator'])],
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['regency'] = 'required';
         }
 
-        $request->validate($validateArray);
+        $validator = Validator::make($request->all(), $validateArray);
+
+        $validator->after(function ($validator) use ($request) {
+            if ($request->role === 'adminprov' && $request->regency !== '3500') {
+                $validator->errors()->add('regency', 'Harus 3500 untuk adminprov.');
+            }
+
+            if ($request->role === 'adminkab' && $request->regency === '3500') {
+                $validator->errors()->add('regency', 'Tidak Boleh 3500 untuk adminkab.');
+            }
+        });
+
+        $validator->validate();
 
         $user = User::find($id);
         $user->update([
@@ -109,7 +139,7 @@ class UserController extends Controller
             'firstname' => $request->firstname,
             'email' => $request->email,
             'username' => $request->email,
-            'regency_id' => $admin->hasRole('adminprov') ? $request->regency : $admin->regency->id,
+            'regency_id' => $admin->hasRole('adminprov') ? ($request->regency != '3500' ? $request->regency : null) : $admin->regency->id,
             'password' => $request->password != $user->password ? Hash::make($request->password) : $user->password,
         ]);
         // $user->syncRoles([$request->role]);
@@ -146,10 +176,18 @@ class UserController extends Controller
             $records = User::query();
         }
 
+        if ($request->role != null && $request->role != '0') {
+            $records->role($request->role);
+        }
+        if ($request->regency != null && $request->regency != '0') {
+            $regency = $request->regency != '3500' ? $request->regency : null;
+            $records->where('regency_id', $regency);
+        }
+
         $recordsTotal = $records->count();
 
         $orderColumn = 'firstname';
-        $orderDir = 'desc';
+        $orderDir = 'asc';
         if ($request->order != null) {
             if ($request->order[0]['dir'] == 'asc') {
                 $orderDir = 'asc';
@@ -159,7 +197,7 @@ class UserController extends Controller
             if ($request->order[0]['column'] == '0') {
                 $orderColumn = 'firstname';
             } else if ($request->order[0]['column'] == '1') {
-                $orderColumn = 'email';
+                $orderColumn = 'firstname';
             }
         }
 
@@ -206,6 +244,18 @@ class UserController extends Controller
             ->orWhere('email', 'LIKE', "%{$query}%")
             ->orderBy('firstname')
             ->get();
+
+        return response()->json($users);
+    }
+
+    public function getUserByRegency($regency)
+    {
+        $users = [];
+        if ($regency != '3500') {
+            $users = User::where('regency_id', $regency)->role(['adminkab', 'pml', 'operator'])->get();
+        } else {
+            $users = User::where('regency_id', null)->role(['adminprov', 'pml', 'operator'])->get();
+        }
 
         return response()->json($users);
     }

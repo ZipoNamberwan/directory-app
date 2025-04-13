@@ -10,6 +10,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ResetPassword;
 use App\Http\Controllers\ChangePassword;
 use App\Http\Controllers\MajapahitLoginController;
+use App\Http\Controllers\MarketAssignmentController;
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\PclController;
 use App\Http\Controllers\ReportController;
@@ -71,18 +72,6 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/assignment', [AdminKabController::class, 'showAssignment'])->name('assignment');
 		Route::get('/download', [AdminKabController::class, 'showDownload'])->name('download');
 		Route::get('/report', [ReportController::class, 'index'])->name('report');
-
-		Route::get('/pasar-assignment', [MarketController::class, 'assignment'])->name('market-assignment');
-		Route::get('/pasar-assignment/pivot', [MarketController::class, 'getUserMarketMappings']);
-		Route::get('/pasar-assignment/data', [MarketController::class, 'getAssignmentStatusData']);
-		Route::get('/pasar-assignment/list', [MarketController::class, 'showAssignmentList']);
-		Route::get('/pasar-assignment/create', [MarketController::class, 'assignmentCreate']);
-		Route::post('/pasar-assignment/store', [MarketController::class, 'assignmentStore']);
-		Route::post('/pasar-assignment/upload', [MarketController::class, 'assignmentUpload']);
-		Route::post('/pasar-assignment/download', [MarketController::class, 'assignmentDownload']);
-		Route::delete('/pasar-assignment/{id}', [MarketController::class, 'assignmentDelete']);
-
-		Route::post('/pasar-assignment/download/file', [MarketController::class, 'downloadUploadedAssignment']);
 	});
 
 	Route::group(['middleware' => ['role:adminprov']], function () {
@@ -91,9 +80,25 @@ Route::group(['middleware' => 'auth'], function () {
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
+		Route::get('/users/kab/{regency}', [UserController::class, 'getUserByRegency']);
+
 		Route::get('/report/{date}/{type}/{level}/{id}', [ReportController::class, 'getReport']);
 		Route::get('/users/data', [UserController::class, 'getUserData']);
 		Route::resource('users', UserController::class);
+
+		Route::get('/pasar-dashboard', [MarketController::class, 'dashboard'])->name('market-dashboard');
+
+		Route::get('/pasar-assignment', [MarketAssignmentController::class, 'showMarketAssignmentForm'])->name('market-assignment');
+		Route::get('/pasar-assignment/pivot', [MarketAssignmentController::class, 'getUserMarketPivot']);
+		Route::get('/pasar-assignment/data', [MarketAssignmentController::class, 'getMarketAssignmentUploadStatus']);
+		Route::get('/pasar-assignment/list', [MarketAssignmentController::class, 'showMarketAssignmentPage']);
+		Route::get('/pasar-assignment/create', [MarketAssignmentController::class, 'showMarketAssignmentCreatePage']);
+		Route::post('/pasar-assignment/store', [MarketAssignmentController::class, 'storeMarketAssignment']);
+		Route::post('/pasar-assignment/upload', [MarketAssignmentController::class, 'uploadMarketAssignment']);
+		Route::post('/pasar-assignment/download', [MarketAssignmentController::class, 'downloadMarketAssignment']);
+		Route::delete('/pasar-assignment/{id}', [MarketAssignmentController::class, 'deleteMarketAssignment']);
+
+		Route::post('/pasar-assignment/download/file', [MarketAssignmentController::class, 'downloadUploadedAssignment']);
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');

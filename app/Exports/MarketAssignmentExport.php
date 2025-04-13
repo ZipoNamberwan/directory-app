@@ -98,7 +98,7 @@ class MasterMarketExportSheet implements FromQuery, ShouldQueue, WithHeadings, W
 
     public function query()
     {
-        return Market::query()->where('regency_id',  $this->regency);
+        return Market::query()->where('regency_id',  $this->regency ?? '3578');
     }
 
     public function headings(): array

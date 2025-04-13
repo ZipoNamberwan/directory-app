@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,6 +14,15 @@ return new class extends Migration
     {
         Schema::dropIfExists('market_assignment_status');
 
+        DB::statement("ALTER TABLE assignment_status MODIFY COLUMN `type` ENUM(
+            'export',
+            'import',
+            'download-sls-business',
+            'download-non-sls-business',
+            'import-business',
+            'upload-market-assignment',
+            'download-market-raw'
+        )");
     }
 
     /**
@@ -27,5 +37,13 @@ return new class extends Migration
             $table->text('message')->nullable();
             $table->timestamps();
         });
+
+        DB::statement("ALTER TABLE assignment_status MODIFY COLUMN `type` ENUM(
+            'export',
+            'import',
+            'download-sls-business',
+            'download-non-sls-business',
+            'import-business'
+        )");
     }
 };

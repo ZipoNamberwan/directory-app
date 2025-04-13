@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('report_market_business_regency', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->integer('uploaded')->default(0);
+            $table->integer('total_market')->default(0);
             $table->string('regency_id');
             $table->foreign('regency_id')->references('id')->on('regencies');
             $table->index('regency_id');
@@ -26,6 +27,9 @@ return new class extends Migration
             $table->string('user_id');
             $table->foreign('user_id')->references('id')->on('users');
             $table->index('user_id');
+            $table->string('regency_id')->nullable();
+            $table->foreign('regency_id')->references('id')->on('regencies');
+            $table->index('regency_id');
             $table->date('date');
         });
 
@@ -35,6 +39,9 @@ return new class extends Migration
             $table->string('market_id');
             $table->foreign('market_id')->references('id')->on('markets');
             $table->index('market_id');
+            $table->string('regency_id')->nullable();
+            $table->foreign('regency_id')->references('id')->on('regencies');
+            $table->index('regency_id');
             $table->date('date');
         });
     }

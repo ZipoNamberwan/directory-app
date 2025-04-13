@@ -28,7 +28,7 @@ class MarketSeeder extends Seeder
                         $csvData = [];
 
                         // Loop through each row
-                        while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+                        while (($row = fgetcsv($handle, 100, ',')) !== false) {
                             // If this is the first row, use it as the header
                             if (!$header) {
                                 $header = $row; // Store header names

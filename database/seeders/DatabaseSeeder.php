@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->call([DummyMarketSeeder::class]);
         $this->call([UserSeeder::class]);
         $this->call([MarketSeeder::class]);
+        $this->call([AdminRoleSeeder::class]);
 
     }
 }
