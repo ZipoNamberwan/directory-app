@@ -60,7 +60,7 @@ class MasterUserExportSheet implements FromQuery, ShouldQueue, WithHeadings, Wit
 
     public function query()
     {
-        return User::query()->where('regency_id',  $this->regency)->role(['pml', 'operator']);
+        return User::query()->where('regency_id',  $this->regency)->role(['adminprov', 'adminkab', 'pml', 'operator']);
     }
 
     public function headings(): array

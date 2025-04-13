@@ -2,7 +2,7 @@
 FROM dunglas/frankenphp
 
 # Set timezone to Asia/Jakarta
-ENV TZ=Asia/Jakarta
+# ENV TZ=Asia/Jakarta
 
 # Install dependency like git, vim, supervisor and cron
 RUN apt-get update && apt-get install -y \
