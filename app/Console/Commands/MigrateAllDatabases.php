@@ -13,9 +13,13 @@ class MigrateAllDatabases extends Command
 
     public function handle()
     {
+        $this->info("Migrating all database...");
+
         $connections = DatabaseSelector::getListConnections();
 
         foreach ($connections as $connection) {
+            $this->info("🔄 Processing $connection");
+
             if ($this->option('rollback')) {
                 $this->rollbackDatabase($connection);
             }
