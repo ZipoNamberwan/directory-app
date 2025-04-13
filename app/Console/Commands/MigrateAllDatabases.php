@@ -40,7 +40,7 @@ class MigrateAllDatabases extends Command
 
     private function migrateDatabase($connection)
     {
-        Artisan::call('migrate', ['--database' => $connection]);
+        Artisan::call('migrate', ['--database' => $connection,  '--force' => true,]);
         $this->info("Migrated: $connection");
     }
 
@@ -52,7 +52,7 @@ class MigrateAllDatabases extends Command
 
     private function rollbackDatabase($connection)
     {
-        Artisan::call('migrate:rollback', ['--database' => $connection]);
+        Artisan::call('migrate:rollback', ['--database' => $connection,  '--force' => true,]);
         $this->info("Rolled back: $connection");
     }
 
