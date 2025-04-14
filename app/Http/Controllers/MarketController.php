@@ -28,15 +28,26 @@ class MarketController extends Controller
         $user = User::find(Auth::id());
         $regencies = [];
         $markets = [];
+        $isAdmin = false;
         if ($user->hasRole('adminprov')) {
             $regencies = Regency::all();
+            $isAdmin = true;
         } else if ($user->hasRole('adminkab')) {
             $markets = Market::where('regency_id', $user->regency_id)->get();
+            $isAdmin = true;
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $markets = $user->markets;
         }
 
-        return view('market.index', ['regencies' => $regencies, 'markets' => $markets]);
+        return view(
+            'market.index',
+            [
+                'regencies' => $regencies,
+                'markets' => $markets,
+                'isAdmin' => $isAdmin,
+                'userId' => $user->id,
+            ]
+        );
     }
 
     public function show()
@@ -427,5 +438,16 @@ class MarketController extends Controller
                 'reportByMarket' => $reportByMarket,
             ]
         );
+    }
+
+    public function deleteMarketBusiness($id)
+    {
+        $business = MarketBusiness::find($id);
+        if ($business) {
+            $business->delete();
+            return redirect('/pasar')->with('success-upload', 'Usaha Telah Dihapus');
+        } else {
+            return redirect('/pasar')->with('failed-upload', 'Usaha gagal dihapus, menyimpan log');
+        }
     }
 }

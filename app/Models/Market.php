@@ -19,6 +19,16 @@ class Market extends Model
         return $this->belongsTo(Regency::class, 'regency_id');
     }
 
+    public function subdistrict()
+    {
+        return $this->belongsTo(Subdistrict::class, 'subdistrict_id');
+    }
+
+    public function village()
+    {
+        return $this->belongsTo(Village::class, 'village_id');
+    }
+
     public function users()
     {
         return $this->belongsToMany(User::class)

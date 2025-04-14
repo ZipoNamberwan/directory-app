@@ -106,14 +106,20 @@ class MasterMarketExportSheet implements FromQuery, ShouldQueue, WithHeadings, W
         return [
             'id_pasar',
             'nama_pasar',
+            'kabupaten',
+            'kecamatan',
+            'desa',
         ];
     }
 
-    public function map($user): array
+    public function map($market): array
     {
         return [
-            $user->id,
-            $user->name,
+            $market->id,
+            $market->name,
+            $market->regency != null ? ("[" . $market->regency->short_code . "] " .  $market->regency->name) : null,
+            $market->subdistrict != null ? ("[" . $market->subdistrict->short_code . "] " .  $market->subdistrict->name) : null,
+            $market->village != null ? ("[" . $market->village->short_code . "] " .  $market->village->name) : null,
         ];
     }
 

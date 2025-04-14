@@ -103,7 +103,7 @@ class MarketAssignmentController extends Controller
             $users = User::where('regency_id', $user->regency_id)->role(['operator', 'pml'])->get();
         }
 
-        return view('market.list', ['markets' => $markets, 'users' => $users, 'regencies' => $regencies]);
+        return view('market.list-assignment', ['markets' => $markets, 'users' => $users, 'regencies' => $regencies]);
     }
 
     public function getUserMarketPivot(Request $request)

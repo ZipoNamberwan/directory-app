@@ -89,7 +89,9 @@
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Catatan</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Pasar</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Kabupaten</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">User yang Upload</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Created At</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -138,6 +140,7 @@
 
     <script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
     <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.js"></script>
 
     <script>
         const selectConfigs = [{
@@ -274,6 +277,32 @@
             return formatted.replace(" pukul ", " ").replace(/\./g, ":");
         }
 
+
+        var isAdmin = @json($isAdmin);
+        var userId = @json($userId);
+
+        function canDelete($id) {
+            return isAdmin || $id == userId;
+        }
+
+        function deleteBusiness(id, name) {
+            event.preventDefault();
+            Swal.fire({
+                title: `Hapus Usaha Ini?`,
+                text: name,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya',
+                cancelButtonText: 'Tidak',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('formdelete' + id).submit();
+                }
+            })
+        }
+
         let table = new DataTable('#myTable', {
             order: [],
             serverSide: true,
@@ -341,10 +370,44 @@
                 {
                     responsivePriority: 4,
                     width: "10%",
+                    data: "user",
+                    type: "text",
+                    render: function(data, type, row) {
+                        return data.firstname;
+                    }
+                },
+                {
+                    responsivePriority: 4,
+                    width: "10%",
                     data: "created_at",
                     type: "text",
                     render: function(data, type, row) {
                         return formatDate(data)
+                    }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "id",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            if (canDelete(row.user.id)) {
+                                return `
+                                <form id="formdelete${data}" name="formdelete${data}" onSubmit="deleteBusiness('${data}','${row.name}')" 
+                                    class="my-2" action="/pasar/${data}" method="POST">
+                                    @csrf
+                                    @method('delete')
+                                    <button class="btn btn-outline-danger btn-sm ms-auto p-1 m-0" type="submit">
+                                        <i class="fas fa-trash mx-1"></i>
+                                    </button>
+                                </form>
+                        `;
+                            } else {
+                                return '-'
+                            }
+                        }
+                        return data;
                     }
                 },
             ],
