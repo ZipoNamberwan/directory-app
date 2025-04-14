@@ -118,12 +118,6 @@ class MarketController extends Controller
         return Storage::download('/upload_swmaps/' . $status->filename);
     }
 
-    public function downloadUploadedAssignment(Request $request)
-    {
-        $status = AssignmentStatus::find($request->id);
-        return Storage::download('/upload_market_assignment/' . $status->id . '.xlsx');
-    }
-
     public function getMarketData(Request $request)
     {
         $user = User::find(Auth::id());

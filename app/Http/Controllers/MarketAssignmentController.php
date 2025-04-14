@@ -13,6 +13,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -304,5 +305,11 @@ class MarketAssignmentController extends Controller
         } else {
             return redirect('/pasar-assignment/list')->with('failed-upload', 'Assignment gagal dihapus, log sudah disimpan');
         }
+    }
+
+    public function downloadUploadedAssignmentFile(Request $request)
+    {
+        $status = AssignmentStatus::find($request->id);
+        return Storage::download('/upload_market_assignment/' . $status->id . '.xlsx');
     }
 }

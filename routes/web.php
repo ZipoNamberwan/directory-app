@@ -99,7 +99,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::post('/pasar-assignment/download', [MarketAssignmentController::class, 'downloadMarketAssignment']);
 		Route::delete('/pasar-assignment/{id}', [MarketAssignmentController::class, 'deleteMarketAssignment']);
 
-		Route::post('/pasar-assignment/download/file', [MarketAssignmentController::class, 'downloadUploadedAssignment']);
+		Route::post('/pasar-assignment/download/file', [MarketAssignmentController::class, 'downloadUploadedAssignmentFile']);
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');
