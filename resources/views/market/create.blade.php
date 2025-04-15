@@ -31,6 +31,7 @@
                                 @foreach ($markets as $market)
                                     <option value="{{ $market->id }}"
                                         {{ old('market') == $market->id ? 'selected' : '' }}>
+                                        [{{ $market->regency->long_code }}{{ $market->subdistrict?->short_code }}{{ $market->village?->short_code }}]
                                         {{ $market->name }}
                                     </option>
                                 @endforeach
