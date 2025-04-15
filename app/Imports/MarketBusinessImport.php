@@ -11,10 +11,11 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 
-class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithStartRow, ShouldQueue
+class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithStartRow, ShouldQueue, WithHeadingRow
 {
 
     use Importable, Queueable;
@@ -41,22 +42,22 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
             foreach ($records as $record) {
                 $rowErrors = [];
 
-                if (empty($record[21])) {
+                if (empty($record['nama_usaha'])) {
                     $rowErrors[] = "Nama Usaha kosong pada baris $rowNumber.";
                 }
-                if (empty($record[22])) {
+                if (empty($record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null)) {
                     $rowErrors[] = "Status Bangunan kosong pada baris $rowNumber.";
                 }
-                if (empty($record[24])) {
+                if (empty($record['deskripsi_aktifitas'])) {
                     $rowErrors[] = "Deskripsi Usaha kosong pada baris $rowNumber.";
                 }
-                if (empty($record[26])) {
+                if (empty($record['sektor'])) {
                     $rowErrors[] = "Sektor Usaha kosong pada baris $rowNumber.";
                 }
-                if (empty($record[4])) {
+                if (empty($record['latitude'])) {
                     $rowErrors[] = "Latitude kosong pada baris $rowNumber.";
                 }
-                if (empty($record[5])) {
+                if (empty($record['longitude'])) {
                     $rowErrors[] = "Longitude kosong pada baris $rowNumber.";
                 }
 
@@ -64,15 +65,15 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
                     $errors[$rowNumber] = $rowErrors;
                 } else {
                     MarketBusiness::create([
-                        'name' => $record[21],
-                        'status' => $record[22],
-                        'address' => $record[23],
-                        'description' => $record[24],
-                        'sector' => $record[26],
-                        'note' => $record[25],
+                        'name' => $record['nama_usaha'],
+                        'status' => $record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null,
+                        'address' => $record['alamat_lengkap'],
+                        'description' => $record['deskripsi_aktifitas'],
+                        'sector' => $record['sektor'],
+                        'note' => $record['catatan_lantaibloksektor'] ?? $record['catatan_lantaiblocksektor'] ?? null,
 
-                        'latitude' => $record[4],
-                        'longitude' => $record[5],
+                        'latitude' => $record['latitude'],
+                        'longitude' => $record['longitude'],
                         'market_id' => $this->status->market_id,
                         'user_id' => $this->status->user_id,
                         'upload_id' => $this->status->id,
