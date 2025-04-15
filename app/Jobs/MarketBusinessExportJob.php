@@ -49,12 +49,15 @@ class MarketBusinessExportJob implements ShouldQueue
             $csv->insertOne([
                 'id',
                 'Nama_Usaha',
-                'Nama_Pemilik',
-                'Pasar',
+                'Status_Bangunan',
+                'Alamat',
+                'Deskripsi',
+                'Sektor',
+                'Catatan',
                 'Latitude',
                 'Longitude',
-                'Catatan',
-                'User',
+                'Pasar',
+                'User_Upload',
                 'Kabupaten',
             ]);
 
@@ -73,13 +76,16 @@ class MarketBusinessExportJob implements ShouldQueue
                         $csv->insertOne([
                             $row->id,
                             $row->name,
-                            $row->owner,
-                            $row->market->name,
+                            $row->status,
+                            $row->address,
+                            $row->description,
+                            $row->sector,
+                            $row->note,
                             $row->latitude,
                             $row->longitude,
-                            $row->note,
-                            $row->user->name,
-                            $row->regency->name,
+                            $row->market->name,
+                            $row->user->firstname,
+                            "[" . $row->regency->long_code . "] " . $row->regency->name,
                         ]);
                     }
                 });
