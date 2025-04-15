@@ -190,6 +190,18 @@
     <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
 
     <script>
+        function showFullMessage(id, fullText) {
+            document.getElementById(id + '_short').style.display = 'none';
+            document.getElementById(id + '_full').style.display = 'inline';
+        }
+
+        function showLessMessage(id) {
+            document.getElementById(id + '_short').style.display = 'inline';
+            document.getElementById(id + '_full').style.display = 'none';
+        }
+    </script>
+
+    <script>
         function renderPivot() {
             table.ajax.url('/pasar-assignment/pivot').load();
         }
@@ -337,11 +349,24 @@
                     type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
-                            if (data == null) {
-                                return '<p class="text-sm"><span>-</span></p>';
+                            if (!data) return '-';
+
+                            const id = 'msg_' + row.id; // unique ID for each row
+                            const maxLength = 200;
+
+                            if (data.length <= maxLength) {
+                                return data;
                             }
-                            return '<p class="text-sm"><span>' + data + '</span></p>';
+
+                            const shortText = data.substring(0, maxLength) + '... ';
+                            const html = `
+                                <span id="${id}_short">${shortText}<a class="text-info" href="#" onclick="showFullMessage('${id}', \`${data.replace(/`/g, '\\`')}\`); return false;">Selengkapnya</a></span>
+                                <span id="${id}_full" style="display:none;">${data} <a class="text-info" href="#" onclick="showLessMessage('${id}'); return false;">Baca lebih sedikit</a></span>
+                            `;
+
+                            return html;
                         }
+
                         return data;
                     }
                 },
