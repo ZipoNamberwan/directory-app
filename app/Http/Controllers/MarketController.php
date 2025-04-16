@@ -167,8 +167,9 @@ class MarketController extends Controller
         if ($searchkeyword != null) {
             $data->where(function ($query) use ($searchkeyword) {
                 $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                    ->orWhereRaw('LOWER(owner) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                    ->orWhereRaw('LOWER(note) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+                ->orWhereRaw('LOWER(address) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                ->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                ->orWhereRaw('LOWER(note) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
             });
         }
         $recordsFiltered = $data->count();
@@ -278,7 +279,7 @@ class MarketController extends Controller
 
     public function downloadUploadedData(Request $request)
     {
-
+        
         $user = User::find(Auth::id());
         $uuid = Str::uuid();
 
@@ -294,8 +295,14 @@ class MarketController extends Controller
                 'type' => 'download-market-raw',
             ]);
 
+            $regency = $request->regency;
+            if ($user->hasRole('adminkab')) {
+                $regency = $user->regency_id;
+            }
+            $market = $request->market;
+
             try {
-                MarketBusinessExportJob::dispatch($request->regency, $uuid);
+                MarketBusinessExportJob::dispatch($regency, $market, $uuid);
             } catch (Exception $e) {
                 $status->update([
                     'status' => 'failed',

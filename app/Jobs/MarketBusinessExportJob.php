@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\AssignmentStatus;
+use App\Models\Market;
 use App\Models\MarketBusiness;
 use App\Models\Regency;
 use Exception;
@@ -16,14 +17,16 @@ class MarketBusinessExportJob implements ShouldQueue
     use Queueable;
 
     public $regencyId;
+    public $marketId;
     public $uuid;
     /**
      * Create a new job instance.
      */
-    public function __construct($regencyId, $uuid)
+    public function __construct($regencyId, $marketId, $uuid)
     {
         $this->regencyId = $regencyId;
         $this->uuid = $uuid;
+        $this->marketId = $marketId;
 
         AssignmentStatus::find($this->uuid)->update(['status' => 'loading',]);
     }
@@ -63,10 +66,16 @@ class MarketBusinessExportJob implements ShouldQueue
 
             $business = null;
             $regency = Regency::find($this->regencyId);
+            $market = Market::find($this->marketId);
+
+            $business = MarketBusiness::query();
+
             if ($regency) {
-                $business = MarketBusiness::where('regency_id', $this->regencyId);
-            } else {
-                $business = MarketBusiness::query();
+                $business->where('regency_id', $this->regencyId);
+            }
+
+            if ($market) {
+                $business->where('market_id', $this->marketId);
             }
 
             $business
