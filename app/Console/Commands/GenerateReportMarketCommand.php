@@ -35,6 +35,7 @@ class GenerateReportMarketCommand extends Command
         $datetime = new DateTime();
         // $datetime->modify('+7 hours');
         $today = $datetime->format('Y-m-d');
+        $now = now();
 
         $businessCountByRegency = DB::table('regencies')
             ->leftJoin('market_business', 'regencies.id', '=', 'market_business.regency_id')
@@ -60,6 +61,8 @@ class GenerateReportMarketCommand extends Command
                 'total_market' => $regency->total_market,
                 'regency_id' => $regency->regency_id,
                 'date' => $today,
+                'created_at' => $now,
+                'updated_at' => $now
             ];
         }
 
@@ -98,6 +101,8 @@ class GenerateReportMarketCommand extends Command
                 'user_id' => $user->user_id,
                 'regency_id' => $user->regency_id,
                 'date' => $today,
+                'created_at' => $now,
+                'updated_at' => $now
             ];
         }
 
@@ -121,6 +126,8 @@ class GenerateReportMarketCommand extends Command
                 'market_id' => $market->market_id,
                 'regency_id' => $market->regency_id,
                 'date' => $today,
+                'created_at' => $now,
+                'updated_at' => $now
             ];
         }
 
