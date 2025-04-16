@@ -1,7 +1,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-main navbar-expand-lg px-0 mx-4 shadow-none border-radius-xl
-        {{ str_contains(Request::url(), 'virtual-reality') == true ? ' mt-3 mx-3 bg-primary' : '' }}" id="navbarBlur"
-    data-scroll="false">
+        {{ str_contains(Request::url(), 'virtual-reality') == true ? ' mt-3 mx-3 bg-primary' : '' }}"
+    id="navbarBlur" data-scroll="false">
     <div class="container-fluid py-1 px-3">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
@@ -18,16 +18,34 @@
                 </div>
             </div>
             <ul class="navbar-nav  justify-content-end">
-                <li class="nav-item d-flex align-items-center px-3">
-                    <form role="form" method="post" action="{{ route('logout') }}" id="logout-form">
-                        @csrf
-                        <a href="{{ route('logout') }}"
-                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                            class="nav-link text-white font-weight-bold px-0">
-                            <i class="fa fa-user me-sm-1"></i>
-                            <span class="d-sm-inline d-none">Log out</span>
-                        </a>
-                    </form>
+                <li class="nav-item dropdown d-flex align-items-center px-3">
+                    <a class="nav-link text-white font-weight-bold px-0 dropdown-toggle" href="#"
+                        id="navbarUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa fa-user me-sm-1"></i>
+                        <span class="d-sm-inline d-none">
+                            {{ \Illuminate\Support\Str::limit(Auth::user()->firstname, 15) }}
+                        </span>
+                    </a>
+
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarUserDropdown">
+                        <!-- Show name only on small screens -->
+                        <li class="d-sm-none px-3 py-2 text-muted">
+                            <strong>{{ \Illuminate\Support\Str::limit(Auth::user()->firstname, 30) }}</strong>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider d-sm-none">
+                        </li>
+
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}" id="logout-form">
+                                @csrf
+                                <button type="submit" class="dropdown-item">
+                                    <i class="ni ni-user-run"></i>
+                                    <span>Logout</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
                 </li>
                 <!-- <li class="nav-item px-3 d-flex align-items-center">
                     <a href="javascript:;" class="nav-link text-white p-0">
