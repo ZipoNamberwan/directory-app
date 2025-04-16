@@ -28,7 +28,7 @@
                                             usaha pasar sudah dimutakhirkan.</span>
                                     </p>
                                     <p class="text-xs text-secondary mb-0">
-                                        Kondisi tanggal: {{ $updateDate }}
+                                        Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}
                                     </p>
                                 </div>
                             </div>
@@ -50,7 +50,7 @@
                         <h6 class="text-capitalize">
                             Report Jumlah Usaha Berdasarkan Kabupaten/Kota
                         </h6>
-                        <p class="text-sm">Kondisi tanggal: {{ $updateDate }}</p>
+                        <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
                     </div>
                     <div class="card-body">
                         <div style="width: 75%; margin: auto;">
@@ -99,7 +99,7 @@
                         <h6 class="text-capitalize">
                             Report Jumlah Usaha Berdasarkan Pasar
                         </h6>
-                        <p class="text-sm">Kondisi tanggal: {{ $updateDate }}</p>
+                        <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
                     </div>
                     <div class="card-body">
                         <table id="marketTable" class="align-items-center text-sm">
@@ -132,7 +132,7 @@
                         <h6 class="text-capitalize">
                             Report Jumlah Usaha Berdasarkan Petugas
                         </h6>
-                        <p class="text-sm">Kondisi tanggal: {{ $updateDate }}</p>
+                        <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
                     </div>
                     <div class="card-body">
                         <table id="userTable" class="align-items-center text-sm">

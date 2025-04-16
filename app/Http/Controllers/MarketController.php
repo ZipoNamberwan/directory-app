@@ -427,6 +427,7 @@ class MarketController extends Controller
         $chartData = ['data' => ($chartReportByRegency->pluck('uploaded'))->reverse()->values(), 'dates' => ($chartReportByRegency->pluck('date'))->reverse()->values()];
 
         $updateDate = Carbon::parse($reportByRegency[0]->date)->translatedFormat('d F Y');
+        $updateTime = Carbon::parse($reportByRegency[0]->created_at)->format('H:i');
 
         return view(
             'market.dashboard',
@@ -434,6 +435,7 @@ class MarketController extends Controller
                 'reportByRegency' => $reportByRegency,
                 'chartData' => $chartData,
                 'updateDate' => $updateDate,
+                'updateTime' => $updateTime,
                 'totalBusiness' => $totalBusiness,
                 'reportByUser' => $reportByUser,
                 'reportByMarket' => $reportByMarket,

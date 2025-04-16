@@ -72,7 +72,7 @@
                             </div>
                             <div class="card card-plain">
                                 <div class="card-body">
-                                    <a href="https://www.majapah.it/dashboard?callback_uri={{ urlencode(url('/majapahit')) }}" class="login-button w-100 text-decoration-none">
+                                    <a href="{{$redirectUrl}}" class="login-button w-100 text-decoration-none">
                                         <span class="login-content">
                                             <span class="login-icon">
                                                 <img src="/img/logo-majapahit.png" alt="Majapahit Logo">
