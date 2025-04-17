@@ -318,6 +318,9 @@
                     width: "10%",
                     data: "name",
                     type: "text",
+                    render: function(data, type, row) {
+                        return $('<div>').text(data).html();
+                    }
                 },
                 {
                     responsivePriority: 2,
