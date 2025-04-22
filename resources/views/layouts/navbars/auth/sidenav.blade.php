@@ -159,7 +159,8 @@
                     </a>
                 </li>
             @endhasrole
-            {{-- <li class="nav-item mt-3">
+            @if(Auth::user()->regency_id == null)
+            <li class="nav-item mt-3">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Suplemen</h6>
             </li>
             <li class="nav-item">
@@ -171,7 +172,8 @@
                     </div>
                     <span class="nav-link-text ms-1">Download Project Suplemen</span>
                 </a>
-            </li> --}}
+            </li>
+            @endif
             @hasrole('adminprov')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Personifikasi</h6>
