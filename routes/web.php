@@ -14,6 +14,7 @@ use App\Http\Controllers\MarketAssignmentController;
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\PclController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SupplementController;
 use App\Http\Controllers\UserController;
 
 // Route::get('/info', function () {
@@ -34,7 +35,8 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('/sls-directory/data', [HomeController::class, 'getSlsDirectoryTables']);
 	Route::get('/non-sls-directory/data', [HomeController::class, 'getNonSlsDirectoryTables']);
 
-	Route::get('/', [HomeController::class, 'index'])->name('home');
+	// Route::get('/', [HomeController::class, 'index'])->name('home');
+	Route::get('/', [MarketController::class, 'homeRedirect'])->name('home');
 	Route::get('/kec/{regency_id}', [HomeController::class, 'getSubdistrict']);
 	Route::get('/desa/{subdistrict_id}', [HomeController::class, 'getVillage']);
 	Route::get('/sls/{village_id}', [HomeController::class, 'getSls']);
@@ -46,6 +48,9 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::delete('/non-sls-directory/{id}', [HomeController::class, 'deleteNonSlsDirectory']);
 	Route::patch('/directory/edit/sls/{id}', [HomeController::class, 'updateSlsDirectory']);
 	Route::patch('/directory/edit/non-sls/{id}', [HomeController::class, 'updateNonSlsDirectory']);
+
+	Route::get('/download-suplemen', [SupplementController::class, 'showDownloadPage']);
+	Route::post('/download-suplemen', [SupplementController::class, 'downloadProject']);
 
 	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');

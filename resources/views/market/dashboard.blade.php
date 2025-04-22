@@ -70,6 +70,9 @@
                                         Total Pasar
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Jumlah Pasar dengan Muatan yang sudah Diupload Minimal 1
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
                                         Usaha yang Sudah Dimutakhirkan
                                     </th>
                                 </tr>
@@ -88,6 +91,8 @@
                                             </div>
                                         </td>
                                         <td class="align-middle text-center text-sm">{{ $report->total_market }}</td>
+                                        <td class="align-middle text-center text-sm">{{ $report->market_have_business }}
+                                        </td>
                                         <td class="align-middle text-center text-sm">{{ $report->uploaded }}</td>
                                     </tr>
                                 @endforeach
@@ -193,6 +198,10 @@
             lengthChange: false,
             columns: [{
                     responsivePriority: 1,
+                    width: "10%",
+                },
+                {
+                    responsivePriority: 3,
                     width: "10%",
                 },
                 {

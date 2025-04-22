@@ -1,2 +1,6 @@
 *
 !.gitignore
+!/market_business_raw
+!/project_swmaps_desa
+!/upload_market_assignment
+!/upload_swmaps

@@ -43,7 +43,13 @@ class GenerateReportMarketCommand extends Command
             ->select(
                 'regencies.id as regency_id',
                 DB::raw('COUNT(DISTINCT market_business.id) as total_business'),
-                DB::raw('COUNT(DISTINCT markets.id) as total_market')
+                DB::raw('COUNT(DISTINCT markets.id) as total_market'),
+                DB::raw('(
+                    SELECT COUNT(DISTINCT mb.market_id)
+                    FROM market_business mb
+                    INNER JOIN markets m ON mb.market_id = m.id
+                    WHERE m.regency_id = regencies.id
+                ) as market_have_business')
             )
             ->groupBy('regencies.id')
             ->orderBy('regencies.id')
@@ -59,6 +65,7 @@ class GenerateReportMarketCommand extends Command
                 'id' => (string) Str::uuid(),
                 'uploaded' => $regency->total_business,
                 'total_market' => $regency->total_market,
+                'market_have_business' => $regency->market_have_business,
                 'regency_id' => $regency->regency_id,
                 'date' => $today,
                 'created_at' => $now,

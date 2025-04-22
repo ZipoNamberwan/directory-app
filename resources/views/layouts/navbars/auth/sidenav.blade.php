@@ -13,7 +13,7 @@
     <hr class="horizontal dark mt-0">
     <div class="collapse navbar-collapse  w-auto " id="sidenav-collapse-main">
         <ul class="navbar-nav">
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link {{ Route::currentRouteName() == 'home' ? 'active' : '' }}"
                     href="{{ route('home') }}">
                     <div
@@ -89,7 +89,7 @@
             </li>
             @endhasrole
             @hasrole('adminkab')
-            {{-- <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link {{ Route::currentRouteName() == 'assignment' ? 'active' : '' }}"
                     href="{{ route('assignment') }}">
                     <div
@@ -98,7 +98,7 @@
                     </div>
                     <span class="nav-link-text ms-1">Assignment</span>
                 </a>
-            </li> --}}
+            </li>
             <li class="nav-item">
                 <a class="nav-link {{ str_contains(request()->url(), 'download') == true ? 'active' : '' }}"
                     href="{{ route('download') }}">
@@ -109,98 +109,111 @@
                     <span class="nav-link-text ms-1">Unduh</span>
                 </a>
             </li>
-            @endhasrole
+            @endhasrole --}}
             @hasrole('pml|operator|adminkab|adminprov')
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Pasar</h6>
-            </li>
-            @hasrole('adminkab|adminprov')
-            <li class="nav-item">
-                <a class="nav-link {{ Route::currentRouteName() == 'market-dashboard' ? 'active' : '' }}"
-                    href="{{ route('market-dashboard') }}">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-table-columns text-primary text-sm opacity-10"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Proggress</span>
-                </a>
-            </li>
+                <li class="nav-item mt-3">
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Pasar</h6>
+                </li>
+                @hasrole('adminkab|adminprov')
+                    <li class="nav-item">
+                        <a class="nav-link {{ Route::currentRouteName() == 'market-dashboard' ? 'active' : '' }}"
+                            href="{{ route('market-dashboard') }}">
+                            <div
+                                class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-table-columns text-primary text-sm opacity-10"></i>
+                            </div>
+                            <span class="nav-link-text ms-1">Proggress</span>
+                        </a>
+                    </li>
+                @endhasrole
+                @hasrole('adminkab|adminprov')
+                    <li class="nav-item">
+                        <a class="nav-link {{ Route::currentRouteName() == 'market-assignment' ? 'active' : '' }}"
+                            href="{{ route('market-assignment') }}">
+                            <div
+                                class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-square-poll-horizontal text-info text-sm opacity-10"></i>
+                            </div>
+                            <span class="nav-link-text ms-1">Assignment Pasar</span>
+                        </a>
+                    </li>
+                @endhasrole
+                <li class="nav-item">
+                    <a class="nav-link {{ Route::currentRouteName() == 'market' ? 'active' : '' }}"
+                        href="{{ route('market') }}">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-shop text-success text-sm opacity-10"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Usaha</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ Route::currentRouteName() == 'market-upload' ? 'active' : '' }}"
+                        href="{{ route('market-upload') }}">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-store text-danger text-sm opacity-10"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Upload</span>
+                    </a>
+                </li>
             @endhasrole
-            @hasrole('adminkab|adminprov')
-            <li class="nav-item">
-                <a class="nav-link {{ Route::currentRouteName() == 'market-assignment' ? 'active' : '' }}"
-                    href="{{ route('market-assignment') }}">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-square-poll-horizontal text-info text-sm opacity-10"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Assignment Pasar</span>
-                </a>
-            </li>
-            @endhasrole
-            <li class="nav-item">
-                <a class="nav-link {{ Route::currentRouteName() == 'market' ? 'active' : '' }}"
-                    href="{{ route('market') }}">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-shop text-success text-sm opacity-10"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Usaha</span>
-                </a>
+            {{-- <li class="nav-item mt-3">
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Suplemen</h6>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ Route::currentRouteName() == 'market-upload' ? 'active' : '' }}"
-                    href="{{ route('market-upload') }}">
+                <a class="nav-link {{ str_contains(request()->url(), 'download-suplemen') == true ? 'active' : '' }}"
+                    href="/download-suplemen">
                     <div
                         class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-store text-danger text-sm opacity-10"></i>
+                        <i class="fas fa-download text-sm opacity-10" style="color: #ef03b4"></i>
                     </div>
-                    <span class="nav-link-text ms-1">Upload</span>
+                    <span class="nav-link-text ms-1">Download Project Suplemen</span>
                 </a>
-            </li>
-            @endhasrole
+            </li> --}}
             @hasrole('adminprov')
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Personifikasi</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ str_contains(request()->url(), 'personifikasi') == true ? 'active' : '' }}"
-                    href="/personifikasi">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-user text-success text-sm opacity-10"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Personifikasi</span>
-                </a>
-            </li>
+                <li class="nav-item mt-3">
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Personifikasi</h6>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'personifikasi') == true ? 'active' : '' }}"
+                        href="/personifikasi">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-user text-success text-sm opacity-10"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Personifikasi</span>
+                    </a>
+                </li>
             @endhasrole
             @hasrole('adminkab|adminprov')
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Petugas</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ str_contains(request()->url(), 'users') == true ? 'active' : '' }}"
-                    href="/users">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-user text-secondary text-sm opacity-10"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Petugas</span>
-                </a>
-            </li>
+                <li class="nav-item mt-3">
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Petugas</h6>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'users') == true ? 'active' : '' }}"
+                        href="/users">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-user text-secondary text-sm opacity-10"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Petugas</span>
+                    </a>
+                </li>
             @endhasrole
             @impersonating($guard = null)
-            <li class="nav-item px-3 mt-2">
-                <a href="{{ route('impersonate.leave') }}" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary w-100"
-                    role="button">
-                    <span class="btn-inner--icon"><i class="fas fa-stop"></i></span>
-                    <span class="btn-inner--text">Stop Personifikasi</span>
-                </a>
-            </li>
-            <li class="nav-item px-3 mt-2">
-                <p class="text-xs text-muted"><span>Personifikasi sbg:
-                        <strong>{{ Auth::user()->firstname }}</strong></span></p>
-            </li>
+                <li class="nav-item px-3 mt-2">
+                    <a href="{{ route('impersonate.leave') }}" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary w-100"
+                        role="button">
+                        <span class="btn-inner--icon"><i class="fas fa-stop"></i></span>
+                        <span class="btn-inner--text">Stop Personifikasi</span>
+                    </a>
+                </li>
+                <li class="nav-item px-3 mt-2">
+                    <p class="text-xs text-muted"><span>Personifikasi sbg:
+                            <strong>{{ Auth::user()->firstname }}</strong></span></p>
+                </li>
             @endImpersonating
         </ul>
     </div>
