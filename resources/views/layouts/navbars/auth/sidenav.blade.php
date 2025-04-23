@@ -126,6 +126,16 @@
                         </a>
                     </li>
                 @endhasrole
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'pasar/manajemen') == true ? 'active' : '' }}"
+                        href="/pasar/manajemen">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-bullseye text-sm opacity-10" style="color: #1565C0"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Pasar</span>
+                    </a>
+                </li>
                 @hasrole('adminkab|adminprov')
                     <li class="nav-item">
                         <a class="nav-link {{ Route::currentRouteName() == 'market-assignment' ? 'active' : '' }}"
@@ -159,20 +169,20 @@
                     </a>
                 </li>
             @endhasrole
-            @if(Auth::user()->regency_id == null)
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Suplemen</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ str_contains(request()->url(), 'download-suplemen') == true ? 'active' : '' }}"
-                    href="/download-suplemen">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-download text-sm opacity-10" style="color: #ef03b4"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Download Project Suplemen</span>
-                </a>
-            </li>
+            @if (Auth::user()->regency_id == null)
+                <li class="nav-item mt-3">
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Suplemen</h6>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'download-suplemen') == true ? 'active' : '' }}"
+                        href="/download-suplemen">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-download text-sm opacity-10" style="color: #ef03b4"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Download Project Suplemen</span>
+                    </a>
+                </li>
             @endif
             @hasrole('adminprov')
                 <li class="nav-item mt-3">

@@ -464,4 +464,161 @@ class MarketController extends Controller
             return redirect('/pasar');
         }
     }
+
+    public function showMarketManagementPage()
+    {
+        $user = User::find(Auth::id());
+        $regencies = [];
+        $isAdmin = false;
+        if ($user->hasRole('adminprov')) {
+            $regencies = Regency::all();
+            $isAdmin = true;
+        }
+        return view('market.management.management', ['regencies' => $regencies, 'isAdmin' => $isAdmin]);
+    }
+
+    public function getMarketManagementData(Request $request)
+    {
+
+        $records = null;
+
+        $user = User::find(Auth::id());
+
+        if ($user->hasRole('adminkab')) {
+            $records = Market::where(['regency_id' => $user->regency_id]);
+        } else if ($user->hasRole('adminprov')) {
+            $records = Market::query();
+        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
+            $records = $user->markets;
+        }
+
+        if ($request->regency != null && $request->regency != '0') {
+            $regency = $request->regency != '3500' ? $request->regency : null;
+            $records->where('regency_id', $regency);
+        }
+
+        $recordsTotal = $records->count();
+
+        $orderColumn = 'name';
+        $orderDir = 'asc';
+        if ($request->order != null) {
+            if ($request->order[0]['dir'] == 'asc') {
+                $orderDir = 'asc';
+            } else {
+                $orderDir = 'desc';
+            }
+            if ($request->order[0]['column'] == '0') {
+                $orderColumn = 'name';
+            } else if ($request->order[0]['column'] == '1') {
+                $orderColumn = 'village_id';
+            }
+        }
+
+        $searchkeyword = $request->search['value'];
+        $data = $records->with([/* 'regency', 'subdistrict',  */'village']);
+        if ($searchkeyword != null) {
+            $data->where(function ($query) use ($searchkeyword) {
+                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                    ->orWhereRaw('LOWER(village_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+            });
+        }
+        $recordsFiltered = $data->count();
+
+        if ($orderDir == 'asc') {
+            $data = $data->orderBy($orderColumn);
+        } else {
+            $data = $data->orderByDesc($orderColumn);
+        }
+
+        if ($request->length != -1) {
+            $data = $data->skip($request->start)
+                ->take($request->length)->get();
+        }
+
+        $data = $data->values();
+
+        return response()->json([
+            "draw" => $request->draw,
+            "recordsTotal" => $recordsTotal,
+            "recordsFiltered" => $recordsFiltered,
+            "data" => $data
+        ]);
+    }
+
+    public function deleteMarket($id)
+    {
+        $user = User::find(Auth::id());
+        $market = Market::find($id);
+        if ($user->hasRole('adminprov')) {
+            $market->delete();
+            return redirect('/pasar/manajemen')->with('success-delete', 'Pasar Telah Dihapus');
+        } else {
+            return redirect('/pasar/manajemen')->with('error-delete', 'Pasar gagal dihapus, menyimpan log');
+        }
+    }
+
+    public function showMarketCreatePage()
+    {
+        $regencies = Regency::all();
+
+        return view('market.management.create-market', ['regencies' => $regencies, 'market' => null]);
+    }
+
+    public function showMarketEditPage($id)
+    {
+        $regencies = Regency::all();
+        $market = Market::find($id);
+
+        return view('market.management.create-market', ['regencies' => $regencies, 'market' => $market]);
+    }
+
+    public function storeMarket(Request $request)
+    {
+        $validateArray = [
+            'name' => 'required',
+            'regency' => 'required',
+            'subdistrict' => 'required',
+            'village' => 'required',
+        ];
+
+        $request->validate($validateArray);
+
+        Market::create([
+            'name' => $request->name,
+            'regency_id' => $request->regency,
+            'subdistrict_id' => $request->subdistrict,
+            'village_id' => $request->village,
+            'address' => $request->address,
+        ]);
+
+        return redirect('/pasar/manajemen')->with('success-create', 'Pasar telah ditambah!');
+    }
+
+    public function updateMarket(Request $request, $id)
+    {
+        $validateArray = [
+            'name' => 'required',
+            'regency' => 'required',
+            'subdistrict' => 'required',
+            'village' => 'required',
+        ];
+
+        $request->validate($validateArray);
+
+        $market = Market::find($id);
+        $market->update([
+            'name' => $request->name,
+            'regency_id' => $request->regency,
+            'subdistrict_id' => $request->subdistrict,
+            'village_id' => $request->village,
+            'address' => $request->address,
+        ]);
+
+        return  redirect('/pasar/manajemen')->with('success-edit', 'Pasar telah diupdate!');
+    }
+
+    public function downloadMarketProject($id)
+    {
+        return 'coming soon';
+    }
 }

@@ -22,9 +22,7 @@ class MigrateAllDatabases extends Command
 
             if ($this->option('rollback')) {
                 $this->rollbackDatabase($connection);
-            }
-
-            if ($this->option('fresh')) {
+            } elseif ($this->option('fresh')) {
                 $this->freshMigrateDatabase($connection);
             } else {
                 $this->migrateDatabase($connection);

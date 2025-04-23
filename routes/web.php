@@ -52,6 +52,10 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('/download-suplemen', [SupplementController::class, 'showDownloadPage']);
 	Route::post('/download-suplemen', [SupplementController::class, 'downloadProject']);
 
+	Route::get('/pasar/manajemen', [MarketController::class, 'showMarketManagementPage']);
+	Route::get('/pasar/manajemen/data', [MarketController::class, 'getMarketManagementData']);
+	Route::post('/pasar/manajemen/download/{id}', [MarketController::class, 'downloadMarketProject']);
+
 	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
 	});
@@ -83,6 +87,12 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::group(['middleware' => ['role:adminprov']], function () {
 		Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);
 		Route::get('/users/search', [UserController::class, 'searchUser']);
+
+		Route::get('/pasar/manajemen/create', [MarketController::class, 'showMarketCreatePage']);
+		Route::get('/pasar/manajemen/{id}/edit', [MarketController::class, 'showMarketEditPage']);
+		Route::delete('/pasar/manajemen/{id}', [MarketController::class, 'deleteMarket']);
+		Route::post('/pasar/manajemen', [MarketController::class, 'storeMarket']);
+		Route::put('/pasar/manajemen/{id}', [MarketController::class, 'updateMarket']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
