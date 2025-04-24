@@ -31,15 +31,22 @@ class MarketController extends Controller
         $user = User::find(Auth::id());
         $regencies = [];
         $markets = [];
+        $users = [];
         $isAdmin = false;
         if ($user->hasRole('adminprov')) {
             $regencies = Regency::all();
             $isAdmin = true;
         } else if ($user->hasRole('adminkab')) {
             $markets = Market::where('regency_id', $user->regency_id)->get();
+            $users = User::where('regency_id', $user->regency_id)->get();
             $isAdmin = true;
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $markets = $user->markets;
+            $marketIds = $user->markets()->pluck('markets.id');
+
+            $users = User::whereHas('markets', function ($query) use ($marketIds) {
+                $query->whereIn('markets.id', $marketIds);
+            })->get();
         }
 
         return view(
@@ -49,6 +56,7 @@ class MarketController extends Controller
                 'markets' => $markets,
                 'isAdmin' => $isAdmin,
                 'userId' => $user->id,
+                'users' => $users,
             ]
         );
     }
@@ -142,6 +150,10 @@ class MarketController extends Controller
 
         if ($request->market && $request->market !== 'all') {
             $records->where('market_id', $request->market);
+        }
+
+        if ($request->user && $request->user !== 'all') {
+            $records->where('user_id', $request->user);
         }
 
         $recordsTotal = $records->count();

@@ -77,6 +77,19 @@
                             @endforeach
                         </select>
                     </div>
+                    @hasrole('adminkab|pml|operator')
+                        <div class="col-md-3">
+                            <label class="form-control-label">Petugas <span class="text-danger">*</span></label>
+                            <select id="user" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Petugas -- </option>
+                                @foreach ($users as $user)
+                                    <option value="{{ $user->id }}" {{ old('user') == $user->id ? 'selected' : '' }}>
+                                        {{ $user->firstname }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endhasrole
                 </div>
                 <table id="myTable" class="align-items-center mb-0 text-sm">
                     <thead>
@@ -151,6 +164,10 @@
                 selector: '#market',
                 placeholder: 'Pilih Pasar'
             },
+            {
+                selector: '#user',
+                placeholder: 'Pilih Petugas'
+            },
         ];
 
         selectConfigs.forEach(({
@@ -172,6 +189,9 @@
             '#market': () => {
                 renderTable()
                 updateDownloadHidden()
+            },
+            '#user': () => {
+                renderTable()
             },
         };
 
@@ -254,7 +274,7 @@
 
         function renderTable() {
             filterUrl = ''
-            filterTypes = ['regency', 'market']
+            filterTypes = ['regency', 'market', 'user']
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
             });
