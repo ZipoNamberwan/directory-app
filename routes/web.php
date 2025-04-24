@@ -65,6 +65,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pasar/upload/data', [MarketController::class, 'getUploadStatusData']);
 
 		Route::get('/pasar', [MarketController::class, 'index'])->name('market');
+		Route::get('/pasar/muatan', [MarketController::class, 'showMarketDistributionPage']);
 		Route::get('/pasar/data', [MarketController::class, 'getMarketData']);
 		Route::delete('/pasar/{id}', [MarketController::class, 'deleteMarketBusiness']);
 		Route::post('/pasar/download', [MarketController::class, 'downloadUploadedData']);

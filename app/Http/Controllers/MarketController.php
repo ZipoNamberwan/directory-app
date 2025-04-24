@@ -175,7 +175,11 @@ class MarketController extends Controller
             }
         }
 
-        $searchkeyword = $request->search['value'];
+        $searchkeyword = null;
+        if ($request->search != null) {
+            $searchkeyword = $request->search['value'];
+        }
+
         $data = $records->with(['user', 'market', 'regency']);
         // $data = $records;
 
@@ -195,9 +199,11 @@ class MarketController extends Controller
             $data = $data->orderByDesc($orderColumn);
         }
 
-        if ($request->length != -1) {
+        if ($request->length != -1 && $request->length != null) {
             $data = $data->skip($request->start)
                 ->take($request->length)->get();
+        } else {
+            $data = $data->get();
         }
 
         $data = $data->values();
@@ -712,5 +718,10 @@ class MarketController extends Controller
         }
 
         return Storage::download('project_market/' . $projectName . $newExtension);
+    }
+
+    public function showMarketDistributionPage()
+    {
+        return view('market.distribution');
     }
 }

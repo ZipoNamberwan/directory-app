@@ -117,6 +117,9 @@
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7">
                                         Nama Pasar
                                     </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                        Wilayah
+                                    </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
                                         Usaha yang Sudah Dimutakhirkan
                                     </th>
@@ -126,6 +129,9 @@
                                 @foreach ($reportByMarket as $report)
                                     <tr>
                                         <td class="text-sm">{{ $report->market->name }}</td>
+                                        <td class="text-sm">[{{ $report->market->village_id }}]
+                                            {{ $report->market->subdistrict->name }} {{ $report->market->village->name }}
+                                        </td>
                                         <td class="align-middle text-center text-sm">{{ $report->uploaded }}</td>
                                     </tr>
                                 @endforeach
@@ -250,6 +256,10 @@
             pageLength: 50,
             columns: [{
                     responsivePriority: 1,
+                    width: "10%",
+                },
+                {
+                    responsivePriority: 2,
                     width: "10%",
                 },
                 {

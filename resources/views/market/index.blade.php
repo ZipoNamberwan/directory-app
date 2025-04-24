@@ -37,6 +37,10 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="text-capitalize">Daftar Usaha yang Telah Diupload</h6>
                     <div class="d-flex">
+                        {{-- <a href="/pasar/muatan" class="btn btn-info btn-lg ms-auto p-2 me-2" role="button">
+                            <span class="btn-inner--icon"><i class="fas fa-map"></i></span>
+                            <span class="ml-3 btn-inner--text">Peta</span>
+                        </a> --}}
                         <form action="/pasar/download" class="me-2" method="POST">
                             @csrf
                             <input type="hidden" name="regency" id="regency_download">
