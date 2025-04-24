@@ -52,10 +52,6 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('/download-suplemen', [SupplementController::class, 'showDownloadPage']);
 	Route::post('/download-suplemen', [SupplementController::class, 'downloadProject']);
 
-	Route::get('/pasar/manajemen', [MarketController::class, 'showMarketManagementPage']);
-	Route::get('/pasar/manajemen/data', [MarketController::class, 'getMarketManagementData']);
-	Route::post('/pasar/manajemen/download/{id}', [MarketController::class, 'downloadMarketProject']);
-
 	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
 	});
@@ -76,6 +72,11 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::post('/pasar/download/business', [MarketController::class, 'downloadMarketBusinessFile']);
 		Route::get('/pasar/download/status', [MarketController::class, 'getMarketBusinessDownloadStatus']);
 		Route::get('/pasar/kab/{regency}', [MarketController::class, 'getMarketByRegency']);
+
+		Route::get('/pasar/manajemen', [MarketController::class, 'showMarketManagementPage']);
+		Route::get('/pasar/manajemen/data', [MarketController::class, 'getMarketManagementData']);
+		Route::post('/pasar/manajemen/download/{id}', [MarketController::class, 'downloadMarketProject']);
+	
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {

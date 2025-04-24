@@ -38,7 +38,7 @@ class SupplementController extends Controller
         $request->validate([
             'village' => 'required|exists:villages,id',
         ]);
-        $files = Storage::files('/project_swmaps_desa');
+        $files = Storage::files('project_swmaps_desa');
 
         // Find the file that starts with the code
         $matchedFile = collect($files)->first(function ($file) use ($request) {

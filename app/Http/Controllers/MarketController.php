@@ -20,6 +20,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use ZipArchive;
 
 class MarketController extends Controller
 {
@@ -115,7 +118,7 @@ class MarketController extends Controller
     public function downloadSwmapsExport(Request $request)
     {
         $status = MarketUploadStatus::find($request->id);
-        return Storage::download('/upload_swmaps/' . $status->filename);
+        return Storage::download('upload_swmaps/' . $status->filename);
     }
 
     public function getMarketData(Request $request)
@@ -387,7 +390,7 @@ class MarketController extends Controller
     public function downloadMarketBusinessFile(Request $request)
     {
         $status = AssignmentStatus::find($request->id);
-        return Storage::download('/market_business_raw/' . $status->id . '.csv');
+        return Storage::download('market_business_raw/' . $status->id . '.csv');
     }
 
     public function dashboard()
@@ -474,6 +477,7 @@ class MarketController extends Controller
             $regencies = Regency::all();
             $isAdmin = true;
         }
+
         return view('market.management.management', ['regencies' => $regencies, 'isAdmin' => $isAdmin]);
     }
 
@@ -484,12 +488,13 @@ class MarketController extends Controller
 
         $user = User::find(Auth::id());
 
-        if ($user->hasRole('adminkab')) {
-            $records = Market::where(['regency_id' => $user->regency_id]);
-        } else if ($user->hasRole('adminprov')) {
+        if ($user->hasRole('adminprov')) {
             $records = Market::query();
+        } else if ($user->hasRole('adminkab')) {
+            $records = Market::where(['regency_id' => $user->regency_id]);
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
-            $records = $user->markets;
+            $marketIds = $user->markets->pluck('id');
+            $records = Market::whereIn('id', $marketIds);
         }
 
         if ($request->regency != null && $request->regency != '0') {
@@ -619,6 +624,81 @@ class MarketController extends Controller
 
     public function downloadMarketProject($id)
     {
-        return 'coming soon';
+        $market = Market::find($id);
+
+        try {
+            if (!Storage::exists('project_market')) {
+                Storage::makeDirectory('project_market');
+            }
+
+            $projectFolder = Str::random(8);
+            $projectName = $market->name . ' (' . $market->subdistrict->name . ') (' . $market->village->name . ') ' . $market->village_id;
+            $newExtension = '.swmz';
+
+            if (!Storage::exists('project_market/' . $projectName . $newExtension)) {
+                // Create the directory first
+                Storage::makeDirectory("project_market/{$projectFolder}/Projects");
+
+                // Get the base template path
+                $sourcePath = 'base_template/Template Updating Muatan Pasar.swm2';
+
+                // Extract extension dynamically (in case it ever changes)
+                $extension = pathinfo($sourcePath, PATHINFO_EXTENSION);
+
+                // Rename file to match your desired naming pattern
+                $newFileName = $projectName . '.' . $extension;
+                $destinationPath = "project_market/{$projectFolder}/Projects/{$newFileName}";
+
+                // Copy file contents to new destination
+                if (Storage::exists($sourcePath)) {
+                    $contents = Storage::get($sourcePath);
+
+                    Storage::put($destinationPath, $contents);
+                }
+
+                // Path to the folder you want to zip
+                $folderPath = Storage::path("project_market/{$projectFolder}");
+
+                // Path to save the zip file
+                $zipFileName = "{$projectName}{$newExtension}";
+                $zipFilePath = Storage::path("project_market/{$zipFileName}");
+                // Make sure zip destination exists
+
+                // Create zip
+                $zip = new ZipArchive;
+                // Create and open the zip file
+                if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+                    // Get all files and directories in the source folder
+                    $files = new RecursiveIteratorIterator(
+                        new RecursiveDirectoryIterator($folderPath),
+                        RecursiveIteratorIterator::LEAVES_ONLY
+                    );
+
+                    // Add all files to the zip
+                    foreach ($files as $name => $file) {
+                        // Skip directories (they would be added automatically)
+                        if (!$file->isDir()) {
+                            // Get real and relative path for current file
+                            $filePath = $file->getRealPath();
+                            $relativePath = substr($filePath, strlen($folderPath) + 1);
+
+                            // Add current file to archive
+                            $zip->addFile($filePath, $relativePath);
+                        }
+                    }
+
+                    // Close the zip file
+                    $zip->close();
+
+                    Storage::deleteDirectory("project_market/{$projectFolder}");
+                } else {
+                    return 'Gagal membuat zip file, log sudah disimpan';
+                }
+            }
+        } catch (Exception $e) {
+            return 'Gagal membuat zip file, log sudah disimpan';
+        }
+
+        return Storage::download('project_market/' . $projectName . $newExtension);
     }
 }

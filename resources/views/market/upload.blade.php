@@ -68,7 +68,7 @@
                     <div class="row">
                         <div class="col-md-6 mt-3">
                             <label class="form-control-label">File Hasil SW Maps <span class="text-danger">*</span></label>
-                            <input id="file" name="file" type="file" class="form-control" accept=".xlsx,.csv">
+                            <input id="file" name="file" type="file" class="form-control" accept=".xlsx">
                         </div>
                         @error('file')
                             <div class="error-feedback">

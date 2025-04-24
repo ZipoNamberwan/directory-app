@@ -310,6 +310,6 @@ class MarketAssignmentController extends Controller
     public function downloadUploadedAssignmentFile(Request $request)
     {
         $status = AssignmentStatus::find($request->id);
-        return Storage::download('/upload_market_assignment/' . $status->id . '.xlsx');
+        return Storage::download('upload_market_assignment/' . $status->id . '.xlsx');
     }
 }
