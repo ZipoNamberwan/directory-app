@@ -376,7 +376,8 @@ class MarketController extends Controller
 
         // Search
         $searchkeyword = $request->search['value'] ?? null;
-
+        $records = $records->with(['user']);
+        
         if (!empty($searchkeyword)) {
             $records->where(function ($query) use ($searchkeyword) {
                 $query->whereRaw('LOWER(status) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])

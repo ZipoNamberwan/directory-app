@@ -135,6 +135,7 @@
                         <thead>
                             <tr>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">File</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Dibuat Oleh</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Status</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Dibuat pada</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Pesan</th>
@@ -479,6 +480,12 @@
                         }
                         return data;
                     }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "user.firstname",
+                    type: "text",
                 },
                 {
                     responsivePriority: 2,
