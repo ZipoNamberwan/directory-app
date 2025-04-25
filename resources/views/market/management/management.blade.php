@@ -178,7 +178,7 @@
                                 return `
                                     <div class="d-flex flex-column justify-content-center my-2">
                                         <h6 class="mb-0 text-sm">[${data.id}]</h6>
-                                        <p class="text-sm text-secondary mb-0">${data.name}</p>
+                                        <p class="text-sm text-secondary mb-0">${row.subdistrict.name}, ${data.name}</p>
                                     </div>
                                 `
                             }
