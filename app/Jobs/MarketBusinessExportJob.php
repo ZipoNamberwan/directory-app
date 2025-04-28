@@ -62,6 +62,8 @@ class MarketBusinessExportJob implements ShouldQueue
                 'Pasar',
                 'User_Upload',
                 'Kabupaten',
+                'Kecamatan',
+                'Desa',
             ]);
 
             $business = null;
@@ -79,7 +81,7 @@ class MarketBusinessExportJob implements ShouldQueue
             }
 
             $business
-                ->with(['market', 'user', 'regency'])
+                ->with(['market.regency', 'market.subdistrict', 'market.village', 'user', 'regency'])
                 ->chunk(1000, function ($businesses) use ($csv) {
                     foreach ($businesses as $row) {
                         $csv->insertOne([
@@ -94,7 +96,9 @@ class MarketBusinessExportJob implements ShouldQueue
                             $row->longitude,
                             $row->market->name,
                             $row->user->firstname,
-                            "[" . $row->regency->long_code . "] " . $row->regency->name,
+                            "[" . $row->market->regency->long_code . "] " . $row->market->regency->name,
+                            "[" . $row->market->subdistrict->short_code . "] " . $row->market->subdistrict->name,
+                            "[" . $row->market->village->short_code . "] " . $row->market->village->name,
                         ]);
                     }
                 });
