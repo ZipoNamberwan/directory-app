@@ -6,6 +6,39 @@
     <link href="/vendor/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="/vendor/datatables/responsive.bootstrap5.min.css" rel="stylesheet" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <style>
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            background-color: #e0f0ff;
+            border-left: 5px solid #2196f3;
+            height: 2rem;
+        }
+
+        .marquee-text {
+            display: inline-block;
+            white-space: nowrap;
+            position: absolute;
+            will-change: transform;
+            animation: marquee-left 20s linear infinite;
+            font-size: 0.875rem;
+            color: #0d47a1;
+            padding: 0 1rem;
+            line-height: 2rem;
+        }
+
+        @keyframes marquee-left {
+            0% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -55,6 +88,13 @@
                                 22.30</strong>
                         </p>
                         <p class="text-sm">Kondisi tanggal: <strong>{{ $updateDate }} {{ $updateTime }}</strong></p>
+                        @if (Auth::user()->organization_id == '3578' || Auth::user()->organization_id == '3500')
+                            <div class="marquee-container">
+                                <p class="text-sm marquee-text">
+                                    <strong>Nb: * Progres Provinsi dan Kota Surabaya sudah Terpisah. Progres pasar sekarang juga hanya muncul pasar yang menjadi tanggung jawab satker masing-masing.</strong>
+                                </p>
+                            </div>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div style="width: 75%; margin: auto;">

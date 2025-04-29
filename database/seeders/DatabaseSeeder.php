@@ -24,5 +24,9 @@ class DatabaseSeeder extends Seeder
         $this->call([MarketSeeder::class]);
         $this->call([AdminRoleSeeder::class]);
 
+        $this->call([OrganizationSeeder::class]);
+        $this->call([OrganizationColumnSeeder::class]);
+        $this->call([MarketDoneByProvSeeder::class]);
+
     }
 }

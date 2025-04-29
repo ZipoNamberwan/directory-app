@@ -195,17 +195,11 @@ class MarketAssignmentController extends Controller
         $markets = [];
         $users = [];
 
-        if ($user->hasRole('adminkab')) {
-            $markets = Market::where('regency_id', $user->regency_id)->get();
-            $users = User::where('regency_id', $user->regency_id)->role(['adminkab', 'operator', 'pml'])->get();
-        } else if ($user->hasRole('adminprov')) {
-            $markets = Market::where('regency_id', '3578')->get();
-            $users = User::where('regency_id', null)->role(['adminprov', 'adminkab', 'operator', 'pml'])->get();
-        }
+        $markets = Market::where('organization_id', $user->organization_id)->get();
+        $users = User::where('organization_id', $user->organization_id)->role(['adminkab', 'adminprov', 'operator', 'pml'])->get();
 
         return view('market.create', ['markets' => $markets, 'users' => $users]);
     }
-
 
     public function storeMarketAssignment(Request $request)
     {

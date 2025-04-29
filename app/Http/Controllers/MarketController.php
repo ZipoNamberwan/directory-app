@@ -416,7 +416,7 @@ class MarketController extends Controller
         $user = User::find(Auth::id());
 
         $reportByRegency = ReportMarketBusinessRegency::orderByDesc('date')
-            ->limit(38)->get()->sortBy('organization_id')
+            ->limit(39)->get()->sortBy('organization_id')
             ->values();
 
         $chartReportByRegency = [];
