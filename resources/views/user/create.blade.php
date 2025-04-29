@@ -84,9 +84,9 @@
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" value="pml" name="role"
-                                        id="customRadio2"
+                                        id="customRadio5"
                                         {{ old('role', $user != null ? $user->hasRole('pml') : '') == 'pml' ? 'checked' : '' }}>
-                                    <label class="custom-control-label" for="customRadio2">PML</label>
+                                    <label class="custom-control-label" for="customRadio5">PML</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" value="pcl" name="role"
@@ -105,22 +105,18 @@
                     @hasrole('adminprov')
                         <div class="row">
                             <div class="col-md-6 mt-3">
-                                <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
-                                <select style="width: 100%;" id="regency" name="regency" class="form-control"
+                                <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                                <select style="width: 100%;" id="organization" name="organization" class="form-control"
                                     data-toggle="select">
-                                    <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
-                                    <option value="3500"
-                                        {{ old('regency', $user != null ? '3500' : null) == '3500' ? 'selected' : '' }}>
-                                        [00] Provinsi
-                                    </option>
-                                    @foreach ($regencies as $regency)
-                                        <option value="{{ $regency->id }}"
-                                            {{ old('regency', $user != null ? ($user->regency != null ? $user->regency->id : null) : null) == $regency->id ? 'selected' : '' }}>
-                                            [{{ $regency->short_code }}] {{ $regency->name }}
+                                    <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                    @foreach ($organizations as $organization)
+                                        <option value="{{ $organization->id }}"
+                                            {{ old('organization', $user != null ? ($user->organization != null ? $user->organization->id : null) : null) == $organization->id ? 'selected' : '' }}>
+                                            [{{ $organization->short_code }}] {{ $organization->name }}
                                         </option>
                                     @endforeach
                                 </select>
-                                @error('regency')
+                                @error('organization')
                                     <div class="error-feedback">
                                         {{ $message }}
                                     </div>
@@ -156,8 +152,8 @@
 
         <script>
             [{
-                selector: '#regency',
-                placeholder: 'Pilih Kabupaten'
+                selector: '#organization',
+                placeholder: 'Pilih Satker',
             }, ].forEach(config => {
                 $(config.selector).select2({
                     placeholder: config.placeholder,

@@ -43,7 +43,7 @@
                         </a> --}}
                         <form action="/pasar/download" class="me-2" method="POST">
                             @csrf
-                            <input type="hidden" name="regency" id="regency_download">
+                            <input type="hidden" name="organization" id="organization_download">
                             <input type="hidden" name="market" id="market_download">
                             <button type="submit" class="btn btn-primary mb-0 p-2">Download</button>
                         </form>
@@ -59,12 +59,13 @@
                 <div class="row mb-3">
                     @hasrole('adminprov')
                         <div class="col-md-3">
-                            <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
-                            <select id="regency" class="form-control" data-toggle="select">
-                                <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
-                                @foreach ($regencies as $regency)
-                                    <option value="{{ $regency->id }}" {{ old('regency') == $regency->id ? 'selected' : '' }}>
-                                        [{{ $regency->short_code }}] {{ $regency->name }}
+                            <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                            <select id="organization" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                @foreach ($organizations as $organization)
+                                    <option value="{{ $organization->id }}"
+                                        {{ old('organization') == $organization->id ? 'selected' : '' }}>
+                                        [{{ $organization->short_code }}] {{ $organization->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -162,8 +163,8 @@
 
     <script>
         const selectConfigs = [{
-                selector: '#regency',
-                placeholder: 'Pilih Kabupaten'
+                selector: '#organization',
+                placeholder: 'Pilih Satker'
             },
             {
                 selector: '#market',
@@ -186,7 +187,7 @@
         });
 
         const eventHandlers = {
-            '#regency': () => {
+            '#organization': () => {
                 loadMarket(null, null)
                 renderTable()
                 updateDownloadHidden()
@@ -224,19 +225,19 @@
         }
 
         function updateDownloadHidden() {
-            document.getElementById('regency_download').value = $('#regency').val();
+            document.getElementById('organization_download').value = $('#organization').val();
             document.getElementById('market_download').value = $('#market').val();
         }
         updateDownloadHidden();
 
-        function loadMarket(regencyid = null, selectedmarket = null) {
+        function loadMarket(organizationid = null, selectedmarket = null) {
 
-            let regencySelector = `#regency`;
+            let organizationSelector = `#organization`;
             let marketSelector = `#market`;
 
-            let id = $(regencySelector).val();
-            if (regencyid != null) {
-                id = regencyid;
+            let id = $(organizationSelector).val();
+            if (organizationid != null) {
+                id = organizationid;
             }
 
             $(marketSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
@@ -279,7 +280,7 @@
 
         function renderTable() {
             filterUrl = ''
-            filterTypes = ['regency', 'market', 'user']
+            filterTypes = ['organization', 'market', 'user']
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
             });
@@ -392,7 +393,17 @@
                     data: "regency",
                     type: "text",
                     render: function(data, type, row) {
-                        return data.name;
+                        var doneBy = '';
+                        if (row.market.organization.id == '3500'){
+                            doneBy = 'Dikerjakan oleh BPS Provinsi'
+                        }
+                        if (type === 'display') {
+                            return `<div class="my-1"> 
+                                    <p style='font-size: 0.875rem' class='text-secondary mb-0'>[${data.long_code}] ${data.name}</p>
+                                    <p style='font-size: 0.875rem' class='text-secondary mb-0 text-bold'>${doneBy}</p>
+                                </div>`
+                        }
+                        return data
                     }
                 },
                 {

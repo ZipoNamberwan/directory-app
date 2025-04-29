@@ -9,6 +9,7 @@ use App\Models\AssignmentStatus;
 use App\Models\Market;
 use App\Models\MarketBusiness;
 use App\Models\MarketUploadStatus;
+use App\Models\Organization;
 use App\Models\Regency;
 use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
@@ -20,25 +21,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use ZipArchive;
 
 class MarketController extends Controller
 {
     public function index()
     {
         $user = User::find(Auth::id());
-        $regencies = [];
+        $organizations = [];
         $markets = [];
         $users = [];
         $isAdmin = false;
         if ($user->hasRole('adminprov')) {
-            $regencies = Regency::all();
+            $organizations = Organization::all();
             $isAdmin = true;
         } else if ($user->hasRole('adminkab')) {
-            $markets = Market::where('regency_id', $user->regency_id)->get();
-            $users = User::where('regency_id', $user->regency_id)->get();
+            $markets = Market::where('organization_id', $user->organization_id)->get();
+            $users = User::where('organization_id', $user->organization_id)->get();
             $isAdmin = true;
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $markets = $user->markets;
@@ -52,7 +50,7 @@ class MarketController extends Controller
         return view(
             'market.index',
             [
-                'regencies' => $regencies,
+                'organizations' => $organizations,
                 'markets' => $markets,
                 'isAdmin' => $isAdmin,
                 'userId' => $user->id,
@@ -138,14 +136,18 @@ class MarketController extends Controller
         if ($user->hasRole('adminprov')) {
             $records = MarketBusiness::query();
         } else if ($user->hasRole('adminkab')) {
-            $records = MarketBusiness::where('regency_id', $user->regency_id);
+            $records = MarketBusiness::whereHas('market', function ($query) use ($user) {
+                $query->where('organization_id', $user->organization_id);
+            });
         } else {
             $marketIds = $user->markets->pluck('id');
             $records = MarketBusiness::whereIn('market_id', $marketIds);
         }
 
-        if ($request->regency && $request->regency !== 'all') {
-            $records->where('regency_id', $request->regency);
+        if ($request->organization && $request->organization !== 'all') {
+            $records->whereHas('market', function ($query) use ($request) {
+                $query->where('organization_id', $request->organization);
+            });
         }
 
         if ($request->market && $request->market !== 'all') {
@@ -180,7 +182,7 @@ class MarketController extends Controller
             $searchkeyword = $request->search['value'];
         }
 
-        $data = $records->with(['user', 'market', 'regency']);
+        $data = $records->with(['user', 'market', 'regency', 'market.organization']);
         // $data = $records;
 
         if ($searchkeyword != null) {
@@ -288,12 +290,7 @@ class MarketController extends Controller
 
     public function getMarketByRegency($regency)
     {
-        $markets = [];
-        if ($regency != '3500') {
-            $markets = Market::where('regency_id', $regency)->get();
-        } else {
-            $markets = Market::where('regency_id', '3578')->get();
-        }
+        $markets = Market::where('organization_id', $regency)->get();
 
         return response()->json($markets);
     }
@@ -316,14 +313,16 @@ class MarketController extends Controller
                 'type' => 'download-market-raw',
             ]);
 
-            $regency = $request->regency;
+            $role = $user->roles->first()->name;
+
+            $organization = $request->organization;
             if ($user->hasRole('adminkab')) {
-                $regency = $user->regency_id;
+                $organization = $user->organization_id;
             }
             $market = $request->market;
 
             try {
-                MarketBusinessExportJob::dispatch($regency, $market, $uuid);
+                MarketBusinessExportJob::dispatch($organization, $market, $uuid, $role);
             } catch (Exception $e) {
                 $status->update([
                     'status' => 'failed',
@@ -485,240 +484,6 @@ class MarketController extends Controller
         } else {
             return redirect('/pasar');
         }
-    }
-
-    public function showMarketManagementPage()
-    {
-        $user = User::find(Auth::id());
-        $regencies = [];
-        $isAdmin = false;
-        if ($user->hasRole('adminprov')) {
-            $regencies = Regency::all();
-            $isAdmin = true;
-        }
-
-        return view('market.management.management', ['regencies' => $regencies, 'isAdmin' => $isAdmin]);
-    }
-
-    public function getMarketManagementData(Request $request)
-    {
-
-        $records = null;
-
-        $user = User::find(Auth::id());
-
-        if ($user->hasRole('adminprov')) {
-            $records = Market::query();
-        } else if ($user->hasRole('adminkab')) {
-            $records = Market::where(['regency_id' => $user->regency_id]);
-        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
-            $marketIds = $user->markets->pluck('id');
-            $records = Market::whereIn('id', $marketIds);
-        }
-
-        if ($request->regency != null && $request->regency != '0') {
-            $regency = $request->regency != '3500' ? $request->regency : null;
-            $records->where('regency_id', $regency);
-        }
-
-        $recordsTotal = $records->count();
-
-        $orderColumn = 'name';
-        $orderDir = 'asc';
-        if ($request->order != null) {
-            if ($request->order[0]['dir'] == 'asc') {
-                $orderDir = 'asc';
-            } else {
-                $orderDir = 'desc';
-            }
-            if ($request->order[0]['column'] == '0') {
-                $orderColumn = 'name';
-            } else if ($request->order[0]['column'] == '1') {
-                $orderColumn = 'village_id';
-            }
-        }
-
-        $searchkeyword = $request->search['value'];
-        $data = $records->with([/* 'regency',  */'subdistrict', 'village']);
-        if ($searchkeyword != null) {
-            $data->where(function ($query) use ($searchkeyword) {
-                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                    ->orWhereRaw('LOWER(village_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
-            });
-        }
-        $recordsFiltered = $data->count();
-
-        if ($orderDir == 'asc') {
-            $data = $data->orderBy($orderColumn);
-        } else {
-            $data = $data->orderByDesc($orderColumn);
-        }
-
-        if ($request->length != -1) {
-            $data = $data->skip($request->start)
-                ->take($request->length)->get();
-        }
-
-        $data = $data->values();
-
-        return response()->json([
-            "draw" => $request->draw,
-            "recordsTotal" => $recordsTotal,
-            "recordsFiltered" => $recordsFiltered,
-            "data" => $data
-        ]);
-    }
-
-    public function deleteMarket($id)
-    {
-        $user = User::find(Auth::id());
-        $market = Market::find($id);
-        if ($user->hasRole('adminprov')) {
-            $market->delete();
-            return redirect('/pasar/manajemen')->with('success-delete', 'Pasar Telah Dihapus');
-        } else {
-            return redirect('/pasar/manajemen')->with('error-delete', 'Pasar gagal dihapus, menyimpan log');
-        }
-    }
-
-    public function showMarketCreatePage()
-    {
-        $regencies = Regency::all();
-
-        return view('market.management.create-market', ['regencies' => $regencies, 'market' => null]);
-    }
-
-    public function showMarketEditPage($id)
-    {
-        $regencies = Regency::all();
-        $market = Market::find($id);
-
-        return view('market.management.create-market', ['regencies' => $regencies, 'market' => $market]);
-    }
-
-    public function storeMarket(Request $request)
-    {
-        $validateArray = [
-            'name' => 'required',
-            'regency' => 'required',
-            'subdistrict' => 'required',
-            'village' => 'required',
-        ];
-
-        $request->validate($validateArray);
-
-        Market::create([
-            'name' => $request->name,
-            'regency_id' => $request->regency,
-            'subdistrict_id' => $request->subdistrict,
-            'village_id' => $request->village,
-            'address' => $request->address,
-        ]);
-
-        return redirect('/pasar/manajemen')->with('success-create', 'Pasar telah ditambah!');
-    }
-
-    public function updateMarket(Request $request, $id)
-    {
-        $validateArray = [
-            'name' => 'required',
-            'regency' => 'required',
-            'subdistrict' => 'required',
-            'village' => 'required',
-        ];
-
-        $request->validate($validateArray);
-
-        $market = Market::find($id);
-        $market->update([
-            'name' => $request->name,
-            'regency_id' => $request->regency,
-            'subdistrict_id' => $request->subdistrict,
-            'village_id' => $request->village,
-            'address' => $request->address,
-        ]);
-
-        return  redirect('/pasar/manajemen')->with('success-edit', 'Pasar telah diupdate!');
-    }
-
-    public function downloadMarketProject($id)
-    {
-        $market = Market::find($id);
-
-        try {
-            if (!Storage::exists('project_market')) {
-                Storage::makeDirectory('project_market');
-            }
-
-            $projectFolder = Str::random(8);
-            $projectName = $market->name . ' (' . $market->subdistrict->name . ') (' . $market->village->name . ') ' . $market->village_id;
-            $newExtension = '.swmz';
-
-            if (!Storage::exists('project_market/' . $projectName . $newExtension)) {
-                // Create the directory first
-                Storage::makeDirectory("project_market/{$projectFolder}/Projects");
-
-                // Get the base template path
-                $sourcePath = 'base_template/Template Updating Muatan Pasar.swm2';
-
-                // Extract extension dynamically (in case it ever changes)
-                $extension = pathinfo($sourcePath, PATHINFO_EXTENSION);
-
-                // Rename file to match your desired naming pattern
-                $newFileName = $projectName . '.' . $extension;
-                $destinationPath = "project_market/{$projectFolder}/Projects/{$newFileName}";
-
-                // Copy file contents to new destination
-                if (Storage::exists($sourcePath)) {
-                    $contents = Storage::get($sourcePath);
-
-                    Storage::put($destinationPath, $contents);
-                }
-
-                // Path to the folder you want to zip
-                $folderPath = Storage::path("project_market/{$projectFolder}");
-
-                // Path to save the zip file
-                $zipFileName = "{$projectName}{$newExtension}";
-                $zipFilePath = Storage::path("project_market/{$zipFileName}");
-                // Make sure zip destination exists
-
-                // Create zip
-                $zip = new ZipArchive;
-                // Create and open the zip file
-                if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-                    // Get all files and directories in the source folder
-                    $files = new RecursiveIteratorIterator(
-                        new RecursiveDirectoryIterator($folderPath),
-                        RecursiveIteratorIterator::LEAVES_ONLY
-                    );
-
-                    // Add all files to the zip
-                    foreach ($files as $name => $file) {
-                        // Skip directories (they would be added automatically)
-                        if (!$file->isDir()) {
-                            // Get real and relative path for current file
-                            $filePath = $file->getRealPath();
-                            $relativePath = substr($filePath, strlen($folderPath) + 1);
-
-                            // Add current file to archive
-                            $zip->addFile($filePath, $relativePath);
-                        }
-                    }
-
-                    // Close the zip file
-                    $zip->close();
-
-                    Storage::deleteDirectory("project_market/{$projectFolder}");
-                } else {
-                    return 'Gagal membuat zip file, log sudah disimpan';
-                }
-            }
-        } catch (Exception $e) {
-            return 'Gagal membuat zip file, log sudah disimpan';
-        }
-
-        return Storage::download('project_market/' . $projectName . $newExtension);
     }
 
     public function showMarketDistributionPage()

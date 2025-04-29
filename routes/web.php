@@ -12,6 +12,7 @@ use App\Http\Controllers\ChangePassword;
 use App\Http\Controllers\MajapahitLoginController;
 use App\Http\Controllers\MarketAssignmentController;
 use App\Http\Controllers\MarketController;
+use App\Http\Controllers\MarketManagementController;
 use App\Http\Controllers\PclController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SupplementController;
@@ -74,9 +75,9 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pasar/download/status', [MarketController::class, 'getMarketBusinessDownloadStatus']);
 		Route::get('/pasar/kab/{regency}', [MarketController::class, 'getMarketByRegency']);
 
-		Route::get('/pasar/manajemen', [MarketController::class, 'showMarketManagementPage']);
-		Route::get('/pasar/manajemen/data', [MarketController::class, 'getMarketManagementData']);
-		Route::post('/pasar/manajemen/download/{id}', [MarketController::class, 'downloadMarketProject']);
+		Route::get('/pasar/manajemen', [MarketManagementController::class, 'showMarketManagementPage']);
+		Route::get('/pasar/manajemen/data', [MarketManagementController::class, 'getMarketManagementData']);
+		Route::post('/pasar/manajemen/download/{id}', [MarketManagementController::class, 'downloadMarketProject']);
 	
 	});
 
@@ -90,11 +91,11 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);
 		Route::get('/users/search', [UserController::class, 'searchUser']);
 
-		Route::get('/pasar/manajemen/create', [MarketController::class, 'showMarketCreatePage']);
-		Route::get('/pasar/manajemen/{id}/edit', [MarketController::class, 'showMarketEditPage']);
-		Route::delete('/pasar/manajemen/{id}', [MarketController::class, 'deleteMarket']);
-		Route::post('/pasar/manajemen', [MarketController::class, 'storeMarket']);
-		Route::put('/pasar/manajemen/{id}', [MarketController::class, 'updateMarket']);
+		Route::get('/pasar/manajemen/create', [MarketManagementController::class, 'showMarketCreatePage']);
+		Route::get('/pasar/manajemen/{id}/edit', [MarketManagementController::class, 'showMarketEditPage']);
+		Route::delete('/pasar/manajemen/{id}', [MarketManagementController::class, 'deleteMarket']);
+		Route::post('/pasar/manajemen', [MarketManagementController::class, 'storeMarket']);
+		Route::put('/pasar/manajemen/{id}', [MarketManagementController::class, 'updateMarket']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {

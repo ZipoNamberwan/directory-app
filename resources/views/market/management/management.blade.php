@@ -52,12 +52,12 @@
                     <div class="row mb-3">
                         @hasrole('adminprov')
                             <div class="col-md-3">
-                                <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
-                                <select id="regency" class="form-control" data-toggle="select">
-                                    <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
-                                    @foreach ($regencies as $regency)
-                                        <option value="{{ $regency->id }}">
-                                            [{{ $regency->short_code }}] {{ $regency->name }}
+                                <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                                <select id="organization" class="form-control" data-toggle="select">
+                                    <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                    @foreach ($organizations as $organization)
+                                        <option value="{{ $organization->id }}">
+                                            [{{ $organization->short_code }}] {{ $organization->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -97,8 +97,8 @@
                 selector: '#role',
                 placeholder: 'Pilih Peran'
             }, {
-                selector: '#regency',
-                placeholder: 'Pilih Kabupaten'
+                selector: '#organization',
+                placeholder: 'Pilih Satker'
             }, ];
 
             selectConfigs.forEach(({
@@ -115,7 +115,7 @@
                 '#role': () => {
                     renderTable()
                 },
-                '#regency': () => {
+                '#organization': () => {
                     renderTable()
                 },
             };
@@ -142,7 +142,7 @@
 
             function renderTable() {
                 filterUrl = ''
-                filterTypes = ['role', 'regency']
+                filterTypes = ['role', 'organization']
                 filterTypes.forEach(f => {
                     filterUrl += getFilterUrl(f)
                 });

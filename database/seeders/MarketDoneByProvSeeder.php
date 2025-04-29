@@ -80,6 +80,6 @@ class MarketDoneByProvSeeder extends Seeder
 
         Market::whereIn('name', $markets)
             ->where('regency_id', 3578)
-            ->update(['done_by_prov' => true]);
+            ->update(['done_by_prov' => true, 'organization_id' => 3500]);
     }
 }

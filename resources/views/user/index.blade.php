@@ -50,15 +50,12 @@
                     <div class="row mb-3">
                         @hasrole('adminprov')
                             <div class="col-md-3">
-                                <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
-                                <select id="regency" class="form-control" data-toggle="select">
-                                    <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
-                                    <option value="3500">
-                                        [00] Provinsi Jawa Timur
-                                    </option>
-                                    @foreach ($regencies as $regency)
-                                        <option value="{{ $regency->id }}">
-                                            [{{ $regency->short_code }}] {{ $regency->name }}
+                                <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                                <select id="organization" class="form-control" data-toggle="select">
+                                    <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                    @foreach ($organizations as $organization)
+                                        <option value="{{ $organization->id }}">
+                                            [{{ $organization->short_code }}] {{ $organization->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -82,7 +79,7 @@
                             <tr>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama dan email</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Role</th>
-                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Kabupaten</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Satker</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
                             </tr>
                         </thead>
@@ -111,8 +108,8 @@
                 selector: '#role',
                 placeholder: 'Pilih Peran'
             }, {
-                selector: '#regency',
-                placeholder: 'Pilih Kabupaten'
+                selector: '#organization',
+                placeholder: 'Pilih Satker'
             }, ];
 
             selectConfigs.forEach(({
@@ -129,7 +126,7 @@
                 '#role': () => {
                     renderTable()
                 },
-                '#regency': () => {
+                '#organization': () => {
                     renderTable()
                 },
             };
@@ -156,7 +153,7 @@
 
             function renderTable() {
                 filterUrl = ''
-                filterTypes = ['role', 'regency']
+                filterTypes = ['role', 'organization']
                 filterTypes.forEach(f => {
                     filterUrl += getFilterUrl(f)
                 });
@@ -209,7 +206,7 @@
                     {
                         responsivePriority: 2,
                         width: "10%",
-                        data: "regency",
+                        data: "organization",
                         type: "text",
                         render: function(data, type, row) {
                             if (type === 'display') {

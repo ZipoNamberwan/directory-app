@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\AssignmentStatus;
 use App\Models\Market;
 use App\Models\MarketBusiness;
+use App\Models\Organization;
 use App\Models\Regency;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -16,17 +17,19 @@ class MarketBusinessExportJob implements ShouldQueue
 {
     use Queueable;
 
-    public $regencyId;
+    public $organizationId;
     public $marketId;
     public $uuid;
+    public $role;
     /**
      * Create a new job instance.
      */
-    public function __construct($regencyId, $marketId, $uuid)
+    public function __construct($organizationId, $marketId, $uuid, $role)
     {
-        $this->regencyId = $regencyId;
+        $this->organizationId = $organizationId;
         $this->uuid = $uuid;
         $this->marketId = $marketId;
+        $this->role = $role;
 
         AssignmentStatus::find($this->uuid)->update(['status' => 'loading',]);
     }
@@ -37,7 +40,8 @@ class MarketBusinessExportJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            AssignmentStatus::find($this->uuid)->update(['status' => 'loading']);
+            $status = AssignmentStatus::find($this->uuid);
+            $status->update(['status' => 'loading']);
 
             if (!Storage::exists('market_business_raw')) {
                 Storage::makeDirectory('market_business_raw');
@@ -67,13 +71,22 @@ class MarketBusinessExportJob implements ShouldQueue
             ]);
 
             $business = null;
-            $regency = Regency::find($this->regencyId);
             $market = Market::find($this->marketId);
-
             $business = MarketBusiness::query();
 
-            if ($regency) {
-                $business->where('regency_id', $this->regencyId);
+            if ($this->role == 'adminprov') {
+                if ($this->organizationId != null) {
+                    $business->whereHas('market', function ($query) {
+                        $query->where('organization_id', $this->organizationId);
+                    });
+                }
+            } else if ($this->role == 'adminkab') {
+                $business->whereHas('market', function ($query) use ($status) {
+                    $query->where('organization_id', $status->user->organization_id);
+                });
+            } else if ($this->role == 'pml' || $this->role == 'operator') {
+                $marketIds = $status->user->markets->pluck('id');
+                $business->whereIn('market_id', $marketIds);
             }
 
             if ($market) {

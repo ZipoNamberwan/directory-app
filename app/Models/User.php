@@ -27,6 +27,7 @@ class User extends Authenticatable
         'email',
         'password',
         'regency_id',
+        'organization_id',
         'must_change_password',
     ];
 
@@ -148,5 +149,10 @@ class User extends Authenticatable
         return $this->belongsToMany(Market::class)
             ->withPivot('user_firstname', 'market_name')
             ->withTimestamps();
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class, 'organization_id');
     }
 }

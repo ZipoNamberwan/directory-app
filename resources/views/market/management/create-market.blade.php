@@ -98,6 +98,18 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-4 mt-3">
+                            <label class="form-control-label" for="address">Apakah Dikerjakan Provinsi?</label>
+                            <input type="hidden" name="managedbyprov" value="0">
+                            <div class="form-check form-switch">
+                                <input value="1" onchange="toggleLabel()" class="form-check-input" name="managedbyprov"
+                                    type="checkbox" id="managedbyprov"
+                                    {{ old('managedbyprov', ($market->organization_id ?? 0) == 3500) ? 'checked' : '' }}>
+                                <label id="switchlabel" class="form-check-label" for="managedbyprov">Tidak</label>
+                            </div>
+                        </div>
+                    </div>
 
                     <button class="btn btn-primary mt-3" id="submit" type="submit">Submit</button>
                 </form>
@@ -109,6 +121,19 @@
     @push('js')
         <script src="/vendor/jquery/jquery-3.7.1.min.js"></script>
         <script src="/vendor/select2/select2.min.js"></script>
+
+        <script>
+            function toggleLabel() {
+                const checkbox = document.getElementById('managedbyprov');
+                const label = document.getElementById('switchlabel');
+
+                if (checkbox.checked) {
+                    label.textContent = 'Ya';
+                } else {
+                    label.textContent = 'Tidak';
+                }
+            }
+        </script>
 
         <script>
             [{

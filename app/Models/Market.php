@@ -10,7 +10,6 @@ class Market extends Model
 {
     use HasFactory, HasUuids;
     protected $guarded = [];
-    public $timestamps = false;
     protected $table = 'markets';
     public $incrementing = false;
 
@@ -34,5 +33,10 @@ class Market extends Model
         return $this->belongsToMany(User::class)
             ->withPivot('user_firstname', 'market_name')
             ->withTimestamps();
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class, 'organization_id');
     }
 }

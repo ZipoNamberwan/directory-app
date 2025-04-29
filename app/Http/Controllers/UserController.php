@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Organization;
 use App\Models\Regency;
 use App\Models\User;
 use Closure;
@@ -21,11 +22,11 @@ class UserController extends Controller
     public function index()
     {
         $user = User::find(Auth::id());
-        $regencies = [];
+        $organizations = [];
         if ($user->hasRole('adminprov')) {
-            $regencies = Regency::all();
+            $organizations = Organization::all();
         }
-        return view('user.index', ['regencies' => $regencies]);
+        return view('user.index', ['organizations' => $organizations]);
     }
 
     /**
@@ -33,8 +34,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        $regencies = Regency::all();
-        return view('user.create', ['user' => null, 'regencies' => $regencies]);
+        $organizations = Organization::all();
+        return view('user.create', ['user' => null, 'organizations' => $organizations]);
     }
 
     /**
@@ -51,18 +52,18 @@ class UserController extends Controller
             'role' => ['required', Rule::in(['adminprov', 'adminkab', 'pml', 'pcl', 'operator'])],
         ];
         if ($admin->hasRole('adminprov')) {
-            $validateArray['regency'] = 'required';
+            $validateArray['organization'] = 'required';
         }
 
         $validator = Validator::make($request->all(), $validateArray);
 
         $validator->after(function ($validator) use ($request) {
-            if ($request->role === 'adminprov' && $request->regency !== '3500') {
-                $validator->errors()->add('regency', 'Harus 3500 untuk adminprov.');
+            if ($request->role === 'adminprov' && $request->organization !== '3500') {
+                $validator->errors()->add('organization', 'Harus 3500 untuk adminprov.');
             }
 
-            if ($request->role === 'adminkab' && $request->regency === '3500') {
-                $validator->errors()->add('regency', 'Tidak Boleh 3500 untuk adminkab.');
+            if ($request->role === 'adminkab' && $request->organization === '3500') {
+                $validator->errors()->add('organization', 'Tidak Boleh 3500 untuk adminkab.');
             }
         });
 
@@ -73,7 +74,8 @@ class UserController extends Controller
             'email' => $request->email,
             'username' => $request->email,
             'password' => Hash::make($request->password),
-            'regency_id' => $admin->hasRole('adminprov') ? ($request->regency != '3500' ? $request->regency : null) : $admin->regency->id,
+            'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? $request->organization : null) : $admin->regency->id,
+            'organization_id' => $admin->hasRole('adminprov') ? $request->organization  : $admin->organization->id,
             'must_change_password' => false
         ]);
         $user->assignRoleAllDatabase($request->role);
@@ -94,8 +96,8 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
-        $regencies = Regency::all();
-        return view('user.create', ['user' => User::find($id), 'regencies' => $regencies]);
+        $organizations = Organization::all();
+        return view('user.create', ['user' => User::find($id), 'organizations' => $organizations]);
     }
 
     /**
@@ -116,18 +118,18 @@ class UserController extends Controller
             'role' => ['required', Rule::in(['adminprov', 'adminkab', 'pml', 'pcl', 'operator'])],
         ];
         if ($admin->hasRole('adminprov')) {
-            $validateArray['regency'] = 'required';
+            $validateArray['organization'] = 'required';
         }
 
         $validator = Validator::make($request->all(), $validateArray);
 
         $validator->after(function ($validator) use ($request) {
-            if ($request->role === 'adminprov' && $request->regency !== '3500') {
-                $validator->errors()->add('regency', 'Harus 3500 untuk adminprov.');
+            if ($request->role === 'adminprov' && $request->organization !== '3500') {
+                $validator->errors()->add('organization', 'Harus 3500 untuk adminprov.');
             }
 
-            if ($request->role === 'adminkab' && $request->regency === '3500') {
-                $validator->errors()->add('regency', 'Tidak Boleh 3500 untuk adminkab.');
+            if ($request->role === 'adminkab' && $request->organization === '3500') {
+                $validator->errors()->add('organization', 'Tidak Boleh 3500 untuk adminkab.');
             }
         });
 
@@ -139,7 +141,8 @@ class UserController extends Controller
             'firstname' => $request->firstname,
             'email' => $request->email,
             'username' => $request->email,
-            'regency_id' => $admin->hasRole('adminprov') ? ($request->regency != '3500' ? $request->regency : null) : $admin->regency->id,
+            'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? $request->organization : null) : $admin->regency->id,
+            'organization_id' => $admin->hasRole('adminprov') ? $request->organization  : $admin->organization->id,
             'password' => $request->password != $user->password ? Hash::make($request->password) : $user->password,
         ]);
         // $user->syncRoles([$request->role]);
@@ -171,7 +174,7 @@ class UserController extends Controller
         $user = User::find(Auth::id());
 
         if ($user->hasRole('adminkab')) {
-            $records = User::where(['regency_id' => $user->regency_id]);
+            $records = User::where(['organization_id' => $user->organization_id]);
         } else if ($user->hasRole('adminprov')) {
             $records = User::query();
         }
@@ -179,9 +182,8 @@ class UserController extends Controller
         if ($request->role != null && $request->role != '0') {
             $records->role($request->role);
         }
-        if ($request->regency != null && $request->regency != '0') {
-            $regency = $request->regency != '3500' ? $request->regency : null;
-            $records->where('regency_id', $regency);
+        if ($request->organization != null && $request->organization != '0') {
+            $records->where('organization_id', $request->organization);
         }
 
         $recordsTotal = $records->count();
@@ -202,7 +204,7 @@ class UserController extends Controller
         }
 
         $searchkeyword = $request->search['value'];
-        $data = $records->with(['roles', 'regency']);
+        $data = $records->with(['roles', 'regency', 'organization']);
         if ($searchkeyword != null) {
             $data->where(function ($query) use ($searchkeyword) {
                 $query->whereRaw('LOWER(firstname) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
