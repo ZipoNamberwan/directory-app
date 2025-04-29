@@ -37,22 +37,17 @@ class GenerateReportMarketCommand extends Command
         $today = $datetime->format('Y-m-d');
         $now = now();
 
-        $businessCountByRegency = DB::table('regencies')
-            ->leftJoin('market_business', 'regencies.id', '=', 'market_business.regency_id')
-            ->leftJoin('markets', 'regencies.id', '=', 'markets.regency_id')
+        $businessCountByOrganization = DB::table('organizations')
+            ->leftJoin('markets', 'organizations.id', '=', 'markets.organization_id')
+            ->leftJoin('market_business', 'markets.id', '=', 'market_business.market_id')
             ->select(
-                'regencies.id as regency_id',
+                'organizations.id as organization_id',
                 DB::raw('COUNT(DISTINCT market_business.id) as total_business'),
                 DB::raw('COUNT(DISTINCT markets.id) as total_market'),
-                DB::raw('(
-                    SELECT COUNT(DISTINCT mb.market_id)
-                    FROM market_business mb
-                    INNER JOIN markets m ON mb.market_id = m.id
-                    WHERE m.regency_id = regencies.id
-                ) as market_have_business')
+                DB::raw('COUNT(DISTINCT CASE WHEN market_business.id IS NOT NULL THEN markets.id END) as market_have_business')
             )
-            ->groupBy('regencies.id')
-            ->orderBy('regencies.id')
+            ->groupBy('organizations.id')
+            ->orderBy('organizations.id')
             ->get();
 
         ReportMarketBusinessRegency::where('date', $today)->delete();
@@ -60,13 +55,13 @@ class GenerateReportMarketCommand extends Command
         // Step 1: Prepare data for bulk insert
         $reportData = [];
 
-        foreach ($businessCountByRegency as $regency) {
+        foreach ($businessCountByOrganization as $regency) {
             $reportData[] = [
                 'id' => (string) Str::uuid(),
                 'uploaded' => $regency->total_business,
                 'total_market' => $regency->total_market,
                 'market_have_business' => $regency->market_have_business,
-                'regency_id' => $regency->regency_id,
+                'organization_id' => $regency->organization_id,
                 'date' => $today,
                 'created_at' => $now,
                 'updated_at' => $now
@@ -90,10 +85,10 @@ class GenerateReportMarketCommand extends Command
             })
             ->select(
                 'users.id as user_id',
-                'users.regency_id',
+                'users.organization_id',
                 DB::raw('COUNT(market_business.id) as total')
             )
-            ->groupBy('users.id', 'users.regency_id')
+            ->groupBy('users.id', 'users.organization_id')
             ->orderBy('users.id')
             ->get();
 
@@ -106,7 +101,7 @@ class GenerateReportMarketCommand extends Command
                 'id' => (string) Str::uuid(),
                 'uploaded' => $user->total,
                 'user_id' => $user->user_id,
-                'regency_id' => $user->regency_id,
+                'organization_id' => $user->organization_id,
                 'date' => $today,
                 'created_at' => $now,
                 'updated_at' => $now
@@ -117,8 +112,8 @@ class GenerateReportMarketCommand extends Command
 
         $businessCountByMarket = DB::table('markets')
             ->leftJoin('market_business', 'markets.id', '=', 'market_business.market_id')
-            ->select('markets.id as market_id', 'markets.regency_id', DB::raw('COUNT(market_business.id) as total'))
-            ->groupBy('markets.id', 'markets.regency_id')
+            ->select('markets.id as market_id', 'markets.organization_id', DB::raw('COUNT(market_business.id) as total'))
+            ->groupBy('markets.id', 'markets.organization_id')
             ->orderBy('markets.id')
             ->get();
 
@@ -131,7 +126,7 @@ class GenerateReportMarketCommand extends Command
                 'id' => (string) Str::uuid(),
                 'uploaded' => $market->total,
                 'market_id' => $market->market_id,
-                'regency_id' => $market->regency_id,
+                'organization_id' => $market->organization_id,
                 'date' => $today,
                 'created_at' => $now,
                 'updated_at' => $now

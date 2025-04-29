@@ -292,7 +292,7 @@ class MarketAssignmentController extends Controller
     {
         $user = User::find(Auth::id());
         $uuid = Str::uuid();
-        return Excel::download(new MarketAssignmentExport($user->regency_id), $uuid . '.xlsx');
+        return Excel::download(new MarketAssignmentExport($user->organization_id), $uuid . '.xlsx');
     }
 
     public function deleteMarketAssignment($id)

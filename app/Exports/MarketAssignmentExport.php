@@ -18,11 +18,11 @@ class MarketAssignmentExportSheet implements FromCollection, WithHeadings, Shoul
 {
     use Exportable, Queueable;
 
-    protected $regency;
+    protected $organization;
 
-    public function __construct($regency)
+    public function __construct($organization)
     {
-        $this->regency = $regency;
+        $this->organization = $organization;
     }
 
     /**
@@ -51,16 +51,16 @@ class MasterUserExportSheet implements FromQuery, ShouldQueue, WithHeadings, Wit
 {
     use Exportable, Queueable;
 
-    protected $regency;
+    protected $organization;
 
-    public function __construct($regency)
+    public function __construct($organization)
     {
-        $this->regency = $regency;
+        $this->organization = $organization;
     }
 
     public function query()
     {
-        return User::query()->where('regency_id',  $this->regency)->role(['adminprov', 'adminkab', 'pml', 'operator']);
+        return User::query()->where('organization_id',  $this->organization)->role(['adminprov', 'adminkab', 'pml', 'operator']);
     }
 
     public function headings(): array
@@ -89,16 +89,16 @@ class MasterMarketExportSheet implements FromQuery, ShouldQueue, WithHeadings, W
 {
     use Exportable, Queueable;
 
-    protected $regency;
+    protected $organization;
 
-    public function __construct($regency)
+    public function __construct($organization)
     {
-        $this->regency = $regency;
+        $this->organization = $organization;
     }
 
     public function query()
     {
-        return Market::query()->where('regency_id',  $this->regency ?? '3578');
+        return Market::query()->where('organization_id',  $this->organization);
     }
 
     public function headings(): array
@@ -131,19 +131,19 @@ class MasterMarketExportSheet implements FromQuery, ShouldQueue, WithHeadings, W
 
 class MarketAssignmentExport implements WithMultipleSheets, ShouldQueue
 {
-    protected $regency;
+    protected $organization;
 
-    public function __construct($regency)
+    public function __construct($organization)
     {
-        $this->regency = $regency;
+        $this->organization = $organization;
     }
 
     public function sheets(): array
     {
         $sheets = [];
-        $sheets[] = new MarketAssignmentExportSheet($this->regency);
-        $sheets[] = new MasterUserExportSheet($this->regency);
-        $sheets[] = new MasterMarketExportSheet($this->regency);
+        $sheets[] = new MarketAssignmentExportSheet($this->organization);
+        $sheets[] = new MasterUserExportSheet($this->organization);
+        $sheets[] = new MasterMarketExportSheet($this->organization);
 
         return $sheets;
     }

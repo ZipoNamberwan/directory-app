@@ -416,15 +416,14 @@ class MarketController extends Controller
         $user = User::find(Auth::id());
 
         $reportByRegency = ReportMarketBusinessRegency::orderByDesc('date')
-            ->limit(38)->get()->sortBy('regency_id')
+            ->limit(38)->get()->sortBy('organization_id')
             ->values();
 
         $chartReportByRegency = [];
         $totalBusiness = 0;
         $reportByUser = [];
 
-        $reportByUser = ReportMarketBusinessUser::where(['date' => $reportByRegency[0]->date, 'regency_id' => $user->regency_id])->get();
-        $reportByMarket = [];
+        $reportByUser = ReportMarketBusinessUser::where(['date' => $reportByRegency[0]->date, 'organization_id' => $user->organization_id])->get();
 
         if ($user->hasRole('adminprov')) {
             $chartReportByRegency = ReportMarketBusinessRegency::selectRaw('date, SUM(uploaded) as uploaded')
@@ -434,16 +433,14 @@ class MarketController extends Controller
                 ->get();
 
             $totalBusiness = $reportByRegency->sum('uploaded');
-
-            $reportByMarket = ReportMarketBusinessMarket::where(['date' => $reportByRegency[0]->date, 'regency_id' => '3578'])->get();
         } else if ($user->hasRole('adminkab')) {
-            $chartReportByRegency = ReportMarketBusinessRegency::where('regency_id', $user->regency_id)->orderByDesc('date')->limit(5)->get();
+            $chartReportByRegency = ReportMarketBusinessRegency::where('organization_id', $user->organization_id)->orderByDesc('date')->limit(5)->get();
 
             $totalBusiness = $reportByRegency
-                ->where('regency_id', $user->regency_id)->first()->uploaded;
-
-            $reportByMarket = ReportMarketBusinessMarket::where(['date' => $reportByRegency[0]->date, 'regency_id' => $user->regency_id])->get();
+                ->where('organization_id', $user->organization_id)->first()->uploaded;
         }
+
+        $reportByMarket = ReportMarketBusinessMarket::where(['date' => $reportByRegency[0]->date, 'organization_id' => $user->organization_id])->get();
 
         $chartData = ['data' => ($chartReportByRegency->pluck('uploaded'))->reverse()->values(), 'dates' => ($chartReportByRegency->pluck('date'))->reverse()->values()];
 

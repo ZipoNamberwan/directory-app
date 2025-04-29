@@ -13,8 +13,8 @@ class ReportMarketBusinessRegency extends Model
     public $timestamps = true;
     protected $table = 'report_market_business_regency';
 
-    public function regency()
+    public function organization()
     {
-        return $this->belongsTo(Regency::class, 'regency_id');
+        return $this->belongsTo(Organization::class, 'organization_id');
     }
 }

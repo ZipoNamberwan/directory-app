@@ -84,9 +84,9 @@
                                             <div class="d-flex gap-3 align-items-center">
                                                 <div>
                                                     <p class="text-xs text-secondary mb-0 mt-1">
-                                                        [{{ $report->regency->long_code }}]
+                                                        [{{ $report->organization->long_code }}]
                                                     </p>
-                                                    <h6 class="text-sm mb-1">{{ $report->regency->name }}</h6>
+                                                    <h6 class="text-sm mb-1">{{ $report->organization->name }}</h6>
                                                 </div>
                                             </div>
                                         </td>
