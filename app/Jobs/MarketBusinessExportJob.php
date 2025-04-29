@@ -85,8 +85,7 @@ class MarketBusinessExportJob implements ShouldQueue
                     $query->where('organization_id', $status->user->organization_id);
                 });
             } else if ($this->role == 'pml' || $this->role == 'operator') {
-                $marketIds = $status->user->markets->pluck('id');
-                $business->whereIn('market_id', $marketIds);
+                $business->where('user_id', $status->user_id);
             }
 
             if ($market) {

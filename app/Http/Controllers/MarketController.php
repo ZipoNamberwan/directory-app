@@ -227,7 +227,9 @@ class MarketController extends Controller
         if ($user->hasRole('adminprov')) {
             $records = MarketUploadStatus::query();
         } else if ($user->hasRole('adminkab')) {
-            $records = MarketUploadStatus::where('regency_id', $user->regency_id);
+            $records = MarketUploadStatus::whereHas('user', function ($query) use ($user) {
+                $query->where('organization_id', $user->organization_id);
+            });
         } else {
             $records = MarketUploadStatus::where('user_id', $user->id);
         }
@@ -345,7 +347,11 @@ class MarketController extends Controller
 
         if ($user->hasRole('adminprov')) {
             $records = AssignmentStatus::where('type', 'download-market-raw');
-        } else if ($user->hasRole('adminkab') || $user->hasRole('pml') || $user->hasRole('operator')) {
+        } else if ($user->hasRole('adminkab')) {
+            $records = AssignmentStatus::where(['type' => 'download-market-raw'])->whereHas('user', function ($query) use ($user) {
+                $query->where('organization_id', $user->organization_id);
+            });
+        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $records = AssignmentStatus::where(['user_id' => $user->id, 'type' => 'download-market-raw']);
         }
 
