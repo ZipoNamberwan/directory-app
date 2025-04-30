@@ -28,7 +28,15 @@ class MarketManagementController extends Controller
             $isAdmin = true;
         }
 
-        return view('market.management.management', ['organizations' => $organizations, 'isAdmin' => $isAdmin]);
+        $targets = Market::getTargetCategoryValues();
+        $completionStatus = Market::getCompletionStatusValues();
+
+        return view('market.management.management', [
+            'organizations' => $organizations,
+            'isAdmin' => $isAdmin,
+            'targets' => $targets,
+            'completionStatus' => $completionStatus,
+        ]);
     }
 
     public function getMarketManagementData(Request $request)
@@ -49,6 +57,12 @@ class MarketManagementController extends Controller
 
         if ($request->organization != null && $request->organization != '0') {
             $records->where('organization_id', $request->organization);
+        }
+        if ($request->target != null && $request->target != '0') {
+            $records->where('target_category', $request->target);
+        }
+        if ($request->completion != null && $request->completion != '0') {
+            $records->where('completion_status', $request->completion);
         }
 
         $recordsTotal = $records->count();
@@ -251,5 +265,62 @@ class MarketManagementController extends Controller
         ]);
 
         return  redirect('/pasar/manajemen')->with('success-edit', 'Pasar telah diupdate!');
+    }
+
+    public function changeMarketTargetCategory(Request $request, $id)
+    {
+        $validateArray = [
+            'target_category' => 'required',
+        ];
+
+        $request->validate($validateArray);
+
+        $market = Market::find($id);
+        if (!$market) {
+            return response()->json(['message' => 'Market not found'], 404);
+        }
+
+        $success = $market->update([
+            'target_category' => $request->target_category ? 'target' : 'non target',
+        ]);
+
+        if ($success) {
+            return response()->json(['message' => 'Category updated successfully'], 200);
+        } else {
+            return response()->json(['message' => 'Failed to update category'], 500);
+        }
+    }
+
+    public function changeMarketCompletionStatus(Request $request, $id)
+    {
+        $validateArray = [
+            'completion_status' => 'required',
+        ];
+
+        $request->validate($validateArray);
+
+        $market = Market::find($id);
+        if (!$market) {
+            return response()->json(['message' => 'Market not found'], 404);
+        }
+
+        $statusNotCompleted = $market->businesses()->exists() ? 'on going' : 'not start';
+
+        $market->completion_status = $request->completion_status ? 'done' : $statusNotCompleted;
+        $success = $market->save();
+
+        if ($success) {
+            return response()->json([
+                'message' => 'Status Penyelesaian Pasar Sukses Diubah',
+                'success' => true,
+                'completion_status' => $market->getTransformedCompletionStatusAttribute(),
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 'Status Penyelesaian Pasar Gagal Diubah',
+                'success' => false,
+                'completion_status' => $market->getTransformedCompletionStatusAttribute(),
+            ], 500);
+        }
     }
 }

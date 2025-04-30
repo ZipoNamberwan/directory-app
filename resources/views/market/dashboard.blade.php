@@ -77,7 +77,7 @@
         </div>
 
         <div class="row mt-3">
-            <div class="col-md-6 col-sm-12 mb-3">
+            <div class="col-md-12 col-sm-12 mb-3">
                 <div class="card">
                     <div class="card-header">
                         <h6 class="text-capitalize">
@@ -91,7 +91,8 @@
                         @if (Auth::user()->organization_id == '3578' || Auth::user()->organization_id == '3500')
                             <div class="marquee-container">
                                 <p class="text-sm marquee-text">
-                                    <strong>Nb: * Progres Provinsi dan Kota Surabaya sudah Terpisah. Progres pasar sekarang juga hanya muncul pasar yang menjadi tanggung jawab satker masing-masing.</strong>
+                                    <strong>Nb: * Progres Provinsi dan Kota Surabaya sudah Terpisah. Progres pasar sekarang
+                                        juga hanya muncul pasar yang menjadi tanggung jawab satker masing-masing.</strong>
                                 </p>
                             </div>
                         @endif
@@ -108,6 +109,21 @@
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
                                         Total Pasar
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Target
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Bukan Target
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Belum Dimulai
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Sedang Dikerjakan
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Sudah Selesai
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
                                         Jumlah Pasar dengan Muatan yang sudah Diupload Minimal 1
@@ -131,6 +147,13 @@
                                             </div>
                                         </td>
                                         <td class="align-middle text-center text-sm">{{ $report->total_market }}</td>
+
+                                        <td class="align-middle text-center text-sm">{{ $report->target }}</td>
+                                        <td class="align-middle text-center text-sm">{{ $report->non_target }}</td>
+                                        <td class="align-middle text-center text-sm">{{ $report->not_start }}</td>
+                                        <td class="align-middle text-center text-sm">{{ $report->on_going }}</td>
+                                        <td class="align-middle text-center text-sm">{{ $report->done }}</td>
+
                                         <td class="align-middle text-center text-sm">{{ $report->market_have_business }}
                                         </td>
                                         <td class="align-middle text-center text-sm">{{ $report->uploaded }}</td>
@@ -160,6 +183,12 @@
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7">
                                         Wilayah
                                     </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                        Status Target
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                        Status Penyelesaian
+                                    </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
                                         Usaha yang Sudah Dimutakhirkan
                                     </th>
@@ -172,6 +201,10 @@
                                         <td class="text-sm">[{{ $report->market->village_id }}]
                                             {{ $report->market->subdistrict->name }} {{ $report->market->village->name }}
                                         </td>
+
+                                        <td class="align-middle text-center text-sm">{{ $report->target_category }}</td>
+                                        <td class="align-middle text-center text-sm">{{ $report->completion_status }}</td>
+
                                         <td class="align-middle text-center text-sm">{{ $report->uploaded }}</td>
                                     </tr>
                                 @endforeach
@@ -244,19 +277,39 @@
             lengthChange: false,
             columns: [{
                     responsivePriority: 1,
-                    width: "10%",
+                    width: "20%",
                 },
                 {
                     responsivePriority: 3,
-                    width: "10%",
+                    width: "5%",
                 },
                 {
                     responsivePriority: 3,
-                    width: "10%",
+                    width: "5%",
+                },
+                {
+                    responsivePriority: 3,
+                    width: "5%",
+                },
+                {
+                    responsivePriority: 3,
+                    width: "5%",
+                },
+                {
+                    responsivePriority: 3,
+                    width: "5%",
+                },
+                {
+                    responsivePriority: 3,
+                    width: "5%",
+                },
+                {
+                    responsivePriority: 3,
+                    width: "5%",
                 },
                 {
                     responsivePriority: 2,
-                    width: "10%",
+                    width: "5%",
                 },
             ],
             language: {
@@ -301,6 +354,40 @@
                 {
                     responsivePriority: 2,
                     width: "10%",
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            if (data == 'target') {
+                                return '<span class="badge badge-sm bg-gradient-success">Target</span>';
+                            } else if (data == 'non target') {
+                                return '<span class="badge badge-sm bg-gradient-danger">Non Target</span>';
+                            } else {
+                                return data;
+                            }
+                        }
+                        return data
+                    }
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            if (data == 'not start') {
+                                return '<span class="badge badge-sm bg-gradient-secondary">Belum Dimulai</span>';
+                            } else if (data == 'on going') {
+                                return '<span class="badge badge-sm bg-gradient-warning">Sedang Dikerjakan</span>';
+                            } else if (data == 'done') {
+                                return '<span class="badge badge-sm bg-gradient-success">Sudah Selesai</span>';
+                            } else {
+                                return data;
+                            }
+                        }
+                        return data
+                    }
                 },
                 {
                     responsivePriority: 2,

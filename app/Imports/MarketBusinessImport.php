@@ -35,70 +35,81 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
      */
     public function collection(Collection $records)
     {
-        try {
-            $errors = [];
-            $rowNumber = 1;
+        if ($this->status->market->completion_status != 'done') {
+            try {
+                $errors = [];
+                $rowNumber = 1;
 
-            foreach ($records as $record) {
-                $rowErrors = [];
+                foreach ($records as $record) {
+                    $rowErrors = [];
 
-                if (empty($record['nama_usaha'])) {
-                    $rowErrors[] = "Nama Usaha kosong pada baris $rowNumber.";
-                }
-                if (empty($record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null)) {
-                    $rowErrors[] = "Status Bangunan kosong pada baris $rowNumber.";
-                }
-                if (empty($record['deskripsi_aktifitas'])) {
-                    $rowErrors[] = "Deskripsi Usaha kosong pada baris $rowNumber.";
-                }
-                if (empty($record['sektor'])) {
-                    $rowErrors[] = "Sektor Usaha kosong pada baris $rowNumber.";
-                }
-                if (empty($record['latitude'])) {
-                    $rowErrors[] = "Latitude kosong pada baris $rowNumber.";
-                }
-                if (empty($record['longitude'])) {
-                    $rowErrors[] = "Longitude kosong pada baris $rowNumber.";
+                    if (empty($record['nama_usaha'])) {
+                        $rowErrors[] = "Nama Usaha kosong pada baris $rowNumber.";
+                    }
+                    if (empty($record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null)) {
+                        $rowErrors[] = "Status Bangunan kosong pada baris $rowNumber.";
+                    }
+                    if (empty($record['deskripsi_aktifitas'])) {
+                        $rowErrors[] = "Deskripsi Usaha kosong pada baris $rowNumber.";
+                    }
+                    if (empty($record['sektor'])) {
+                        $rowErrors[] = "Sektor Usaha kosong pada baris $rowNumber.";
+                    }
+                    if (empty($record['latitude'])) {
+                        $rowErrors[] = "Latitude kosong pada baris $rowNumber.";
+                    }
+                    if (empty($record['longitude'])) {
+                        $rowErrors[] = "Longitude kosong pada baris $rowNumber.";
+                    }
+
+                    if (!empty($rowErrors)) {
+                        $errors[$rowNumber] = $rowErrors;
+                    } else {
+                        MarketBusiness::create([
+                            'name' => $record['nama_usaha'],
+                            'status' => $record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null,
+                            'address' => $record['alamat_lengkap'],
+                            'description' => $record['deskripsi_aktifitas'],
+                            'sector' => $record['sektor'],
+                            'note' => $record['catatan_lantaibloksektor'] ?? $record['catatan_lantaiblocksektor'] ?? null,
+
+                            'latitude' => $record['latitude'],
+                            'longitude' => $record['longitude'],
+                            'market_id' => $this->status->market_id,
+                            'user_id' => $this->status->user_id,
+                            'upload_id' => $this->status->id,
+                            'regency_id' => $this->status->regency_id
+                        ]);
+                    }
+
+                    $rowNumber++;
                 }
 
-                if (!empty($rowErrors)) {
-                    $errors[$rowNumber] = $rowErrors;
-                } else {
-                    MarketBusiness::create([
-                        'name' => $record['nama_usaha'],
-                        'status' => $record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null,
-                        'address' => $record['alamat_lengkap'],
-                        'description' => $record['deskripsi_aktifitas'],
-                        'sector' => $record['sektor'],
-                        'note' => $record['catatan_lantaibloksektor'] ?? $record['catatan_lantaiblocksektor'] ?? null,
-
-                        'latitude' => $record['latitude'],
-                        'longitude' => $record['longitude'],
-                        'market_id' => $this->status->market_id,
-                        'user_id' => $this->status->user_id,
-                        'upload_id' => $this->status->id,
-                        'regency_id' => $this->status->regency_id
+                if (count($errors) > 0) {
+                    $errorMessages = [];
+                    foreach ($errors as $row => $messages) {
+                        foreach ($messages as $message) {
+                            $errorMessages[] = $message;
+                        }
+                    }
+                    $this->status = $this->status->update([
+                        'message' => $this->status->message . implode("<br>", $errorMessages) . "<br>",
                     ]);
                 }
 
-                $rowNumber++;
-            }
-
-            if (count($errors) > 0) {
-                $errorMessages = [];
-                foreach ($errors as $row => $messages) {
-                    foreach ($messages as $message) {
-                        $errorMessages[] = $message;
-                    }
-                }
+                $this->status->market->update([
+                    'completion_status' => 'on going',
+                ]);
+            } catch (Exception $e) {
                 $this->status = $this->status->update([
-                    'message' => $this->status->message . implode("<br>", $errorMessages) . "<br>",
+                    'status' => 'failed',
+                    'message' => $e->getMessage(),
                 ]);
             }
-        } catch (Exception $e) {
+        } else {
             $this->status = $this->status->update([
                 'status' => 'failed',
-                'message' => $e->getMessage(),
+                'message' => 'Tidak bisa mengupload data, karena status pasar sudah selesai/completed. Hubungi Admin Kab untuk membuka kembali.',
             ]);
         }
     }

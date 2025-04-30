@@ -453,6 +453,7 @@ class MarketController extends Controller
         $updateDate = Carbon::parse($reportByRegency[0]->date)->translatedFormat('d F Y');
         $updateTime = Carbon::parse($reportByRegency[0]->created_at)->format('H:i');
 
+        
         return view(
             'market.dashboard',
             [

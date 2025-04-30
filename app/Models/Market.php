@@ -12,6 +12,7 @@ class Market extends Model
     protected $guarded = [];
     protected $table = 'markets';
     public $incrementing = false;
+    protected $appends = ['transformed_completion_status'];
 
     public function regency()
     {
@@ -38,5 +39,58 @@ class Market extends Model
     public function organization()
     {
         return $this->belongsTo(Organization::class, 'organization_id');
+    }
+
+    public function businesses()
+    {
+        return $this->hasMany(MarketBusiness::class, 'market_id');
+    }
+
+    public function getTransformedCompletionStatusAttribute()
+    {
+        if ($this->completion_status == 'not start') {
+            return 'Belum Dimulai';
+        } else if ($this->completion_status == 'on going') {
+            return 'Sedang Jalan';
+        } else if ($this->completion_status == 'done') {
+            return 'Selesai';
+        }
+    }
+
+    public static function getTargetCategoryValues()
+    {
+        return [
+            ['name' => 'Target', 'value' => 'target'],
+            ['name' => 'Non Target', 'value' => 'non target'],
+        ];
+    }
+
+    public static function getCompletionStatusValues()
+    {
+        return [
+            ['name' => 'Belum Dimulai', 'value' => 'not start'],
+            ['name' => 'Sedang Jalan', 'value' => 'on going'],
+            ['name' => 'Selesai', 'value' => 'done'],
+        ];
+    }
+
+    public static function getTransformedCompletionStatusByValue($value)
+    {
+        if ($value == 'not start') {
+            return 'Belum Dimulai';
+        } else if ($value == 'on going') {
+            return 'Sedang Jalan';
+        } else if ($value == 'done') {
+            return 'Selesai';
+        }
+    }
+
+    public static function getTransformedTargetCategoryByValue($value)
+    {
+        if ($value == 'target') {
+            return 'Target';
+        } else if ($value == 'non target') {
+            return 'Non Target';
+        }
     }
 }

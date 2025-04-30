@@ -44,7 +44,16 @@ class GenerateReportMarketCommand extends Command
                 'organizations.id as organization_id',
                 DB::raw('COUNT(DISTINCT market_business.id) as total_business'),
                 DB::raw('COUNT(DISTINCT markets.id) as total_market'),
-                DB::raw('COUNT(DISTINCT CASE WHEN market_business.id IS NOT NULL THEN markets.id END) as market_have_business')
+                DB::raw('COUNT(DISTINCT CASE WHEN market_business.id IS NOT NULL THEN markets.id END) as market_have_business'),
+
+                // Target category counts
+                DB::raw("COUNT(DISTINCT CASE WHEN markets.target_category = 'target' THEN markets.id END) as target"),
+                DB::raw("COUNT(DISTINCT CASE WHEN markets.target_category = 'non target' THEN markets.id END) as non_target"),
+
+                // Completion status counts
+                DB::raw("COUNT(DISTINCT CASE WHEN markets.completion_status = 'not start' THEN markets.id END) as not_start"),
+                DB::raw("COUNT(DISTINCT CASE WHEN markets.completion_status = 'on going' THEN markets.id END) as on_going"),
+                DB::raw("COUNT(DISTINCT CASE WHEN markets.completion_status = 'done' THEN markets.id END) as done")
             )
             ->groupBy('organizations.id')
             ->orderBy('organizations.id')
@@ -61,6 +70,11 @@ class GenerateReportMarketCommand extends Command
                 'uploaded' => $regency->total_business,
                 'total_market' => $regency->total_market,
                 'market_have_business' => $regency->market_have_business,
+                'target' => $regency->target,
+                'non_target' => $regency->non_target,
+                'not_start' => $regency->not_start,
+                'on_going' => $regency->on_going,
+                'done' => $regency->done,
                 'organization_id' => $regency->organization_id,
                 'date' => $today,
                 'created_at' => $now,
@@ -112,7 +126,13 @@ class GenerateReportMarketCommand extends Command
 
         $businessCountByMarket = DB::table('markets')
             ->leftJoin('market_business', 'markets.id', '=', 'market_business.market_id')
-            ->select('markets.id as market_id', 'markets.organization_id', DB::raw('COUNT(market_business.id) as total'))
+            ->select(
+                'markets.id as market_id',
+                'markets.organization_id',
+                'markets.completion_status',
+                'markets.target_category',
+                DB::raw('COUNT(market_business.id) as total')
+            )
             ->groupBy('markets.id', 'markets.organization_id')
             ->orderBy('markets.id')
             ->get();
@@ -127,6 +147,8 @@ class GenerateReportMarketCommand extends Command
                 'uploaded' => $market->total,
                 'market_id' => $market->market_id,
                 'organization_id' => $market->organization_id,
+                'completion_status' => $market->completion_status,
+                'target_category' => $market->target_category,
                 'date' => $today,
                 'created_at' => $now,
                 'updated_at' => $now

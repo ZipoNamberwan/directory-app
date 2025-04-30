@@ -96,6 +96,8 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::delete('/pasar/manajemen/{id}', [MarketManagementController::class, 'deleteMarket']);
 		Route::post('/pasar/manajemen', [MarketManagementController::class, 'storeMarket']);
 		Route::put('/pasar/manajemen/{id}', [MarketManagementController::class, 'updateMarket']);
+
+		Route::patch('/pasar/manajemen/kategori/{id}', [MarketManagementController::class, 'changeMarketTargetCategory']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
@@ -118,6 +120,8 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::delete('/pasar-assignment/{id}', [MarketAssignmentController::class, 'deleteMarketAssignment']);
 
 		Route::post('/pasar-assignment/download/file', [MarketAssignmentController::class, 'downloadUploadedAssignmentFile']);
+
+		Route::patch('/pasar/manajemen/selesai/{id}', [MarketManagementController::class, 'changeMarketCompletionStatus']);
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');
