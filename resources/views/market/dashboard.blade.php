@@ -38,6 +38,23 @@
                 transform: translateX(-100%);
             }
         }
+
+        .custom-note {
+            background-color: #e0f0ff;
+            /* light blue background */
+            border-left: 6px solid #007bff;
+            /* bold blue border */
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+            font-family: Arial, sans-serif;
+            color: #004085;
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+        }
+
+        .custom-note strong {
+            margin-bottom: 5px;
+        }
     </style>
 @endsection
 
@@ -100,6 +117,16 @@
                     <div class="card-body">
                         <div style="width: 75%; margin: auto;">
                             <canvas id="proggress_chart"></canvas>
+                        </div>
+                        <div class="custom-note">
+                            <strong>Note:</strong><br>
+                            Pasar <code>target</code> dan <code>non target</code> adalah status pasar yang ditentukan oleh provinsi sesuai petunjuk dari kabupaten/kota. 
+                            Pasar <code>non target</code> adalah pasar yang tidak dicacah karena berbagai alasan seperti akses yang sulit, keamanan, bencana dll. 
+                            Pengajuan pasar jenis ini bisa menghubungi <strong>Tim Garda Provinsi</strong>.<br><br>
+
+                            Status penyelesaian pasar ada 3 yaitu <code>Belum Dimulai</code>, <code>Sedang Dikerjakan</code>, dan <code>Sudah Selesai</code>. 
+                            Untuk menandai pasar yang sudah selesai, bisa menggunakan <strong>menu pasar</strong> kemudian <strong>ganti flag status penyelesaian</strong> pada tabel.
+
                         </div>
                         <table id="regencyTable" class="align-items-center text-sm">
                             <thead>
