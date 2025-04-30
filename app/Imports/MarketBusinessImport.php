@@ -92,7 +92,7 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
                             $errorMessages[] = $message;
                         }
                     }
-                    $this->status = $this->status->update([
+                    $this->status->update([
                         'message' => $this->status->message . implode("<br>", $errorMessages) . "<br>",
                     ]);
                 }
@@ -100,14 +100,15 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
                 $this->status->market->update([
                     'completion_status' => 'on going',
                 ]);
+
             } catch (Exception $e) {
-                $this->status = $this->status->update([
+                $this->status->update([
                     'status' => 'failed',
                     'message' => $e->getMessage(),
                 ]);
             }
         } else {
-            $this->status = $this->status->update([
+            $this->status->update([
                 'status' => 'failed',
                 'message' => 'Tidak bisa mengupload data, karena status pasar sudah selesai/completed. Hubungi Admin Kab untuk membuka kembali.',
             ]);
