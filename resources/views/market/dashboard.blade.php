@@ -192,7 +192,7 @@
                 </div>
             </div>
 
-            <div class="col-md-6 col-sm-12 mb-3">
+            <div class="col-md-9 col-sm-12 mb-3">
                 <div class="card">
                     <div class="card-header">
                         <h6 class="text-capitalize">
@@ -241,7 +241,7 @@
                 </div>
             </div>
 
-            <div class="col-md-6 col-sm-12 mb-3">
+            <div class="col-md-3 col-sm-12 mb-3">
                 <div class="card">
                     <div class="card-header">
                         <h6 class="text-capitalize">
@@ -304,7 +304,7 @@
             lengthChange: false,
             columns: [{
                     responsivePriority: 1,
-                    width: "20%",
+                    width: "10%",
                 },
                 {
                     responsivePriority: 3,
