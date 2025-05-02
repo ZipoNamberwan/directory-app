@@ -190,7 +190,11 @@ class MarketManagementController extends Controller
             return 'Gagal membuat zip file, log sudah disimpan';
         }
 
-        return Storage::download('project_market/' . $projectName . $newExtension);
+        // return Storage::download('project_market/' . $projectName . $newExtension);
+        return Storage::download('project_market/' . $projectName . $newExtension, $projectName . $newExtension, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="' . $projectName . $newExtension . '"',
+        ]);
     }
 
     public function deleteMarket($id)

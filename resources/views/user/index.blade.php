@@ -229,6 +229,12 @@
                             if (type === 'display') {
                                 return `
                         <div class="d-flex align-items-center justify-content-start my-2 gap-2">
+                            @hasrole('adminprov')
+                            <a href="${`{{route('impersonate', ':id' )}}`.replace(':id', row.id)}" class="px-2 py-1 m-0 btn btn-icon btn-outline-success btn-sm" role="button">
+                                <span class="btn-inner--icon"><i class="fas fa-hat-cowboy"></i></span>
+                            </a>
+                            @endhasrole
+                            
                             <a href="/users/${data}/edit" class="px-2 py-1 m-0 btn btn-icon btn-outline-info btn-sm" role="button">
                                 <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
                             </a>

@@ -35,7 +35,10 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
      */
     public function collection(Collection $records)
     {
-        if ($this->status->market->completion_status != 'done') {
+        if (
+            $this->status->market->completion_status != 'done' &&
+            $this->status->market->target_category != 'non target'
+        ) {
             try {
                 $errors = [];
                 $rowNumber = 1;
@@ -100,7 +103,6 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
                 $this->status->market->update([
                     'completion_status' => 'on going',
                 ]);
-
             } catch (Exception $e) {
                 $this->status->update([
                     'status' => 'failed',
@@ -108,10 +110,18 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
                 ]);
             }
         } else {
-            $this->status->update([
-                'status' => 'failed',
-                'message' => 'Tidak bisa mengupload data, karena status pasar sudah selesai/completed. Hubungi Admin Kab untuk membuka kembali.',
-            ]);
+            if ($this->status->market->completion_status == 'done') {
+                $this->status->update([
+                    'status' => 'failed',
+                    'message' => 'Tidak bisa mengupload data, karena status pasar sudah selesai/completed. Hubungi Admin Kab untuk membuka kembali.',
+                ]);
+            }
+            if ($this->status->market->target_category == 'non target') {
+                $this->status->update([
+                    'status' => 'failed',
+                    'message' => 'Tidak bisa mengupload data, karena kategori pasar adalah non target. Hubungi Admin Kab untuk membuka kembali.',
+                ]);
+            }
         }
     }
 

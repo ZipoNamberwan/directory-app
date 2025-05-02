@@ -51,10 +51,16 @@
                                 data-toggle="select">
                                 <option value="0" disabled selected> -- Pilih Pasar -- </option>
                                 @foreach ($markets as $market)
-                                    <option {{ $market->completion_status == 'done' ? 'disabled' : '' }}
+                                    <option
+                                        {{ $market->completion_status == 'done' || $market->target_category == 'non target' ? 'disabled' : '' }}
                                         value="{{ $market->id }}" {{ old('market') == $market->id ? 'selected' : '' }}>
                                         [{{ $market->regency->long_code }}{{ $market->subdistrict?->short_code }}{{ $market->village?->short_code }}]
-                                        {{ $market->name }} {{ $market->completion_status == 'done' ? '(Selesai)' : '' }}
+                                        {{ $market->name }}
+                                        @if ($market->target_category == 'non target')
+                                            (Non Target)
+                                        @elseif ($market->completion_status == 'done')
+                                            (Selesai)
+                                        @endif
                                     </option>
                                 @endforeach
                             </select>

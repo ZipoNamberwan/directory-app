@@ -89,7 +89,7 @@
                             <tr>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Wilayah</th>
-                                @hasrole('adminprov')
+                                @hasrole('adminprov|adminkab')
                                     <th class="text-uppercase text-small font-weight-bolder opacity-7">Status Target</th>
                                 @endhasrole
                                 @hasrole('adminprov|adminkab')
@@ -350,6 +350,26 @@
                                 `;
                             }
                             return data;
+                        }
+                    },
+                @endhasrole
+                @hasrole('adminkab')
+                    {
+                        responsivePriority: 1,
+                        width: "10%",
+                        data: "target_category",
+                        type: "text",
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                if (data == 'target') {
+                                    return '<span class="badge badge-sm bg-gradient-success">Target</span>';
+                                } else if (data == 'non target') {
+                                    return '<span class="badge badge-sm bg-gradient-danger">Non Target</span>';
+                                } else {
+                                    return data;
+                                }
+                            }
+                            return data
                         }
                     },
                 @endhasrole

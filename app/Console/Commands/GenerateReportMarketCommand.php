@@ -50,10 +50,10 @@ class GenerateReportMarketCommand extends Command
                 DB::raw("COUNT(DISTINCT CASE WHEN markets.target_category = 'target' THEN markets.id END) as target"),
                 DB::raw("COUNT(DISTINCT CASE WHEN markets.target_category = 'non target' THEN markets.id END) as non_target"),
 
-                // Completion status counts
-                DB::raw("COUNT(DISTINCT CASE WHEN markets.completion_status = 'not start' THEN markets.id END) as not_start"),
-                DB::raw("COUNT(DISTINCT CASE WHEN markets.completion_status = 'on going' THEN markets.id END) as on_going"),
-                DB::raw("COUNT(DISTINCT CASE WHEN markets.completion_status = 'done' THEN markets.id END) as done")
+                // Completion status counts (only for target markets)
+                DB::raw("COUNT(DISTINCT CASE WHEN markets.target_category = 'target' AND markets.completion_status = 'not start' THEN markets.id END) as not_start"),
+                DB::raw("COUNT(DISTINCT CASE WHEN markets.target_category = 'target' AND markets.completion_status = 'on going' THEN markets.id END) as on_going"),
+                DB::raw("COUNT(DISTINCT CASE WHEN markets.target_category = 'target' AND markets.completion_status = 'done' THEN markets.id END) as done")
             )
             ->groupBy('organizations.id')
             ->orderBy('organizations.id')

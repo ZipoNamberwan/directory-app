@@ -120,12 +120,16 @@
                         </div>
                         <div class="custom-note">
                             <strong>Note:</strong><br>
-                            Pasar <code>target</code> dan <code>non target</code> adalah status pasar yang ditentukan oleh provinsi sesuai petunjuk dari kabupaten/kota. 
-                            Pasar <code>non target</code> adalah pasar yang tidak dicacah karena berbagai alasan seperti akses yang sulit, keamanan, bencana dll. 
+                            Pasar <code>target</code> dan <code>non target</code> adalah status pasar yang ditentukan oleh
+                            provinsi sesuai petunjuk dari kabupaten/kota.
+                            Pasar <code>non target</code> adalah pasar yang tidak dicacah karena berbagai alasan seperti
+                            akses yang sulit, keamanan, bencana dll.
                             Pengajuan pasar jenis ini bisa menghubungi <strong>Tim Garda Provinsi</strong>.<br><br>
 
-                            Status penyelesaian pasar ada 3 yaitu <code>Belum Dimulai</code>, <code>Sedang Dikerjakan</code>, dan <code>Sudah Selesai</code>. 
-                            Untuk menandai pasar yang sudah selesai, bisa menggunakan <strong>menu pasar</strong> kemudian <strong>ganti flag status penyelesaian</strong> pada tabel.
+                            Status penyelesaian pasar ada 3 yaitu <code>Belum Dimulai</code>, <code>Sedang
+                                Dikerjakan</code>, dan <code>Sudah Selesai</code>.
+                            Untuk menandai pasar yang sudah selesai, bisa menggunakan <strong>menu pasar</strong> kemudian
+                            <strong>ganti flag status penyelesaian</strong> pada tabel.
 
                         </div>
                         <table id="regencyTable" class="align-items-center text-sm">
@@ -403,14 +407,18 @@
                     width: "10%",
                     render: function(data, type, row) {
                         if (type === 'display') {
-                            if (data == 'not start') {
-                                return '<span class="badge badge-sm bg-gradient-secondary">Belum Dimulai</span>';
-                            } else if (data == 'on going') {
-                                return '<span class="badge badge-sm bg-gradient-warning">Sedang Dikerjakan</span>';
-                            } else if (data == 'done') {
-                                return '<span class="badge badge-sm bg-gradient-success">Sudah Selesai</span>';
+                            if (row[2] == 'target') {
+                                if (data == 'not start') {
+                                    return '<span class="badge badge-sm bg-gradient-secondary">Belum Dimulai</span>';
+                                } else if (data == 'on going') {
+                                    return '<span class="badge badge-sm bg-gradient-warning">Sedang Dikerjakan</span>';
+                                } else if (data == 'done') {
+                                    return '<span class="badge badge-sm bg-gradient-success">Sudah Selesai</span>';
+                                } else {
+                                    return data;
+                                }
                             } else {
-                                return data;
+                                return '-'
                             }
                         }
                         return data
