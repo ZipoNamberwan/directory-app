@@ -14,6 +14,7 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStartRow;
+use Illuminate\Support\Str;
 
 class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithStartRow, ShouldQueue, WithHeadingRow
 {
@@ -45,6 +46,18 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
 
                 foreach ($records as $record) {
                     $rowErrors = [];
+
+                    if (
+                        empty($record['id'])
+                        && empty($record['nama_usaha'])
+                        && empty($record['status_bangunan_usaha'])
+                        && empty($record['deskripsi_aktifitas'])
+                        && empty($record['sektor'])
+                        && empty($record['latitude'])
+                        && empty($record['longitude'])
+                    ) {
+                        continue; // Skip empty rows
+                    }
 
                     if (empty($record['nama_usaha'])) {
                         $rowErrors[] = "Nama Usaha kosong pada baris $rowNumber.";
@@ -104,9 +117,11 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
                     'completion_status' => 'on going',
                 ]);
             } catch (Exception $e) {
+                $maxLength = 10000; 
+
                 $this->status->update([
                     'status' => 'failed',
-                    'message' => $e->getMessage(),
+                    'message' => Str::limit($e->getMessage(), $maxLength),
                 ]);
             }
         } else {
