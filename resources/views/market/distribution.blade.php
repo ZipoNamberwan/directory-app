@@ -71,7 +71,6 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
         <script>
-            // Initialize the map centered on a default location
             const map = L.map('map').setView([37.7749, -122.4194], 10);
 
             // Add the base tile layer (OpenStreetMap)
@@ -85,7 +84,6 @@
 
             // Function to fetch points from the API
             async function fetchPoints() {
-
                 $.ajax({
                     type: 'GET',
                     url: '/pasar/data?&regency=3578',
@@ -99,6 +97,8 @@
                                 lng: point.longitude
                             });
                         });
+
+                        moveToLocation(data[0].lat, data[0].lng); 
 
                         // Add markers for each point
                         data.forEach(point => {
@@ -115,14 +115,16 @@
                         alert("Failed to load map points. Please try again later.");
                     }
                 });
-
             }
 
             // Function to add a marker to the map
             function addMarker(point) {
                 const marker = L.marker([point.lat, point.lng]).addTo(markersLayer);
 
-                // Add a tooltip showing the point name
+                // Store the point name in the marker options for later use
+                marker.pointName = point.name;
+
+                // Add a permanent tooltip showing the point name
                 marker.bindTooltip(point.name, {
                     permanent: true,
                     direction: 'top',
@@ -133,6 +135,18 @@
                 marker.on('click', () => {
                     fetchPointDetails(point.id, marker);
                 });
+
+                // Add a handler for popup close to ensure tooltip is visible again
+                marker.on('popupclose', () => {
+                    // Re-enable the tooltip with the original name
+                    if (!marker.getTooltip()) {
+                        marker.bindTooltip(marker.pointName, {
+                            permanent: true,
+                            direction: 'top',
+                            className: 'marker-label'
+                        });
+                    }
+                });
             }
 
             // Function to fetch and display details for a specific point
@@ -141,7 +155,13 @@
 
                 // Show loading state
                 popup.setContent('<div class="loading">Loading details...</div>');
+
+                // Store the tooltip content before removing it
+                const tooltipContent = marker.pointName;
+
+                // Temporarily unbind tooltip while popup is open
                 marker.unbindTooltip();
+
                 marker.bindPopup(popup).openPopup();
 
                 $.ajax({
@@ -150,7 +170,7 @@
                     success: function(response) {
                         const details = {
                             id: pointId,
-                            name: marker.getTooltip(),
+                            name: tooltipContent, // Use stored name
                             description: `This is a detailed description for location #${pointId}.`,
                             visitors: Math.floor(Math.random() * 1000000),
                             established: 1900 + Math.floor(Math.random() * 120),
@@ -159,22 +179,30 @@
 
                         // Update popup with details
                         popup.setContent(`
-                            <div class="popup-content">
-                                <div class="popup-title">${details.name}</div>
-                                <div class="popup-detail"><strong>Description:</strong> ${details.description}</div>
-                                <div class="popup-detail"><strong>Annual Visitors:</strong> ${details.visitors.toLocaleString()}</div>
-                                <div class="popup-detail"><strong>Established:</strong> ${details.established}</div>
-                                <div class="popup-detail"><strong>Status:</strong> ${details.status}</div>
-                            </div>
-                        `);
+                <div class="popup-content">
+                    <div class="popup-title">${details.name}</div>
+                    <div class="popup-detail"><strong>Description:</strong> ${details.description}</div>
+                    <div class="popup-detail"><strong>Annual Visitors:</strong> ${details.visitors.toLocaleString()}</div>
+                    <div class="popup-detail"><strong>Established:</strong> ${details.established}</div>
+                    <div class="popup-detail"><strong>Status:</strong> ${details.status}</div>
+                </div>
+            `);
                         marker.openPopup();
                     },
                     error: function(xhr, status, error) {
                         alert("Gagal memuat detail titik. Log sudah disimpan.");
                     }
                 });
-
             }
+
+            // Function to move map to specific coordinates
+            function moveToLocation(lat, lng, zoom = 15) {
+                map.setView([lat, lng], zoom);
+            }
+
+            // Example usage of moveToLocation function:
+            // moveToLocation(-6.2088, 106.8456); // Move to Jakarta
+            // moveToLocation(-7.7956, 110.3695, 14); // Move to Yogyakarta with zoom level 14
 
             // Load the points when the page loads
             document.addEventListener('DOMContentLoaded', fetchPoints);

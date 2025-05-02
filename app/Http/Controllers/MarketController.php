@@ -171,8 +171,14 @@ class MarketController extends Controller
             if ($request->order[0]['column'] == '0') {
                 $orderColumn = 'name';
             } else if ($request->order[0]['column'] == '1') {
-                $orderColumn = 'owner';
-            } else if ($request->order[0]['column'] == '1') {
+                $orderColumn = 'status';
+            } else if ($request->order[0]['column'] == '2') {
+                $orderColumn = 'address';
+            } else if ($request->order[0]['column'] == '3') {
+                $orderColumn = 'description';
+            } else if ($request->order[0]['column'] == '4') {
+                $orderColumn = 'sector';
+            } else if ($request->order[0]['column'] == '5') {
                 $orderColumn = 'note';
             }
         }
@@ -453,7 +459,7 @@ class MarketController extends Controller
         $updateDate = Carbon::parse($reportByRegency[0]->date)->translatedFormat('d F Y');
         $updateTime = Carbon::parse($reportByRegency[0]->created_at)->format('H:i');
 
-        
+
         return view(
             'market.dashboard',
             [

@@ -79,11 +79,15 @@ class MarketManagementController extends Controller
                 $orderColumn = 'name';
             } else if ($request->order[0]['column'] == '1') {
                 $orderColumn = 'village_id';
+            } else if ($request->order[0]['column'] == '2') {
+                $orderColumn = 'target_category';
+            } else if ($request->order[0]['column'] == '3') {
+                $orderColumn = 'completion_status';
             }
         }
 
         $searchkeyword = $request->search['value'];
-        $data = $records->with([/* 'regency',  */'subdistrict', 'village']);
+        $data = $records->with(['regency', 'subdistrict', 'village']);
         if ($searchkeyword != null) {
             $data->where(function ($query) use ($searchkeyword) {
                 $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
