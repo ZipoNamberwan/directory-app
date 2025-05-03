@@ -68,7 +68,7 @@
                             <option value="0" disabled selected> -- Pilih Pasar -- </option>
                             @foreach ($markets as $market)
                                 <option value="{{ $market->id }}" {{ old('market') == $market->id ? 'selected' : '' }}>
-                                    {{ $market->name }}
+                                    [{{$market->village_id}}] {{ $market->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -204,7 +204,7 @@
                         response.forEach(element => {
                             let selected = selectedmarket == String(element.id) ? 'selected' : '';
                             $(marketSelector).append(
-                                `<option value="${element.id}" ${selected}>${element.name}</option>`
+                                `<option value="${element.id}" ${selected}>[${element.village_id}] ${element.name}</option>`
                             );
                         });
                     }
