@@ -14,12 +14,14 @@ class LoginController extends Controller
      */
     public function show()
     {
-        $redirectUrl = '';
-        if (config('app.env') == 'production') {
-            $redirectUrl = "https://majapahit.web.bps.go.id/dashboard?callback_uri=" . url('/majapahit');
-        } else {
-            $redirectUrl = "https://majapah.it/dashboard?callback_uri=" . url('/majapahit');
-        }
+        // $redirectUrl = '';
+        // if (config('app.env') == 'production') {
+        //     $redirectUrl = "https://majapahit.web.bps.go.id/dashboard?callback_uri=" . url('/majapahit');
+        // } else {
+        //     $redirectUrl = "https://majapah.it/dashboard?callback_uri=" . url('/majapahit');
+        // }
+
+        $redirectUrl = "https://majapah.it/dashboard?callback_uri=" . url('/majapahit');
 
         return view('auth.login', ['redirectUrl' => $redirectUrl]);
     }
