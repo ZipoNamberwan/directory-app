@@ -83,12 +83,24 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-md-3">
+                            <label class="form-control-label">Tipe <span class="text-danger">*</span></label>
+                            <select id="marketType" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Tipe -- </option>
+                                @foreach ($marketTypes as $marketType)
+                                    <option value="{{ $marketType->id }}">
+                                        {{ $marketType->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                     <table id="myTable" class="align-items-center mb-0 text-sm">
                         <thead>
                             <tr>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Wilayah</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Tipe</th>
                                 @hasrole('adminprov|adminkab')
                                     <th class="text-uppercase text-small font-weight-bolder opacity-7">Status Target</th>
                                 @endhasrole
@@ -132,6 +144,9 @@
         }, {
             selector: '#completion',
             placeholder: 'Pilih Status Penyelesaian'
+        }, {
+            selector: '#marketType',
+            placeholder: 'Pilih Tipe'
         }];
 
         selectConfigs.forEach(({
@@ -155,6 +170,9 @@
                 renderTable()
             },
             '#completion': () => {
+                renderTable()
+            },
+            '#marketType': () => {
                 renderTable()
             },
         };
@@ -181,7 +199,7 @@
 
         function renderTable() {
             filterUrl = ''
-            filterTypes = ['role', 'organization', 'target', 'completion']
+            filterTypes = ['role', 'organization', 'target', 'completion', 'marketType']
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
             });
@@ -323,6 +341,12 @@
                         return data
                     }
                 },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "market_type.name",
+                    type: "text",
+                },
                 @hasrole('adminprov')
                     {
                         responsivePriority: 1,
@@ -416,8 +440,8 @@
                                         </a>
                                         <form class="d-inline" id="formdelete${data}" name="formdelete${data}" onSubmit="deleteMarket('${data}','${row.name}')" 
                                             method="POST" action="/pasar/manajemen/${data}">
-                                            @method('delete')
                                             @csrf
+                                            @method('delete')
                                             <button class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="submit">
                                                 <span class="btn-inner--icon"><i class="fas fa-trash"></i></span>
                                             </button>

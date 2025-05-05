@@ -29,6 +29,11 @@ class Market extends Model
         return $this->belongsTo(Village::class, 'village_id');
     }
 
+    public function marketType()
+    {
+        return $this->belongsTo(MarketType::class, 'market_type_id');
+    }
+
     public function users()
     {
         return $this->belongsToMany(User::class)

@@ -99,6 +99,25 @@
                         </div>
                     </div>
                     <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-control-label">Tipe <span class="text-danger">*</span></label>
+                            <select id="marketType" name="marketType" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Tipe -- </option>
+                                @foreach ($marketTypes as $marketType)
+                                    <option value="{{ $marketType->id }}"
+                                        {{ old('marketType', $market != null ? $market->market_type_id : null) == $marketType->id ? 'selected' : '' }}>
+                                        {{ $marketType->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('marketType')
+                                <div class="error-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-4 mt-3">
                             <label class="form-control-label" for="address">Apakah Dikerjakan Provinsi?</label>
                             <input type="hidden" name="managedbyprov" value="0">
@@ -146,6 +165,10 @@
                 {
                     selector: '#village',
                     placeholder: 'Pilih Desa'
+                },
+                {
+                    selector: '#marketType',
+                    placeholder: 'Pilih Tipe'
                 },
             ].forEach(config => {
                 $(config.selector).select2({

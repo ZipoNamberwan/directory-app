@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Market;
+use App\Models\MarketType;
 use App\Models\Organization;
 use App\Models\Regency;
 use App\Models\User;
@@ -30,12 +31,14 @@ class MarketManagementController extends Controller
 
         $targets = Market::getTargetCategoryValues();
         $completionStatus = Market::getCompletionStatusValues();
+        $marketTypes = MarketType::all();
 
         return view('market.management.management', [
             'organizations' => $organizations,
             'isAdmin' => $isAdmin,
             'targets' => $targets,
             'completionStatus' => $completionStatus,
+            'marketTypes' => $marketTypes,
         ]);
     }
 
@@ -64,6 +67,9 @@ class MarketManagementController extends Controller
         if ($request->completion != null && $request->completion != '0') {
             $records->where('completion_status', $request->completion);
         }
+        if ($request->marketType != null && $request->marketType != '0') {
+            $records->where('market_type_id', $request->marketType);
+        }
 
         $recordsTotal = $records->count();
 
@@ -87,7 +93,7 @@ class MarketManagementController extends Controller
         }
 
         $searchkeyword = $request->search['value'];
-        $data = $records->with(['regency', 'subdistrict', 'village']);
+        $data = $records->with(['regency', 'subdistrict', 'village', 'marketType']);
         if ($searchkeyword != null) {
             $data->where(function ($query) use ($searchkeyword) {
                 $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
@@ -216,16 +222,26 @@ class MarketManagementController extends Controller
     public function showMarketCreatePage()
     {
         $regencies = Regency::all();
+        $marketTypes = MarketType::all();
 
-        return view('market.management.create-market', ['regencies' => $regencies, 'market' => null]);
+        return view('market.management.create-market', [
+            'regencies' => $regencies,
+            'market' => null,
+            'marketTypes' => $marketTypes,
+        ]);
     }
 
     public function showMarketEditPage($id)
     {
         $regencies = Regency::all();
+        $marketTypes = MarketType::all();
         $market = Market::find($id);
 
-        return view('market.management.create-market', ['regencies' => $regencies, 'market' => $market]);
+        return view('market.management.create-market', [
+            'regencies' => $regencies,
+            'market' => $market,
+            'marketTypes' => $marketTypes,
+        ]);
     }
 
     public function storeMarket(Request $request)
@@ -235,6 +251,7 @@ class MarketManagementController extends Controller
             'regency' => 'required',
             'subdistrict' => 'required',
             'village' => 'required',
+            'marketType' => 'required',
         ];
 
         $request->validate($validateArray);
@@ -245,6 +262,7 @@ class MarketManagementController extends Controller
             'subdistrict_id' => $request->subdistrict,
             'village_id' => $request->village,
             'address' => $request->address,
+            'market_type_id' => $request->marketType,
             'organization_id' =>  $request->managedbyprov == "1"  ? 3500 : $request->regency,
         ]);
 
@@ -258,6 +276,7 @@ class MarketManagementController extends Controller
             'regency' => 'required',
             'subdistrict' => 'required',
             'village' => 'required',
+            'marketType' => 'required',
         ];
 
         $request->validate($validateArray);
@@ -269,6 +288,7 @@ class MarketManagementController extends Controller
             'subdistrict_id' => $request->subdistrict,
             'village_id' => $request->village,
             'address' => $request->address,
+            'market_type_id' => $request->marketType,
             'organization_id' =>  $request->managedbyprov == "1"  ? 3500 : $request->regency,
         ]);
 
