@@ -432,6 +432,7 @@ class MarketController extends Controller
             ->values();
 
         $chartReportByRegency = [];
+        $numberOfDays = 10;
         $totalBusiness = 0;
         $reportByUser = [];
 
@@ -441,12 +442,12 @@ class MarketController extends Controller
             $chartReportByRegency = ReportMarketBusinessRegency::selectRaw('date, SUM(uploaded) as uploaded')
                 ->groupBy('date')
                 ->orderBy('date', 'desc')
-                ->limit(5)
+                ->limit($numberOfDays)
                 ->get();
 
             $totalBusiness = $reportByRegency->sum('uploaded');
         } else if ($user->hasRole('adminkab')) {
-            $chartReportByRegency = ReportMarketBusinessRegency::where('organization_id', $user->organization_id)->orderByDesc('date')->limit(5)->get();
+            $chartReportByRegency = ReportMarketBusinessRegency::where('organization_id', $user->organization_id)->orderByDesc('date')->limit($numberOfDays)->get();
 
             $totalBusiness = $reportByRegency
                 ->where('organization_id', $user->organization_id)->first()->uploaded;

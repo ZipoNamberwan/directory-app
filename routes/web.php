@@ -50,9 +50,6 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::patch('/directory/edit/sls/{id}', [HomeController::class, 'updateSlsDirectory']);
 	Route::patch('/directory/edit/non-sls/{id}', [HomeController::class, 'updateNonSlsDirectory']);
 
-	Route::get('/download-suplemen', [SupplementController::class, 'showDownloadPage']);
-	Route::post('/download-suplemen', [SupplementController::class, 'downloadProject']);
-
 	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
 	});
@@ -78,7 +75,11 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pasar/manajemen', [MarketManagementController::class, 'showMarketManagementPage']);
 		Route::get('/pasar/manajemen/data', [MarketManagementController::class, 'getMarketManagementData']);
 		Route::post('/pasar/manajemen/download/{id}', [MarketManagementController::class, 'downloadMarketProject']);
-	
+
+		Route::get('/suplemen', [SupplementController::class, 'showSupplementIndexPage'])->name('suplemen');
+		Route::get('/suplemen/upload', [SupplementController::class, 'showSupplementUploadPage']);
+		Route::get('/suplemen/download', [SupplementController::class, 'showSupplementDownloadPage']);
+		Route::post('/suplemen/download', [SupplementController::class, 'downloadSupplementProject']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {

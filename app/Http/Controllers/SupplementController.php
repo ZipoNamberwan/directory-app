@@ -11,7 +11,17 @@ use Illuminate\Support\Str;
 
 class SupplementController extends Controller
 {
-    public function showDownloadPage()
+    public function showSupplementIndexPage()
+    {
+        return view('supplement.index');
+    }
+
+    public function showSupplementUploadPage()
+    {
+        return view('supplement.upload');
+    }
+
+    public function showSupplementDownloadPage()
     {
         $user = Auth::user();
         $regencies = [];
@@ -33,7 +43,7 @@ class SupplementController extends Controller
         ]);
     }
 
-    public function downloadProject(Request $request)
+    public function downloadSupplementProject(Request $request)
     {
         $request->validate([
             'village' => 'required|exists:villages,id',
@@ -44,11 +54,11 @@ class SupplementController extends Controller
         $matchedFile = collect($files)->first(function ($file) use ($request) {
             return Str::startsWith(basename($file), $request->village);
         });
-    
+
         if (!$matchedFile) {
             abort(404, 'File not found');
         }
-    
+
         // Return file as download
         return Storage::download($matchedFile);
     }

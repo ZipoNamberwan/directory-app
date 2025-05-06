@@ -19,7 +19,7 @@
                 <p class="text-sm">Menu ini digunakan untuk mendownload project suplemen SW Maps berdasarkan wilayah</p>
             </div>
             <div class="card-body pt-1">
-                <form id="formupdate" autocomplete="off" method="post" action="/download-suplemen" class="needs-validation"
+                <form id="formupdate" autocomplete="off" method="post" action="/suplemen/download" class="needs-validation"
                     enctype="multipart/form-data" novalidate>
                     @csrf
                     @if ($user->regency_id == null)

@@ -169,13 +169,32 @@
                     </a>
                 </li>
             @endhasrole
-            @if (Auth::user()->regency_id == null)
+            @if (Auth::user()->organization_id == '3500')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Suplemen</h6>
                 </li>
+                {{-- <li class="nav-item">
+                    <a class="nav-link {{ Route::currentRouteName() == 'suplemen' ? 'active' : '' }}" href="/suplemen">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-briefcase text-sm opacity-10" style="color: #F9A825"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Usaha Suplemen</span>
+                    </a>
+                </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ str_contains(request()->url(), 'download-suplemen') == true ? 'active' : '' }}"
-                        href="/download-suplemen">
+                    <a class="nav-link {{ str_contains(request()->url(), 'suplemen/upload') == true ? 'active' : '' }}"
+                        href="/suplemen/upload">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-file-import text-sm opacity-10" style="color: #D50000"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Upload Suplemen</span>
+                    </a>
+                </li> --}}
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'suplemen/download') == true ? 'active' : '' }}"
+                        href="/suplemen/download">
                         <div
                             class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
                             <i class="fas fa-download text-sm opacity-10" style="color: #ef03b4"></i>
