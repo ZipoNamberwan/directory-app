@@ -59,17 +59,24 @@ class MarketController extends Controller
         );
     }
 
-    public function show()
+    public function showUploadPage()
     {
         $user = User::find(Auth::id());
         $markets = [];
+        $users = [];
         if ($user->hasRole('superadmin')) {
             $markets = Market::all();
         } else {
             $markets = $user->markets;
         }
 
-        return view('market.upload', ['markets' => $markets]);
+        if ($user->hasRole('adminprov') || $user->hasRole('adminkab')) {
+            $users = User::where('organization_id', $user->organization_id)->get();
+        }
+
+        $statuses = MarketUploadStatus::getStatusValues();
+
+        return view('market.upload', ['markets' => $markets, 'statuses' => $statuses, 'users' => $users]);
     }
 
     public function upload(Request $request)
@@ -240,6 +247,13 @@ class MarketController extends Controller
             $records = MarketUploadStatus::where('user_id', $user->id);
         }
 
+        if ($request->status && $request->status !== 'all') {
+            $records->where('status', $request->status);
+        }
+        if ($request->user && $request->user !== 'all') {
+            $records->where('user_id', $request->user);
+        }
+
         $recordsTotal = $records->count();
 
         $orderColumn = 'created_at';
@@ -270,7 +284,8 @@ class MarketController extends Controller
                 $query->whereRaw('LOWER(market_name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
                     ->orWhereRaw('LOWER(user_firstname) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
                     ->orWhereRaw('LOWER(regency_id) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                    ->orWhereRaw('LOWER(regency_name) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+                    ->orWhereRaw('LOWER(regency_name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                    ->orWhereRaw('LOWER(message) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
             });
         }
         $recordsFiltered = $data->count();

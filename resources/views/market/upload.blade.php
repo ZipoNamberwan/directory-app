@@ -95,7 +95,34 @@
                 <div>
                     <button id="refresh" onclick="renderTable()" class="btn btn-primary btn-sm p-2">Refresh</button>
                 </div>
-                <table id="myTable" class="align-items-center mb-0 text-sm">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-control-label">Status <span class="text-danger">*</span></label>
+                        <select id="status" class="form-control" data-toggle="select">
+                            <option value="0" disabled selected> -- Pilih Status -- </option>
+                            @foreach ($statuses as $status)
+                                <option value="{{ $status['value'] }}"
+                                    {{ old('status') == $status['value'] ? 'selected' : '' }}>
+                                    {{ $status['name'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @hasrole('adminprov|adminkab')
+                        <div class="col-md-3">
+                            <label class="form-control-label">Petugas <span class="text-danger">*</span></label>
+                            <select id="user" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Petugas -- </option>
+                                @foreach ($users as $user)
+                                    <option value="{{ $user->id }}" {{ old('user') == $user->id ? 'selected' : '' }}>
+                                        {{ $user->firstname }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endhasrole
+                </div>
+                <table id="myTable" class="align-items-center mb-0 text-sm mt-2">
                     <thead>
                         <tr>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Pasar</th>
@@ -137,6 +164,40 @@
     </script>
 
     <script>
+        const selectConfigs = [{
+                selector: '#status',
+                placeholder: 'Pilih Status'
+            },
+            {
+                selector: '#user',
+                placeholder: 'Pilih Petugas'
+            },
+        ];
+
+        selectConfigs.forEach(({
+            selector,
+            placeholder
+        }) => {
+            $(selector).select2({
+                placeholder,
+                allowClear: true
+            });
+        });
+
+        const eventHandlers = {
+            '#status': () => {
+                renderTable()
+            },
+            '#user': () => {
+                renderTable()
+            },
+        };
+
+        Object.entries(eventHandlers).forEach(([selector, handler]) => {
+            $(selector).on('change', handler);
+        });
+    </script>
+    <script>
         function showFullMessage(id, fullText) {
             document.getElementById(id + '_short').style.display = 'none';
             document.getElementById(id + '_full').style.display = 'inline';
@@ -149,8 +210,30 @@
     </script>
 
     <script>
+        function getFilterUrl(filter) {
+            var filterUrl = ''
+            var e = document.getElementById(filter);
+            if (e != null) {
+                var filterselected = e.options[e.selectedIndex];
+                if (filterselected != null) {
+                    var filterid = filterselected.value
+                    if (filterid != 0) {
+                        filterUrl = `&${filter}=` + filterid
+                    }
+                }
+            }
+
+            return filterUrl
+        }
+
         function renderTable() {
-            table.ajax.url('/pasar/upload/data').load();
+            filterUrl = ''
+            filterTypes = ['status', 'user']
+            filterTypes.forEach(f => {
+                filterUrl += getFilterUrl(f)
+            });
+
+            table.ajax.url('/pasar/upload/data?' + filterUrl).load();
         }
 
         function formatDate(isoString) {
