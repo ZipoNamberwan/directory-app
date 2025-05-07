@@ -537,7 +537,7 @@ class MarketController extends Controller
 
         $records = null;
 
-        if (!$request->organization) {
+        if (!$request->market) {
             return response()->json([]);
         }
 

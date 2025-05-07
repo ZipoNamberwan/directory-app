@@ -171,7 +171,7 @@
             const eventHandlers = {
                 '#organization': () => {
                     loadMarket(null, null)
-                    fetchPoints() // Refetch points when organization changes
+                    // fetchPoints()
                 },
                 '#market': () => {
                     fetchPoints() // Refetch points when market changes
