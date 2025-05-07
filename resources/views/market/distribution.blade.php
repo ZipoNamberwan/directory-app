@@ -58,6 +58,33 @@
                 </div>
             </div>
             <div class="card-body pt-1">
+                <div class="row mb-3">
+                    @hasrole('adminprov')
+                        <div class="col-md-3">
+                            <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                            <select id="organization" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                @foreach ($organizations as $organization)
+                                    <option value="{{ $organization->id }}"
+                                        {{ old('organization') == $organization->id ? 'selected' : '' }}>
+                                        [{{ $organization->short_code }}] {{ $organization->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endhasrole
+                    <div class="col-md-3">
+                        <label class="form-control-label">Pasar <span class="text-danger">*</span></label>
+                        <select id="market" class="form-control" data-toggle="select">
+                            <option value="0" disabled selected> -- Pilih Pasar -- </option>
+                            @foreach ($markets as $market)
+                                <option value="{{ $market->id }}" {{ old('market') == $market->id ? 'selected' : '' }}>
+                                    {{ $market->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
                 <div id="map"></div>
             </div>
         </div>
@@ -70,8 +97,123 @@
 
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
         <script>
-            const map = L.map('map').setView([37.7749, -122.4194], 10);
+            // Add progress bar HTML right before the script starts
+            const mapContainer = document.getElementById('map');
+            const progressBar = document.createElement('div');
+            progressBar.id = 'map-loading-progress';
+            progressBar.className = 'progress-bar';
+            progressBar.style.cssText = `
+                width: 100%;
+                height: 4px;
+                background-color: #f1f1f1;
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 1000;
+                margin: 0;
+                display: none;
+            `;
+
+            const progressIndicator = document.createElement('div');
+            progressIndicator.className = 'progress-indicator';
+            progressIndicator.style.cssText = `
+                height: 100%;
+                width: 0%;
+                background-color: #4CAF50;
+                position: absolute;
+                transition: width 0.3s ease;
+            `;
+
+            progressBar.appendChild(progressIndicator);
+            mapContainer.style.position = 'relative'; // Ensure the map container is positioned
+            mapContainer.appendChild(progressBar); // Append to the map container instead of before it
+
+            // Function to control the progress bar
+            function showMapLoading(show, progress = 0) {
+                const progressBar = document.getElementById('map-loading-progress');
+                const progressIndicator = progressBar.querySelector('.progress-indicator');
+
+                if (show) {
+                    progressBar.style.display = 'block';
+                    progressIndicator.style.width = progress + '%';
+                } else {
+                    // Quickly complete the progress bar before hiding
+                    progressIndicator.style.width = '100%';
+                    setTimeout(() => {
+                        progressBar.style.display = 'none';
+                        progressIndicator.style.width = '0%';
+                    }, 300);
+                }
+            }
+
+            const selectConfigs = [{
+                    selector: '#organization',
+                    placeholder: 'Pilih Satker'
+                },
+                {
+                    selector: '#market',
+                    placeholder: 'Pilih Pasar'
+                },
+            ];
+
+            selectConfigs.forEach(({
+                selector,
+                placeholder
+            }) => {
+                $(selector).select2({
+                    placeholder,
+                    allowClear: true
+                });
+            });
+
+            const eventHandlers = {
+                '#organization': () => {
+                    loadMarket(null, null)
+                    fetchPoints() // Refetch points when organization changes
+                },
+                '#market': () => {
+                    fetchPoints() // Refetch points when market changes
+                },
+            };
+
+            Object.entries(eventHandlers).forEach(([selector, handler]) => {
+                $(selector).on('change', handler);
+            });
+
+            function loadMarket(organizationid = null, selectedmarket = null) {
+                let organizationSelector = `#organization`;
+                let marketSelector = `#market`;
+
+                let id = $(organizationSelector).val();
+                if (organizationid != null) {
+                    id = organizationid;
+                }
+
+                $(marketSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+                if (id != null) {
+                    $.ajax({
+                        type: 'GET',
+                        url: '/pasar/kab/' + id,
+                        success: function(response) {
+                            $(marketSelector).empty().append(
+                                `<option value="0" disabled selected> -- Pilih Pasar -- </option>`);
+                            response.forEach(element => {
+                                let selected = selectedmarket == String(element.id) ? 'selected' : '';
+                                $(marketSelector).append(
+                                    `<option value="${element.id}" ${selected}>${element.name}</option>`
+                                );
+                            });
+                        }
+                    });
+                } else {
+                    $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Pasar -- </option>`);
+                }
+            }
+
+            const map = L.map('map').setView([-7.536, 112.238], 8);
 
             // Add the base tile layer (OpenStreetMap)
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -80,16 +222,50 @@
             }).addTo(map);
 
             // Create a layer group for markers
-            const markersLayer = L.layerGroup().addTo(map);
+            const markersLayer = L.featureGroup().addTo(map);
 
-            // Function to fetch points from the API
+            // Function to fetch points from the API with filter parameters
             async function fetchPoints() {
+                // Show loading indicator
+                showMapLoading(true, 10);
+
+                // Clear existing markers
+                markersLayer.clearLayers();
+
+                // Build URL with filter parameters
+                let apiUrl = '/pasar/peta?';
+
+                // Add organization filter if selected
+                const organizationValue = $('#organization').val();
+                if (organizationValue && organizationValue != '0') {
+                    apiUrl += `&organization=${organizationValue}`;
+                }
+
+                // Add market filter if selected
+                const marketValue = $('#market').val();
+                if (marketValue && marketValue != '0') {
+                    apiUrl += `&market=${marketValue}`;
+                }
+
+                // Simulate progress advancement
+                let progressInterval = setInterval(() => {
+                    const currentProgress = parseInt(document.querySelector('.progress-indicator').style.width) ||
+                        10;
+                    if (currentProgress < 80) {
+                        showMapLoading(true, currentProgress + 10);
+                    }
+                }, 200);
+
                 $.ajax({
                     type: 'GET',
-                    url: '/pasar/data?&regency=3578',
+                    url: apiUrl,
                     success: function(response) {
+                        // Clear the progress interval
+                        clearInterval(progressInterval);
+                        showMapLoading(true, 90);
+
                         const data = [];
-                        response.data.forEach(point => {
+                        response.forEach(point => {
                             data.push({
                                 id: point.id,
                                 name: point.name,
@@ -97,9 +273,6 @@
                                 lng: point.longitude
                             });
                         });
-
-                        moveToLocation(data[0].lat, data[0].lng); 
-
                         // Add markers for each point
                         data.forEach(point => {
                             addMarker(point);
@@ -107,12 +280,38 @@
 
                         // Adjust map view to fit all markers
                         if (data.length > 0) {
-                            const bounds = markersLayer.getBounds();
-                            map.fitBounds(bounds);
+                            if (data.length === 1) {
+                                // If only one point, center on it with fixed zoom
+                                moveToLocation(data[0].lat, data[0].lng, 15);
+                            } else {
+                                // If multiple points, fit bounds to show all markers
+                                // Check if the layer has any markers before getting bounds
+                                if (markersLayer.getLayers().length > 0) {
+                                    // Use try-catch to handle any potential issues with getBounds
+                                    try {
+                                        const bounds = markersLayer.getBounds();
+                                        map.fitBounds(bounds);
+                                    } catch (e) {
+                                        console.log(e)
+                                        console.log("Could not fit bounds, using default view");
+                                        // Fallback to a default view if bounds calculation fails
+                                        map.setView([data[0].lat, data[0].lng], 10);
+                                    }
+                                }
+                            }
                         }
+
+                        // Hide loading indicator
+                        setTimeout(() => {
+                            showMapLoading(false);
+                        }, 200);
                     },
                     error: function(xhr, status, error) {
-                        alert("Failed to load map points. Please try again later.");
+                        // Clear the progress interval
+                        clearInterval(progressInterval);
+                        // Hide loading indicator
+                        showMapLoading(false);
+                        alert("Gagal membuka map. Log error sudah disimpan.");
                     }
                 });
             }
@@ -166,31 +365,23 @@
 
                 $.ajax({
                     type: 'GET',
-                    url: '/pasar/data?&regency=3578',
+                    url: '/pasar/muatan/' + pointId,
                     success: function(response) {
-                        const details = {
-                            id: pointId,
-                            name: tooltipContent, // Use stored name
-                            description: `This is a detailed description for location #${pointId}.`,
-                            visitors: Math.floor(Math.random() * 1000000),
-                            established: 1900 + Math.floor(Math.random() * 120),
-                            status: Math.random() > 0.5 ? "Open" : "Closed"
-                        };
-
                         // Update popup with details
                         popup.setContent(`
                 <div class="popup-content">
-                    <div class="popup-title">${details.name}</div>
-                    <div class="popup-detail"><strong>Description:</strong> ${details.description}</div>
-                    <div class="popup-detail"><strong>Annual Visitors:</strong> ${details.visitors.toLocaleString()}</div>
-                    <div class="popup-detail"><strong>Established:</strong> ${details.established}</div>
-                    <div class="popup-detail"><strong>Status:</strong> ${details.status}</div>
+                    <div class="popup-title">${response.name}</div>
+                    <div class="popup-detail"><strong>Status Bangunan:</strong> ${response.status}</div>
+                    <div class="popup-detail"><strong>Alamat Lengkap:</strong> ${response.address}</div>
+                    <div class="popup-detail"><strong>Deksripsi Aktivitas:</strong> ${response.description}</div>
+                    <div class="popup-detail"><strong>Sektor:</strong> ${response.sector}</div>
+                    <div class="popup-detail"><strong>Catatan:</strong> ${response.note}</div>
                 </div>
             `);
                         marker.openPopup();
                     },
                     error: function(xhr, status, error) {
-                        alert("Gagal memuat detail titik. Log sudah disimpan.");
+                        alert("Silakan refresh halaman untuk mencoba lagi.");
                     }
                 });
             }
@@ -199,10 +390,6 @@
             function moveToLocation(lat, lng, zoom = 15) {
                 map.setView([lat, lng], zoom);
             }
-
-            // Example usage of moveToLocation function:
-            // moveToLocation(-6.2088, 106.8456); // Move to Jakarta
-            // moveToLocation(-7.7956, 110.3695, 14); // Move to Yogyakarta with zoom level 14
 
             // Load the points when the page loads
             document.addEventListener('DOMContentLoaded', fetchPoints);

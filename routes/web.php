@@ -80,6 +80,10 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/suplemen/upload', [SupplementController::class, 'showSupplementUploadPage']);
 		Route::get('/suplemen/download', [SupplementController::class, 'showSupplementDownloadPage']);
 		Route::post('/suplemen/download', [SupplementController::class, 'downloadSupplementProject']);
+
+		Route::get('/pasar/peta', [MarketController::class, 'getMarketDistributionData']);
+		Route::get('/pasar/muatan/{id}', [MarketController::class, 'getMarketBusinessDetail']);
+
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {

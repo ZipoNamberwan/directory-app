@@ -514,6 +514,66 @@ class MarketController extends Controller
 
     public function showMarketDistributionPage()
     {
-        return view('market.distribution');
+        $user = User::find(Auth::id());
+        $organizations = [];
+        $markets = [];
+        if ($user->hasRole('adminprov')) {
+            $organizations = Organization::all();
+        } else if ($user->hasRole('adminkab')) {
+            $markets = Market::where('organization_id', $user->organization_id)->get();
+        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
+            $markets = $user->markets;
+        }
+
+        return view('market.distribution', [
+            'organizations' => $organizations,
+            'markets' => $markets,
+        ]);
+    }
+
+    public function getMarketDistributionData(Request $request)
+    {
+        $user = User::find(Auth::id());
+
+        $records = null;
+
+        if (!$request->organization) {
+            return response()->json([]);
+        }
+
+        if ($user->hasRole('adminprov')) {
+            $records = MarketBusiness::query();
+        } else if ($user->hasRole('adminkab')) {
+            $records = MarketBusiness::whereHas('market', function ($query) use ($user) {
+                $query->where('organization_id', $user->organization_id);
+            });
+        } else {
+            $marketIds = $user->markets->pluck('id');
+            $records = MarketBusiness::whereIn('market_id', $marketIds);
+        }
+
+        if ($request->organization && $request->organization !== 'all') {
+            $records->whereHas('market', function ($query) use ($request) {
+                $query->where('organization_id', $request->organization);
+            });
+        }
+
+        if ($request->market && $request->market !== 'all') {
+            $records->where('market_id', $request->market);
+        }
+
+        $records = $records->select('id', 'name', 'longitude', 'latitude');
+
+        return response()->json($records->get());
+    }
+
+    public function getMarketBusinessDetail($id)
+    {
+        $business = MarketBusiness::find($id);
+        if ($business) {
+            return response()->json($business);
+        } else {
+            return response()->json(['error' => 'Business not found'], 404);
+        }
     }
 }
