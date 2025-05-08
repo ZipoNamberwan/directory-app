@@ -39,4 +39,16 @@ class SupplementUploadStatus extends Model
     {
         return $this->belongsTo(Organization::class, 'organization_id');
     }
+
+    public static function getStatusValues()
+    {
+        return [
+            ['name' => 'start', 'value' => 'start'],
+            ['name' => 'loading', 'value' => 'loading'],
+            ['name' => 'processing', 'value' => 'processing'],
+            ['name' => 'success', 'value' => 'success'],
+            ['name' => 'failed', 'value' => 'failed'],
+            ['name' => 'success with error', 'value' => 'success with error'],
+        ];
+    }
 }

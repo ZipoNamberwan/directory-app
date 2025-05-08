@@ -47,14 +47,14 @@
 @endsection
 
 @section('content')
-    @include('layouts.navbars.auth.topnav', ['title' => 'Persebaran Muatan Pasar'])
+    @include('layouts.navbars.auth.topnav', ['title' => 'Persebaran Muatan Sentra Ekonomi'])
     <div class="full-screen-bg"></div>
 
     <div class="container-fluid">
         <div class="card">
             <div class="card-header pb-0">
                 <div class="d-flex align-items-center">
-                    <h4 class="text-capitalize">Persebaran Muatan Pasar</h4>
+                    <h4 class="text-capitalize">Persebaran Muatan Sentra Ekonomi</h4>
                 </div>
             </div>
             <div class="card-body pt-1">
@@ -74,12 +74,12 @@
                         </div>
                     @endhasrole
                     <div class="col-md-3">
-                        <label class="form-control-label">Pasar <span class="text-danger">*</span></label>
+                        <label class="form-control-label">Sentra Ekonomi <span class="text-danger">*</span></label>
                         <select id="market" class="form-control" data-toggle="select">
-                            <option value="0" disabled selected> -- Pilih Pasar -- </option>
+                            <option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>
                             @foreach ($markets as $market)
                                 <option value="{{ $market->id }}" {{ old('market') == $market->id ? 'selected' : '' }}>
-                                    {{ $market->name }}
+                                    [{{$market->village_id}}] {{ $market->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -154,7 +154,7 @@
                 },
                 {
                     selector: '#market',
-                    placeholder: 'Pilih Pasar'
+                    placeholder: 'Pilih Sentra Ekonomi'
                 },
             ];
 
@@ -199,17 +199,17 @@
                         url: '/pasar/kab/' + id,
                         success: function(response) {
                             $(marketSelector).empty().append(
-                                `<option value="0" disabled selected> -- Pilih Pasar -- </option>`);
+                                `<option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>`);
                             response.forEach(element => {
                                 let selected = selectedmarket == String(element.id) ? 'selected' : '';
                                 $(marketSelector).append(
-                                    `<option value="${element.id}" ${selected}>${element.name}</option>`
+                                    `<option value="${element.id}" ${selected}>[${element.village_id}] ${element.name}</option>`
                                 );
                             });
                         }
                     });
                 } else {
-                    $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Pasar -- </option>`);
+                    $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Sentra Ekonomi -- </option>`);
                 }
             }
 

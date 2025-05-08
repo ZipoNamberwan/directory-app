@@ -439,7 +439,7 @@ class MarketController extends Controller
     }
 
     public function dashboard()
-    {
+    {   
         $user = User::find(Auth::id());
 
         $reportByRegency = ReportMarketBusinessRegency::orderByDesc('date')

@@ -37,7 +37,7 @@ class MarketAssignmentExportSheet implements FromCollection, WithHeadings, Shoul
     {
         return [
             'email_bps',
-            'id_pasar',
+            'id_sentra',
         ];
     }
 
@@ -104,11 +104,12 @@ class MasterMarketExportSheet implements FromQuery, ShouldQueue, WithHeadings, W
     public function headings(): array
     {
         return [
-            'id_pasar',
-            'nama_pasar',
+            'id_sentra',
+            'nama_sentra',
             'kabupaten',
             'kecamatan',
             'desa',
+            'tipe',
         ];
     }
 
@@ -120,12 +121,13 @@ class MasterMarketExportSheet implements FromQuery, ShouldQueue, WithHeadings, W
             $market->regency != null ? ("[" . $market->regency->short_code . "] " .  $market->regency->name) : null,
             $market->subdistrict != null ? ("[" . $market->subdistrict->short_code . "] " .  $market->subdistrict->name) : null,
             $market->village != null ? ("[" . $market->village->short_code . "] " .  $market->village->name) : null,
+            $market->marketType != null ? $market->marketType->name : null,
         ];
     }
 
     public function title(): string
     {
-        return 'Pasar';
+        return 'Sentra';
     }
 }
 

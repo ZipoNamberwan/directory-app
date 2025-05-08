@@ -7,14 +7,14 @@
 @endsection
 
 @section('content')
-    @include('layouts.navbars.auth.topnav', ['title' => 'Tambah Pasar'])
+    @include('layouts.navbars.auth.topnav', ['title' => 'Tambah Sentra Ekonomi'])
     <div class="full-screen-bg"></div>
 
     <div class="container-fluid">
         <div class="card">
             <div class="card-header pb-0">
                 <div class="d-flex align-items-center">
-                    <h4 class="text-capitalize">{{ $market == null ? 'Tambah Pasar' : 'Edit Pasar' }}</h4>
+                    <h4 class="text-capitalize">{{ $market == null ? 'Tambah Sentra Ekonomi' : 'Edit Sentra Ekonomi' }}</h4>
                 </div>
             </div>
             <div class="card-body pt-1">

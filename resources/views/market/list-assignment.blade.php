@@ -63,9 +63,9 @@
                         </div>
                     @endhasrole
                     <div class="col-md-3">
-                        <label class="form-control-label">Pasar <span class="text-danger">*</span></label>
+                        <label class="form-control-label">Sentra Ekonomi <span class="text-danger">*</span></label>
                         <select id="market" name="market" class="form-control" data-toggle="select">
-                            <option value="0" disabled selected> -- Pilih Pasar -- </option>
+                            <option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>
                             @foreach ($markets as $market)
                                 <option value="{{ $market->id }}" {{ old('market') == $market->id ? 'selected' : '' }}>
                                     [{{$market->village_id}}] {{ $market->name }}
@@ -88,7 +88,7 @@
                 <table id="myTable" class="align-items-center mb-0 text-sm">
                     <thead>
                         <tr>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Pasar</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Sentra Ekonomi</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama User</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
                         </tr>
@@ -115,7 +115,7 @@
     <script>
         const selectConfigs = [{
                 selector: '#market',
-                placeholder: 'Pilih Pasar'
+                placeholder: 'Pilih Sentra Ekonomi'
             },
             {
                 selector: '#user',
@@ -200,7 +200,7 @@
                     url: '/pasar/kab/' + id,
                     success: function(response) {
                         $(marketSelector).empty().append(
-                            `<option value="0" disabled selected> -- Pilih Pasar -- </option>`);
+                            `<option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>`);
                         response.forEach(element => {
                             let selected = selectedmarket == String(element.id) ? 'selected' : '';
                             $(marketSelector).append(
@@ -210,7 +210,7 @@
                     }
                 });
             } else {
-                $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Pasar -- </option>`);
+                $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Sentra Ekonomi -- </option>`);
             }
         }
 
@@ -302,7 +302,7 @@
             event.preventDefault();
             Swal.fire({
                 title: `Hapus Assignment Ini?`,
-                text: 'Menghapus assignment tidak mempengaruhi data pasar yang telah diupload',
+                text: 'Menghapus assignment tidak mempengaruhi data sentra ekonomi yang telah diupload',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',

@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-    @include('layouts.navbars.auth.topnav', ['title' => 'Assignment Pasar'])
+    @include('layouts.navbars.auth.topnav', ['title' => 'Assignment Sentra Ekonomi'])
     <div class="container-fluid py-4">
 
         @if (session('success-upload'))
@@ -34,9 +34,9 @@
 
         <div class="card z-index-2 h-100">
             <div class="card-header pb-0 pt-3 bg-transparent">
-                <h4 class="text-capitalize">Assignment Pasar</h4>
+                <h4 class="text-capitalize">Assignment Sentra Ekonomi</h4>
                 <p class="text-sm mb-0">
-                    <span>Menu ini digunakan untuk melakukan assignment <strong>pasar dengan petugas.</strong></span>
+                    <span>Menu ini digunakan untuk melakukan assignment <strong>sentra ekonomi dengan petugas.</strong></span>
                 </p>
             </div>
             <div class="card-body p-3">
@@ -63,7 +63,7 @@
                                     Download Template
                                 </h6>
                                 <p class="text-muted small mb-3">
-                                    Menu ini digunakan untuk mengunduh template assignment pasar.
+                                    Menu ini digunakan untuk mengunduh template assignment sentra ekonomi.
                                 </p>
                                 <form id="formupdate" autocomplete="off" method="post" action="/pasar-assignment/download"
                                     class="needs-validation" enctype="multipart/form-data" novalidate>
@@ -164,7 +164,7 @@
                         <table id="myTable" class="align-items-center mb-0 text-sm">
                             <thead>
                                 <tr>
-                                    <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Pasar</th>
+                                    <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Sentra Ekonomi</th>
                                     <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama User</th>
                                     {{-- <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th> --}}
                                 </tr>

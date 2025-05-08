@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-    @include('layouts.navbars.auth.topnav', ['title' => 'Upload Direktori Pasar'])
+    @include('layouts.navbars.auth.topnav', ['title' => 'Upload Direktori Sentra Ekonomi'])
     <div class="container-fluid py-4">
 
         @if (session('success-upload'))
@@ -34,7 +34,7 @@
 
         <div class="card z-index-2 h-100">
             <div class="card-header pb-0 pt-3 bg-transparent">
-                <h6 class="text-capitalize">Upload Direktori Pasar</h6>
+                <h6 class="text-capitalize">Upload Direktori Sentra Ekonomi</h6>
                 {{-- <p class="text-sm mb-0">
                     <span>Berikut rekap semua assignment direktori usaha</span>
                 </p> --}}
@@ -46,10 +46,10 @@
 
                     <div class="row">
                         <div class="col-md-6 mt-3">
-                            <label class="form-control-label">Pilih Pasar <span class="text-danger">*</span></label>
+                            <label class="form-control-label">Pilih Sentra Ekonomi <span class="text-danger">*</span></label>
                             <select style="width: 100%;" id="market" name="market" class="form-control"
                                 data-toggle="select">
-                                <option value="0" disabled selected> -- Pilih Pasar -- </option>
+                                <option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>
                                 @foreach ($markets as $market)
                                     <option
                                         {{ $market->completion_status == 'done' || $market->target_category == 'non target' ? 'disabled' : '' }}
@@ -125,7 +125,7 @@
                 <table id="myTable" class="align-items-center mb-0 text-sm mt-2">
                     <thead>
                         <tr>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Pasar</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Sentra Ekonomi</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">User</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">File</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Diupload Pada</th>
@@ -154,7 +154,7 @@
     <script>
         [{
             selector: '#market',
-            placeholder: 'Pilih Pasar'
+            placeholder: 'Pilih Sentra Ekonomi'
         }, ].forEach(config => {
             $(config.selector).select2({
                 placeholder: config.placeholder,

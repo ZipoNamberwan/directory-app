@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-    @include('layouts.navbars.auth.topnav', ['title' => 'Manajemen Pasar'])
+    @include('layouts.navbars.auth.topnav', ['title' => 'Manajemen Sentra Ekonomi'])
     <div class="container-fluid py-4">
 
         @if (session('success-edit') || session('success-create'))
@@ -36,7 +36,7 @@
         <div class="card">
             <div class="card-header pb-0">
                 <div class="d-flex align-items-center">
-                    <h4 class="text-capitalize">Daftar Pasar</h4>
+                    <h4 class="text-capitalize">Daftar Sentra Ekonomi</h4>
                     @hasrole('adminprov')
                         <a href="/pasar/manajemen/create" class="btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
                             <span class="btn-inner--icon"><i class="fas fa-plus"></i></span>
@@ -291,8 +291,8 @@
         function deleteMarket(id, name) {
             event.preventDefault();
             Swal.fire({
-                title: `Yakin Hapus Pasar Ini? ${name}`,
-                text: 'Menghapus pasar akan menghapus seluruh muatan pada pasar tersebut',
+                title: `Yakin Hapus Sentra Ekonomi Ini? ${name}`,
+                text: 'Menghapus Sentra Ekonomi akan menghapus seluruh muatan pada Sentra Ekonomi tersebut',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',

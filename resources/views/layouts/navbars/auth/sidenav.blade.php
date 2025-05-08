@@ -112,7 +112,7 @@
             @endhasrole --}}
             @hasrole('pml|operator|adminkab|adminprov')
                 <li class="nav-item mt-3">
-                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Pasar</h6>
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Sentra Ekonomi</h6>
                 </li>
                 @hasrole('adminkab|adminprov')
                     <li class="nav-item">
@@ -133,7 +133,7 @@
                             class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
                             <i class="fas fa-bullseye text-sm opacity-10" style="color: #1565C0"></i>
                         </div>
-                        <span class="nav-link-text ms-1">Pasar</span>
+                        <span class="nav-link-text ms-1">Sentra Ekonomi</span>
                     </a>
                 </li>
                 @hasrole('adminkab|adminprov')
@@ -144,7 +144,7 @@
                                 class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
                                 <i class="fas fa-square-poll-horizontal text-info text-sm opacity-10"></i>
                             </div>
-                            <span class="nav-link-text ms-1">Assignment Pasar</span>
+                            <span class="nav-link-text ms-1">Assignment</span>
                         </a>
                     </li>
                 @endhasrole
@@ -173,7 +173,7 @@
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Suplemen</h6>
                 </li>
-                {{-- <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link {{ Route::currentRouteName() == 'suplemen' ? 'active' : '' }}" href="/suplemen">
                         <div
                             class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -191,7 +191,7 @@
                         </div>
                         <span class="nav-link-text ms-1">Upload Suplemen</span>
                     </a>
-                </li> --}}
+                </li>
                 <li class="nav-item">
                     <a class="nav-link {{ str_contains(request()->url(), 'suplemen/download') == true ? 'active' : '' }}"
                         href="/suplemen/download">

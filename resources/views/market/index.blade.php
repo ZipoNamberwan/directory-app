@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-    @include('layouts.navbars.auth.topnav', ['title' => 'Daftar Direktori Usaha Pasar'])
+    @include('layouts.navbars.auth.topnav', ['title' => 'Daftar Direktori Usaha Sentra Ekonomi'])
     <div class="container-fluid py-4">
 
         @if (session('success-upload'))
@@ -37,10 +37,10 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="text-capitalize">Daftar Usaha yang Telah Diupload</h6>
                     <div class="d-flex">
-                        {{-- <a href="/pasar/muatan" class="btn btn-info btn-lg ms-auto p-2 me-2" role="button">
+                        <a href="/pasar/muatan" class="btn btn-info btn-lg ms-auto p-2 me-2" role="button">
                             <span class="btn-inner--icon"><i class="fas fa-map"></i></span>
                             <span class="ml-3 btn-inner--text">Peta</span>
-                        </a> --}}
+                        </a>
                         <form action="/pasar/download" class="me-2" method="POST">
                             @csrf
                             <input type="hidden" name="organization" id="organization_download">
@@ -72,9 +72,9 @@
                         </div>
                     @endhasrole
                     <div class="col-md-3">
-                        <label class="form-control-label">Pasar <span class="text-danger">*</span></label>
+                        <label class="form-control-label">Sentra Ekonomi <span class="text-danger">*</span></label>
                         <select id="market" class="form-control" data-toggle="select">
-                            <option value="0" disabled selected> -- Pilih Pasar -- </option>
+                            <option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>
                             @foreach ($markets as $market)
                                 <option value="{{ $market->id }}" {{ old('market') == $market->id ? 'selected' : '' }}>
                                     {{ $market->name }}
@@ -105,7 +105,7 @@
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Deskripsi</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Sektor</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Catatan</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Pasar</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Sentra Ekonomi</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Kabupaten</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">User yang Upload</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Created At</th>
@@ -168,7 +168,7 @@
             },
             {
                 selector: '#market',
-                placeholder: 'Pilih Pasar'
+                placeholder: 'Pilih Sentra Ekonomi'
             },
             {
                 selector: '#user',
@@ -248,7 +248,7 @@
                     url: '/pasar/kab/' + id,
                     success: function(response) {
                         $(marketSelector).empty().append(
-                            `<option value="0" disabled selected> -- Pilih Pasar -- </option>`);
+                            `<option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>`);
                         response.forEach(element => {
                             let selected = selectedmarket == String(element.id) ? 'selected' : '';
                             $(marketSelector).append(
@@ -258,7 +258,7 @@
                     }
                 });
             } else {
-                $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Pasar -- </option>`);
+                $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Sentra Ekonomi -- </option>`);
             }
         }
 
@@ -394,7 +394,7 @@
                     type: "text",
                     render: function(data, type, row) {
                         var doneBy = '';
-                        if (row.market.organization.id == '3500'){
+                        if (row.market.organization.id == '3500') {
                             doneBy = 'Dikerjakan oleh BPS Provinsi'
                         }
                         if (type === 'display') {

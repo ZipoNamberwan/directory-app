@@ -77,13 +77,17 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::post('/pasar/manajemen/download/{id}', [MarketManagementController::class, 'downloadMarketProject']);
 
 		Route::get('/suplemen', [SupplementController::class, 'showSupplementIndexPage'])->name('suplemen');
+		Route::get('/suplemen/data', [SupplementController::class, 'getSupplementData']);
 		Route::get('/suplemen/upload', [SupplementController::class, 'showSupplementUploadPage']);
+		Route::post('/suplemen/upload', [SupplementController::class, 'upload']);
 		Route::get('/suplemen/download', [SupplementController::class, 'showSupplementDownloadPage']);
 		Route::post('/suplemen/download', [SupplementController::class, 'downloadSupplementProject']);
 
+		Route::get('/suplemen/upload/data', [SupplementController::class, 'getUploadStatusData']);
+
+
 		Route::get('/pasar/peta', [MarketController::class, 'getMarketDistributionData']);
 		Route::get('/pasar/muatan/{id}', [MarketController::class, 'getMarketBusinessDetail']);
-
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {

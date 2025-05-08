@@ -68,14 +68,14 @@
                         <div class="row">
                             <div class="col-8">
                                 <div class="numbers">
-                                    <p class="text-sm mb-2 text-uppercase font-weight-bold">Pemutakhiran Direktori Pasar
+                                    <p class="text-sm mb-2 text-uppercase font-weight-bold">Pemutakhiran Direktori Sentra Ekonomi
                                     </p>
                                     <h5 class="font-weight-bolder">
 
                                     </h5>
                                     <p class="mb-0">
                                         <span class="text-sm"><strong class="text-success">{{ $totalBusiness }}</strong>
-                                            usaha pasar sudah dimutakhirkan.</span>
+                                            usaha sentra ekonomi sudah dimutakhirkan.</span>
                                     </p>
                                     <p class="text-xs text-secondary mb-0">
                                         Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}
@@ -108,8 +108,8 @@
                         @if (Auth::user()->organization_id == '3578' || Auth::user()->organization_id == '3500')
                             <div class="marquee-container">
                                 <p class="text-sm marquee-text">
-                                    <strong>Nb: * Progres Provinsi dan Kota Surabaya sudah Terpisah. Progres pasar sekarang
-                                        juga hanya muncul pasar yang menjadi tanggung jawab satker masing-masing.</strong>
+                                    <strong>Nb: * Progres Provinsi dan Kota Surabaya sudah Terpisah. Progres sentra ekonomi sekarang
+                                        juga hanya muncul sentra ekonomi yang menjadi tanggung jawab satker masing-masing.</strong>
                                 </p>
                             </div>
                         @endif
@@ -120,15 +120,15 @@
                         </div>
                         <div class="custom-note">
                             <strong>Note:</strong><br>
-                            Pasar <code>target</code> dan <code>non target</code> adalah status pasar yang ditentukan oleh
+                            Sentra Ekonomi <code>target</code> dan <code>non target</code> adalah status sentra ekonomi yang ditentukan oleh
                             provinsi sesuai petunjuk dari kabupaten/kota.
-                            Pasar <code>non target</code> adalah pasar yang tidak dicacah karena berbagai alasan seperti
+                            Sentra Ekonomi <code>non target</code> adalah sentra ekonomi yang tidak dicacah karena berbagai alasan seperti
                             akses yang sulit, keamanan, bencana dll.
-                            Pengajuan pasar jenis ini bisa menghubungi <strong>Tim Garda Provinsi</strong>.<br><br>
+                            Pengajuan sentra ekonomi jenis ini bisa menghubungi <strong>Tim Garda Provinsi</strong>.<br><br>
 
-                            Status penyelesaian pasar ada 3 yaitu <code>Belum Dimulai</code>, <code>Sedang
+                            Status penyelesaian sentra ekonomi ada 3 yaitu <code>Belum Dimulai</code>, <code>Sedang
                                 Dikerjakan</code>, dan <code>Sudah Selesai</code>.
-                            Untuk menandai pasar yang sudah selesai, bisa menggunakan <strong>menu pasar</strong> kemudian
+                            Untuk menandai sentra ekonomi yang sudah selesai, bisa menggunakan <strong>menu sentra ekonomi</strong> kemudian
                             <strong>ganti flag status penyelesaian</strong> pada tabel.
 
                         </div>
@@ -139,7 +139,7 @@
                                         Kabupaten
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                        Total Pasar
+                                        Total Sentra Ekonomi
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
                                         Target
@@ -157,7 +157,7 @@
                                         Sudah Selesai
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                        Jumlah Pasar dengan Muatan yang sudah Diupload Minimal 1
+                                        Jumlah Sentra Ekonomi dengan Muatan yang sudah Diupload Minimal 1
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
                                         Usaha yang Sudah Dimutakhirkan
@@ -200,7 +200,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h6 class="text-capitalize">
-                            Report Jumlah Usaha Berdasarkan Pasar
+                            Report Jumlah Usaha Berdasarkan Sentra Ekonomi
                         </h6>
                         <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
                     </div>
@@ -209,7 +209,7 @@
                             <thead>
                                 <tr>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7">
-                                        Nama Pasar
+                                        Nama Sentra Ekonomi
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7">
                                         Wilayah
@@ -446,7 +446,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Progres Pemutakhiran Pasar',
+                        label: 'Progres Pemutakhiran Sentra Ekonomi',
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         borderColor: 'rgba(75, 192, 192, 1)',
                         data: data

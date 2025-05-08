@@ -62,13 +62,14 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
                     if (empty($record['nama_usaha'])) {
                         $rowErrors[] = "Nama Usaha kosong pada baris $rowNumber.";
                     }
-                    if (empty($record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null)) {
+                    $statusBangunan = $record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null;
+                    if (empty($statusBangunan) || $statusBangunan === '-') {
                         $rowErrors[] = "Status Bangunan kosong pada baris $rowNumber.";
                     }
                     if (empty($record['deskripsi_aktifitas'])) {
                         $rowErrors[] = "Deskripsi Usaha kosong pada baris $rowNumber.";
                     }
-                    if (empty($record['sektor'])) {
+                    if (empty($record['sektor']) || $record['sektor'] == '-') {
                         $rowErrors[] = "Sektor Usaha kosong pada baris $rowNumber.";
                     }
                     if (empty($record['latitude'])) {
@@ -117,7 +118,7 @@ class MarketBusinessImportSheet implements ToCollection, WithChunkReading, WithS
                     'completion_status' => 'on going',
                 ]);
             } catch (Exception $e) {
-                $maxLength = 10000; 
+                $maxLength = 10000;
 
                 $this->status->update([
                     'status' => 'failed',
