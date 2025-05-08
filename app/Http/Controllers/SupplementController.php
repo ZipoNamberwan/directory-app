@@ -101,9 +101,14 @@ class SupplementController extends Controller
     //     return Storage::download($matchedFile);
     // }
 
-    public function downloadSupplementProject(Request $request)
+    public function downloadSupplementProjectAndroid(Request $request)
     {
         return Storage::download('project_swmaps_desa/Project SW Maps 2025.swmz');
+    }
+
+    public function downloadSupplementProjectIos(Request $request)
+    {
+        return Storage::download('project_swmaps_desa/Project SW Maps 2025 IOS.swmt');
     }
 
     public function showSupplementDownloadPage()

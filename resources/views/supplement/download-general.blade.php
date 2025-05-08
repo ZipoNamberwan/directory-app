@@ -19,12 +19,27 @@
                 <p class="text-sm">Menu ini digunakan untuk mendownload project suplemen SW Maps.</p>
             </div>
             <div class="card-body pt-1">
-                <form id="formupdate" autocomplete="off" method="post" action="/suplemen/download" class="needs-validation"
-                    enctype="multipart/form-data" novalidate>
-                    @csrf
-                    <button onclick="download()" class="btn btn-success mt-3" id="submitBtn">Download Project Android</button>
-                </form>
-                <p class="text-sm">Untuk IOs bisa download <a href="https://s.bps.go.id/swmaps-ios">di sini.</a></p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <!-- Android Download Form -->
+                    <form id="form-android" method="post" action="/suplemen/download-android" class="needs-validation"
+                        enctype="multipart/form-data" novalidate>
+                        @csrf
+                        <button type="submit" class="btn btn-success">
+                            <i class="fab fa-android me-1"></i> Download Android
+                        </button>
+                    </form>
+
+                    <!-- iOS Download Form -->
+                    <form id="form-ios" method="post" action="/suplemen/download-ios" class="needs-validation"
+                        enctype="multipart/form-data" novalidate>
+                        @csrf
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="fab fa-apple me-1"></i> Download iOS
+                        </button>
+                    </form>
+                </div>
+
+                <p class="text-sm mt-2">Untuk Petunjuk penggunaan project IOS bisa dilihat <a target="_blank" href="https://s.bps.go.id/swmaps-ios">di sini.</a></p>
             </div>
         </div>
         @include('layouts.footers.auth.footer')
