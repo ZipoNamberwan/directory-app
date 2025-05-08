@@ -35,7 +35,7 @@
         @if (in_array(request()->route()->getName(), ['login', 'change-password']))
             @yield('content')
         @else
-            <div class="min-height-300 bg-primary position-absolute w-100"></div>
+            <div class="min-height-300 bg-{{$color ?? 'primary'}} position-absolute w-100"></div>
             @include('layouts.navbars.auth.sidenav')
             <main class="main-content border-radius-lg">
                 @yield('content')

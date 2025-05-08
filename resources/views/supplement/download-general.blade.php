@@ -22,9 +22,9 @@
                 <form id="formupdate" autocomplete="off" method="post" action="/suplemen/download" class="needs-validation"
                     enctype="multipart/form-data" novalidate>
                     @csrf
-                    <button onclick="download()" class="btn btn-primary mt-3" id="submitBtn">Download Project Android</button>
+                    <button onclick="download()" class="btn btn-success mt-3" id="submitBtn">Download Project Android</button>
                 </form>
-                <p class="text-sm">Untuk IOs bisa download di sini.</p>
+                <p class="text-sm">Untuk IOs bisa download <a href="https://s.bps.go.id/swmaps-ios">di sini.</a></p>
             </div>
         </div>
         @include('layouts.footers.auth.footer')

@@ -37,6 +37,7 @@ class SupplementController extends Controller
             'users' => $users,
             'isAdmin' => $isAdmin,
             'userId' => $user->id,
+            'color' => 'success'
         ]);
     }
 
@@ -54,6 +55,7 @@ class SupplementController extends Controller
         return view('supplement.upload', [
             'users' => $users,
             'statuses' => $statuses,
+            'color' => 'success'
         ]);
     }
 
@@ -106,7 +108,7 @@ class SupplementController extends Controller
 
     public function showSupplementDownloadPage()
     {
-        return view('supplement.download-general');
+        return view('supplement.download-general', ['color' => 'success']);
     }
 
     public function getUploadStatusData(Request $request)
