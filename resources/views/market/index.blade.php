@@ -72,6 +72,18 @@
                         </div>
                     @endhasrole
                     <div class="col-md-3">
+                        <label class="form-control-label">Tipe <span class="text-danger">*</span></label>
+                        <select id="marketType" class="form-control" data-toggle="select">
+                            <option value="0" disabled selected> -- Pilih Tipe -- </option>
+                            <option value="all"> Semua </option>
+                            @foreach ($marketTypes as $marketType)
+                                <option value="{{ $marketType->id }}" {{ old('marketType') == $marketType->id ? 'selected' : '' }}>
+                                    {{ $marketType->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-control-label">Sentra Ekonomi <span class="text-danger">*</span></label>
                         <select id="market" class="form-control" data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>
@@ -174,6 +186,10 @@
                 selector: '#user',
                 placeholder: 'Pilih Petugas'
             },
+            {
+                selector: '#marketType',
+                placeholder: 'Pilih Tipe'
+            },
         ];
 
         selectConfigs.forEach(({
@@ -197,6 +213,9 @@
                 updateDownloadHidden()
             },
             '#user': () => {
+                renderTable()
+            },
+            '#marketType': () => {
                 renderTable()
             },
         };
@@ -261,7 +280,7 @@
 
         function renderTable() {
             filterUrl = ''
-            filterTypes = ['organization', 'market', 'user']
+            filterTypes = ['organization', 'market', 'user', 'marketType']
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
             });

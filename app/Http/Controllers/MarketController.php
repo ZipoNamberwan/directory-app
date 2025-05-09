@@ -8,6 +8,7 @@ use App\Jobs\MarketUploadNotificationJob;
 use App\Models\AssignmentStatus;
 use App\Models\Market;
 use App\Models\MarketBusiness;
+use App\Models\MarketType;
 use App\Models\MarketUploadStatus;
 use App\Models\Organization;
 use App\Models\Regency;
@@ -47,6 +48,8 @@ class MarketController extends Controller
             })->get();
         }
 
+        $marketTypes = MarketType::all();
+
         return view(
             'market.index',
             [
@@ -55,6 +58,7 @@ class MarketController extends Controller
                 'isAdmin' => $isAdmin,
                 'userId' => $user->id,
                 'users' => $users,
+                'marketTypes' => $marketTypes,
             ]
         );
     }
@@ -163,6 +167,12 @@ class MarketController extends Controller
 
         if ($request->user && $request->user !== 'all') {
             $records->where('user_id', $request->user);
+        }
+
+        if ($request->marketType && $request->marketType !== 'all') {
+            $records->whereHas('market', function ($query) use ($request) {
+                $query->where('market_type_id', $request->marketType);
+            });
         }
 
         $recordsTotal = $records->count();
