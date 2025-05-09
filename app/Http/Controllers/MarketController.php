@@ -32,6 +32,8 @@ class MarketController extends Controller
         $markets = [];
         $users = [];
         $isAdmin = false;
+        $marketTypes = [];
+
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
             $isAdmin = true;
@@ -39,6 +41,7 @@ class MarketController extends Controller
             $markets = Market::where('organization_id', $user->organization_id)->get();
             $users = User::where('organization_id', $user->organization_id)->get();
             $isAdmin = true;
+            $marketTypes = MarketType::all();
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $markets = $user->markets;
             $marketIds = $user->markets()->pluck('markets.id');
@@ -46,9 +49,8 @@ class MarketController extends Controller
             $users = User::whereHas('markets', function ($query) use ($marketIds) {
                 $query->whereIn('markets.id', $marketIds);
             })->get();
+            $marketTypes = MarketType::all();
         }
-
-        $marketTypes = MarketType::all();
 
         return view(
             'market.index',
@@ -328,6 +330,40 @@ class MarketController extends Controller
         return response()->json($markets);
     }
 
+    public function getMarketByFilter(Request $request)
+    {
+        $user = User::find(Auth::id());
+
+        $organizationId = null;
+        if ($user->hasRole('adminkab') || $user->hasRole('operator') || $user->hasRole('pml')) {
+            $organizationId = $user->organization_id;
+        } else if ('adminprov') {
+            $organizationId = $request->organization;
+        }
+
+        if ($organizationId == null) {
+            return response()->json([]);
+        }
+
+        $markets = Market::query();
+
+        $markets->where('organization_id', $organizationId);
+
+        if ($request->marketType && $request->marketType !== 'all') {
+            $markets->whereHas('marketType', function ($query) use ($request) {
+                $query->where('market_type_id', $request->marketType);
+            });
+        }
+
+        return response()->json($markets->get());
+    }
+
+    public function getMarketTypes()
+    {
+        $marketTypes = MarketType::all();
+        return response()->json($marketTypes);
+    }
+
     public function downloadUploadedData(Request $request)
     {
 
@@ -371,7 +407,7 @@ class MarketController extends Controller
     }
 
     public function dashboard()
-    {   
+    {
         $user = User::find(Auth::id());
 
         $reportByRegency = ReportMarketBusinessRegency::orderByDesc('date')

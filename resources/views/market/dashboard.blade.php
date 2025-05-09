@@ -105,20 +105,20 @@
                                 22.30</strong>
                         </p>
                         <p class="text-sm">Kondisi tanggal: <strong>{{ $updateDate }} {{ $updateTime }}</strong></p>
-                        @if (Auth::user()->organization_id == '3578' || Auth::user()->organization_id == '3500')
+                        {{-- @if (Auth::user()->organization_id == '3578' || Auth::user()->organization_id == '3500')
                             <div class="marquee-container">
                                 <p class="text-sm marquee-text">
                                     <strong>Nb: * Progres Provinsi dan Kota Surabaya sudah Terpisah. Progres sentra ekonomi sekarang
                                         juga hanya muncul sentra ekonomi yang menjadi tanggung jawab satker masing-masing.</strong>
                                 </p>
                             </div>
-                        @endif
+                        @endif --}}
                     </div>
                     <div class="card-body">
                         <div style="width: 75%; margin: auto;">
                             <canvas id="proggress_chart"></canvas>
                         </div>
-                        <div class="custom-note">
+                        {{-- <div class="custom-note">
                             <strong>Note:</strong><br>
                             Sentra Ekonomi <code>target</code> dan <code>non target</code> adalah status sentra ekonomi yang ditentukan oleh
                             provinsi sesuai petunjuk dari kabupaten/kota.
@@ -131,7 +131,7 @@
                             Untuk menandai sentra ekonomi yang sudah selesai, bisa menggunakan <strong>menu sentra ekonomi</strong> kemudian
                             <strong>ganti flag status penyelesaian</strong> pada tabel.
 
-                        </div>
+                        </div> --}}
                         <table id="regencyTable" class="align-items-center text-sm">
                             <thead>
                                 <tr>

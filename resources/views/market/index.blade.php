@@ -75,9 +75,9 @@
                         <label class="form-control-label">Tipe <span class="text-danger">*</span></label>
                         <select id="marketType" class="form-control" data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Tipe -- </option>
-                            <option value="all"> Semua </option>
                             @foreach ($marketTypes as $marketType)
-                                <option value="{{ $marketType->id }}" {{ old('marketType') == $marketType->id ? 'selected' : '' }}>
+                                <option value="{{ $marketType->id }}"
+                                    {{ old('marketType') == $marketType->id ? 'selected' : '' }}>
                                     {{ $marketType->name }}
                                 </option>
                             @endforeach
@@ -204,6 +204,7 @@
 
         const eventHandlers = {
             '#organization': () => {
+                loadMarketType()
                 loadMarket(null, null)
                 renderTable()
                 updateDownloadHidden()
@@ -216,6 +217,7 @@
                 renderTable()
             },
             '#marketType': () => {
+                loadMarket(null, null)
                 renderTable()
             },
         };
@@ -231,34 +233,83 @@
         updateDownloadHidden();
 
         function loadMarket(organizationid = null, selectedmarket = null) {
+            const organizationSelector = '#organization';
+            const marketTypeSelector = '#marketType';
+            const marketSelector = '#market';
 
-            let organizationSelector = `#organization`;
-            let marketSelector = `#market`;
+            // Check if organization input is available (adminprov)
+            const organizationExists = $(organizationSelector).length > 0;
 
-            let id = $(organizationSelector).val();
+            let organizationId = organizationExists ? $(organizationSelector).val() : null;
             if (organizationid != null) {
-                id = organizationid;
+                organizationId = organizationid;
             }
 
+            const marketType = $(marketTypeSelector).val();
+
             $(marketSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            let url = `/pasar/filter`;
+            let query = [];
+
+            if (organizationExists && organizationId) {
+                query.push(`organization=${organizationId}`);
+            }
+
+            if (marketType && marketType !== 'all') {
+                query.push(`marketType=${marketType}`);
+            }
+
+            if (query.length > 0) {
+                url += '?' + query.join('&');
+            }
+
+            $.ajax({
+                type: 'GET',
+                url: url,
+                success: function(response) {
+                    $(marketSelector).empty().append(
+                        `<option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>`
+                    );
+                    response.forEach(element => {
+                        const selected = selectedmarket == String(element.id) ? 'selected' : '';
+                        $(marketSelector).append(
+                            `<option value="${element.id}" ${selected}>${element.name}</option>`
+                        );
+                    });
+                },
+                error: function() {
+                    $(marketSelector).empty().append(
+                        `<option value="0" disabled> -- Gagal Memuat Data -- </option>`);
+                }
+            });
+        }
+
+        function loadMarketType() {
+
+            let organizationSelector = `#organization`;
+            let marketTypeSelector = `#marketType`;
+
+            let id = $(organizationSelector).val();
+
+            $(marketTypeSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
 
             if (id != null) {
                 $.ajax({
                     type: 'GET',
-                    url: '/pasar/kab/' + id,
+                    url: '/pasar/type/',
                     success: function(response) {
-                        $(marketSelector).empty().append(
-                            `<option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>`);
+                        $(marketTypeSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Tipe -- </option>`);
                         response.forEach(element => {
-                            let selected = selectedmarket == String(element.id) ? 'selected' : '';
-                            $(marketSelector).append(
-                                `<option value="${element.id}" ${selected}>${element.name}</option>`
+                            $(marketTypeSelector).append(
+                                `<option value="${element.id}">${element.name}</option>`
                             );
                         });
                     }
                 });
             } else {
-                $(marketSelector).empty().append(`<option value="0" disabled> -- Pilih Sentra Ekonomi -- </option>`);
+                $(marketTypeSelector).empty().append(`<option value="0" disabled> -- Pilih Tipe -- </option>`);
             }
         }
 

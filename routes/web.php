@@ -72,6 +72,8 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::post('/pasar/download', [MarketController::class, 'downloadUploadedData']);
 		Route::post('/pasar/download/swmap', [MarketController::class, 'downloadSwmapsExport']);
 		Route::get('/pasar/kab/{regency}', [MarketController::class, 'getMarketByRegency']);
+		Route::get('/pasar/filter', [MarketController::class, 'getMarketByFilter']);
+		Route::get('/pasar/type', [MarketController::class, 'getMarketTypes']);
 
 		Route::get('/pasar/manajemen', [MarketManagementController::class, 'showMarketManagementPage']);
 		Route::get('/pasar/manajemen/data', [MarketManagementController::class, 'getMarketManagementData']);
