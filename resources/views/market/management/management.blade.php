@@ -35,25 +35,28 @@
 
         <div class="card">
             <div class="card-header pb-0">
-                <div class="d-flex align-items-center">
+                <div class="d-flex justify-content-between align-items-center">
                     <h4 class="text-capitalize">Daftar Sentra Ekonomi</h4>
-                    @hasrole('adminprov')
-                        <a href="/pasar/manajemen/create" class="me-2 btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
-                            <span class="btn-inner--icon"><i class="fas fa-plus"></i></span>
-                            <span class="ml-3 btn-inner--text">Tambah</span>
-                        </a>
-                    @endhasrole
-                    <form action="/pasar/manajemen/download" class="me-2" method="POST">
-                        @csrf
-                        <input type="hidden" name="organization" id="organization_download">
-                        <input type="hidden" name="market" id="market_download">
-                        <button type="submit" class="btn btn-primary mb-0 p-2">Download</button>
-                    </form>
-                    <button onclick="refresh()" class="btn btn-outline-primary mb-0 p-2" data-bs-toggle="modal"
-                        data-bs-target="#statusDialog">
-                        <i class="fas fa-circle-info me-2"></i>
-                        Status
-                    </button>
+                    <div class="d-flex">
+                        @hasrole('adminprov')
+                            <a href="/pasar/manajemen/create" class="me-2 btn btn-primary btn-lg ms-auto p-2 m-0"
+                                role="button">
+                                <span class="btn-inner--icon"><i class="fas fa-plus"></i></span>
+                                <span class="ml-3 btn-inner--text">Tambah</span>
+                            </a>
+                        @endhasrole
+                        <form action="/pasar/manajemen/download" class="me-2" method="POST">
+                            @csrf
+                            <input type="hidden" name="organization" id="organization_download">
+                            <input type="hidden" name="market" id="market_download">
+                            <button type="submit" class="btn btn-primary mb-0 p-2">Download</button>
+                        </form>
+                        <button onclick="refresh()" class="btn btn-outline-primary mb-0 p-2" data-bs-toggle="modal"
+                            data-bs-target="#statusDialog">
+                            <i class="fas fa-circle-info me-2"></i>
+                            Status
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="card-body pt-1">
