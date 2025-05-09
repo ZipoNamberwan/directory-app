@@ -207,7 +207,7 @@
         }
 
         function renderStatus() {
-            table2.ajax.url('/pasar-assignment/data').load();
+            table2.ajax.url('/status/data/4').load();
         }
 
         function formatDate(isoString) {
@@ -269,7 +269,7 @@
             processing: true,
             // deferLoading: 0,
             ajax: {
-                url: '/pasar-assignment/data',
+                url: '/status/data/4',
                 type: 'GET',
             },
             responsive: true,
@@ -290,7 +290,7 @@
                     render: function(data, type, row) {
                         if (type === 'display') {
                             return `
-                        <form class="my-2" action="/pasar-assignment/download/file" method="POST">
+                        <form class="my-2" action="/status/download/4" method="POST">
                             @csrf
                             <input type="hidden" name="id" value="${data}"> 
                             <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">

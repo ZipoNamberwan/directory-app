@@ -205,25 +205,6 @@
             $(selector).on('change', handler);
         });
 
-        function refresh() {
-            tableStatus.ajax.url('/pasar/download/status').load();
-        }
-
-        function formatDate(isoString) {
-            const date = new Date(isoString);
-
-            let formatted = new Intl.DateTimeFormat('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            }).format(date);
-            return formatted.replace(" pukul ", " ").replace(/\./g, ":");
-        }
-
         function updateDownloadHidden() {
             document.getElementById('organization_download').value = $('#organization').val();
             document.getElementById('market_download').value = $('#market').val();
@@ -302,7 +283,6 @@
             }).format(date);
             return formatted.replace(" pukul ", " ").replace(/\./g, ":");
         }
-
 
         var isAdmin = @json($isAdmin);
         var userId = @json($userId);
@@ -458,13 +438,17 @@
             }
         });
 
+        function refresh() {
+            tableStatus.ajax.url('/status/data/3').load();
+        }
+
         let tableStatus = new DataTable('#statusTable', {
             order: [],
             serverSide: true,
             processing: true,
             // deferLoading: 0,
             ajax: {
-                url: '/pasar/download/status',
+                url: '/status/data/3',
                 type: 'GET',
             },
             responsive: true,
@@ -477,7 +461,7 @@
                         if (type === 'display') {
                             if (row.status == 'success') {
                                 return `
-                        <form class="my-2" action="/pasar/download/business" method="POST">
+                        <form class="my-2" action="/status/download/3" method="POST">
                             @csrf
                             <input type="hidden" name="id" value="${data}"> 
                             <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">

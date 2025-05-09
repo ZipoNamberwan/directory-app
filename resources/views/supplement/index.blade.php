@@ -36,19 +36,19 @@
             <div class="card-header pb-0">
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="text-capitalize">Daftar Usaha Suplemen</h6>
-                    {{-- <div class="d-flex">
-                        <form action="/suplemen/download" class="me-2" method="POST">
-                            @csrf --}}
+                    <div class="d-flex">
+                        <form action="/suplemen/download/raw" class="me-2" method="POST">
+                            @csrf
                             <input type="hidden" name="organization" id="organization_download">
                             <input type="hidden" name="market" id="market_download">
-                            {{-- <button type="submit" class="btn btn-primary mb-0 p-2">Download</button>
+                            <button type="submit" class="btn btn-success mb-0 p-2">Download</button>
                         </form>
-                        <button onclick="refresh()" class="btn btn-outline-primary mb-0 p-2" data-bs-toggle="modal"
+                        <button onclick="refresh()" class="btn btn-outline-success mb-0 p-2" data-bs-toggle="modal"
                             data-bs-target="#statusDialog">
                             <i class="fas fa-circle-info me-2"></i>
                             Status
                         </button>
-                    </div> --}}
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -395,98 +395,102 @@
             }
         });
 
-        // let tableStatus = new DataTable('#statusTable', {
-        //     order: [],
-        //     serverSide: true,
-        //     processing: true,
-        //     // deferLoading: 0,
-        //     ajax: {
-        //         url: '/suplemen/download/status',
-        //         type: 'GET',
-        //     },
-        //     responsive: true,
-        //     columns: [{
-        //             responsivePriority: 1,
-        //             width: "10%",
-        //             data: "id",
-        //             type: "text",
-        //             render: function(data, type, row) {
-        //                 if (type === 'display') {
-        //                     if (row.status == 'success') {
-        //                         return `
-        //                 <form class="my-2" action="/suplemen/download/business" method="POST">
-        //                     @csrf
-        //                     <input type="hidden" name="id" value="${data}"> 
-        //                     <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
-        //                         <i class="fas fa-download mx-1"></i>
-        //                     </button>
-        //                 </form>
-        //                 `
-        //                     } else {
-        //                         return '-'
-        //                     }
-        //                 }
-        //                 return data;
-        //             }
-        //         },
-        //         {
-        //             responsivePriority: 3,
-        //             width: "10%",
-        //             data: "user.firstname",
-        //             type: "text",
-        //         },
-        //         {
-        //             responsivePriority: 2,
-        //             width: "10%",
-        //             data: "status",
-        //             type: "text",
-        //             render: function(data, type, row) {
-        //                 if (type === 'display') {
+        function refresh() {
+            tableStatus.ajax.url('/status/data/2').load();
+        }
 
-        //                     var color = 'info'
-        //                     if (data == 'success') {
-        //                         color = 'success'
-        //                     } else if (data == 'failed') {
-        //                         color = 'danger'
-        //                     } else if (data == 'success') {
-        //                         color = 'success'
-        //                     } else if (data == 'loading' || data == 'processing') {
-        //                         color = 'secondary'
-        //                     } else if (data == 'success with error') {
-        //                         color = 'danger'
-        //                     } else {
-        //                         color = 'info'
-        //                     }
+        let tableStatus = new DataTable('#statusTable', {
+            order: [],
+            serverSide: true,
+            processing: true,
+            // deferLoading: 0,
+            ajax: {
+                url: '/status/data/2',
+                type: 'GET',
+            },
+            responsive: true,
+            columns: [{
+                    responsivePriority: 1,
+                    width: "10%",
+                    data: "id",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            if (row.status == 'success') {
+                                return `
+                        <form class="my-2" action="/status/download/2" method="POST">
+                            @csrf
+                            <input type="hidden" name="id" value="${data}"> 
+                            <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
+                                <i class="fas fa-download mx-1"></i>
+                            </button>
+                        </form>
+                        `
+                            } else {
+                                return '-'
+                            }
+                        }
+                        return data;
+                    }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "user.firstname",
+                    type: "text",
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "status",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
 
-        //                     return '<p class="mb-0"><span class="badge badge-small bg-' + color +
-        //                         '">' +
-        //                         data + '</span></p>';
-        //                 }
-        //                 return data;
-        //             }
-        //         },
-        //         {
-        //             responsivePriority: 3,
-        //             width: "10%",
-        //             data: "created_at",
-        //             type: "text",
-        //             render: function(data, type, row) {
-        //                 return formatDate(data)
-        //             }
-        //         },
-        //         {
-        //             responsivePriority: 4,
-        //             width: "10%",
-        //             data: "message",
-        //             type: "text",
-        //         },
-        //     ],
-        //     language: {
-        //         paginate: {
-        //             previous: '<i class="fas fa-angle-left"></i>',
-        //             next: '<i class="fas fa-angle-right"></i>'
-        //         }
-        //     }
-        // });
+                            var color = 'info'
+                            if (data == 'success') {
+                                color = 'success'
+                            } else if (data == 'failed') {
+                                color = 'danger'
+                            } else if (data == 'success') {
+                                color = 'success'
+                            } else if (data == 'loading' || data == 'processing') {
+                                color = 'secondary'
+                            } else if (data == 'success with error') {
+                                color = 'danger'
+                            } else {
+                                color = 'info'
+                            }
+
+                            return '<p class="mb-0"><span class="badge badge-small bg-' + color +
+                                '">' +
+                                data + '</span></p>';
+                        }
+                        return data;
+                    }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "created_at",
+                    type: "text",
+                    render: function(data, type, row) {
+                        return formatDate(data)
+                    }
+                },
+                {
+                    responsivePriority: 4,
+                    width: "10%",
+                    data: "message",
+                    type: "text",
+                },
+            ],
+            language: {
+                paginate: {
+                    previous: '<i class="fas fa-angle-left"></i>',
+                    next: '<i class="fas fa-angle-right"></i>'
+                }
+            }
+        });
     </script>
 @endpush

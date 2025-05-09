@@ -38,11 +38,22 @@
                 <div class="d-flex align-items-center">
                     <h4 class="text-capitalize">Daftar Sentra Ekonomi</h4>
                     @hasrole('adminprov')
-                        <a href="/pasar/manajemen/create" class="btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
+                        <a href="/pasar/manajemen/create" class="me-2 btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
                             <span class="btn-inner--icon"><i class="fas fa-plus"></i></span>
                             <span class="ml-3 btn-inner--text">Tambah</span>
                         </a>
                     @endhasrole
+                    <form action="/pasar/manajemen/download" class="me-2" method="POST">
+                        @csrf
+                        <input type="hidden" name="organization" id="organization_download">
+                        <input type="hidden" name="market" id="market_download">
+                        <button type="submit" class="btn btn-primary mb-0 p-2">Download</button>
+                    </form>
+                    <button onclick="refresh()" class="btn btn-outline-primary mb-0 p-2" data-bs-toggle="modal"
+                        data-bs-target="#statusDialog">
+                        <i class="fas fa-circle-info me-2"></i>
+                        Status
+                    </button>
                 </div>
             </div>
             <div class="card-body pt-1">
@@ -117,7 +128,36 @@
                 </div>
             </div>
         </div>
+    </div>
 
+    <div class="modal fade" id="statusDialog" tabindex="-1" role="dialog" aria-labelledby="statusDialogLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Status Download</h5>
+                    <button onclick="refresh()" class="btn btn-sm btn-outline-primary mb-0 p-2">
+                        Refresh
+                    </button>
+                    {{-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> --}}
+                </div>
+                <div class="modal-body">
+                    <table id="statusTable" class="align-items-center mb-0 text-sm">
+                        <thead>
+                            <tr>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">File</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Dibuat Oleh</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Status</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Dibuat pada</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Pesan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
 
@@ -180,6 +220,25 @@
         Object.entries(eventHandlers).forEach(([selector, handler]) => {
             $(selector).on('change', handler);
         });
+
+        function refresh() {
+            tableStatus.ajax.url('/status/data/1').load();
+        }
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+
+            let formatted = new Intl.DateTimeFormat('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).format(date);
+            return formatted.replace(" pukul ", " ").replace(/\./g, ":");
+        }
 
         function getFilterUrl(filter) {
             var filterUrl = ''
@@ -441,7 +500,7 @@
                                         <form class="d-inline" id="formdelete${data}" name="formdelete${data}" onSubmit="deleteMarket('${data}','${row.name}')" 
                                             method="POST" action="/pasar/manajemen/${data}">
                                             @csrf
-                                            @method('delete')
+                                            @method('DELETE')
                                             <button class="px-2 py-1 m-0 btn btn-icon btn-outline-danger btn-sm" type="submit">
                                                 <span class="btn-inner--icon"><i class="fas fa-trash"></i></span>
                                             </button>
@@ -466,6 +525,100 @@
                         }
                         return data
                     }
+                },
+            ],
+            language: {
+                paginate: {
+                    previous: '<i class="fas fa-angle-left"></i>',
+                    next: '<i class="fas fa-angle-right"></i>'
+                }
+            }
+        });
+
+        let tableStatus = new DataTable('#statusTable', {
+            order: [],
+            serverSide: true,
+            processing: true,
+            // deferLoading: 0,
+            ajax: {
+                url: '/status/data/1',
+                type: 'GET',
+            },
+            responsive: true,
+            columns: [{
+                    responsivePriority: 1,
+                    width: "10%",
+                    data: "id",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            if (row.status == 'success') {
+                                return `
+                        <form class="my-2" action="/status/download/1" method="POST">
+                            @csrf
+                            <input type="hidden" name="id" value="${data}"> 
+                            <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
+                                <i class="fas fa-download mx-1"></i>
+                            </button>
+                        </form>
+                        `
+                            } else {
+                                return '-'
+                            }
+                        }
+                        return data;
+                    }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "user.firstname",
+                    type: "text",
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "status",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+
+                            var color = 'info'
+                            if (data == 'success') {
+                                color = 'success'
+                            } else if (data == 'failed') {
+                                color = 'danger'
+                            } else if (data == 'success') {
+                                color = 'success'
+                            } else if (data == 'loading' || data == 'processing') {
+                                color = 'secondary'
+                            } else if (data == 'success with error') {
+                                color = 'danger'
+                            } else {
+                                color = 'info'
+                            }
+
+                            return '<p class="mb-0"><span class="badge badge-small bg-' + color +
+                                '">' +
+                                data + '</span></p>';
+                        }
+                        return data;
+                    }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "created_at",
+                    type: "text",
+                    render: function(data, type, row) {
+                        return formatDate(data)
+                    }
+                },
+                {
+                    responsivePriority: 4,
+                    width: "10%",
+                    data: "message",
+                    type: "text",
                 },
             ],
             language: {

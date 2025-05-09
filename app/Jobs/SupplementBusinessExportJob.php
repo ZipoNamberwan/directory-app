@@ -3,30 +3,27 @@
 namespace App\Jobs;
 
 use App\Models\AssignmentStatus;
-use App\Models\Market;
-use App\Models\MarketBusiness;
+use App\Models\SupplementBusiness;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Storage;
 use League\Csv\Writer;
 
-class MarketBusinessExportJob implements ShouldQueue
+class SupplementBusinessExportJob implements ShouldQueue
 {
     use Queueable;
 
     public $organizationId;
-    public $marketId;
     public $uuid;
     public $role;
     /**
      * Create a new job instance.
      */
-    public function __construct($organizationId, $marketId, $uuid, $role)
+    public function __construct($organizationId, $uuid, $role)
     {
         $this->organizationId = $organizationId;
         $this->uuid = $uuid;
-        $this->marketId = $marketId;
         $this->role = $role;
 
         AssignmentStatus::find($this->uuid)->update(['status' => 'loading',]);
@@ -41,11 +38,11 @@ class MarketBusinessExportJob implements ShouldQueue
             $status = AssignmentStatus::find($this->uuid);
             $status->update(['status' => 'loading']);
 
-            if (!Storage::exists('market_business_raw')) {
-                Storage::makeDirectory('market_business_raw');
+            if (!Storage::exists('supplement')) {
+                Storage::makeDirectory('supplement');
             }
 
-            $stream = fopen(Storage::path('/market_business_raw/' . $this->uuid . ".csv"), 'w+');
+            $stream = fopen(Storage::path('/supplement/' . $this->uuid . ".csv"), 'w+');
 
             $csv = Writer::createFromStream($stream);
             $csv->setDelimiter(',');
@@ -61,16 +58,12 @@ class MarketBusinessExportJob implements ShouldQueue
                 'Catatan',
                 'Latitude',
                 'Longitude',
-                'Pasar',
                 'User_Upload',
                 'Kabupaten',
-                'Kecamatan',
-                'Desa',
             ]);
 
             $business = null;
-            $market = Market::find($this->marketId);
-            $business = MarketBusiness::query();
+            $business = SupplementBusiness::query();
 
             if ($this->role == 'adminprov') {
                 if ($this->organizationId != null) {
@@ -86,12 +79,8 @@ class MarketBusinessExportJob implements ShouldQueue
                 $business->where('user_id', $status->user_id);
             }
 
-            if ($market) {
-                $business->where('market_id', $this->marketId);
-            }
-
             $business
-                ->with(['market.regency', 'market.subdistrict', 'market.village', 'user', 'regency'])
+                ->with(['organization', 'user'])
                 ->chunk(1000, function ($businesses) use ($csv) {
                     foreach ($businesses as $row) {
                         $csv->insertOne([
@@ -104,11 +93,8 @@ class MarketBusinessExportJob implements ShouldQueue
                             $row->note,
                             $row->latitude,
                             $row->longitude,
-                            $row->market->name,
                             $row->user->firstname,
-                            "[" . $row->market->regency->long_code . "] " . $row->market->regency->name,
-                            "[" . $row->market->subdistrict->short_code . "] " . $row->market->subdistrict->name,
-                            "[" . $row->market->village->short_code . "] " . $row->market->village->name,
+                            "[" . $row->organization->long_code . "] " . $row->organization->name,
                         ]);
                     }
                 });

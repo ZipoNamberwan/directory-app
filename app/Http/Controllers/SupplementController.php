@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Imports\SupplementBusinessImport;
+use App\Jobs\SupplementBusinessExportJob;
 use App\Jobs\SupplementUploadNotificationJob;
+use App\Models\AssignmentStatus;
 use App\Models\Organization;
 use App\Models\Regency;
 use App\Models\Subdistrict;
@@ -325,5 +327,45 @@ class SupplementController extends Controller
             "recordsFiltered" => $recordsFiltered,
             "data" => $data
         ]);
+    }
+
+    public function downloadSupplementBusiness(Request $request)
+    {
+        $user = User::find(Auth::id());
+        $uuid = Str::uuid();
+
+        $status = AssignmentStatus::where('user_id', Auth::id())
+            ->where('type', 'download-supplement-business')
+            ->whereIn('status', ['start', 'loading'])->first();
+
+        if ($status == null) {
+            $status = AssignmentStatus::create([
+                'id' => $uuid,
+                'status' => 'start',
+                'user_id' => $user->id,
+                'type' => 'download-supplement-business',
+            ]);
+
+            $role = $user->roles->first()->name;
+
+            $organization = $request->organization;
+            if ($user->hasRole('adminkab')) {
+                $organization = $user->organization_id;
+            }
+
+            try {
+                SupplementBusinessExportJob::dispatch($organization, $uuid, $role);
+            } catch (Exception $e) {
+                $status->update([
+                    'status' => 'failed',
+                    'message' => $e->getMessage(),
+                ]);
+
+                return redirect('/suplemen')->with('failed-upload', 'Download gagal diproses, log sudah disimpan');
+            }
+            return redirect('/suplemen')->with('success-upload', 'Download telah di proses, cek status pada tombol status');
+        } else {
+            return redirect('/suplemen')->with('failed-upload', 'Download tidak diproses karena masih ada proses download yang belum selesai');
+        }
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\MarketMasterExportJob;
+use App\Models\AssignmentStatus;
 use App\Models\Market;
 use App\Models\MarketType;
 use App\Models\Organization;
@@ -349,6 +351,39 @@ class MarketManagementController extends Controller
                 'success' => false,
                 'completion_status' => $market->getTransformedCompletionStatusAttribute(),
             ], 500);
+        }
+    }
+
+    public function downloadMarket(Request $request)
+    {
+        $user = User::find(Auth::id());
+        $uuid = Str::uuid();
+
+        $status = AssignmentStatus::where('user_id', Auth::id())
+            ->where('type', 'download-market-master')
+            ->whereIn('status', ['start', 'loading'])->first();
+
+        if ($status == null) {
+            $status = AssignmentStatus::create([
+                'id' => $uuid,
+                'status' => 'start',
+                'user_id' => $user->id,
+                'type' => 'download-market-master',
+            ]);
+
+            try {
+                MarketMasterExportJob::dispatch($uuid, $user->organization_id);
+            } catch (Exception $e) {
+                $status->update([
+                    'status' => 'failed',
+                    'message' => $e->getMessage(),
+                ]);
+
+                return redirect('/pasar/manajemen')->with('error-delete', 'Download gagal diproses, log sudah disimpan');
+            }
+            return redirect('/pasar/manajemen')->with('success-edit', 'Download telah di proses, cek status pada tombol status');
+        } else {
+            return redirect('/pasar/manajemen')->with('error-delete', 'Download tidak diproses karena masih ada proses download yang belum selesai');
         }
     }
 }

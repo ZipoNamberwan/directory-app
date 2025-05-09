@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\DatabaseSelector;
+use App\Models\AssignmentStatus;
 use App\Models\NonSlsBusiness;
 use App\Models\ReportProvince;
 use App\Models\ReportRegency;
@@ -15,6 +16,7 @@ use App\Models\Village;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
 {
@@ -418,7 +420,7 @@ class HomeController extends Controller
         if (!empty($request->level) && $request->level !== 'all') {
             $records->where('level', $request->level);
         }
-        
+
         if (!$user->hasRole('adminprov') && !empty($request->regency) && $request->regency !== 'all') {
             $records->where('regency_id', $request->regency);
         }
@@ -710,5 +712,90 @@ class HomeController extends Controller
             return "Error: Division by zero!";
         }
         return number_format($numerator / $denominator, 4);
+    }
+
+
+    public function getAssignmentStatusData($type, Request $request)
+    {
+        $user = User::find(Auth::id());
+
+        $records = null;
+
+        if ($user->hasRole('adminprov')) {
+            $records = AssignmentStatus::query();
+        } else if ($user->hasRole('adminkab')) {
+            $records = AssignmentStatus::whereHas('user', function ($query) use ($user) {
+                $query->where('organization_id', $user->organization_id);
+            });
+        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
+            $records = AssignmentStatus::where(['user_id' => $user->id]);
+        }
+
+        $records->where('type', AssignmentStatus::getTransformedTypeByValue($type));
+
+        $recordsTotal = $records->count();
+
+        $orderColumn = 'created_at';
+        $orderDir = 'desc';
+
+        if (!empty($request->order)) {
+            $columnIndex = $request->order[0]['column'];
+            $direction = $request->order[0]['dir'] === 'asc' ? 'asc' : 'desc';
+
+            // You can map column index from frontend to actual DB columns here
+            switch ($columnIndex) {
+                case '0':
+                    $orderColumn = 'id';
+                    break;
+                case '1':
+                    $orderColumn = 'status';
+                    break;
+                default:
+                    $orderColumn = 'created_at';
+            }
+
+            $orderDir = $direction;
+        }
+
+        // Search
+        $searchkeyword = $request->search['value'] ?? null;
+        $records = $records->with(['user']);
+
+        if (!empty($searchkeyword)) {
+            $records->where(function ($query) use ($searchkeyword) {
+                $query->whereHas('user', function ($q) use ($searchkeyword) {
+                    $q->whereRaw('LOWER(firstname) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+                })->whereRaw('LOWER(status) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
+                    ->orWhereRaw('LOWER(message) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
+            });
+        }
+
+        $recordsFiltered = $records->count();
+
+        // Pagination
+        if ($request->length != -1) {
+            $records->skip($request->start)
+                ->take($request->length);
+        }
+
+        // Order
+        $records->orderBy($orderColumn, $orderDir);
+
+        $data = $records->get();
+
+        return response()->json([
+            "draw" => $request->draw,
+            "recordsTotal" => $recordsTotal,
+            "recordsFiltered" => $recordsFiltered,
+            "data" => $data
+        ]);
+    }
+
+    public function getAssigmentFile($type, Request $request)
+    {
+        $status = AssignmentStatus::find($request->id);
+        $folder = AssignmentStatus::getFolderDownloadAndTypeByValue($type);
+
+        return Storage::download($folder['name'] . '/' . $status->id . $folder['extension']);
     }
 }

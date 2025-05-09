@@ -53,6 +53,9 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
 	});
+	
+	Route::get('/status/data/{type}', [HomeController::class, 'getAssignmentStatusData']);
+	Route::post('/status/download/{type}', [HomeController::class, 'getAssigmentFile']);
 
 	Route::group(['middleware' => ['role:pml|operator|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'updatePage'])->name('updating-non-sls');
@@ -68,8 +71,6 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::delete('/pasar/{id}', [MarketController::class, 'deleteMarketBusiness']);
 		Route::post('/pasar/download', [MarketController::class, 'downloadUploadedData']);
 		Route::post('/pasar/download/swmap', [MarketController::class, 'downloadSwmapsExport']);
-		Route::post('/pasar/download/business', [MarketController::class, 'downloadMarketBusinessFile']);
-		Route::get('/pasar/download/status', [MarketController::class, 'getMarketBusinessDownloadStatus']);
 		Route::get('/pasar/kab/{regency}', [MarketController::class, 'getMarketByRegency']);
 
 		Route::get('/pasar/manajemen', [MarketManagementController::class, 'showMarketManagementPage']);
@@ -81,11 +82,11 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/suplemen/upload', [SupplementController::class, 'showSupplementUploadPage']);
 		Route::post('/suplemen/upload', [SupplementController::class, 'upload']);
 		Route::get('/suplemen/download', [SupplementController::class, 'showSupplementDownloadPage']);
+		Route::post('/suplemen/download/raw', [SupplementController::class, 'downloadSupplementBusiness']);
 		Route::post('/suplemen/download-android', [SupplementController::class, 'downloadSupplementProjectAndroid']);
 		Route::post('/suplemen/download-ios', [SupplementController::class, 'downloadSupplementProjectIos']);
 
 		Route::get('/suplemen/upload/data', [SupplementController::class, 'getUploadStatusData']);
-
 
 		Route::get('/pasar/peta', [MarketController::class, 'getMarketDistributionData']);
 		Route::get('/pasar/muatan/{id}', [MarketController::class, 'getMarketBusinessDetail']);
@@ -121,7 +122,6 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/pasar-assignment', [MarketAssignmentController::class, 'showMarketAssignmentForm'])->name('market-assignment');
 		Route::get('/pasar-assignment/pivot', [MarketAssignmentController::class, 'getUserMarketPivot']);
-		Route::get('/pasar-assignment/data', [MarketAssignmentController::class, 'getMarketAssignmentUploadStatus']);
 		Route::get('/pasar-assignment/list', [MarketAssignmentController::class, 'showMarketAssignmentPage']);
 		Route::get('/pasar-assignment/create', [MarketAssignmentController::class, 'showMarketAssignmentCreatePage']);
 		Route::post('/pasar-assignment/store', [MarketAssignmentController::class, 'storeMarketAssignment']);
@@ -129,9 +129,9 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::post('/pasar-assignment/download', [MarketAssignmentController::class, 'downloadMarketAssignment']);
 		Route::delete('/pasar-assignment/{id}', [MarketAssignmentController::class, 'deleteMarketAssignment']);
 
-		Route::post('/pasar-assignment/download/file', [MarketAssignmentController::class, 'downloadUploadedAssignmentFile']);
-
 		Route::patch('/pasar/manajemen/selesai/{id}', [MarketManagementController::class, 'changeMarketCompletionStatus']);
+		Route::post('/pasar/manajemen/download', [MarketManagementController::class, 'downloadMarket']);
+
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');

@@ -24,74 +24,6 @@ class MarketAssignmentController extends Controller
         return view('market.assignment');
     }
 
-    public function getMarketAssignmentUploadStatus(Request $request)
-    {
-        $user = User::find(Auth::id());
-
-        $records = null;
-
-        if ($user->hasRole('adminprov')) {
-            $records = AssignmentStatus::where('type', 'upload-market-assignment');
-        } else if ($user->hasRole('adminkab')) {
-            $records = AssignmentStatus::where([
-                'user_id' => $user->id,
-                'type' => 'upload-market-assignment'
-            ]);
-        }
-
-        $recordsTotal = $records->count();
-
-        $orderColumn = 'created_at';
-        $orderDir = 'desc';
-        if ($request->order != null) {
-            if ($request->order[0]['dir'] == 'asc') {
-                $orderDir = 'asc';
-            } else {
-                $orderDir = 'desc';
-            }
-            if ($request->order[0]['column'] == '3') {
-                $orderColumn = 'status';
-            } else if ($request->order[0]['column'] == '4') {
-                $orderColumn = 'message';
-            }
-        }
-
-        $searchkeyword = $request->search['value'];
-        $data = $records->with(['user']);
-        $data = $records;
-
-        if ($searchkeyword != null) {
-            $data = $data->where(function ($query) use ($searchkeyword) {
-                $query->whereHas('user', function ($q) use ($searchkeyword) {
-                    $q->whereRaw('LOWER(firstname) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
-                })
-                    ->orWhereRaw('LOWER(status) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                    ->orWhereRaw('LOWER(message) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
-            });
-        }
-        $recordsFiltered = $data->count();
-
-        if ($orderDir == 'asc') {
-            $data = $data->orderBy($orderColumn);
-        } else {
-            $data = $data->orderByDesc($orderColumn);
-        }
-
-        if ($request->length != -1) {
-            $data = $data->skip($request->start)
-                ->take($request->length)->get();
-        }
-
-        $data = $data->values();
-
-        return response()->json([
-            "draw" => $request->draw,
-            "recordsTotal" => $recordsTotal,
-            "recordsFiltered" => $recordsFiltered,
-            "data" => $data
-        ]);
-    }
-
     public function showMarketAssignmentPage()
     {
         $user = User::find(Auth::id());
@@ -299,11 +231,5 @@ class MarketAssignmentController extends Controller
         } else {
             return redirect('/pasar-assignment/list')->with('failed-upload', 'Assignment gagal dihapus, log sudah disimpan');
         }
-    }
-
-    public function downloadUploadedAssignmentFile(Request $request)
-    {
-        $status = AssignmentStatus::find($request->id);
-        return Storage::download('upload_market_assignment/' . $status->id . '.xlsx');
     }
 }
