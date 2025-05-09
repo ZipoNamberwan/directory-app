@@ -71,7 +71,7 @@ class MarketMasterExportJob implements ShouldQueue
                             '[' . $row->village->short_code . '] ' . $row->village->name,
                             '[' . $row->organization->id . '] ' . $row->organization->name,
                             Market::getTransformedCompletionStatusByValue($row->completion_status),
-                            $row->targetCategory,
+                            $row->target_category,
                             $row->marketType->name,
                         ]);
                     }
