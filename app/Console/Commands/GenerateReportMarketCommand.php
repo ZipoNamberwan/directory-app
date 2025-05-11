@@ -132,7 +132,7 @@ class GenerateReportMarketCommand extends Command
         foreach (array_chunk($reportUserData, 1000) as $chunk) {
             ReportMarketBusinessUser::insert($chunk);
         }
-        
+
         $businessCountByMarket = DB::table('markets')
             ->leftJoin('market_business', 'markets.id', '=', 'market_business.market_id')
             ->select(
@@ -166,7 +166,7 @@ class GenerateReportMarketCommand extends Command
             ];
         }
 
-        foreach (array_chunk($reportMarketData, 1000) as $chunk) {
+        foreach (array_chunk($reportMarketData, 100) as $chunk) {
             ReportMarketBusinessMarket::insert($chunk);
         }
     }
