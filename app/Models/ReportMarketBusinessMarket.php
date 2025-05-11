@@ -17,4 +17,9 @@ class ReportMarketBusinessMarket extends Model
     {
         return $this->belongsTo(Market::class, 'market_id');
     }
+
+    public function marketType()
+    {
+        return $this->belongsTo(MarketType::class, 'market_type_id');
+    }
 }

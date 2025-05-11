@@ -9,6 +9,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ResetPassword;
 use App\Http\Controllers\ChangePassword;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MajapahitLoginController;
 use App\Http\Controllers\MarketAssignmentController;
 use App\Http\Controllers\MarketController;
@@ -53,7 +54,7 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
 	});
-	
+
 	Route::get('/status/data/{type}', [HomeController::class, 'getAssignmentStatusData']);
 	Route::post('/status/download/{type}', [HomeController::class, 'getAssigmentFile']);
 
@@ -120,8 +121,6 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/users/data', [UserController::class, 'getUserData']);
 		Route::resource('users', UserController::class);
 
-		Route::get('/pasar-dashboard', [MarketController::class, 'dashboard'])->name('market-dashboard');
-
 		Route::get('/pasar-assignment', [MarketAssignmentController::class, 'showMarketAssignmentForm'])->name('market-assignment');
 		Route::get('/pasar-assignment/pivot', [MarketAssignmentController::class, 'getUserMarketPivot']);
 		Route::get('/pasar-assignment/list', [MarketAssignmentController::class, 'showMarketAssignmentPage']);
@@ -134,6 +133,12 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::patch('/pasar/manajemen/selesai/{id}', [MarketManagementController::class, 'changeMarketCompletionStatus']);
 		Route::post('/pasar/manajemen/download', [MarketManagementController::class, 'downloadMarket']);
 
+		Route::get('/pasar-dashboard', [DashboardController::class, 'showDashboardPage'])->name('market-dashboard');
+		Route::get('/pasar-dashboard/download', [DashboardController::class, 'showDownloadReportPage']);
+		Route::post('/pasar-dashboard/download', [DashboardController::class, 'downloadReport']);
+		Route::get('/pasar-dashboard/market/data/{date}', [DashboardController::class, 'getMarketReportData']);
+		Route::get('/pasar-dashboard/user/data/{date}', [DashboardController::class, 'getUserReportData']);
+		Route::get('/pasar-dashboard/regency/data/{date}', [DashboardController::class, 'getRegencyReportData']);
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');

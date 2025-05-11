@@ -11,12 +11,7 @@ use App\Models\MarketBusiness;
 use App\Models\MarketType;
 use App\Models\MarketUploadStatus;
 use App\Models\Organization;
-use App\Models\Regency;
-use App\Models\ReportMarketBusinessMarket;
-use App\Models\ReportMarketBusinessRegency;
-use App\Models\ReportMarketBusinessUser;
 use App\Models\User;
-use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -404,58 +399,6 @@ class MarketController extends Controller
         } else {
             return redirect('/pasar')->with('failed-upload', 'Download tidak diproses karena masih ada proses download yang belum selesai');
         }
-    }
-
-    public function dashboard()
-    {
-        $user = User::find(Auth::id());
-
-        $reportByRegency = ReportMarketBusinessRegency::orderByDesc('date')
-            ->limit(39)->get()->sortBy('organization_id')
-            ->values();
-
-        $chartReportByRegency = [];
-        $numberOfDays = 10;
-        $totalBusiness = 0;
-        $reportByUser = [];
-
-        $reportByUser = ReportMarketBusinessUser::where(['date' => $reportByRegency[0]->date, 'organization_id' => $user->organization_id])->get();
-
-        if ($user->hasRole('adminprov')) {
-            $chartReportByRegency = ReportMarketBusinessRegency::selectRaw('date, SUM(uploaded) as uploaded')
-                ->groupBy('date')
-                ->orderBy('date', 'desc')
-                ->limit($numberOfDays)
-                ->get();
-
-            $totalBusiness = $reportByRegency->sum('uploaded');
-        } else if ($user->hasRole('adminkab')) {
-            $chartReportByRegency = ReportMarketBusinessRegency::where('organization_id', $user->organization_id)->orderByDesc('date')->limit($numberOfDays)->get();
-
-            $totalBusiness = $reportByRegency
-                ->where('organization_id', $user->organization_id)->first()->uploaded;
-        }
-
-        $reportByMarket = ReportMarketBusinessMarket::where(['date' => $reportByRegency[0]->date, 'organization_id' => $user->organization_id])->get();
-
-        $chartData = ['data' => ($chartReportByRegency->pluck('uploaded'))->reverse()->values(), 'dates' => ($chartReportByRegency->pluck('date'))->reverse()->values()];
-
-        $updateDate = Carbon::parse($reportByRegency[0]->date)->translatedFormat('d F Y');
-        $updateTime = Carbon::parse($reportByRegency[0]->created_at)->format('H:i');
-
-
-        return view(
-            'market.dashboard',
-            [
-                'reportByRegency' => $reportByRegency,
-                'chartData' => $chartData,
-                'updateDate' => $updateDate,
-                'updateTime' => $updateTime,
-                'totalBusiness' => $totalBusiness,
-                'reportByUser' => $reportByUser,
-                'reportByMarket' => $reportByMarket,
-            ]
-        );
     }
 
     public function deleteMarketBusiness($id)

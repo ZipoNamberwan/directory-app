@@ -28,6 +28,8 @@ class AssignmentStatus extends Model
             return 'download-market-raw';
         } else if ($value == '4') {
             return 'upload-market-assignment';
+        } else if ($value == '5') {
+            return ['dashboard-regency', 'dashboard-user', 'dashboard-market'];
         } else {
             return null;
         }
@@ -47,6 +49,9 @@ class AssignmentStatus extends Model
         } else if ($value == '4') {
             // 'upload-market-assignment';
             return ['name' => 'upload_market_assignment', 'extension' => '.xlsx'];
+        } else if ($value == '5') {
+            // ['dashboard-regency', 'dashboard-user', 'dashboard-market'];
+            return ['name' => 'dashboard_report', 'extension' => '.csv'];
         } else {
             return null;
         }

@@ -17,4 +17,9 @@ class ReportMarketBusinessRegency extends Model
     {
         return $this->belongsTo(Organization::class, 'organization_id');
     }
+
+    public function marketType()
+    {
+        return $this->belongsTo(MarketType::class, 'market_type_id');
+    }
 }

@@ -88,6 +88,7 @@ class Market extends Model
         } else if ($value == 'done') {
             return 'Selesai';
         }
+        return '';
     }
 
     public static function getTransformedTargetCategoryByValue($value)
@@ -97,5 +98,6 @@ class Market extends Model
         } else if ($value == 'non target') {
             return 'Non Target';
         }
+        return '';
     }
 }

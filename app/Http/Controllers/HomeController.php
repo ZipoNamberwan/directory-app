@@ -731,7 +731,12 @@ class HomeController extends Controller
             $records = AssignmentStatus::where(['user_id' => $user->id]);
         }
 
-        $records->where('type', AssignmentStatus::getTransformedTypeByValue($type));
+        $type = AssignmentStatus::getTransformedTypeByValue($type);
+        if (is_array($type)) {
+            $records->whereIn('type', $type);
+        } else {
+            $records->where('type', $type);
+        }
 
         $recordsTotal = $records->count();
 

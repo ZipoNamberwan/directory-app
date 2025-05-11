@@ -68,7 +68,8 @@
                         <div class="row">
                             <div class="col-8">
                                 <div class="numbers">
-                                    <p class="text-sm mb-2 text-uppercase font-weight-bold">Pemutakhiran Direktori Sentra Ekonomi
+                                    <p class="text-sm mb-2 text-uppercase font-weight-bold">Pemutakhiran Direktori Sentra
+                                        Ekonomi
                                     </p>
                                     <h5 class="font-weight-bolder">
 
@@ -105,6 +106,10 @@
                                 22.30</strong>
                         </p>
                         <p class="text-sm">Kondisi tanggal: <strong>{{ $updateDate }} {{ $updateTime }}</strong></p>
+                        <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
+                            <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
+                            <span class="ml-3 btn-inner--text">Download Report Di Sini</span>
+                        </a>
                         {{-- @if (Auth::user()->organization_id == '3578' || Auth::user()->organization_id == '3500')
                             <div class="marquee-container">
                                 <p class="text-sm marquee-text">
@@ -132,6 +137,34 @@
                             <strong>ganti flag status penyelesaian</strong> pada tabel.
 
                         </div> --}}
+                        <div class="row mt-4">
+                            <div class="col-md-4 {{-- border-secondary rounded border p-3 --}}">
+                                <h5 class="card-title text-primary font-weight-bold mb-3">
+                                    <i class="fas fa-filter mr-2"></i>Filter Tipe Sentra Ekonomi
+                                    <span class="text-danger">*</span>
+                                </h5>
+                                <div class="d-flex align-items-center">
+                                    <select id="marketTypeRegency" class="form-control form-control-lg border-primary"
+                                        data-toggle="select">
+                                        <option value="all" selected> Semua </option>
+                                        @foreach ($marketTypes as $marketType)
+                                            <option value="{{ $marketType->id }}"
+                                                {{ old('marketType') == $marketType->id ? 'selected' : '' }}>
+                                                {{ $marketType->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div id="regencyLoadingIndicator" class="d-none text-center ml-2">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="sr-only">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted mt-2 d-block">Pilih tipe sentra ekonomi untuk melihat hasil</small>
+                            </div>
+                        </div>
+
+
                         <table id="regencyTable" class="align-items-center text-sm">
                             <thead>
                                 <tr>
@@ -165,31 +198,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($reportByRegency as $report)
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex gap-3 align-items-center">
-                                                <div>
-                                                    <p class="text-xs text-secondary mb-0 mt-1">
-                                                        [{{ $report->organization->long_code }}]
-                                                    </p>
-                                                    <h6 class="text-sm mb-1">{{ $report->organization->name }}</h6>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="align-middle text-center text-sm">{{ $report->total_market }}</td>
 
-                                        <td class="align-middle text-center text-sm">{{ $report->target }}</td>
-                                        <td class="align-middle text-center text-sm">{{ $report->non_target }}</td>
-                                        <td class="align-middle text-center text-sm">{{ $report->not_start }}</td>
-                                        <td class="align-middle text-center text-sm">{{ $report->on_going }}</td>
-                                        <td class="align-middle text-center text-sm">{{ $report->done }}</td>
-
-                                        <td class="align-middle text-center text-sm">{{ $report->market_have_business }}
-                                        </td>
-                                        <td class="align-middle text-center text-sm">{{ $report->uploaded }}</td>
-                                    </tr>
-                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -199,17 +208,57 @@
             <div class="col-md-9 col-sm-12 mb-3">
                 <div class="card">
                     <div class="card-header">
-                        <h6 class="text-capitalize">
-                            Report Jumlah Usaha Berdasarkan Sentra Ekonomi
-                        </h6>
-                        <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-capitalize">
+                                    Report Jumlah Usaha Berdasarkan Sentra Ekonomi
+                                </h6>
+                                <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
+                            </div>
+                            <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0"
+                                role="button">
+                                <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
+                                <span class="ml-3 btn-inner--text">Download</span>
+                            </a>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <table id="marketTable" class="align-items-center text-sm">
+                    <div class="card-body pt-0">
+                        <div class="row">
+                            @hasrole('adminprov')
+                                <div class="col-md-3">
+                                    <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                                    <select id="organizationMarket" class="form-control" data-toggle="select">
+                                        <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                        @foreach ($organizations as $organization)
+                                            <option value="{{ $organization->id }}"
+                                                {{ old('organization') == $organization->id ? 'selected' : '' }}>
+                                                [{{ $organization->short_code }}] {{ $organization->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endhasrole
+                            <div class="col-md-3">
+                                <label class="form-control-label">Filter Tipe <span class="text-danger">*</span></label>
+                                <select id="marketTypeMarket" class="form-control" data-toggle="select">
+                                    <option value="0" disabled selected> -- Pilih Tipe -- </option>
+                                    @foreach ($marketTypes as $marketType)
+                                        <option value="{{ $marketType->id }}"
+                                            {{ old('marketType') == $marketType->id ? 'selected' : '' }}>
+                                            {{ $marketType->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <table id="marketTable" class="align-items-center text-sm mt-2">
                             <thead>
                                 <tr>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7">
                                         Nama Sentra Ekonomi
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                        Tipe
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7">
                                         Wilayah
@@ -226,19 +275,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($reportByMarket as $report)
-                                    <tr>
-                                        <td class="text-sm">{{ $report->market->name }}</td>
-                                        <td class="text-sm">[{{ $report->market->village_id }}]
-                                            {{ $report->market->subdistrict->name }} {{ $report->market->village->name }}
-                                        </td>
-
-                                        <td class="align-middle text-center text-sm">{{ $report->target_category }}</td>
-                                        <td class="align-middle text-center text-sm">{{ $report->completion_status }}</td>
-
-                                        <td class="align-middle text-center text-sm">{{ $report->uploaded }}</td>
-                                    </tr>
-                                @endforeach
+                                <tr id="regencyLoadingRow">
+                                    <td colspan="9" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="sr-only">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -248,13 +291,37 @@
             <div class="col-md-3 col-sm-12 mb-3">
                 <div class="card">
                     <div class="card-header">
-                        <h6 class="text-capitalize">
-                            Report Jumlah Usaha Berdasarkan Petugas
-                        </h6>
-                        <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-capitalize">
+                                    Report Jumlah Usaha Berdasarkan Petugas
+                                </h6>
+                                <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
+                            </div>
+                            <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0"
+                                role="button">
+                                <span class="ml-3 btn-inner--text">Download</span>
+                            </a>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <table id="userTable" class="align-items-center text-sm">
+                    <div class="card-body pt-0">
+                        <div class="row">
+                            @hasrole('adminprov')
+                                <div class="col-md-12">
+                                    <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                                    <select id="organizationUser" class="form-control" data-toggle="select">
+                                        <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                        @foreach ($organizations as $organization)
+                                            <option value="{{ $organization->id }}"
+                                                {{ old('organization') == $organization->id ? 'selected' : '' }}>
+                                                [{{ $organization->short_code }}] {{ $organization->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endhasrole
+                        </div>
+                        <table id="userTable" class="align-items-center text-sm mt-2">
                             <thead>
                                 <tr>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7">
@@ -266,12 +333,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($reportByUser as $report)
-                                    <tr>
-                                        <td class="text-sm">{{ $report->user->firstname }}</td>
-                                        <td class="align-middle text-center text-sm">{{ $report->uploaded }}</td>
-                                    </tr>
-                                @endforeach
+
                             </tbody>
                         </table>
                     </div>
@@ -285,6 +347,7 @@
 
 @push('js')
     <script src="/vendor/jquery/jquery-3.7.1.min.js"></script>
+    <script src="/vendor/select2/select2.min.js"></script>
 
     <script src="/vendor/chart.js/chart.js"></script>
     <script src="/vendor/chart.js/chartjs-plugin-datalabels@2.0.0"></script>
@@ -296,51 +359,186 @@
     <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
 
     <script>
-        let tableRegency = new DataTable('#regencyTable', {
-            order: [],
+        const selectConfigs = [{
+                selector: '#marketTypeMarket',
+                placeholder: 'Pilih Tipe'
+            },
+            {
+                selector: '#marketTypeRegency',
+                placeholder: 'Pilih Tipe'
+            },
+            {
+                selector: '#organizationMarket',
+                placeholder: 'Pilih Satker'
+            },
+            {
+                selector: '#organizationUser',
+                placeholder: 'Pilih Satker'
+            },
+        ];
+
+        selectConfigs.forEach(({
+            selector,
+            placeholder
+        }) => {
+            $(selector).select2({
+                placeholder,
+                allowClear: true
+            });
+        });
+
+        const eventHandlers = {
+            '#marketTypeMarket': () => {
+                renderTable('market', marketTable);
+            },
+            '#marketTypeRegency': () => {
+                renderRegencyTable()
+                // renderTable('regency', regencyTable);
+            },
+            '#organizationMarket': () => {
+                renderTable('market', marketTable);
+            },
+            '#organizationUser': () => {
+                renderTable('user', userTable);
+            },
+        };
+
+        Object.entries(eventHandlers).forEach(([selector, handler]) => {
+            $(selector).on('change', handler);
+        });
+
+        function getFilterUrlByPrefix(prefix) {
+            let filterUrl = '';
+            let filterTypes = ['organization', 'marketType']; // Adjust if needed
+
+            filterTypes.forEach(filter => {
+                let elementId = prefix ? `${filter}${prefix}` : filter;
+                let e = document.getElementById(elementId);
+                if (e) {
+                    let selectedValue = e.value;
+                    if (selectedValue && selectedValue !== '0') {
+                        filterUrl += `&${filter}=${selectedValue}`;
+                    }
+                }
+            });
+
+            return filterUrl;
+        }
+
+        function renderTable(tableType, tableInstance) {
+            const urlPrefix = {
+                'market': 'Market',
+                'regency': 'Regency',
+                'user': 'User'
+            } [tableType];
+
+            let filterUrl = getFilterUrlByPrefix(urlPrefix);
+
+            tableInstance.ajax.url(`/pasar-dashboard/${tableType}/data/{{ $date }}?` + filterUrl).load();
+        }
+
+        function renderRegencyTable() {
+            const marketType = $('#marketTypeRegency').val();
+
+            $('#regencyLoadingIndicator').removeClass('d-none');
+
+            $.ajax({
+                url: `/pasar-dashboard/regency/data/{{ $date }}`,
+                type: 'GET',
+                data: {
+                    marketType: marketType
+                },
+                success: function(response) {
+                    regencyTable.clear().rows.add(response).draw();
+                },
+                error: function() {
+                    alert('Gagal memuat data');
+                },
+                complete: function() {
+                    $('#regencyLoadingIndicator').addClass('d-none');
+                }
+            });
+        }
+
+        renderRegencyTable()
+    </script>
+
+    <script>
+        let regencyTable = new DataTable('#regencyTable', {
             responsive: true,
             ordering: true,
-            paging: false, // ❌ No pagination
-            searching: false, // ❌ No search box
-            ordering: true, // ✅ Columns still sortable
-            info: false, // ❌ No "Showing X of Y" info
-            pageLength: 38, // ✅ Show exactly 38 rows
+            paging: false,
+            searching: false,
+            info: false,
+            pageLength: 39,
             lengthChange: false,
             columns: [{
+                    data: 'organization',
                     responsivePriority: 1,
                     width: "10%",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            return `
+                            <div class="d-flex gap-3 align-items-center">
+                                <div>
+                                    <p class="text-xs text-secondary mb-0 mt-1">
+                                    [${data.id}]
+                                    </p>
+                                    <h6 class="text-sm mb-1">${data.name}</h6>
+                                </div>
+                            </div>
+                                `
+                        }
+                        return data
+                    }
                 },
                 {
+                    data: 'total_market',
                     responsivePriority: 3,
                     width: "5%",
+                    className: 'text-center'
                 },
                 {
+                    data: 'target',
                     responsivePriority: 3,
                     width: "5%",
+                    className: 'text-center'
                 },
                 {
+                    data: 'non_target',
                     responsivePriority: 3,
                     width: "5%",
+                    className: 'text-center'
                 },
                 {
+                    data: 'not_start',
                     responsivePriority: 3,
                     width: "5%",
+                    className: 'text-center'
                 },
                 {
+                    data: 'on_going',
                     responsivePriority: 3,
                     width: "5%",
+                    className: 'text-center'
                 },
                 {
+                    data: 'done',
                     responsivePriority: 3,
                     width: "5%",
+                    className: 'text-center'
                 },
                 {
+                    data: 'market_have_business',
                     responsivePriority: 3,
                     width: "5%",
+                    className: 'text-center'
                 },
                 {
+                    data: 'uploaded',
                     responsivePriority: 2,
                     width: "5%",
+                    className: 'text-center'
                 },
             ],
             language: {
@@ -351,18 +549,28 @@
             }
         });
 
-        let tableUser = new DataTable('#userTable', {
+        let userTable = new DataTable('#userTable', {
             order: [],
-            responsive: true,
-            ordering: true,
+            serverSide: true,
+            processing: true,
             pageLength: 50,
+            // deferLoading: 0,
+            ajax: {
+                url: '/pasar-dashboard/user/data/{{ $date }}',
+                type: 'GET',
+            },
+            responsive: true,
             columns: [{
                     responsivePriority: 1,
                     width: "10%",
+                    data: "user.firstname",
+                    type: "text",
                 },
                 {
                     responsivePriority: 2,
                     width: "10%",
+                    data: "uploaded",
+                    className: 'text-center'
                 },
             ],
             language: {
@@ -373,22 +581,48 @@
             }
         });
 
-        let marketUser = new DataTable('#marketTable', {
+        let marketTable = new DataTable('#marketTable', {
             order: [],
-            responsive: true,
-            ordering: true,
+            serverSide: true,
+            processing: true,
             pageLength: 50,
+            // deferLoading: 0,
+            ajax: {
+                url: '/pasar-dashboard/market/data/{{ $date }}',
+                type: 'GET',
+            },
+            responsive: true,
             columns: [{
                     responsivePriority: 1,
                     width: "10%",
+                    data: "market.name",
+                    type: "text",
                 },
                 {
-                    responsivePriority: 2,
-                    width: "10%",
+                    responsivePriority: 3,
+                    width: "5%",
+                    data: "market_type.name",
+                    type: "text",
                 },
                 {
-                    responsivePriority: 2,
+                    responsivePriority: 6,
                     width: "10%",
+                    data: "market",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            return `
+                                    <p class="text-sm text-secondary mb-0">[${data.village_id}] ${data.regency.name}, ${data.subdistrict.name}, ${data.village.name}</p>
+                                `
+                        }
+                        return data
+                    }
+                },
+                {
+                    responsivePriority: 5,
+                    width: "10%",
+                    data: "target_category",
+                    type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
                             if (data == 'target') {
@@ -403,11 +637,13 @@
                     }
                 },
                 {
-                    responsivePriority: 2,
+                    responsivePriority: 4,
                     width: "10%",
+                    data: "completion_status",
+                    type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
-                            if (row[2] == 'target') {
+                            if (row.target_category == 'target') {
                                 if (data == 'not start') {
                                     return '<span class="badge badge-sm bg-gradient-secondary">Belum Dimulai</span>';
                                 } else if (data == 'on going') {
@@ -427,6 +663,8 @@
                 {
                     responsivePriority: 2,
                     width: "10%",
+                    data: "uploaded",
+                    className: 'text-center'
                 },
             ],
             language: {

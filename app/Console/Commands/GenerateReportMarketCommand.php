@@ -37,11 +37,16 @@ class GenerateReportMarketCommand extends Command
         $today = $datetime->format('Y-m-d');
         $now = now();
 
-        $businessCountByOrganization = DB::table('organizations')
-            ->leftJoin('markets', 'organizations.id', '=', 'markets.organization_id')
+        $businessCountByOrganizationAndMarketType = DB::table('organizations')
+            ->crossJoin('market_types')
+            ->leftJoin('markets', function ($join) {
+                $join->on('markets.organization_id', '=', 'organizations.id')
+                    ->on('markets.market_type_id', '=', 'market_types.id');
+            })
             ->leftJoin('market_business', 'markets.id', '=', 'market_business.market_id')
             ->select(
                 'organizations.id as organization_id',
+                'market_types.id as market_type_id',
                 DB::raw('COUNT(DISTINCT market_business.id) as total_business'),
                 DB::raw('COUNT(DISTINCT markets.id) as total_market'),
                 DB::raw('COUNT(DISTINCT CASE WHEN market_business.id IS NOT NULL THEN markets.id END) as market_have_business'),
@@ -55,8 +60,9 @@ class GenerateReportMarketCommand extends Command
                 DB::raw("COUNT(DISTINCT CASE WHEN markets.target_category = 'target' AND markets.completion_status = 'on going' THEN markets.id END) as on_going"),
                 DB::raw("COUNT(DISTINCT CASE WHEN markets.target_category = 'target' AND markets.completion_status = 'done' THEN markets.id END) as done")
             )
-            ->groupBy('organizations.id')
+            ->groupBy('organizations.id', 'market_types.id')
             ->orderBy('organizations.id')
+            ->orderBy('market_types.id')
             ->get();
 
         ReportMarketBusinessRegency::where('date', $today)->delete();
@@ -64,7 +70,7 @@ class GenerateReportMarketCommand extends Command
         // Step 1: Prepare data for bulk insert
         $reportData = [];
 
-        foreach ($businessCountByOrganization as $regency) {
+        foreach ($businessCountByOrganizationAndMarketType as $regency) {
             $reportData[] = [
                 'id' => (string) Str::uuid(),
                 'uploaded' => $regency->total_business,
@@ -78,7 +84,8 @@ class GenerateReportMarketCommand extends Command
                 'organization_id' => $regency->organization_id,
                 'date' => $today,
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
+                'market_type_id' => $regency->market_type_id,
             ];
         }
 
@@ -131,6 +138,7 @@ class GenerateReportMarketCommand extends Command
                 'markets.organization_id',
                 'markets.completion_status',
                 'markets.target_category',
+                'markets.market_type_id',
                 DB::raw('COUNT(market_business.id) as total')
             )
             ->groupBy('markets.id', 'markets.organization_id')
@@ -149,6 +157,7 @@ class GenerateReportMarketCommand extends Command
                 'organization_id' => $market->organization_id,
                 'completion_status' => $market->completion_status,
                 'target_category' => $market->target_category,
+                'market_type_id' => $market->market_type_id,
                 'date' => $today,
                 'created_at' => $now,
                 'updated_at' => $now
