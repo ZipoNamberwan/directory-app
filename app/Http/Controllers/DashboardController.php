@@ -27,9 +27,8 @@ class DashboardController extends Controller
     {
         $user = User::find(Auth::id());
 
-        $reportByRegency = ReportMarketBusinessRegency::orderByDesc('date')
-            ->limit(39)->get()->sortBy('organization_id')
-            ->values();
+        $latestRow = ReportMarketBusinessRegency::orderByDesc('date')->first();
+        $latestDate = $latestRow->date;
 
         $organizations = [];
         $chartReportByRegency = [];
@@ -38,25 +37,29 @@ class DashboardController extends Controller
 
         if ($user->hasRole('adminprov')) {
             $chartReportByRegency = ReportMarketBusinessRegency::selectRaw('date, SUM(uploaded) as uploaded')
+                ->where('date', '>=', Carbon::now()->subDays($numberOfDays)->toDateString())
                 ->groupBy('date')
-                ->orderBy('date', 'desc')
-                ->limit($numberOfDays)
+                ->orderByDesc('date')
                 ->get();
 
-            $totalBusiness = $reportByRegency->sum('uploaded');
+            $totalBusiness = $chartReportByRegency->first()->uploaded;
 
             $organizations = Organization::all();
         } else if ($user->hasRole('adminkab')) {
-            $chartReportByRegency = ReportMarketBusinessRegency::where('organization_id', $user->organization_id)->orderByDesc('date')->limit($numberOfDays)->get();
+            $chartReportByRegency = ReportMarketBusinessRegency::selectRaw('date, SUM(uploaded) as uploaded')
+                ->where('organization_id', $user->organization_id)
+                ->where('date', '>=', Carbon::now()->subDays($numberOfDays)->toDateString())
+                ->groupBy('date')
+                ->orderByDesc('date')
+                ->get();
 
-            $totalBusiness = $reportByRegency
-                ->where('organization_id', $user->organization_id)->first()->uploaded;
+            $totalBusiness = $chartReportByRegency->first()->uploaded;
         }
 
         $chartData = ['data' => ($chartReportByRegency->pluck('uploaded'))->reverse()->values(), 'dates' => ($chartReportByRegency->pluck('date'))->reverse()->values()];
 
-        $updateDate = Carbon::parse($reportByRegency[0]->date)->translatedFormat('d F Y');
-        $updateTime = Carbon::parse($reportByRegency[0]->created_at)->format('H:i');
+        $updateDate = Carbon::parse($latestDate)->translatedFormat('d F Y');
+        $updateTime = Carbon::parse($latestRow->created_at)->format('H:i');
 
         $marketTypes = MarketType::all();
 
@@ -69,7 +72,7 @@ class DashboardController extends Controller
                 'totalBusiness' => $totalBusiness,
                 'marketTypes' => $marketTypes,
                 'organizations' => $organizations,
-                'date' => $reportByRegency[0]->date
+                'date' => $latestDate
             ]
         );
     }
