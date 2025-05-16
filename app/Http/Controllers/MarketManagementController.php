@@ -386,4 +386,47 @@ class MarketManagementController extends Controller
             return redirect('/pasar/manajemen')->with('error-delete', 'Download tidak diproses karena masih ada proses download yang belum selesai');
         }
     }
+
+    public function savePolygonMarket(Request $request,$id)
+    {
+        $validateArray = [
+            'json' => 'required',
+        ];
+
+        $request->validate($validateArray);
+
+        $geojson = json_decode($request->json, true);
+		// Convert all coordinates to float
+		foreach ($geojson['geometry']['coordinates'][0] as &$point) {
+			$point[0] = floatval($point[0]); // longitude
+			$point[1] = floatval($point[1]); // latitude
+		}
+		$validGeoJson = json_encode($geojson);
+
+        $saveFile=Storage::disk('local')->put('market_polygon/'.$id.'.geojson', $validGeoJson);
+
+        if($saveFile){
+            $market = Market::find($id);
+            $success = $market->update([
+                'geojson' => $id.".geojson"
+            ]);
+
+            if ($success) {
+                return response()->json([
+                    'message' => 'Polygon pasar berhasil ditambahkan',
+                    'success' => true,
+                ], 200);
+            } else {
+                return response()->json([
+                    'message' => 'Polygon pasar gagal ditambahkan',
+                    'success' => false,
+                ], 200);
+            }
+        } else {
+            return response()->json([
+                'message' => 'Polygon pasar gagal ditambahkan',
+                'success' => false,
+            ], 200);
+        }
+    }
 }
