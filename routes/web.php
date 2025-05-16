@@ -93,6 +93,7 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/pasar/peta', [MarketController::class, 'getMarketDistributionData']);
 		Route::get('/pasar/muatan/{id}', [MarketController::class, 'getMarketBusinessDetail']);
+		Route::get('/pasar/polygon/{id}', [MarketController::class, 'getMarketPolygon']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {

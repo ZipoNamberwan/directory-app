@@ -216,10 +216,10 @@
             const map = L.map('map').setView([-7.536, 112.238], 8);
 
             // Add the base tile layer (OpenStreetMap)
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('https://www.google.com/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 25
-            }).addTo(map);
+            }).addTo(map);         
 
             // Create a layer group for markers
             const markersLayer = L.featureGroup().addTo(map);
@@ -245,6 +245,14 @@
                 const marketValue = $('#market').val();
                 if (marketValue && marketValue != '0') {
                     apiUrl += `&market=${marketValue}`;
+
+                    //function to get market polygon
+                    $.getJSON("/pasar/polygon/"+marketValue, function (geojson) {
+                        district_boundary=L.geoJSON(geojson, {
+                            onEachFeature: onEachFeature
+                        }).addTo(map);
+                        map.fitBounds(district_boundary.getBounds());
+                    });
                 }
 
                 // Simulate progress advancement
@@ -324,11 +332,11 @@
                 marker.pointName = point.name;
 
                 // Add a permanent tooltip showing the point name
-                marker.bindTooltip(point.name, {
-                    permanent: true,
-                    direction: 'top',
-                    className: 'marker-label'
-                });
+                //marker.bindTooltip(point.name, {
+                //    permanent: true,
+                //    direction: 'top',
+                //    className: 'marker-label'
+                //});
 
                 // Add click handler to show details
                 marker.on('click', () => {
@@ -369,15 +377,15 @@
                     success: function(response) {
                         // Update popup with details
                         popup.setContent(`
-                <div class="popup-content">
-                    <div class="popup-title">${response.name}</div>
-                    <div class="popup-detail"><strong>Status Bangunan:</strong> ${response.status}</div>
-                    <div class="popup-detail"><strong>Alamat Lengkap:</strong> ${response.address}</div>
-                    <div class="popup-detail"><strong>Deksripsi Aktivitas:</strong> ${response.description}</div>
-                    <div class="popup-detail"><strong>Sektor:</strong> ${response.sector}</div>
-                    <div class="popup-detail"><strong>Catatan:</strong> ${response.note}</div>
-                </div>
-            `);
+                            <div class="popup-content">
+                                <div class="popup-title">${response.name}</div>
+                                <div class="popup-detail"><strong>Status Bangunan:</strong> ${response.status}</div>
+                                <div class="popup-detail"><strong>Alamat Lengkap:</strong> ${response.address}</div>
+                                <div class="popup-detail"><strong>Deksripsi Aktivitas:</strong> ${response.description}</div>
+                                <div class="popup-detail"><strong>Sektor:</strong> ${response.sector}</div>
+                                <div class="popup-detail"><strong>Catatan:</strong> ${response.note}</div>
+                            </div>
+                        `);
                         marker.openPopup();
                     },
                     error: function(xhr, status, error) {
@@ -389,6 +397,48 @@
             // Function to move map to specific coordinates
             function moveToLocation(lat, lng, zoom = 15) {
                 map.setView([lat, lng], zoom);
+            }
+
+            // Function to handle event on each feature such as click,hover
+            function onEachFeature(feature, layer) {
+                layer.on({
+                    click : function(e){
+                        e.target.bindTooltip(e.target.feature.properties.name);
+                    },
+                    mouseover: highlightFeature,
+                    mouseout: resetHighlight,
+                });
+               
+                layer.setStyle(style(feature));
+            }
+
+            //Function to handle style polygon
+            function style(feature) {
+                return {
+                    weight: 2,
+                    opacity: 0.8,
+                    color: "black",
+                    dashArray: "3",
+                    fillOpacity: 0.7,
+                    fillColor: "green"
+                };
+            }
+
+            function highlightFeature(e){
+                e.target.setStyle({weight:5});
+                if (!L.Browser.ie && !L.Browser.opera) {
+                    e.target.bringToFront();
+                }
+                
+                var teks=e.target.feature.properties.name
+                e.target.bindTooltip(teks);
+            }
+
+            function resetHighlight(e) {
+                e.target.setStyle({
+                  weight:2,
+                });
+                info.update("");
             }
 
             // Load the points when the page loads

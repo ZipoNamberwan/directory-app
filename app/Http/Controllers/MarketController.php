@@ -16,6 +16,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 
 class MarketController extends Controller
@@ -486,5 +487,19 @@ class MarketController extends Controller
         } else {
             return response()->json(['error' => 'Business not found'], 404);
         }
+    }
+
+    public function getMarketPolygon($id)
+    {
+        $path="market_polygon/".$id.".geojson";
+        if (!Storage::exists($path)) {
+            abort(404);
+        }
+
+        $geojson = Storage::get($path);
+
+        return Response::make($geojson, 200, [
+            'Content-Type' => 'application/json',
+        ]);
     }
 }
