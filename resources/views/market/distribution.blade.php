@@ -260,7 +260,7 @@
 
             // Create a layer group for markers
             const markersLayer = L.featureGroup().addTo(map);
-
+            const drawnItems = new L.FeatureGroup();
             // Function to fetch points from the API with filter parameters
             async function fetchPoints() {
                 // Show loading indicator
@@ -291,50 +291,51 @@
                         map.fitBounds(district_boundary.getBounds());
                     });
 
-                    var drawnItems = new L.FeatureGroup();
-                    map.addLayer(drawnItems);
-                    var drawControl = new L.Control.Draw({
-                        edit: {
-                            featureGroup: drawnItems,
-                            poly: {
-                                allowIntersection: false
-                            }
-                        },
-                        draw: {
-                            polygon: {
-                                allowIntersection: false,
-                                showArea: true,
-                                shapeOptions: {
-                                    color: "#bada55"
+                    if (!map.hasLayer(drawnItems)) {
+                        map.addLayer(drawnItems);
+                        var drawControl = new L.Control.Draw({
+                            edit: {
+                                featureGroup: drawnItems,
+                                poly: {
+                                    allowIntersection: false
                                 }
                             },
-                            circle:false,
-                            circlemarker:false,
-                            polyline:false,
-                            rectangle:false,
-                            simpleshape:false,
-                            marker: false
-                        }
-                    });
-                    map.addControl(drawControl);
+                            draw: {
+                                polygon: {
+                                    allowIntersection: false,
+                                    showArea: true,
+                                    shapeOptions: {
+                                        color: "#bada55"
+                                    }
+                                },
+                                circle:false,
+                                circlemarker:false,
+                                polyline:false,
+                                rectangle:false,
+                                simpleshape:false,
+                                marker: false
+                            }
+                        });
+                        map.addControl(drawControl);
 
-                    map.on(L.Draw.Event.CREATED, function (event) {
-                        var layer = event.layer;
-                        console.log(layer);
-                        drawnItems.addLayer(layer);
+                        map.on(L.Draw.Event.CREATED, function (event) {
+                            var layer = event.layer;
+                            console.log(layer);
+                            drawnItems.addLayer(layer);
 
-                        // Convert to GeoJSON
-                        let geojson = layer.toGeoJSON();
-                        savePolygon(JSON.stringify(geojson));
-                    });
-
-                    map.on("draw:edited", function (e) {
-                        var layers = e.layers;
-                        layers.eachLayer(function (layer) {
-                            let geojson = layer.toGeoJSON();                    
+                            // Convert to GeoJSON
+                            let geojson = layer.toGeoJSON();
                             savePolygon(JSON.stringify(geojson));
                         });
-                    });
+
+                        map.on("draw:edited", function (e) {
+                            var layers = e.layers;
+                            layers.eachLayer(function (layer) {
+                                let geojson = layer.toGeoJSON();                    
+                                savePolygon(JSON.stringify(geojson));
+                            });
+                        });
+                    }
                 }
 
                 // Simulate progress advancement
@@ -520,7 +521,6 @@
                 e.target.setStyle({
                   weight:2,
                 });
-                info.update("");
             }
 
             async function savePolygon(json){
@@ -541,8 +541,7 @@
                     },
                     success: function(response) {
                         let data=JSON.parse(response)
-                        // $.LoadingOverlay("hide");
-                        
+                        console.log(data.message);
                         alert(data.message);
                     }
                 });
