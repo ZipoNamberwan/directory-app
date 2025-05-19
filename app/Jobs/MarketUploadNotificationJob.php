@@ -27,20 +27,27 @@ class MarketUploadNotificationJob implements ShouldQueue
     {
         $status = MarketUploadStatus::find($this->uuid);
         if ($status->status != 'failed') {
-            if ($status->message != null) {
+            if ($status->processed_count == 0) {
                 $status->update([
-                    'status' => 'success with error',
+                    'status' => 'failed',
+                    'message' => 'File kosong atau tidak memiliki baris yang dapat diproses.',
                 ]);
             } else {
-                $status->update([
-                    'status' => 'success',
-                ]);
-            }
+                if ($status->message != null) {
+                    $status->update([
+                        'status' => 'success with error',
+                    ]);
+                } else {
+                    $status->update([
+                        'status' => 'success',
+                    ]);
+                }
 
-            MarketBusiness::where([
-                'user_id' => $status->user_id,
-                'market_id' => $status->market_id
-            ])->where('upload_id', '!=', $status->id)->forceDelete();
+                MarketBusiness::where([
+                    'user_id' => $status->user_id,
+                    'market_id' => $status->market_id
+                ])->where('upload_id', '!=', $status->id)->forceDelete();
+            }
         }
     }
 }

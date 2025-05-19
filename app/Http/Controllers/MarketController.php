@@ -92,6 +92,22 @@ class MarketController extends Controller
         $user = User::find(Auth::id());
         $market = Market::find($request->market);
 
+        if (!$market) {
+            return redirect('/pasar/upload')->with('failed-upload', 'Pasar tidak ditemukan. Silakan pilih pasar yang valid.');
+        }
+
+        $status = MarketUploadStatus::where('user_id', $user->id)
+            ->where('market_id', $market->id)
+            ->whereIn('status', ['start', 'loading'])
+            ->first();
+
+        if ($status != null) {
+            return redirect('/pasar/upload')->with(
+                'failed-upload',
+                'Masih ada proses upload di pasar ' . $market->name . '. Tunggu hingga selesai.'
+            );
+        }
+
         if ($request->hasFile('file') && $market != null) {
             $file = $request->file('file');
             $extension = $file->getClientOriginalExtension();
@@ -491,7 +507,7 @@ class MarketController extends Controller
 
     public function getMarketPolygon($id)
     {
-        $path="market_polygon/".$id.".geojson";
+        $path = "market_polygon/" . $id . ".geojson";
         if (!Storage::exists($path)) {
             abort(404);
         }
