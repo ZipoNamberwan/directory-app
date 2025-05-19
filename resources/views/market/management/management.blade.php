@@ -6,6 +6,25 @@
     <link href="/vendor/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="/vendor/datatables/responsive.bootstrap5.min.css" rel="stylesheet" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <style>
+        .custom-note {
+            background-color: #e0f0ff;
+            /* light blue background */
+            border-left: 6px solid #007bff;
+            /* bold blue border */
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+            font-family: Arial, sans-serif;
+            color: #004085;
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+        }
+
+        .custom-note strong {
+            margin-bottom: 5px;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -57,6 +76,14 @@
                             Status
                         </button>
                     </div>
+                </div>
+                <div class="custom-note">
+                    <strong>Note:</strong><br>
+                    Sentra Ekonomi yang tidak mempunyai usaha tidak bisa ditandai <code>selesai</code>.
+                    Jika sentra ekonomi tersebut tidak bisa dicacah karena satu dan lain hal,
+                    sentra ekonomi tersebut bisa ditandai <code>non target</code> oleh Garda Provinsi.
+                    Pemberian status <code>non target</code> mengikuti hasil identifikasi pada <a target="_blank"
+                        href="https://s.bps.go.id/mall_pertokoan">link https://s.bps.go.id/mall_pertokoan.</a>
                 </div>
             </div>
             <div class="card-body pt-1">
@@ -333,35 +360,35 @@
             showToggleStatus(id, 'loading', 'completion');
 
             fetch(`/pasar/manajemen/selesai/${id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                },
-                body: JSON.stringify({
-                    completion_status: isChecked
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: JSON.stringify({
+                        completion_status: isChecked
+                    })
                 })
-            })
-            .then(async response => {
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw errorData;
-                }
-                return response.json();
-            })
-            .then(data => {
-                label.textContent = data.completion_status;
-                showToggleStatus(id, 'success', 'completion');
-            })
-            .catch(error => {
-                showToggleStatus(id, 'error', 'completion');
-                element.checked = !isChecked;
-                label.textContent = error.completion_status;
+                .then(async response => {
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw errorData;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    label.textContent = data.completion_status;
+                    showToggleStatus(id, 'success', 'completion');
+                })
+                .catch(error => {
+                    showToggleStatus(id, 'error', 'completion');
+                    element.checked = !isChecked;
+                    label.textContent = error.completion_status;
 
-                // Show error message in table
-                messageContainer.textContent = error.message;
-                messageContainer.classList.remove('d-none');
-            });
+                    // Show error message in table
+                    messageContainer.textContent = error.message;
+                    messageContainer.classList.remove('d-none');
+                });
         }
 
 
@@ -481,9 +508,9 @@
                         data: "completion_status",
                         type: "text",
                         render: function(data, type, row) {
-                             if (type === 'display') {
-        var isCheckedInput = data == 'done' ? 'checked' : '';
-        return `
+                            if (type === 'display') {
+                                var isCheckedInput = data == 'done' ? 'checked' : '';
+                                return `
             <div class="d-flex flex-column align-items-start">
                 <div class="form-check form-switch">
                     <input id="completion-${row.id}-input" onchange="toggleCompletion(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
@@ -504,8 +531,8 @@
                 <div id="completion-message-${row.id}" class="text-danger small mt-1 d-none"></div>
             </div>
         `;
-    }
-    return data;
+                            }
+                            return data;
                         }
 
                     },
