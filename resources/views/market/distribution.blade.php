@@ -5,6 +5,7 @@
     <link href="/vendor/select2/select2.min.css" rel="stylesheet" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="/vendor/leaflet/draw/leaflet.draw.css" />
 
     <style>
         #map {
@@ -97,6 +98,42 @@
 
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+        <script src="/vendor/leaflet/draw/Leaflet.draw.js"></script>
+
+        <script src="/vendor/leaflet/draw/Leaflet.Draw.Event.js"></script>
+        <script src="/vendor/leaflet/draw/Toolbar.js"></script>
+        <script src="/vendor/leaflet/draw/Tooltip.js"></script>
+
+        <script src="/vendor/leaflet/draw/ext/GeometryUtil.js"></script>
+        <script src="/vendor/leaflet/draw/ext/LatLngUtil.js"></script>
+        <script src="/vendor/leaflet/draw/ext/LineUtil.Intersect.js"></script>
+        <script src="/vendor/leaflet/draw/ext/Polygon.Intersect.js"></script>
+        <script src="/vendor/leaflet/draw/ext/Polyline.Intersect.js"></script>
+        <script src="/vendor/leaflet/draw/ext/TouchEvents.js"></script>
+
+        <script src="/vendor/leaflet/draw/draw/DrawToolbar.js"></script>
+        <script src="/vendor/leaflet/draw/draw/handler/Draw.Feature.js"></script>
+        <script src="/vendor/leaflet/draw/draw/handler/Draw.SimpleShape.js"></script>
+        <script src="/vendor/leaflet/draw/draw/handler/Draw.Polyline.js"></script>
+        <script src="/vendor/leaflet/draw/draw/handler/Draw.Marker.js"></script>
+        <script src="/vendor/leaflet/draw/draw/handler/Draw.Circle.js"></script>
+        <script src="/vendor/leaflet/draw/draw/handler/Draw.CircleMarker.js"></script>
+        <script src="/vendor/leaflet/draw/draw/handler/Draw.Polygon.js"></script>
+        <script src="/vendor/leaflet/draw/draw/handler/Draw.Rectangle.js"></script>
+
+
+        <script src="/vendor/leaflet/draw/edit/EditToolbar.js"></script>
+        <script src="/vendor/leaflet/draw/edit/handler/EditToolbar.Edit.js"></script>
+        <script src="/vendor/leaflet/draw/edit/handler/EditToolbar.Delete.js"></script>
+
+        <script src="/vendor/leaflet/draw/Control.Draw.js"></script>
+
+        <script src="/vendor/leaflet/draw/edit/handler/Edit.Poly.js"></script>
+        <script src="/vendor/leaflet/draw/edit/handler/Edit.SimpleShape.js"></script>
+        <script src="/vendor/leaflet/draw/edit/handler/Edit.Rectangle.js"></script>
+        <script src="/vendor/leaflet/draw/edit/handler/Edit.Marker.js"></script>
+        <script src="/vendor/leaflet/draw/edit/handler/Edit.CircleMarker.js"></script>
+        <script src="/vendor/leaflet/draw/edit/handler/Edit.Circle.js"></script>
 
         <script>
             // Add progress bar HTML right before the script starts
@@ -216,14 +253,14 @@
             const map = L.map('map').setView([-7.536, 112.238], 8);
 
             // Add the base tile layer (OpenStreetMap)
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('https://www.google.com/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 25
-            }).addTo(map);
+            }).addTo(map); 
 
             // Create a layer group for markers
             const markersLayer = L.featureGroup().addTo(map);
-
+            const drawnItems = new L.FeatureGroup();
             // Function to fetch points from the API with filter parameters
             async function fetchPoints() {
                 // Show loading indicator
@@ -245,6 +282,60 @@
                 const marketValue = $('#market').val();
                 if (marketValue && marketValue != '0') {
                     apiUrl += `&market=${marketValue}`;
+
+                    //function to get market polygon
+                    $.getJSON("/pasar/polygon/"+marketValue, function (geojson) {
+                        district_boundary=L.geoJSON(geojson, {
+                            onEachFeature: onEachFeature
+                        }).addTo(map);
+                        map.fitBounds(district_boundary.getBounds());
+                    });
+
+                    if (!map.hasLayer(drawnItems)) {
+                        map.addLayer(drawnItems);
+                        var drawControl = new L.Control.Draw({
+                            edit: {
+                                featureGroup: drawnItems,
+                                poly: {
+                                    allowIntersection: false
+                                }
+                            },
+                            draw: {
+                                polygon: {
+                                    allowIntersection: false,
+                                    showArea: true,
+                                    shapeOptions: {
+                                        color: "#bada55"
+                                    }
+                                },
+                                circle:false,
+                                circlemarker:false,
+                                polyline:false,
+                                rectangle:false,
+                                simpleshape:false,
+                                marker: false
+                            }
+                        });
+                        map.addControl(drawControl);
+
+                        map.on(L.Draw.Event.CREATED, function (event) {
+                            var layer = event.layer;
+                            console.log(layer);
+                            drawnItems.addLayer(layer);
+
+                            // Convert to GeoJSON
+                            let geojson = layer.toGeoJSON();
+                            savePolygon(JSON.stringify(geojson));
+                        });
+
+                        map.on("draw:edited", function (e) {
+                            var layers = e.layers;
+                            layers.eachLayer(function (layer) {
+                                let geojson = layer.toGeoJSON();                    
+                                savePolygon(JSON.stringify(geojson));
+                            });
+                        });
+                    }
                 }
 
                 // Simulate progress advancement
@@ -324,11 +415,11 @@
                 marker.pointName = point.name;
 
                 // Add a permanent tooltip showing the point name
-                marker.bindTooltip(point.name, {
-                    permanent: true,
-                    direction: 'top',
-                    className: 'marker-label'
-                });
+                //marker.bindTooltip(point.name, {
+                //    permanent: true,
+                //    direction: 'top',
+                //    className: 'marker-label'
+                //});
 
                 // Add click handler to show details
                 marker.on('click', () => {
@@ -369,15 +460,15 @@
                     success: function(response) {
                         // Update popup with details
                         popup.setContent(`
-                <div class="popup-content">
-                    <div class="popup-title">${response.name}</div>
-                    <div class="popup-detail"><strong>Status Bangunan:</strong> ${response.status}</div>
-                    <div class="popup-detail"><strong>Alamat Lengkap:</strong> ${response.address}</div>
-                    <div class="popup-detail"><strong>Deksripsi Aktivitas:</strong> ${response.description}</div>
-                    <div class="popup-detail"><strong>Sektor:</strong> ${response.sector}</div>
-                    <div class="popup-detail"><strong>Catatan:</strong> ${response.note}</div>
-                </div>
-            `);
+                            <div class="popup-content">
+                                <div class="popup-title">${response.name}</div>
+                                <div class="popup-detail"><strong>Status Bangunan:</strong> ${response.status}</div>
+                                <div class="popup-detail"><strong>Alamat Lengkap:</strong> ${response.address}</div>
+                                <div class="popup-detail"><strong>Deksripsi Aktivitas:</strong> ${response.description}</div>
+                                <div class="popup-detail"><strong>Sektor:</strong> ${response.sector}</div>
+                                <div class="popup-detail"><strong>Catatan:</strong> ${response.note}</div>
+                            </div>
+                        `);
                         marker.openPopup();
                     },
                     error: function(xhr, status, error) {
@@ -389,6 +480,71 @@
             // Function to move map to specific coordinates
             function moveToLocation(lat, lng, zoom = 15) {
                 map.setView([lat, lng], zoom);
+            }
+
+            // Function to handle event on each feature such as click,hover
+            function onEachFeature(feature, layer) {
+                layer.on({
+                    click : function(e){
+                        e.target.bindTooltip(e.target.feature.properties.name);
+                    },
+                    mouseover: highlightFeature,
+                    mouseout: resetHighlight,
+                });
+               
+                layer.setStyle(style(feature));
+            }
+
+            //Function to handle style polygon
+            function style(feature) {
+                return {
+                    weight: 2,
+                    opacity: 0.8,
+                    color: "black",
+                    dashArray: "3",
+                    fillOpacity: 0.7,
+                    fillColor: "green"
+                };
+            }
+
+            function highlightFeature(e){
+                e.target.setStyle({weight:5});
+                if (!L.Browser.ie && !L.Browser.opera) {
+                    e.target.bringToFront();
+                }
+                
+                var teks=e.target.feature.properties.name
+                e.target.bindTooltip(teks);
+            }
+
+            function resetHighlight(e) {
+                e.target.setStyle({
+                  weight:2,
+                });
+            }
+
+            async function savePolygon(json){
+                let marketValue = $('#market').val();
+                $.ajax({
+                    url: "/pasar/savepolygon/"+marketValue,
+                    type: "POST",
+                    data: {json:json},
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    beforeSend : function (){
+                        // $.LoadingOverlay("show", {
+                        //     background  : "rgba(0, 0, 0, 0.5)",
+                        //     image       : "",
+                        //     text        : "Loading..."
+                        // });
+                    },
+                    success: function(response) {
+                        let data=JSON.parse(response)
+                        console.log(data.message);
+                        alert(data.message);
+                    }
+                });
             }
 
             // Load the points when the page loads

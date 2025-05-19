@@ -38,8 +38,10 @@ class SupplementBusinessImportSheet implements ToCollection, WithChunkReading, W
     {
 
         try {
+            $successCount = 0;
             $errors = [];
             $rowNumber = 1;
+            $processedCount = 0;
 
             foreach ($records as $record) {
                 $rowErrors = [];
@@ -55,6 +57,8 @@ class SupplementBusinessImportSheet implements ToCollection, WithChunkReading, W
                 ) {
                     continue; // Skip empty rows
                 }
+
+                $processedCount++;
 
                 if (empty($record['nama_usaha'])) {
                     $rowErrors[] = "Nama Usaha kosong pada baris $rowNumber.";
@@ -79,7 +83,7 @@ class SupplementBusinessImportSheet implements ToCollection, WithChunkReading, W
                 if (!empty($rowErrors)) {
                     $errors[$rowNumber] = $rowErrors;
                 } else {
-                    SupplementBusiness::create([
+                    $inserted =  SupplementBusiness::create([
                         'name' => $record['nama_usaha'],
                         'status' => $record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null,
                         'address' => $record['alamat_lengkap'],
@@ -99,9 +103,34 @@ class SupplementBusinessImportSheet implements ToCollection, WithChunkReading, W
                         'organization_id' => $this->status->organization_id,
                         'upload_id' => $this->status->id,
                     ]);
+
+                    if ($inserted) {
+                        $successCount++;
+                    }
                 }
 
                 $rowNumber++;
+            }
+
+            $this->status->update([
+                'processed_count' => $processedCount,
+            ]);
+
+            // 🧨 Case 1: File is completely empty (no rows processed)
+            if ($processedCount === 0) {
+                throw new Exception('File kosong atau tidak memiliki baris yang dapat diproses.');
+            }
+
+            // ⚠️ Case 2: File has rows but all were invalid
+            if ($successCount === 0 && $processedCount > 0) {
+                $errorMessages = [];
+                foreach ($errors as $row => $messages) {
+                    foreach ($messages as $message) {
+                        $errorMessages[] = $message;
+                    }
+                }
+
+                throw new Exception(implode("<br>", $errorMessages));
             }
 
             if (count($errors) > 0) {

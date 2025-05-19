@@ -16,6 +16,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 
 class MarketController extends Controller
@@ -90,6 +91,22 @@ class MarketController extends Controller
         $request->validate($validateArray);
         $user = User::find(Auth::id());
         $market = Market::find($request->market);
+
+        if (!$market) {
+            return redirect('/pasar/upload')->with('failed-upload', 'Pasar tidak ditemukan. Silakan pilih pasar yang valid.');
+        }
+
+        $status = MarketUploadStatus::where('user_id', $user->id)
+            ->where('market_id', $market->id)
+            ->whereIn('status', ['start', 'loading'])
+            ->first();
+
+        if ($status != null) {
+            return redirect('/pasar/upload')->with(
+                'failed-upload',
+                'Masih ada proses upload di pasar ' . $market->name . '. Tunggu hingga selesai.'
+            );
+        }
 
         if ($request->hasFile('file') && $market != null) {
             $file = $request->file('file');
@@ -486,5 +503,19 @@ class MarketController extends Controller
         } else {
             return response()->json(['error' => 'Business not found'], 404);
         }
+    }
+
+    public function getMarketPolygon($id)
+    {
+        $path = "market_polygon/" . $id . ".geojson";
+        if (!Storage::exists($path)) {
+            abort(404);
+        }
+
+        $geojson = Storage::get($path);
+
+        return Response::make($geojson, 200, [
+            'Content-Type' => 'application/json',
+        ]);
     }
 }

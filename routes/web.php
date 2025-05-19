@@ -93,6 +93,7 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/pasar/peta', [MarketController::class, 'getMarketDistributionData']);
 		Route::get('/pasar/muatan/{id}', [MarketController::class, 'getMarketBusinessDetail']);
+		Route::get('/pasar/polygon/{id}', [MarketController::class, 'getMarketPolygon']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab']], function () {
@@ -139,6 +140,8 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pasar-dashboard/market/data/{date}', [DashboardController::class, 'getMarketReportData']);
 		Route::get('/pasar-dashboard/user/data/{date}', [DashboardController::class, 'getUserReportData']);
 		Route::get('/pasar-dashboard/regency/data/{date}', [DashboardController::class, 'getRegencyReportData']);
+
+		Route::post('/pasar/savepolygon/{id}', [MarketManagementController::class, 'savePolygonMarket']);
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');
