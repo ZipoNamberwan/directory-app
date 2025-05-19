@@ -331,11 +331,21 @@ class MarketManagementController extends Controller
 
         $market = Market::find($id);
         if (!$market) {
-            return response()->json(['message' => 'Market not found'], 404);
+            return response()->json(['message' => 'Sentra ekonomi tidak ditemukan'], 404);
+        }
+
+        // If requested status is "done" but no businesses exist, reject it
+        if ($request->completion_status == 'done' && !$market->businesses()->exists()) {
+            return response()->json([
+                'message' => 'Tidak bisa tandai selesai, karena tidak ada usaha di pasar tersebut',
+                'success' => false,
+                'completion_status' => $market->getTransformedCompletionStatusAttribute(),
+            ], 422);
         }
 
         $statusNotCompleted = $market->businesses()->exists() ? 'on going' : 'not start';
 
+        // Only allow setting to "done" if explicitly requested and passes the business check
         $market->completion_status = $request->completion_status ? 'done' : $statusNotCompleted;
         $success = $market->save();
 
@@ -387,7 +397,7 @@ class MarketManagementController extends Controller
         }
     }
 
-    public function savePolygonMarket(Request $request,$id)
+    public function savePolygonMarket(Request $request, $id)
     {
         $validateArray = [
             'json' => 'required',
@@ -396,19 +406,19 @@ class MarketManagementController extends Controller
         $request->validate($validateArray);
 
         $geojson = json_decode($request->json, true);
-		// Convert all coordinates to float
-		foreach ($geojson['geometry']['coordinates'][0] as &$point) {
-			$point[0] = floatval($point[0]); // longitude
-			$point[1] = floatval($point[1]); // latitude
-		}
-		$validGeoJson = json_encode($geojson);
+        // Convert all coordinates to float
+        foreach ($geojson['geometry']['coordinates'][0] as &$point) {
+            $point[0] = floatval($point[0]); // longitude
+            $point[1] = floatval($point[1]); // latitude
+        }
+        $validGeoJson = json_encode($geojson);
 
-        $saveFile=Storage::disk('local')->put('market_polygon/'.$id.'.geojson', $validGeoJson);
+        $saveFile = Storage::disk('local')->put('market_polygon/' . $id . '.geojson', $validGeoJson);
 
-        if($saveFile){
+        if ($saveFile) {
             $market = Market::find($id);
             $success = $market->update([
-                'geojson' => $id.".geojson"
+                'geojson' => $id . ".geojson"
             ]);
 
             if ($success) {

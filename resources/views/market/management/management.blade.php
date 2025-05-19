@@ -323,32 +323,47 @@
 
         function toggleCompletion(element, id) {
             const isChecked = element.checked;
+            const label = document.getElementById(`completion-${id}-label`);
+            const messageContainer = document.getElementById(`completion-message-${id}`);
+
+            // Clear previous message
+            messageContainer.classList.add('d-none');
+            messageContainer.textContent = '';
 
             showToggleStatus(id, 'loading', 'completion');
+
             fetch(`/pasar/manajemen/selesai/${id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    },
-                    body: JSON.stringify({
-                        completion_status: isChecked
-                    })
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({
+                    completion_status: isChecked
                 })
-                .then(response => {
-                    if (!response.ok) throw new Error("Request failed");
-                    return response.json();
-                })
-                .then(data => {
-                    document.getElementById(`completion-${id}-label`).textContent = data.completion_status;
-                    showToggleStatus(id, 'success', 'completion');
-                })
-                .catch(error => {
-                    showToggleStatus(id, 'error', 'completion');
-                    element.checked = !isChecked;
-                    label.textContent = !isChecked ? 'Selesai' : 'Belum Selesai';
-                });
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw errorData;
+                }
+                return response.json();
+            })
+            .then(data => {
+                label.textContent = data.completion_status;
+                showToggleStatus(id, 'success', 'completion');
+            })
+            .catch(error => {
+                showToggleStatus(id, 'error', 'completion');
+                element.checked = !isChecked;
+                label.textContent = error.completion_status;
+
+                // Show error message in table
+                messageContainer.textContent = error.message;
+                messageContainer.classList.remove('d-none');
+            });
         }
+
 
         function deleteMarket(id, name) {
             event.preventDefault();
@@ -466,27 +481,33 @@
                         data: "completion_status",
                         type: "text",
                         render: function(data, type, row) {
-                            if (type === 'display') {
-                                var isCheckedInput = data == 'done' ? 'checked' : '';
-                                return `
-                                        <div class="form-check form-switch">
-                                            <input id="completion-${row.id}-input" onchange="toggleCompletion(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
-                                                type="checkbox" ${isCheckedInput}>
-                                            <label id="completion-${row.id}-label" class="form-check-label me-1" for="managedbyprov">${row.transformed_completion_status.replace(/\b\w/g, char => char.toUpperCase())}</label>
-                                            <span id="completion-loading-${row.id}" class="d-none text-warning">
-                                                <i class="fas fa-spinner fa-spin"></i>
-                                            </span>
-                                            <span id="completion-success-${row.id}" class="d-none text-success">
-                                                <i class="fas fa-check-circle"></i>
-                                            </span>
-                                            <span id="completion-error-${row.id}" class="d-none text-danger">
-                                                <i class="fas fa-times-circle"></i>
-                                            </span>
-                                        </div>
-                                `;
-                            }
-                            return data;
+                             if (type === 'display') {
+        var isCheckedInput = data == 'done' ? 'checked' : '';
+        return `
+            <div class="d-flex flex-column align-items-start">
+                <div class="form-check form-switch">
+                    <input id="completion-${row.id}-input" onchange="toggleCompletion(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
+                        type="checkbox" ${isCheckedInput}>
+                    <label id="completion-${row.id}-label" class="form-check-label me-1" for="managedbyprov">
+                        ${row.transformed_completion_status.replace(/\b\w/g, char => char.toUpperCase())}
+                    </label>
+                    <span id="completion-loading-${row.id}" class="d-none text-warning">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </span>
+                    <span id="completion-success-${row.id}" class="d-none text-success">
+                        <i class="fas fa-check-circle"></i>
+                    </span>
+                    <span id="completion-error-${row.id}" class="d-none text-danger">
+                        <i class="fas fa-times-circle"></i>
+                    </span>
+                </div>
+                <div id="completion-message-${row.id}" class="text-danger small mt-1 d-none"></div>
+            </div>
+        `;
+    }
+    return data;
                         }
+
                     },
                 @endhasrole {
                     responsivePriority: 3,
