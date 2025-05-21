@@ -56,8 +56,9 @@ class MarketManagementController extends Controller
         } else if ($user->hasRole('adminkab')) {
             $records = Market::where(['organization_id' => $user->organization_id]);
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
-            $marketIds = $user->markets->pluck('id');
-            $records = Market::whereIn('id', $marketIds);
+            // $marketIds = $user->markets->pluck('id');
+            // $records = Market::whereIn('id', $marketIds);
+            $records = Market::where(['organization_id' => $user->organization_id]);
         }
 
         if ($request->organization != null && $request->organization != '0') {
