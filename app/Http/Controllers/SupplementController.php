@@ -368,4 +368,15 @@ class SupplementController extends Controller
             return redirect('/suplemen')->with('failed-upload', 'Download tidak diproses karena masih ada proses download yang belum selesai');
         }
     }
+
+    public function deleteBusiness(Request $request, $id)
+    {
+        $business = SupplementBusiness::find($id);
+        if ($business) {
+            $business->delete();
+            return redirect('/suplemen')->with('success-upload', 'Usaha Telah Dihapus');
+        } else {
+            return redirect('/suplemen')->with('failed-upload', 'Usaha gagal dihapus, menyimpan log');
+        }
+    }
 }

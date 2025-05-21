@@ -88,6 +88,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::post('/suplemen/download/raw', [SupplementController::class, 'downloadSupplementBusiness']);
 		Route::post('/suplemen/download-android', [SupplementController::class, 'downloadSupplementProjectAndroid']);
 		Route::post('/suplemen/download-ios', [SupplementController::class, 'downloadSupplementProjectIos']);
+		Route::delete('/suplemen/{id}', [SupplementController::class, 'deleteBusiness']);
 
 		Route::get('/suplemen/upload/data', [SupplementController::class, 'getUploadStatusData']);
 
