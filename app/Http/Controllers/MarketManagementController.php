@@ -396,9 +396,15 @@ class MarketManagementController extends Controller
             return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah kategori pasar ini'], 403);
         }
 
-        $success = $market->update([
+        // Update target_category and note (note can be null)
+        $updateData = [
             'target_category' => $request->target_category ? 'target' : 'non target',
-        ]);
+        ];
+        if ($request->has('note')) {
+            $updateData['note'] = $request->note;
+        }
+
+        $success = $market->update($updateData);
 
         if ($success) {
             return response()->json(['message' => 'Category updated successfully'], 200);

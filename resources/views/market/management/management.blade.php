@@ -77,14 +77,14 @@
                         </button>
                     </div>
                 </div>
-                <div class="custom-note">
+                {{-- <div class="custom-note">
                     <strong>Note:</strong><br>
                     Sentra Ekonomi yang tidak mempunyai usaha tidak bisa ditandai <code>selesai</code>.
                     Jika sentra ekonomi tersebut tidak bisa dicacah karena satu dan lain hal,
                     sentra ekonomi tersebut bisa ditandai <code>non target</code> oleh Garda Provinsi.
                     Pemberian status <code>non target</code> mengikuti hasil identifikasi pada <a target="_blank"
                         href="https://s.bps.go.id/mall_pertokoan">link https://s.bps.go.id/mall_pertokoan.</a>
-                </div>
+                </div> --}}
             </div>
             <div class="card-body pt-1">
                 <div>
@@ -185,6 +185,26 @@
                         <tbody>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="categoryNoteModal" tabindex="-1" aria-labelledby="categoryNoteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoryNoteModalLabel">Catatan Non Target</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="categoryNoteInput" class="form-label">Masukkan alasan menandai sebagai Non Target:</label>
+                    <textarea class="form-control" id="categoryNoteInput" rows="3"></textarea>
+                    <div id="categoryNoteError" class="text-danger small mt-2 d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="categoryNoteCancel" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" id="categoryNoteSubmit" class="btn btn-primary">Submit</button>
                 </div>
             </div>
         </div>
@@ -318,36 +338,91 @@
             }
         }
 
+        let pendingCategoryToggle = null;
+
+        // Unified function to handle category toggle fetch
+        function submitCategoryToggle({ element, id, label, target_category, note }) {
+            showToggleStatus(id, 'loading', 'category');
+            fetch(`/pasar/manajemen/kategori/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({
+                    target_category: target_category,
+                    note: note ?? null
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Request failed");
+                return response.json();
+            })
+            .then(data => {
+                label.textContent = target_category ? 'Target' : 'Non Target';
+                showToggleStatus(id, 'success', 'category');
+                // Show or hide the note below the toggle
+                const noteDiv = document.getElementById(`category-note-${id}`);
+                if (!target_category && note) {
+                    if (noteDiv) {
+                        noteDiv.textContent = note;
+                        noteDiv.classList.remove('d-none');
+                    }
+                } else if (noteDiv) {
+                    noteDiv.textContent = '';
+                    noteDiv.classList.add('d-none');
+                }
+            })
+            .catch(error => {
+                showToggleStatus(id, 'error', 'category');
+                element.checked = !target_category;
+                label.textContent = !target_category ? 'Target' : 'Non Target';
+            });
+        }
+
         function toggleCategory(element, id) {
             const isChecked = element.checked;
             const label = document.getElementById(`category-${id}-label`);
 
-            showToggleStatus(id, 'loading', 'category');
-            fetch(`/pasar/manajemen/kategori/${id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    },
-                    body: JSON.stringify({
-                        target_category: isChecked
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error("Request failed");
-                    return response.json();
-                })
-                .then(data => {
-                    label.textContent = isChecked ? 'Target' :
-                        'Non Target';
-                    showToggleStatus(id, 'success', 'category');
-                })
-                .catch(error => {
-                    showToggleStatus(id, 'error', 'category');
-                    element.checked = !isChecked;
-                    label.textContent = !isChecked ? 'Target' : 'Non Target';
-                });
+            // If disabling (unchecking), show modal for note
+            if (!isChecked) {
+                pendingCategoryToggle = { element, id, label };
+                $('#categoryNoteInput').val('');
+                $('#categoryNoteError').addClass('d-none').text('');
+                var modal = new bootstrap.Modal(document.getElementById('categoryNoteModal'));
+                modal.show();
+                return;
+            }
+
+            // If enabling (checking), submit with note as null
+            submitCategoryToggle({ element, id, label, target_category: true, note: null });
         }
+
+        // Modal submit/cancel handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Submit
+            document.getElementById('categoryNoteSubmit').addEventListener('click', function() {
+                if (!pendingCategoryToggle) return;
+                const note = document.getElementById('categoryNoteInput').value.trim();
+                if (!note) {
+                    document.getElementById('categoryNoteError').classList.remove('d-none');
+                    document.getElementById('categoryNoteError').textContent = 'Catatan wajib diisi.';
+                    return;
+                }
+                const { element, id, label } = pendingCategoryToggle;
+                bootstrap.Modal.getInstance(document.getElementById('categoryNoteModal')).hide();
+
+                submitCategoryToggle({ element, id, label, target_category: false, note: note });
+                pendingCategoryToggle = null;
+            });
+
+            // Cancel
+            document.getElementById('categoryNoteCancel').addEventListener('click', function() {
+                if (!pendingCategoryToggle) return;
+                pendingCategoryToggle.element.checked = true;
+                pendingCategoryToggle = null;
+            });
+        });
 
         function toggleCompletion(element, id) {
             const isChecked = element.checked;
@@ -478,10 +553,15 @@
                         type: "text",
                         render: function(data, type, row) {
                             if (type === 'display') {
-                                if (isAdminProv || (isAdminKab && allowedMarketTypes.includes(row
-                                        .market_type_id))) {
-                                
+                                if (isAdminProv || (isAdminKab && allowedMarketTypes.includes(row.market_type_id))) {
                                     var isCheckedInput = data == 'target' ? 'checked' : '';
+                                    // Add a div for showing the note, only visible if non target and note exists
+                                    var noteHtml = '';
+                                    if (data == 'non target' && row.note) {
+                                        noteHtml = `<div id="category-note-${row.id}" class="text-danger small mt-1">Alasan: ${row.note}</div>`;
+                                    } else {
+                                        noteHtml = `<div id="category-note-${row.id}" class="text-danger small mt-1 d-none"></div>`;
+                                    }
                                     return `
                                         <div class="form-check form-switch">
                                             <input id="category-${row.id}-input" onchange="toggleCategory(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
@@ -497,12 +577,15 @@
                                                 <i class="fas fa-times-circle"></i>
                                             </span>
                                         </div>
-                                `;
+                                        ${noteHtml}
+                                    `;
                                 } else {
                                     if (data == 'target') {
                                         return '<span class="badge badge-sm bg-gradient-success">Target</span>';
                                     } else if (data == 'non target') {
-                                        return '<span class="badge badge-sm bg-gradient-danger">Non Target</span>';
+                                        // Show note for non target
+                                        let note = row.note ? `<div class="text-danger small mt-1">Alasan: ${row.note}</div>` : '';
+                                        return '<span class="badge badge-sm bg-gradient-danger">Non Target</span>' + note;
                                     } else {
                                         return data;
                                     }
@@ -523,26 +606,26 @@
                             if (type === 'display') {
                                 var isCheckedInput = data == 'done' ? 'checked' : '';
                                 return `
-            <div class="d-flex flex-column align-items-start">
-                <div class="form-check form-switch">
-                    <input id="completion-${row.id}-input" onchange="toggleCompletion(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
-                        type="checkbox" ${isCheckedInput}>
-                    <label id="completion-${row.id}-label" class="form-check-label me-1" for="managedbyprov">
-                        ${row.transformed_completion_status.replace(/\b\w/g, char => char.toUpperCase())}
-                    </label>
-                    <span id="completion-loading-${row.id}" class="d-none text-warning">
-                        <i class="fas fa-spinner fa-spin"></i>
-                    </span>
-                    <span id="completion-success-${row.id}" class="d-none text-success">
-                        <i class="fas fa-check-circle"></i>
-                    </span>
-                    <span id="completion-error-${row.id}" class="d-none text-danger">
-                        <i class="fas fa-times-circle"></i>
-                    </span>
-                </div>
-                <div id="completion-message-${row.id}" class="text-danger small mt-1 d-none"></div>
-            </div>
-        `;
+                                    <div class="d-flex flex-column align-items-start">
+                                        <div class="form-check form-switch">
+                                            <input id="completion-${row.id}-input" onchange="toggleCompletion(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
+                                                type="checkbox" ${isCheckedInput}>
+                                            <label id="completion-${row.id}-label" class="form-check-label me-1" for="managedbyprov">
+                                                ${row.transformed_completion_status.replace(/\b\w/g, char => char.toUpperCase())}
+                                            </label>
+                                            <span id="completion-loading-${row.id}" class="d-none text-warning">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </span>
+                                            <span id="completion-success-${row.id}" class="d-none text-success">
+                                                <i class="fas fa-check-circle"></i>
+                                            </span>
+                                            <span id="completion-error-${row.id}" class="d-none text-danger">
+                                                <i class="fas fa-times-circle"></i>
+                                            </span>
+                                        </div>
+                                        <div id="completion-message-${row.id}" class="text-danger small mt-1 d-none"></div>
+                                    </div>
+                                `;
                             }
                             return data;
                         }
