@@ -50,7 +50,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-4">
-                            <label class="form-control-label">Kecamatan <span class="text-danger">*</span></label>
+                            <label class="form-control-label">Kecamatan (Opsional)</label>
                             <select id="subdistrict" name="subdistrict" class="form-control" data-toggle="select"
                                 name="subdistrict"></select>
                             @error('subdistrict')
@@ -62,7 +62,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-4">
-                            <label class="form-control-label">Desa <span class="text-danger">*</span></label>
+                            <label class="form-control-label">Desa (Opsional)</label>
                             <select id="village" name="village" class="form-control" data-toggle="select"
                                 name="village"></select>
                             @error('village')
@@ -118,18 +118,18 @@
                         </div>
                     </div>
                     @hasrole('adminprov')
-                    <div class="row">
-                        <div class="col-md-4 mt-3">
-                            <label class="form-control-label" for="address">Apakah Dikerjakan Provinsi?</label>
-                            <input type="hidden" name="managedbyprov" value="0">
-                            <div class="form-check form-switch">
-                                <input value="1" onchange="toggleLabel()" class="form-check-input" name="managedbyprov"
-                                    type="checkbox" id="managedbyprov"
-                                    {{ old('managedbyprov', ($market->organization_id ?? 0) == 3500) ? 'checked' : '' }}>
-                                <label id="switchlabel" class="form-check-label" for="managedbyprov">Tidak</label>
+                        <div class="row">
+                            <div class="col-md-4 mt-3">
+                                <label class="form-control-label" for="address">Apakah Dikerjakan Provinsi?</label>
+                                <input type="hidden" name="managedbyprov" value="0">
+                                <div class="form-check form-switch">
+                                    <input value="1" onchange="toggleLabel()" class="form-check-input" name="managedbyprov"
+                                        type="checkbox" id="managedbyprov"
+                                        {{ old('managedbyprov', ($market->organization_id ?? 0) == 3500) ? 'checked' : '' }}>
+                                    <label id="switchlabel" class="form-check-label" for="managedbyprov">Tidak</label>
+                                </div>
                             </div>
                         </div>
-                    </div>
                     @endhasrole
 
                     <button class="btn btn-primary mt-3" id="submit" type="submit">Submit</button>
