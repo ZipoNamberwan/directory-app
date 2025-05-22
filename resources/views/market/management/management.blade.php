@@ -57,7 +57,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h4 class="text-capitalize">Daftar Sentra Ekonomi</h4>
                     <div class="d-flex">
-                        @hasrole('adminprov')
+                        @hasrole('adminprov|adminkab')
                             <a href="/pasar/manajemen/create" class="me-2 btn btn-primary btn-lg ms-auto p-2 m-0"
                                 role="button">
                                 <span class="btn-inner--icon"><i class="fas fa-plus"></i></span>
@@ -320,6 +320,7 @@
 
         function toggleCategory(element, id) {
             const isChecked = element.checked;
+            const label = document.getElementById(`category-${id}-label`);
 
             showToggleStatus(id, 'loading', 'category');
             fetch(`/pasar/manajemen/kategori/${id}`, {
@@ -337,7 +338,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    document.getElementById(`category-${id}-label`).textContent = isChecked ? 'Target' :
+                    label.textContent = isChecked ? 'Target' :
                         'Non Target';
                     showToggleStatus(id, 'success', 'category');
                 })
@@ -410,8 +411,9 @@
             })
         }
 
-        var isAdmin = @json($isAdmin);
-
+        var isAdminProv = @json($isAdminProv);
+        var isAdminKab = @json($isAdminKab);
+        var allowedMarketTypes = @json($allowedMarketTypes);
 
         let mytable = new DataTable('#myTable', {
             order: [],
@@ -451,7 +453,7 @@
                     data: "market_type.name",
                     type: "text",
                 },
-                @hasrole('adminprov')
+                @hasrole('adminprov|adminkab')
                     {
                         responsivePriority: 1,
                         width: "10%",
@@ -459,8 +461,11 @@
                         type: "text",
                         render: function(data, type, row) {
                             if (type === 'display') {
-                                var isCheckedInput = data == 'target' ? 'checked' : '';
-                                return `
+                                if (isAdminProv || (isAdminKab && allowedMarketTypes.includes(row
+                                        .market_type_id))) {
+                                
+                                    var isCheckedInput = data == 'target' ? 'checked' : '';
+                                    return `
                                         <div class="form-check form-switch">
                                             <input id="category-${row.id}-input" onchange="toggleCategory(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
                                                 type="checkbox" ${isCheckedInput}>
@@ -476,28 +481,18 @@
                                             </span>
                                         </div>
                                 `;
+                                } else {
+                                    if (data == 'target') {
+                                        return '<span class="badge badge-sm bg-gradient-success">Target</span>';
+                                    } else if (data == 'non target') {
+                                        return '<span class="badge badge-sm bg-gradient-danger">Non Target</span>';
+                                    } else {
+                                        return data;
+                                    }
+                                }
+
                             }
                             return data;
-                        }
-                    },
-                @endhasrole
-                @hasrole('adminkab')
-                    {
-                        responsivePriority: 1,
-                        width: "10%",
-                        data: "target_category",
-                        type: "text",
-                        render: function(data, type, row) {
-                            if (type === 'display') {
-                                if (data == 'target') {
-                                    return '<span class="badge badge-sm bg-gradient-success">Target</span>';
-                                } else if (data == 'non target') {
-                                    return '<span class="badge badge-sm bg-gradient-danger">Non Target</span>';
-                                } else {
-                                    return data;
-                                }
-                            }
-                            return data
                         }
                     },
                 @endhasrole
@@ -544,10 +539,14 @@
                     render: function(data, type, row) {
                         if (type === 'display') {
 
-                            var adminButton = isAdmin ? `
+                            var editButton = isAdminProv || (isAdminKab && allowedMarketTypes.includes(
+                                row.market_type_id)) ? `
                                         <a href="/pasar/manajemen/${data}/edit" class="px-2 py-1 m-0 btn btn-icon btn-outline-info btn-sm" role="button">
                                             <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
                                         </a>
+                                ` : ''
+
+                            var deleteButton = isAdminProv ? `
                                         <form class="d-inline" id="formdelete${data}" name="formdelete${data}" onSubmit="deleteMarket('${data}','${row.name}')" 
                                             method="POST" action="/pasar/manajemen/${data}">
                                             @csrf
@@ -570,7 +569,8 @@
                                                 </span>
                                             </button>
                                         </form>
-                                        ${adminButton}
+                                        ${editButton}
+                                        ${deleteButton}
                                     </div>
                                 `
                         }

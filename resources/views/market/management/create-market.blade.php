@@ -77,7 +77,7 @@
                             <label class="form-control-label" for="name">Nama <span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
                                 value="{{ @old('name', $market != null ? $market->name : '') }}" id="name"
-                                placeholder="Nama Lengkap">
+                                placeholder="Nama Sentra Ekonomi">
                             @error('name')
                                 <div class="error-feedback">
                                     {{ $message }}
@@ -117,6 +117,7 @@
                             @enderror
                         </div>
                     </div>
+                    @hasrole('adminprov')
                     <div class="row">
                         <div class="col-md-4 mt-3">
                             <label class="form-control-label" for="address">Apakah Dikerjakan Provinsi?</label>
@@ -129,6 +130,7 @@
                             </div>
                         </div>
                     </div>
+                    @endhasrole
 
                     <button class="btn btn-primary mt-3" id="submit" type="submit">Submit</button>
                 </form>
