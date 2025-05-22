@@ -304,8 +304,6 @@ class MarketManagementController extends Controller
         $validateArray = [
             'name' => 'required',
             'regency' => 'required',
-            'subdistrict' => 'required',
-            'village' => 'required',
             'marketType' => 'required',
         ];
 
@@ -343,8 +341,6 @@ class MarketManagementController extends Controller
         $validateArray = [
             'name' => 'required',
             'regency' => 'required',
-            'subdistrict' => 'required',
-            'village' => 'required',
             'marketType' => 'required',
         ];
 

@@ -437,12 +437,29 @@
                     type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
+                            // Safely get IDs for area code
+                            const regencyId = row.regency && row.regency.id ? row.regency.id : '';
+                            const subdistrictId = row.subdistrict && row.subdistrict.short_code ? row.subdistrict.short_code : '';
+                            const villageId = data && data.short_code ? data.short_code : '';
+                            const areaCode = [regencyId, subdistrictId, villageId].filter(Boolean).join('');
+
+                            const regencyName = row.regency && row.regency.name ? row.regency.name : '';
+                            const subdistrictName = row.subdistrict && row.subdistrict.name ? row.subdistrict.name : '';
+                            const villageName = data && data.name ? data.name : '';
+
+                            // Build location string without trailing/extra commas
+                            let locationParts = [];
+                            if (regencyName) locationParts.push(regencyName);
+                            if (subdistrictName) locationParts.push(subdistrictName);
+                            if (villageName) locationParts.push(villageName);
+                            const locationString = locationParts.join(', ');
+
                             return `
-                                    <div class="d-flex flex-column justify-content-center my-2">
-                                        <h6 class="mb-0 text-sm">[${data.id}]</h6>
-                                        <p class="text-sm text-secondary mb-0">${row.regency.name}, ${row.subdistrict.name}, ${data.name}</p>
-                                    </div>
-                                `
+                                <div class="d-flex flex-column justify-content-center my-2">
+                                    <h6 class="mb-0 text-sm">[${areaCode}]</h6>
+                                    <p class="text-sm text-secondary mb-0">${locationString}</p>
+                                </div>
+                            `;
                         }
                         return data
                     }
