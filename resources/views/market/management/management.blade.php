@@ -489,6 +489,7 @@
         var isAdminProv = @json($isAdminProv);
         var isAdminKab = @json($isAdminKab);
         var allowedMarketTypes = @json($allowedMarketTypes);
+        var organizationId = @json($organizationId);
 
         let mytable = new DataTable('#myTable', {
             order: [],
@@ -644,9 +645,21 @@
                                         <a href="/pasar/manajemen/${data}/edit" class="px-2 py-1 m-0 btn btn-icon btn-outline-info btn-sm" role="button">
                                             <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
                                         </a>
-                                ` : ''
+                                ` : '';
 
-                            var deleteButton = isAdminProv ? `
+                            // Enable delete for adminprov, or adminkab with allowed market type and created_by == organizationId
+                            var canDelete = false;
+                            if (isAdminProv) {
+                                canDelete = true;
+                            } else if (
+                                isAdminKab &&
+                                allowedMarketTypes.includes(row.market_type_id) &&
+                                row.created_by == organizationId
+                            ) {
+                                canDelete = true;
+                            }
+
+                            var deleteButton = canDelete ? `
                                         <form class="d-inline" id="formdelete${data}" name="formdelete${data}" onSubmit="deleteMarket('${data}','${row.name}')" 
                                             method="POST" action="/pasar/manajemen/${data}">
                                             @csrf
@@ -655,7 +668,7 @@
                                                 <span class="btn-inner--icon"><i class="fas fa-trash"></i></span>
                                             </button>
                                         </form>
-                                ` : ''
+                                ` : '';
 
                             return `
                                     <div class="d-flex align-items-center justify-content-start my-2 gap-2">

@@ -81,6 +81,7 @@ class MarketManagementController extends Controller
             'targets' => $targets,
             'completionStatus' => $completionStatus,
             'marketTypes' => $marketTypes,
+            'organizationId' => $user->organization_id,
         ]);
     }
 
@@ -254,7 +255,15 @@ class MarketManagementController extends Controller
     {
         $user = User::find(Auth::id());
         $market = Market::find($id);
-        if ($user->hasRole('adminprov')) {
+
+        if (
+            $user->hasRole('adminprov') ||
+            (
+                $user->hasRole('adminkab') &&
+                in_array($market->market_type_id, $this->getAdminKabAllowedMarketTypes()) &&
+                $market->created_by == $user->organization_id
+            )
+        ) {
             $market->delete();
             return redirect('/pasar/manajemen')->with('success-delete', 'Pasar Telah Dihapus');
         } else {
@@ -331,6 +340,7 @@ class MarketManagementController extends Controller
             'address' => $request->address,
             'market_type_id' => $request->marketType,
             'organization_id' => $request->managedbyprov == "1" ? 3500 : $regencyId,
+            'created_by' => $user->organization_id,
         ]);
 
         return redirect('/pasar/manajemen')->with('success-create', 'Pasar telah ditambah!');

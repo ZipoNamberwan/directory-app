@@ -106,8 +106,6 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::group(['middleware' => ['role:adminprov']], function () {
 		Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);
 		Route::get('/users/search', [UserController::class, 'searchUser']);
-
-		Route::delete('/pasar/manajemen/{id}', [MarketManagementController::class, 'deleteMarket']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
@@ -133,6 +131,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::patch('/pasar/manajemen/kategori/{id}', [MarketManagementController::class, 'changeMarketTargetCategory']);
 		Route::post('/pasar/manajemen', [MarketManagementController::class, 'storeMarket']);
 		Route::put('/pasar/manajemen/{id}', [MarketManagementController::class, 'updateMarket']);
+		Route::delete('/pasar/manajemen/{id}', [MarketManagementController::class, 'deleteMarket']);
 
 		Route::get('/pasar-dashboard', [DashboardController::class, 'showDashboardPage'])->name('market-dashboard');
 		Route::get('/pasar-dashboard/download', [DashboardController::class, 'showDownloadReportPage']);
