@@ -115,12 +115,20 @@ class ReportExportJob implements ShouldQueue
                     ->with(['market', 'marketType'])
                     ->chunk(1000, function ($businesses) use ($csv) {
                         foreach ($businesses as $row) {
+                            $regency = $row->market->regency;
+                            $subdistrict = $row->market->subdistrict ?? null;
+                            $village = $row->market->village ?? null;
+
+                            $regencyStr = $regency ? "[" . $regency->id . "] " . $regency->name : '';
+                            $subdistrictStr = $subdistrict ? "[" . $subdistrict->short_code . "] " . $subdistrict->name : '';
+                            $villageStr = $village ? "[" . $village->short_code . "] " . $village->name : '';
+
                             $csv->insertOne([
                                 $row->market->name,
                                 $row->marketType->name,
-                                "[" . $row->market->regency->id . "] " . $row->market->regency->name,
-                                "[" . $row->market->subdistrict->short_code . "] " . $row->market->subdistrict->name,
-                                "[" . $row->market->village->short_code . "] " . $row->market->village->name,
+                                $regencyStr,
+                                $subdistrictStr,
+                                $villageStr,
                                 Market::getTransformedTargetCategoryByValue($row->target_category),
                                 Market::getTransformedCompletionStatusByValue($row->completion_status),
                                 $row->uploaded,
