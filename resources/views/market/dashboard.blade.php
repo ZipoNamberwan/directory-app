@@ -611,8 +611,24 @@
                     type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
+                            // Safely get IDs for area code
+                            const regencyId = data.regency && data.regency.id ? data.regency.id : '';
+                            const subdistrictId = data.subdistrict && data.subdistrict.short_code ? data.subdistrict.short_code : '';
+                            const villageId = data.village && data.village.short_code ? data.village.short_code : '';
+                            const areaCode = [regencyId, subdistrictId, villageId].filter(Boolean).join('');
+
+                            const regencyName = data.regency && data.regency.name ? data.regency.name : '';
+                            const subdistrictName = data.subdistrict && data.subdistrict.name ? data.subdistrict.name : '';
+                            const villageName = data.village && data.village.name ? data.village.name : '';
+
+                            // Build location string without trailing/extra commas
+                            let locationParts = [];
+                            if (regencyName) locationParts.push(regencyName);
+                            if (subdistrictName) locationParts.push(subdistrictName);
+                            if (villageName) locationParts.push(villageName);
+                            const locationString = locationParts.join(', ');
                             return `
-                                    <p class="text-sm text-secondary mb-0">[${data.village_id}] ${data.regency.name}, ${data.subdistrict.name}, ${data.village.name}</p>
+                                    <p class="text-sm text-secondary mb-0">[${areaCode}] ${locationString}</p>
                                 `
                         }
                         return data

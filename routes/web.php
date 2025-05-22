@@ -107,13 +107,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);
 		Route::get('/users/search', [UserController::class, 'searchUser']);
 
-		Route::get('/pasar/manajemen/create', [MarketManagementController::class, 'showMarketCreatePage']);
-		Route::get('/pasar/manajemen/{id}/edit', [MarketManagementController::class, 'showMarketEditPage']);
 		Route::delete('/pasar/manajemen/{id}', [MarketManagementController::class, 'deleteMarket']);
-		Route::post('/pasar/manajemen', [MarketManagementController::class, 'storeMarket']);
-		Route::put('/pasar/manajemen/{id}', [MarketManagementController::class, 'updateMarket']);
-
-		Route::patch('/pasar/manajemen/kategori/{id}', [MarketManagementController::class, 'changeMarketTargetCategory']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
@@ -134,6 +128,11 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::patch('/pasar/manajemen/selesai/{id}', [MarketManagementController::class, 'changeMarketCompletionStatus']);
 		Route::post('/pasar/manajemen/download', [MarketManagementController::class, 'downloadMarket']);
+		Route::get('/pasar/manajemen/create', [MarketManagementController::class, 'showMarketCreatePage']);
+		Route::get('/pasar/manajemen/{id}/edit', [MarketManagementController::class, 'showMarketEditPage']);
+		Route::patch('/pasar/manajemen/kategori/{id}', [MarketManagementController::class, 'changeMarketTargetCategory']);
+		Route::post('/pasar/manajemen', [MarketManagementController::class, 'storeMarket']);
+		Route::put('/pasar/manajemen/{id}', [MarketManagementController::class, 'updateMarket']);
 
 		Route::get('/pasar-dashboard', [DashboardController::class, 'showDashboardPage'])->name('market-dashboard');
 		Route::get('/pasar-dashboard/download', [DashboardController::class, 'showDownloadReportPage']);

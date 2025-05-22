@@ -20,24 +20,64 @@ use ZipArchive;
 
 class MarketManagementController extends Controller
 {
+    // Define market types that adminkab can manage
+    private function getAdminKabAllowedMarketTypes()
+    {
+        // Replace this with the specific market_type_ids that adminkab users can manage
+        return [4]; // Example: market_type_id 4
+    }
+
+    // Check if the user has permission to manage a specific market
+    private function canManageMarket($market = null, $marketTypeId = null)
+    {
+        $user = User::find(Auth::id());
+
+        // Adminprov can manage all markets
+        if ($user->hasRole('adminprov')) {
+            return true;
+        }
+
+        // For adminkab, check market type permissions
+        if ($user->hasRole('adminkab')) {
+            $allowedMarketTypes = $this->getAdminKabAllowedMarketTypes();
+
+            // For existing market
+            if ($market) {
+                return in_array($market->market_type_id, $allowedMarketTypes);
+            }
+
+            // For new market
+            if ($marketTypeId) {
+                return in_array($marketTypeId, $allowedMarketTypes);
+            }
+        }
+
+        return false;
+    }
 
     public function showMarketManagementPage()
     {
         $user = User::find(Auth::id());
         $organizations = [];
-        $isAdmin = false;
+        $isAdminProv = false;
+        $isAdminKab = false;
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
-            $isAdmin = true;
+            $isAdminProv = true;
+        } else if ($user->hasRole('adminkab')) {
+            $isAdminKab = true;
         }
 
         $targets = Market::getTargetCategoryValues();
         $completionStatus = Market::getCompletionStatusValues();
         $marketTypes = MarketType::all();
+        $allowedMarketTypes = $this->getAdminKabAllowedMarketTypes();
 
         return view('market.management.management', [
             'organizations' => $organizations,
-            'isAdmin' => $isAdmin,
+            'isAdminProv' => $isAdminProv,
+            'isAdminKab' => $isAdminKab,
+            'allowedMarketTypes' => $allowedMarketTypes,
             'targets' => $targets,
             'completionStatus' => $completionStatus,
             'marketTypes' => $marketTypes,
@@ -224,8 +264,14 @@ class MarketManagementController extends Controller
 
     public function showMarketCreatePage()
     {
-        $regencies = Regency::all();
-        $marketTypes = MarketType::all();
+        $user = User::find(Auth::id());
+        if ($user->hasRole('adminprov')) {
+            $marketTypes = MarketType::all();
+            $regencies = Regency::all();
+        } else if ($user->hasRole('adminkab')) {
+            $marketTypes = MarketType::whereIn('id', $this->getAdminKabAllowedMarketTypes())->get();
+            $regencies = Regency::where('id', $user->organization_id)->get();
+        }
 
         return view('market.management.create-market', [
             'regencies' => $regencies,
@@ -236,8 +282,14 @@ class MarketManagementController extends Controller
 
     public function showMarketEditPage($id)
     {
-        $regencies = Regency::all();
-        $marketTypes = MarketType::all();
+        $user = User::find(Auth::id());
+        if ($user->hasRole('adminprov')) {
+            $marketTypes = MarketType::all();
+            $regencies = Regency::all();
+        } else if ($user->hasRole('adminkab')) {
+            $marketTypes = MarketType::whereIn('id', $this->getAdminKabAllowedMarketTypes())->get();
+            $regencies = Regency::where('id', $user->organization_id)->get();
+        }
         $market = Market::find($id);
 
         return view('market.management.create-market', [
@@ -252,21 +304,33 @@ class MarketManagementController extends Controller
         $validateArray = [
             'name' => 'required',
             'regency' => 'required',
-            'subdistrict' => 'required',
-            'village' => 'required',
             'marketType' => 'required',
         ];
 
         $request->validate($validateArray);
 
+        $user = User::find(Auth::id());
+
+        if ($user->hasRole('adminprov')) {
+            // adminprov can add anything
+            $regencyId = $request->regency;
+        } elseif ($user->hasRole('adminkab')) {
+            // adminkab: restrict regency and market type
+            $allowedMarketTypes = $this->getAdminKabAllowedMarketTypes();
+            if ($request->regency != $user->organization_id || !in_array($request->marketType, $allowedMarketTypes)) {
+                abort(403, 'Anda tidak memiliki akses untuk menambah pasar dengan tipe atau kabupaten ini');
+            }
+            $regencyId = $user->organization_id;
+        }
+
         Market::create([
             'name' => $request->name,
-            'regency_id' => $request->regency,
+            'regency_id' => $regencyId,
             'subdistrict_id' => $request->subdistrict,
             'village_id' => $request->village,
             'address' => $request->address,
             'market_type_id' => $request->marketType,
-            'organization_id' =>  $request->managedbyprov == "1"  ? 3500 : $request->regency,
+            'organization_id' => $request->managedbyprov == "1" ? 3500 : $regencyId,
         ]);
 
         return redirect('/pasar/manajemen')->with('success-create', 'Pasar telah ditambah!');
@@ -277,25 +341,37 @@ class MarketManagementController extends Controller
         $validateArray = [
             'name' => 'required',
             'regency' => 'required',
-            'subdistrict' => 'required',
-            'village' => 'required',
             'marketType' => 'required',
         ];
 
         $request->validate($validateArray);
 
+        $user = User::find(Auth::id());
         $market = Market::find($id);
+
+        if ($user->hasRole('adminprov')) {
+            // adminprov can update anything
+            $regencyId = $request->regency;
+        } elseif ($user->hasRole('adminkab')) {
+            // adminkab: restrict regency and market type
+            $allowedMarketTypes = $this->getAdminKabAllowedMarketTypes();
+            if ($request->regency != $user->organization_id || !in_array($request->marketType, $allowedMarketTypes)) {
+                abort(403, 'Anda tidak memiliki akses untuk mengedit pasar ini');
+            }
+            $regencyId = $user->organization_id;
+        }
+
         $market->update([
             'name' => $request->name,
-            'regency_id' => $request->regency,
+            'regency_id' => $regencyId,
             'subdistrict_id' => $request->subdistrict,
             'village_id' => $request->village,
             'address' => $request->address,
             'market_type_id' => $request->marketType,
-            'organization_id' =>  $request->managedbyprov == "1"  ? 3500 : $request->regency,
+            'organization_id' => $request->managedbyprov == "1" ? 3500 : $regencyId,
         ]);
 
-        return  redirect('/pasar/manajemen')->with('success-edit', 'Pasar telah diupdate!');
+        return redirect('/pasar/manajemen')->with('success-edit', 'Pasar telah diupdate!');
     }
 
     public function changeMarketTargetCategory(Request $request, $id)
@@ -311,9 +387,24 @@ class MarketManagementController extends Controller
             return response()->json(['message' => 'Market not found'], 404);
         }
 
-        $success = $market->update([
+        $user = User::find(Auth::id());
+        // Adminprov can change all, adminkab only allowed types
+        if (
+            !$user->hasRole('adminprov') &&
+            !($user->hasRole('adminkab') && in_array($market->market_type_id, $this->getAdminKabAllowedMarketTypes()))
+        ) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah kategori pasar ini'], 403);
+        }
+
+        // Update target_category and note (note can be null)
+        $updateData = [
             'target_category' => $request->target_category ? 'target' : 'non target',
-        ]);
+        ];
+        if ($request->has('note')) {
+            $updateData['note'] = $request->note;
+        }
+
+        $success = $market->update($updateData);
 
         if ($success) {
             return response()->json(['message' => 'Category updated successfully'], 200);

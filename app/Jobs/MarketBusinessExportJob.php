@@ -106,9 +106,9 @@ class MarketBusinessExportJob implements ShouldQueue
                             $row->longitude,
                             $row->market->name,
                             $row->user->firstname,
-                            "[" . $row->market->regency->long_code . "] " . $row->market->regency->name,
-                            "[" . $row->market->subdistrict->short_code . "] " . $row->market->subdistrict->name,
-                            "[" . $row->market->village->short_code . "] " . $row->market->village->name,
+                            $row->market->regency != null ? "[" . $row->market->regency->long_code . "] " . $row->market->regency->name : null,
+                            $row->market->subdistrict != null ? "[" . $row->market->subdistrict->short_code . "] " . $row->market->subdistrict->name : null,
+                            $row->market->village != null ? "[" . $row->market->village->short_code . "] " . $row->market->village->name : null,
                         ]);
                     }
                 });

@@ -57,7 +57,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h4 class="text-capitalize">Daftar Sentra Ekonomi</h4>
                     <div class="d-flex">
-                        @hasrole('adminprov')
+                        @hasrole('adminprov|adminkab')
                             <a href="/pasar/manajemen/create" class="me-2 btn btn-primary btn-lg ms-auto p-2 m-0"
                                 role="button">
                                 <span class="btn-inner--icon"><i class="fas fa-plus"></i></span>
@@ -77,14 +77,14 @@
                         </button>
                     </div>
                 </div>
-                <div class="custom-note">
+                {{-- <div class="custom-note">
                     <strong>Note:</strong><br>
                     Sentra Ekonomi yang tidak mempunyai usaha tidak bisa ditandai <code>selesai</code>.
                     Jika sentra ekonomi tersebut tidak bisa dicacah karena satu dan lain hal,
                     sentra ekonomi tersebut bisa ditandai <code>non target</code> oleh Garda Provinsi.
                     Pemberian status <code>non target</code> mengikuti hasil identifikasi pada <a target="_blank"
                         href="https://s.bps.go.id/mall_pertokoan">link https://s.bps.go.id/mall_pertokoan.</a>
-                </div>
+                </div> --}}
             </div>
             <div class="card-body pt-1">
                 <div>
@@ -185,6 +185,26 @@
                         <tbody>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="categoryNoteModal" tabindex="-1" aria-labelledby="categoryNoteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoryNoteModalLabel">Catatan Non Target</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="categoryNoteInput" class="form-label">Masukkan alasan menandai sebagai Non Target:</label>
+                    <textarea class="form-control" id="categoryNoteInput" rows="3"></textarea>
+                    <div id="categoryNoteError" class="text-danger small mt-2 d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="categoryNoteCancel" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" id="categoryNoteSubmit" class="btn btn-primary">Submit</button>
                 </div>
             </div>
         </div>
@@ -318,35 +338,91 @@
             }
         }
 
-        function toggleCategory(element, id) {
-            const isChecked = element.checked;
+        let pendingCategoryToggle = null;
 
+        // Unified function to handle category toggle fetch
+        function submitCategoryToggle({ element, id, label, target_category, note }) {
             showToggleStatus(id, 'loading', 'category');
             fetch(`/pasar/manajemen/kategori/${id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    },
-                    body: JSON.stringify({
-                        target_category: isChecked
-                    })
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({
+                    target_category: target_category,
+                    note: note ?? null
                 })
-                .then(response => {
-                    if (!response.ok) throw new Error("Request failed");
-                    return response.json();
-                })
-                .then(data => {
-                    document.getElementById(`category-${id}-label`).textContent = isChecked ? 'Target' :
-                        'Non Target';
-                    showToggleStatus(id, 'success', 'category');
-                })
-                .catch(error => {
-                    showToggleStatus(id, 'error', 'category');
-                    element.checked = !isChecked;
-                    label.textContent = !isChecked ? 'Target' : 'Non Target';
-                });
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Request failed");
+                return response.json();
+            })
+            .then(data => {
+                label.textContent = target_category ? 'Target' : 'Non Target';
+                showToggleStatus(id, 'success', 'category');
+                // Show or hide the note below the toggle
+                const noteDiv = document.getElementById(`category-note-${id}`);
+                if (!target_category && note) {
+                    if (noteDiv) {
+                        noteDiv.textContent = note;
+                        noteDiv.classList.remove('d-none');
+                    }
+                } else if (noteDiv) {
+                    noteDiv.textContent = '';
+                    noteDiv.classList.add('d-none');
+                }
+            })
+            .catch(error => {
+                showToggleStatus(id, 'error', 'category');
+                element.checked = !target_category;
+                label.textContent = !target_category ? 'Target' : 'Non Target';
+            });
         }
+
+        function toggleCategory(element, id) {
+            const isChecked = element.checked;
+            const label = document.getElementById(`category-${id}-label`);
+
+            // If disabling (unchecking), show modal for note
+            if (!isChecked) {
+                pendingCategoryToggle = { element, id, label };
+                $('#categoryNoteInput').val('');
+                $('#categoryNoteError').addClass('d-none').text('');
+                var modal = new bootstrap.Modal(document.getElementById('categoryNoteModal'));
+                modal.show();
+                return;
+            }
+
+            // If enabling (checking), submit with note as null
+            submitCategoryToggle({ element, id, label, target_category: true, note: null });
+        }
+
+        // Modal submit/cancel handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Submit
+            document.getElementById('categoryNoteSubmit').addEventListener('click', function() {
+                if (!pendingCategoryToggle) return;
+                const note = document.getElementById('categoryNoteInput').value.trim();
+                if (!note) {
+                    document.getElementById('categoryNoteError').classList.remove('d-none');
+                    document.getElementById('categoryNoteError').textContent = 'Catatan wajib diisi.';
+                    return;
+                }
+                const { element, id, label } = pendingCategoryToggle;
+                bootstrap.Modal.getInstance(document.getElementById('categoryNoteModal')).hide();
+
+                submitCategoryToggle({ element, id, label, target_category: false, note: note });
+                pendingCategoryToggle = null;
+            });
+
+            // Cancel
+            document.getElementById('categoryNoteCancel').addEventListener('click', function() {
+                if (!pendingCategoryToggle) return;
+                pendingCategoryToggle.element.checked = true;
+                pendingCategoryToggle = null;
+            });
+        });
 
         function toggleCompletion(element, id) {
             const isChecked = element.checked;
@@ -410,8 +486,9 @@
             })
         }
 
-        var isAdmin = @json($isAdmin);
-
+        var isAdminProv = @json($isAdminProv);
+        var isAdminKab = @json($isAdminKab);
+        var allowedMarketTypes = @json($allowedMarketTypes);
 
         let mytable = new DataTable('#myTable', {
             order: [],
@@ -435,12 +512,29 @@
                     type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
+                            // Safely get IDs for area code
+                            const regencyId = row.regency && row.regency.id ? row.regency.id : '';
+                            const subdistrictId = row.subdistrict && row.subdistrict.short_code ? row.subdistrict.short_code : '';
+                            const villageId = data && data.short_code ? data.short_code : '';
+                            const areaCode = [regencyId, subdistrictId, villageId].filter(Boolean).join('');
+
+                            const regencyName = row.regency && row.regency.name ? row.regency.name : '';
+                            const subdistrictName = row.subdistrict && row.subdistrict.name ? row.subdistrict.name : '';
+                            const villageName = data && data.name ? data.name : '';
+
+                            // Build location string without trailing/extra commas
+                            let locationParts = [];
+                            if (regencyName) locationParts.push(regencyName);
+                            if (subdistrictName) locationParts.push(subdistrictName);
+                            if (villageName) locationParts.push(villageName);
+                            const locationString = locationParts.join(', ');
+
                             return `
-                                    <div class="d-flex flex-column justify-content-center my-2">
-                                        <h6 class="mb-0 text-sm">[${data.id}]</h6>
-                                        <p class="text-sm text-secondary mb-0">${row.regency.name}, ${row.subdistrict.name}, ${data.name}</p>
-                                    </div>
-                                `
+                                <div class="d-flex flex-column justify-content-center my-2">
+                                    <h6 class="mb-0 text-sm">[${areaCode}]</h6>
+                                    <p class="text-sm text-secondary mb-0">${locationString}</p>
+                                </div>
+                            `;
                         }
                         return data
                     }
@@ -451,7 +545,7 @@
                     data: "market_type.name",
                     type: "text",
                 },
-                @hasrole('adminprov')
+                @hasrole('adminprov|adminkab')
                     {
                         responsivePriority: 1,
                         width: "10%",
@@ -459,8 +553,16 @@
                         type: "text",
                         render: function(data, type, row) {
                             if (type === 'display') {
-                                var isCheckedInput = data == 'target' ? 'checked' : '';
-                                return `
+                                if (isAdminProv || (isAdminKab && allowedMarketTypes.includes(row.market_type_id))) {
+                                    var isCheckedInput = data == 'target' ? 'checked' : '';
+                                    // Add a div for showing the note, only visible if non target and note exists
+                                    var noteHtml = '';
+                                    if (data == 'non target' && row.note) {
+                                        noteHtml = `<div id="category-note-${row.id}" class="text-danger small mt-1">Alasan: ${row.note}</div>`;
+                                    } else {
+                                        noteHtml = `<div id="category-note-${row.id}" class="text-danger small mt-1 d-none"></div>`;
+                                    }
+                                    return `
                                         <div class="form-check form-switch">
                                             <input id="category-${row.id}-input" onchange="toggleCategory(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
                                                 type="checkbox" ${isCheckedInput}>
@@ -475,29 +577,22 @@
                                                 <i class="fas fa-times-circle"></i>
                                             </span>
                                         </div>
-                                `;
+                                        ${noteHtml}
+                                    `;
+                                } else {
+                                    if (data == 'target') {
+                                        return '<span class="badge badge-sm bg-gradient-success">Target</span>';
+                                    } else if (data == 'non target') {
+                                        // Show note for non target
+                                        let note = row.note ? `<div class="text-danger small mt-1">Alasan: ${row.note}</div>` : '';
+                                        return '<span class="badge badge-sm bg-gradient-danger">Non Target</span>' + note;
+                                    } else {
+                                        return data;
+                                    }
+                                }
+
                             }
                             return data;
-                        }
-                    },
-                @endhasrole
-                @hasrole('adminkab')
-                    {
-                        responsivePriority: 1,
-                        width: "10%",
-                        data: "target_category",
-                        type: "text",
-                        render: function(data, type, row) {
-                            if (type === 'display') {
-                                if (data == 'target') {
-                                    return '<span class="badge badge-sm bg-gradient-success">Target</span>';
-                                } else if (data == 'non target') {
-                                    return '<span class="badge badge-sm bg-gradient-danger">Non Target</span>';
-                                } else {
-                                    return data;
-                                }
-                            }
-                            return data
                         }
                     },
                 @endhasrole
@@ -511,26 +606,26 @@
                             if (type === 'display') {
                                 var isCheckedInput = data == 'done' ? 'checked' : '';
                                 return `
-            <div class="d-flex flex-column align-items-start">
-                <div class="form-check form-switch">
-                    <input id="completion-${row.id}-input" onchange="toggleCompletion(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
-                        type="checkbox" ${isCheckedInput}>
-                    <label id="completion-${row.id}-label" class="form-check-label me-1" for="managedbyprov">
-                        ${row.transformed_completion_status.replace(/\b\w/g, char => char.toUpperCase())}
-                    </label>
-                    <span id="completion-loading-${row.id}" class="d-none text-warning">
-                        <i class="fas fa-spinner fa-spin"></i>
-                    </span>
-                    <span id="completion-success-${row.id}" class="d-none text-success">
-                        <i class="fas fa-check-circle"></i>
-                    </span>
-                    <span id="completion-error-${row.id}" class="d-none text-danger">
-                        <i class="fas fa-times-circle"></i>
-                    </span>
-                </div>
-                <div id="completion-message-${row.id}" class="text-danger small mt-1 d-none"></div>
-            </div>
-        `;
+                                    <div class="d-flex flex-column align-items-start">
+                                        <div class="form-check form-switch">
+                                            <input id="completion-${row.id}-input" onchange="toggleCompletion(this, '${row.id}')" style="height: 1.25rem !important" class="form-check-input" name="managedbyprov"
+                                                type="checkbox" ${isCheckedInput}>
+                                            <label id="completion-${row.id}-label" class="form-check-label me-1" for="managedbyprov">
+                                                ${row.transformed_completion_status.replace(/\b\w/g, char => char.toUpperCase())}
+                                            </label>
+                                            <span id="completion-loading-${row.id}" class="d-none text-warning">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </span>
+                                            <span id="completion-success-${row.id}" class="d-none text-success">
+                                                <i class="fas fa-check-circle"></i>
+                                            </span>
+                                            <span id="completion-error-${row.id}" class="d-none text-danger">
+                                                <i class="fas fa-times-circle"></i>
+                                            </span>
+                                        </div>
+                                        <div id="completion-message-${row.id}" class="text-danger small mt-1 d-none"></div>
+                                    </div>
+                                `;
                             }
                             return data;
                         }
@@ -544,10 +639,14 @@
                     render: function(data, type, row) {
                         if (type === 'display') {
 
-                            var adminButton = isAdmin ? `
+                            var editButton = isAdminProv || (isAdminKab && allowedMarketTypes.includes(
+                                row.market_type_id)) ? `
                                         <a href="/pasar/manajemen/${data}/edit" class="px-2 py-1 m-0 btn btn-icon btn-outline-info btn-sm" role="button">
                                             <span class="btn-inner--icon"><i class="fas fa-edit"></i></span>
                                         </a>
+                                ` : ''
+
+                            var deleteButton = isAdminProv ? `
                                         <form class="d-inline" id="formdelete${data}" name="formdelete${data}" onSubmit="deleteMarket('${data}','${row.name}')" 
                                             method="POST" action="/pasar/manajemen/${data}">
                                             @csrf
@@ -570,7 +669,8 @@
                                                 </span>
                                             </button>
                                         </form>
-                                        ${adminButton}
+                                        ${editButton}
+                                        ${deleteButton}
                                     </div>
                                 `
                         }
