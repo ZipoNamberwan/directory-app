@@ -113,7 +113,8 @@ class MarketController extends Controller
             $extension = $file->getClientOriginalExtension();
             $customFileName = $user->firstname . '_' . $market->name . '_' . now()->format('Ymd_His') . '_' . Str::random(4) . '.' . $extension;
 
-            $file->storeAs('/upload_swmaps', $customFileName);
+            $storedPath = $file->storeAs('upload_swmaps', $customFileName); // no leading slash
+            $absolutePath = Storage::path($storedPath);
 
             $uuid = Str::uuid();
             $status = MarketUploadStatus::create([
@@ -130,7 +131,7 @@ class MarketController extends Controller
             ]);
 
             try {
-                (new MarketBusinessImport($uuid))->queue('/upload_swmaps/' . $customFileName)->chain([
+                (new MarketBusinessImport($uuid))->queue($absolutePath)->chain([
                     new MarketUploadNotificationJob($uuid),
                 ]);
             } catch (Exception $e) {
