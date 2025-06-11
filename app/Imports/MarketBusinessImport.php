@@ -83,9 +83,42 @@ class MarketBusinessImportSheet implements
                     }
                     if (empty($record['latitude'])) {
                         $rowErrors[] = "Latitude kosong pada baris $rowNumber.";
+                    } else {
+                        if (!is_numeric($record['latitude'])) {
+                            $rowErrors[] = "Latitude tidak valid (bukan angka) pada baris $rowNumber.";
+                        } else {
+                            $latitude = (float)$record['latitude'];
+
+                            if ($latitude < -90 || $latitude > 90) {
+                                $rowErrors[] = "Latitude di luar rentang yang diperbolehkan (-90 sampai 90) pada baris $rowNumber.";
+                            }
+
+                            if (!$this->validateDecimalPrecision($record['latitude'], 2, 10)) {
+                                $rowErrors[] = "Latitude pada baris $rowNumber memiliki terlalu banyak angka. Maksimal 2 digit sebelum titik desimal dan 10 digit setelah titik desimal.";
+                            }
+
+                            if ($latitude > 0) {
+                                $rowErrors[] = "Latitude pada baris $rowNumber harus bernilai negatif.";
+                            }
+                        }
                     }
+
                     if (empty($record['longitude'])) {
                         $rowErrors[] = "Longitude kosong pada baris $rowNumber.";
+                    } else {
+                        if (!is_numeric($record['longitude'])) {
+                            $rowErrors[] = "Longitude tidak valid (bukan angka) pada baris $rowNumber.";
+                        } else {
+                            $longitude = (float)$record['longitude'];
+
+                            if ($longitude < -180 || $longitude > 180) {
+                                $rowErrors[] = "Longitude di luar rentang yang diperbolehkan (-180 sampai 180) pada baris $rowNumber.";
+                            }
+
+                            if (!$this->validateDecimalPrecision($record['longitude'], 3, 10)) {
+                                $rowErrors[] = "Longitude pada baris $rowNumber memiliki terlalu banyak angka. Maksimal 3 digit sebelum titik desimal dan 10 digit setelah titik desimal.";
+                            }
+                        }
                     }
 
                     if (!empty($rowErrors)) {
@@ -175,6 +208,19 @@ class MarketBusinessImportSheet implements
                 ]);
             }
         }
+    }
+
+    function validateDecimalPrecision($value, $maxDigitsBeforeDot, $maxDigitsAfterDot): bool
+    {
+        if (!is_numeric($value)) {
+            return false;
+        }
+
+        $parts = explode('.', (string)$value);
+        $beforeDot = ltrim($parts[0], '-');
+        $afterDot = isset($parts[1]) ? $parts[1] : '';
+
+        return strlen($beforeDot) <= $maxDigitsBeforeDot && strlen($afterDot) <= $maxDigitsAfterDot;
     }
 
     public function chunkSize(): int

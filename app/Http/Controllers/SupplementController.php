@@ -211,7 +211,8 @@ class SupplementController extends Controller
             $extension = $file->getClientOriginalExtension();
             $customFileName = $user->firstname . '_' . now()->format('Ymd_His') . '_' . Str::random(4) . '.' . $extension;
 
-            $file->storeAs('/upload_supplement', $customFileName);
+            $storedPath = $file->storeAs('/upload_supplement', $customFileName);
+            $absolutePath = Storage::path($storedPath);
 
             $uuid = Str::uuid();
             $status = SupplementUploadStatus::create([
@@ -225,7 +226,7 @@ class SupplementController extends Controller
             ]);
 
             try {
-                (new SupplementBusinessImport($uuid))->queue('/upload_supplement/' . $customFileName)->chain([
+                (new SupplementBusinessImport($uuid))->queue($absolutePath)->chain([
                     new SupplementUploadNotificationJob($uuid),
                 ]);
             } catch (Exception $e) {
@@ -239,6 +240,12 @@ class SupplementController extends Controller
         }
 
         return redirect('/suplemen/upload')->with('failed-upload', 'File gagal diupload, menyimpan log');
+    }
+
+    public function downloadSwmapsExport(Request $request)
+    {
+        $status = SupplementUploadStatus::find($request->id);
+        return Storage::download('upload_supplement/' . $status->filename);
     }
 
     public function getSupplementData(Request $request)

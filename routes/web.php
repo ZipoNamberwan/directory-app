@@ -85,6 +85,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/suplemen/upload', [SupplementController::class, 'showSupplementUploadPage']);
 		Route::post('/suplemen/upload', [SupplementController::class, 'upload']);
 		Route::get('/suplemen/download', [SupplementController::class, 'showSupplementDownloadPage']);
+		Route::post('/suplemen/download/swmap', [SupplementController::class, 'downloadSwmapsExport']);
 		Route::post('/suplemen/download/raw', [SupplementController::class, 'downloadSupplementBusiness']);
 		Route::post('/suplemen/download-android', [SupplementController::class, 'downloadSupplementProjectAndroid']);
 		Route::post('/suplemen/download-ios', [SupplementController::class, 'downloadSupplementProjectIos']);
