@@ -39,4 +39,9 @@ class SupplementBusiness extends Model
     {
         return $this->belongsTo(Organization::class, 'organization_id');
     }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class, 'project_id');
+    }
 }
