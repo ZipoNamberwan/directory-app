@@ -151,6 +151,11 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function projects()
+    {
+        return $this->hasMany(Project::class, 'user_id');
+    }
+
     public function organization()
     {
         return $this->belongsTo(Organization::class, 'organization_id');

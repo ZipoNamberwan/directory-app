@@ -71,15 +71,24 @@ class MarketBusinessImportSheet implements
                     if (empty($record['nama_usaha'])) {
                         $rowErrors[] = "Nama Usaha kosong pada baris $rowNumber.";
                     }
+                    $allowedStatusBangunan = ['Tetap', 'Tidak Tetap'];
                     $statusBangunan = $record['status_bangunan_usaha'] ?? $record['status_bangunan_usahate'] ?? null;
                     if (empty($statusBangunan) || $statusBangunan === '-') {
                         $rowErrors[] = "Status Bangunan kosong pada baris $rowNumber.";
+                    } elseif (!in_array($statusBangunan, $allowedStatusBangunan)) {
+                        $rowErrors[] = "Status Bangunan tidak valid pada baris $rowNumber. Hanya diperbolehkan: " . implode(', ', $allowedStatusBangunan) . ".";
                     }
+
                     if (empty($record['deskripsi_aktifitas'])) {
                         $rowErrors[] = "Deskripsi Usaha kosong pada baris $rowNumber.";
                     }
-                    if (empty($record['sektor']) || $record['sektor'] == '-') {
+
+                    $allowedSektorPrefixes = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'P.', 'Q.', 'R.', 'S.', 'T.', 'U.'];
+                    $sektor = $record['sektor'] ?? null;
+                    if (empty($sektor) || $sektor === '-') {
                         $rowErrors[] = "Sektor Usaha kosong pada baris $rowNumber.";
+                    } elseif (!collect($allowedSektorPrefixes)->contains(fn($prefix) => str_starts_with($sektor, $prefix))) {
+                        $rowErrors[] = "Sektor Usaha tidak valid pada baris $rowNumber. Harus diawali dengan salah satu dari: " . implode(', ', $allowedSektorPrefixes) . ".";
                     }
                     if (empty($record['latitude'])) {
                         $rowErrors[] = "Latitude kosong pada baris $rowNumber.";

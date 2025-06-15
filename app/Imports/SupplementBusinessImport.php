@@ -2,6 +2,7 @@
 
 namespace App\Imports;
 
+use App\Models\Project;
 use App\Models\SupplementBusiness;
 use App\Models\SupplementUploadStatus;
 use Exception;
@@ -42,6 +43,8 @@ class SupplementBusinessImportSheet implements ToCollection, WithChunkReading, W
             $errors = [];
             $rowNumber = 1;
             $processedCount = 0;
+
+            $project = Project::where('type', 'swmaps supplement')->first();
 
             foreach ($records as $record) {
                 $rowErrors = [];
@@ -135,6 +138,7 @@ class SupplementBusinessImportSheet implements ToCollection, WithChunkReading, W
                         'sls_id' => $this->status->sls_id,
                         'organization_id' => $this->status->organization_id,
                         'upload_id' => $this->status->id,
+                        'project_id' => $project != null ? $project->id : null,
                     ]);
 
                     if ($inserted) {

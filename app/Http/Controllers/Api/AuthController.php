@@ -20,10 +20,10 @@ class AuthController extends Controller
         ]);
 
         if (!Auth::attempt($request->only('email', 'password'))) {
-            return $this->errorResponse('Email atau password keliru', 401);
+            return $this->errorResponse('Email atau password keliru', 422);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->with(['organization', 'roles'])->first();
 
         // Create new personal access token
         $token = $user->createToken('mobile-token')->plainTextToken;
@@ -39,6 +39,6 @@ class AuthController extends Controller
         // Revoke current access token only
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out']);
+        return $this->successResponse(null, 'Logout berhasil');
     }
 }
