@@ -48,7 +48,9 @@ return new class extends Migration
             $table->foreign('project_id')
                 ->references('id')
                 ->on('projects')
-                ->onDelete('set null');
+                ->onDelete('cascade');
+
+            $table->string('owner')->nullable();
         });
     }
 
@@ -79,12 +81,14 @@ return new class extends Migration
             $table->dropForeign(['upload_id']);
 
             // Change upload_id back to NOT NULL
-            $table->uuid('upload_id')->nullable(false)->change();
+            $table->uuid('upload_id')->nullable(true)->change();
 
             // Re-add the foreign key constraint
             $table->foreign('upload_id')
                 ->references('id')
                 ->on('supplement_upload_status');
+
+            $table->dropColumn('owner');
         });
 
         // Drop the projects table

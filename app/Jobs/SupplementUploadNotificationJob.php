@@ -43,9 +43,11 @@ class SupplementUploadNotificationJob implements ShouldQueue
                     ]);
                 }
 
-                SupplementBusiness::where([
-                    'user_id' => $status->user_id,
-                ])->where('upload_id', '!=', $status->id)->forceDelete();
+                SupplementBusiness::where(['user_id' => $status->user_id,])
+                    ->where('upload_id', '!=', $status->id)
+                    ->whereHas('project', function ($query) {
+                        $query->where('type', 'swmaps supplement');
+                    })->forceDelete();
             }
         }
     }

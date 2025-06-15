@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Models\SupplementBusiness;
 use App\Traits\ApiResponser;
 use Exception;
 use Illuminate\Http\Request;
@@ -102,11 +103,13 @@ class ProjectController extends Controller
         try {
             $project = Project::find($id);
             if (!$project) {
-                return $this->errorResponse('Projek tidak ditemukan', 404);
+                return $this->successResponse(data: ['is_found' => false], message: 'Project tidak ditemukan', status: 200);
             }
+            SupplementBusiness::where('project_id', $id)->delete();
+
             $project->delete();
 
-            return $this->successResponse(null, 'Project deleted');
+            return $this->successResponse(data: ['is_found' => true], message: 'Project berhasil dihapus', status: 200);
         } catch (Exception $e) {
             throw new Exception('Gagal menghapus projek: ' . $e->getMessage(), 500);
         }
