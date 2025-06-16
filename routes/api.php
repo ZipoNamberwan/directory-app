@@ -16,7 +16,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/business-in-box', [TaggingController::class, 'getBusinessInBoundingBox']);
     Route::get('/business/project/{projectId}', [TaggingController::class, 'getBusinessByProject']);
     Route::post('/business', [TaggingController::class, 'storeSupplementBusiness']);
+    Route::post('/business/upload-multiple', [TaggingController::class, 'uploadMultipleTags']);
     Route::put('/business/{id}', [TaggingController::class, 'updateSupplementBusiness']);
+    Route::delete('/business/delete-multiple', [TaggingController::class, 'deleteMultipleTags']);
     Route::delete('/business/{id}', [TaggingController::class, 'deleteSupplementBusiness']);
 
     Route::get('users/{user}/projects', [ProjectController::class, 'getProjectsByUser']);
@@ -24,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('mobile-projects/{id}', [ProjectController::class, 'show']);
     Route::put('mobile-projects/{id}', [ProjectController::class, 'updateMobileProject']);
     Route::delete('mobile-projects/{id}', [ProjectController::class, 'destroyMobileProject']);
+
 
     Route::post('/logout', [AuthController::class, 'logout']);
 });

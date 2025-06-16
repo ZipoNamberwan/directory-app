@@ -202,6 +202,64 @@ class TaggingController extends Controller
 
     public function uploadMultipleTags(Request $request)
     {
-        
+        // create method to handle multiple tags upload, no need to validate, the return will be ids successfully uploaded
+        $uploadedIds = [];
+
+        foreach ($request->tags as $tagData) {
+            try {
+                $project = Project::find($tagData['project']['id']);
+                if ($project == null) {
+                    $project = Project::create([
+                        'id' => $tagData['project']['id'],
+                        'name' => $tagData['project']['name'],
+                        'description' => $tagData['project']['description'],
+                        'type' => 'kendedes mobile',
+                        'user_id' => $tagData['user'],
+                    ]);
+                }
+                $tag = SupplementBusiness::updateOrCreate(
+                    ['id' => $tagData['id']],
+                    [
+                        'name' => $tagData['name'],
+                        'owner' => $tagData['owner'],
+                        'status' => $tagData['building'],
+                        'address' => $tagData['address'],
+                        'description' => $tagData['description'],
+                        'sector' => $tagData['sector'],
+                        'note' => $tagData['note'],
+                        'latitude' => $tagData['latitude'],
+                        'longitude' => $tagData['longitude'],
+                        'user_id' => $tagData['user'],
+                        'project_id' => $tagData['project']['id'],
+                        'organization_id' => $tagData['organization'],
+                    ]
+                );
+
+                $uploadedIds[] = $tag->id;
+            } catch (Exception $e) {
+                continue;
+            }
+        }
+
+        return $this->successResponse(
+            data: ['uploaded_ids' => $uploadedIds],
+            message: 'Tagging berhasil diunggah',
+            status: 201
+        );
+    }
+
+    public function deleteMultipleTags(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'uuid',
+        ]);
+
+        try {
+            $deletedCount = SupplementBusiness::whereIn('id', $request->ids)->delete();
+            return $this->successResponse(data: ['deleted_count' => $deletedCount, 'success' => true], message: 'Tagging berhasil dihapus', status: 200);
+        } catch (Exception $e) {
+            return $this->errorResponse('Gagal menghapus tagging', 500);
+        }
     }
 }
