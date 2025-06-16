@@ -22,7 +22,7 @@ class ProjectController extends Controller
 
     public function getProjectsByUser($user)
     {
-        $projects = Project::where('user_id', $user)->get();
+        $projects = Project::with(['user', 'user.organization'])->where('user_id', $user)->get();
         return $this->successResponse($projects);
     }
 
