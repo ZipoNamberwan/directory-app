@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\AdminKabController;
 use App\Http\Controllers\AdminProvController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,11 @@ Route::post('/login', [LoginController::class, 'login'])->middleware('guest')->n
 Route::get('/majapahit', [MajapahitLoginController::class, 'login']);
 Route::get('/majapahit-mobile-login', [MajapahitLoginController::class, 'loginApi']);
 Route::get('/login-redirect', [MajapahitLoginController::class, 'redirectApi']);
+
+Route::get('/.well-known/assetlinks.json', function () {
+	$path = public_path('.well-known/assetlinks.json');
+	return Response::file($path, ['Content-Type' => 'application/json']);
+});
 
 Route::group(['middleware' => 'auth'], function () {
 
