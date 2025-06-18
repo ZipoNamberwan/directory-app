@@ -80,4 +80,94 @@ class MajapahitLoginController extends Controller
 
         return 'Anda belum masuk ke akun Kendedes, silahkan buka melalui Majapahit';
     }
+
+    public function loginApi(Request $request)
+    {
+        $jwt = $request->query('token');
+
+        if (Auth::check()) {
+            return redirect('/');
+        } elseif ($jwt) {
+            JWT::$leeway = 60;
+            try {
+                $key = config('app.majapahit_key');
+                $decoded = JWT::decode($jwt, new Key($key, 'HS256'));
+
+                $user = User::where('email', $decoded->email)->first();
+
+                $regencyId = null;
+                if ($decoded->satker !== '3500') {
+                    $regency = Regency::where('long_code', $decoded->satker)->first();
+                    $regencyId = $regency?->id; // safer null handling
+                }
+
+                $userData = [
+                    'email' => $decoded->email,
+                    'username' => $decoded->email,
+                    'firstname' => $decoded->nama,
+                    'regency_id' => $regencyId,
+                    'organization_id' => $decoded->satker,
+                ];
+
+                if (!$user) {
+                    $userData['role'] = 'operator';
+                    $userData['password'] = Hash::make('se26Sukses');
+
+                    $user = User::create($userData);
+
+                    $user->load('organization', 'roles');
+                } else {
+                    $user->update([
+                        'firstname' => $userData['firstname'],
+                        'regency_id' => $userData['regency_id'],
+                        'organization_id' => $userData['organization_id'],
+                    ]);
+
+                    $user->refresh()->load('organization', 'roles');
+                }
+
+                $token = $user->createToken('mobile-token')->plainTextToken;
+
+                $userPayload = [
+                    'token' => $token,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'roles' => $user->roles,
+                        'organization' => $user->organization,
+                    ],
+                ];
+
+                $encoded = base64_encode(json_encode($userPayload));
+
+                return redirect('/api/login-redirect?data=' . $encoded);
+
+            } catch (Exception $e) {
+                if (str_contains($e->getMessage(), 'Expired token') || str_contains($e->getMessage(), 'Signature verification failed')) {
+                    return $this->errorResponse('Token Majapahit tidak valid, silahkan buka ulang Majapahit', 401);
+                } else {
+                    return $this->errorResponse('Terjadi kesalahan pada aplikasi ini, silahkan coba lagi', 500);
+                }
+            }
+        }
+
+        return $this->errorResponse('Anda belum masuk ke akun Kendedes, silahkan buka melalui Majapahit', 401);
+    }
+
+    public function redirectApi(Request $request)
+    {
+        $data = $request->query('data');
+
+        if (!$data) {
+            return $this->errorResponse('Token tidak ditemukan', 400);
+        }
+
+        try {
+            $decoded = json_decode(base64_decode($data), true);
+            return response()->json($decoded, 200);
+        } catch (Exception $e) {
+            return $this->errorResponse('Token tidak valid', 400);
+        }
+    }
 }
