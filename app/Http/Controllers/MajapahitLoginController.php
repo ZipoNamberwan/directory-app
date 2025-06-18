@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Regency;
 use App\Models\User;
+use App\Traits\ApiResponser;
 use Exception;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Hash;
 
 class MajapahitLoginController extends Controller
 {
+    use ApiResponser;
+
     public function login(Request $request)
     {
         $jwt = $request->query('token');
@@ -122,7 +125,9 @@ class MajapahitLoginController extends Controller
                     ]);
                 }
 
-                $user = User::find($user->id)->with('organization', 'roles')->first();
+                $user = $user->load(['organization', 'roles']);
+
+                // $user = User::find($user->id)->with('organization', 'roles')->first();
 
                 $token = $user->createToken('mobile-token')->plainTextToken;
 
