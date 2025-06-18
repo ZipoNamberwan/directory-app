@@ -130,19 +130,12 @@ class MajapahitLoginController extends Controller
 
                 $userPayload = [
                     'token' => $token,
-                    'user' => [
-                        'id' => $user->id,
-                        'firstname' => $user->firstname,
-                        'email' => $user->email,
-                        'roles' => $user->roles,
-                        'organization' => $user->organization,
-                    ],
+                    'user' => $user,
                 ];
 
                 $encoded = base64_encode(json_encode($userPayload));
 
                 return redirect('/login-redirect?data=' . $encoded);
-
             } catch (Exception $e) {
                 if (str_contains($e->getMessage(), 'Expired token') || str_contains($e->getMessage(), 'Signature verification failed')) {
                     return $this->errorResponse('Token Majapahit tidak valid, silahkan buka ulang Majapahit', 401);
