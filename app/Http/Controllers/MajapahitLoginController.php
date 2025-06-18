@@ -132,7 +132,7 @@ class MajapahitLoginController extends Controller
                     'token' => $token,
                     'user' => [
                         'id' => $user->id,
-                        'name' => $user->name,
+                        'firstname' => $user->firstname,
                         'email' => $user->email,
                         'roles' => $user->roles,
                         'organization' => $user->organization,
