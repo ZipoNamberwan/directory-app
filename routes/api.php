@@ -7,8 +7,6 @@ use App\Http\Controllers\MajapahitLoginController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/majapahit-login', [MajapahitLoginController::class, 'loginApi']);
-Route::get('/login-redirect', [MajapahitLoginController::class, 'redirectApi']);
 
 Route::middleware('auth:sanctum')->group(function () {
 

@@ -26,6 +26,8 @@ use App\Http\Controllers\UserController;
 Route::get('/login', [LoginController::class, 'show'])->middleware('guest')->name('login');
 Route::post('/login', [LoginController::class, 'login'])->middleware('guest')->name('login.perform');
 Route::get('/majapahit', [MajapahitLoginController::class, 'login']);
+Route::get('/majapahit-mobile-login', [MajapahitLoginController::class, 'loginApi']);
+Route::get('/login-redirect', [MajapahitLoginController::class, 'redirectApi']);
 
 Route::group(['middleware' => 'auth'], function () {
 

@@ -141,7 +141,7 @@ class MajapahitLoginController extends Controller
 
                 $encoded = base64_encode(json_encode($userPayload));
 
-                return redirect('/api/login-redirect?data=' . $encoded);
+                return redirect('/login-redirect?data=' . $encoded);
 
             } catch (Exception $e) {
                 if (str_contains($e->getMessage(), 'Expired token') || str_contains($e->getMessage(), 'Signature verification failed')) {
