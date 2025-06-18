@@ -114,17 +114,15 @@ class MajapahitLoginController extends Controller
                     $userData['password'] = Hash::make('se26Sukses');
 
                     $user = User::create($userData);
-
-                    $user->load('organization', 'roles');
                 } else {
                     $user->update([
                         'firstname' => $userData['firstname'],
                         'regency_id' => $userData['regency_id'],
                         'organization_id' => $userData['organization_id'],
                     ]);
-
-                    $user->refresh()->load('organization', 'roles');
                 }
+
+                $user = User::find($user->id)->with('organization', 'roles')->first();
 
                 $token = $user->createToken('mobile-token')->plainTextToken;
 
