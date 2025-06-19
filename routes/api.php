@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\TaggingController;
+use App\Http\Controllers\Api\VersionController;
 use App\Http\Controllers\MajapahitLoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('mobile-projects/{id}', [ProjectController::class, 'updateMobileProject']);
     Route::delete('mobile-projects/{id}', [ProjectController::class, 'destroyMobileProject']);
 
+    Route::get('/version/check', [VersionController::class, 'shouldUpdate']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
 });

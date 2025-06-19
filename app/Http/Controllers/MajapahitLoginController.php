@@ -153,17 +153,19 @@ class MajapahitLoginController extends Controller
 
     public function redirectApi(Request $request)
     {
-        $data = $request->query('data');
+        // $data = $request->query('data');
 
-        if (!$data) {
-            return $this->errorResponse('Token tidak ditemukan', 400);
-        }
+        // if (!$data) {
+        //     return $this->errorResponse('Token tidak ditemukan', 400);
+        // }
 
-        try {
-            $decoded = json_decode(base64_decode($data), true);
-            return response()->json($decoded, 200);
-        } catch (Exception $e) {
-            return $this->errorResponse('Token tidak valid', 400);
-        }
+        // try {
+        //     $decoded = json_decode(base64_decode($data), true);
+        //     return response()->json($decoded, 200);
+        // } catch (Exception $e) {
+        //     return $this->errorResponse('Token tidak valid', 400);
+        // }
+
+        return 'Seharusnya langsung kembali ke aplikasi Kendedes Mobile, jika tidak, silahkan login kembali';
     }
 }
