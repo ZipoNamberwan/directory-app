@@ -24,7 +24,7 @@ class MarketManagementController extends Controller
     private function getAdminKabAllowedMarketTypes()
     {
         // Replace this with the specific market_type_ids that adminkab users can manage
-        return [4]; // Example: market_type_id 4
+        return [1, 4]; // Example: market_type_id 4
     }
 
     // Check if the user has permission to manage a specific market

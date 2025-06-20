@@ -166,6 +166,6 @@ class MajapahitLoginController extends Controller
         //     return $this->errorResponse('Token tidak valid', 400);
         // }
 
-        return 'Seharusnya langsung kembali ke aplikasi Kendedes Mobile, jika tidak, silahkan login kembali';
+        return 'Seharusnya langsung kembali ke aplikasi Kendedes Mobile, jika tidak, silahkan login kembali. Oh iya, pastikan browser default adalah Google Chrome, kalau bukan Chrome kemungkinan tidak bisa kembali ke aplikasi Kendedes Mobile. Semangat!!!';
     }
 }
