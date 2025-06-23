@@ -300,7 +300,7 @@ class SupplementController extends Controller
             $searchkeyword = $request->search['value'];
         }
 
-        $data = $records->with(['user', 'organization']);
+        $data = $records->with(['user', 'organization', 'project']);
         // $data = $records;
 
         if ($searchkeyword != null) {

@@ -92,6 +92,7 @@
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Catatan</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Kabupaten</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">User yang Upload</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Jenis Projek</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Created At</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
                         </tr>
@@ -355,6 +356,15 @@
                 {
                     responsivePriority: 4,
                     width: "10%",
+                    data: "project",
+                    type: "text",
+                    render: function(data, type, row) {
+                        return data.type;
+                    }
+                },
+                {
+                    responsivePriority: 4,
+                    width: "10%",
                     data: "created_at",
                     type: "text",
                     render: function(data, type, row) {
@@ -368,7 +378,7 @@
                     type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
-                            if (canDelete(row.user.id)) {
+                            if (canDelete(row.user.id) && row.project.type != 'kendedes mobile') {
                                 return `
                                 <form id="formdelete${data}" name="formdelete${data}" onSubmit="deleteBusiness('${data}','${row.name}')" 
                                     class="my-2" action="/suplemen/${data}" method="POST">
