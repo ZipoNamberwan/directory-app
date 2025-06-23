@@ -80,6 +80,17 @@
                             </select>
                         </div>
                     @endhasrole
+                    <div class="col-md-3">
+                        <label class="form-control-label">Tipe Projek <span class="text-danger">*</span></label>
+                        <select id="projectType" class="form-control" data-toggle="select">
+                            <option value="0" disabled selected> -- Pilih Tipe Projek -- </option>
+                            @foreach ($projectTypes as $projectType)
+                                <option value="{{ $projectType['value'] }}">
+                                    {{ $projectType['name'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
                 <table id="myTable" class="align-items-center mb-0 text-sm">
                     <thead>
@@ -159,6 +170,10 @@
                 selector: '#user',
                 placeholder: 'Pilih Petugas'
             },
+            {
+                selector: '#projectType',
+                placeholder: 'Pilih Tipe Projek'
+            },
         ];
 
         selectConfigs.forEach(({
@@ -181,6 +196,9 @@
                 updateDownloadHidden()
             },
             '#user': () => {
+                renderTable()
+            },
+            '#projectType': () => {
                 renderTable()
             },
         };
@@ -232,7 +250,7 @@
 
         function renderTable() {
             filterUrl = ''
-            filterTypes = ['organization', 'market', 'user']
+            filterTypes = ['organization', 'market', 'user', 'projectType'];
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
             });

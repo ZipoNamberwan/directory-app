@@ -34,12 +34,18 @@ class SupplementController extends Controller
             $isAdmin = true;
         }
 
+        $projectTypes = [
+            ['name' => 'SWMAPS Supplement', 'value' => 'swmaps supplement'],
+            ['name' => 'Kendedes Mobile', 'value' => 'kendedes mobile'],
+        ];
+
         return view('supplement.index', [
             'organizations' => $organizations,
             'users' => $users,
             'isAdmin' => $isAdmin,
             'userId' => $user->id,
-            'color' => 'success'
+            'color' => 'success',
+            'projectTypes' => $projectTypes,
         ]);
     }
 
@@ -268,6 +274,12 @@ class SupplementController extends Controller
 
         if ($request->user && $request->user !== 'all') {
             $records->where('user_id', $request->user);
+        }
+
+        if ($request->projectType && $request->projectType !== 'all') {
+            $records->whereHas('project', function ($query) use ($request) {
+                $query->where('type', $request->projectType);
+            });
         }
 
         $recordsTotal = $records->count();
