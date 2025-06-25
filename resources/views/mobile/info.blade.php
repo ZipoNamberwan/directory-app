@@ -49,7 +49,6 @@
 
 <body>
     <div class="container">
-        <h2>Login Gagal, Monggo Ikuti Langkah Berikut</h2>
         <ul>
             <li>Seharusnya Anda langsung kembali ke aplikasi <b>Kendedes Mobile</b>.</li>
             <li>Jika tidak otomatis kembali, silakan <b>tutup/swipe up</b> Kendedes Mobile dan <b>login</b> kembali.</li>
