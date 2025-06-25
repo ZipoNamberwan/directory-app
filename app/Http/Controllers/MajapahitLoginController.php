@@ -88,84 +88,68 @@ class MajapahitLoginController extends Controller
     {
         $jwt = $request->query('token');
 
-        if (Auth::check()) {
-            return redirect('/');
-        } elseif ($jwt) {
-            JWT::$leeway = 60;
-            try {
-                $key = config('app.majapahit_key');
-                $decoded = JWT::decode($jwt, new Key($key, 'HS256'));
+        JWT::$leeway = 60;
+        try {
+            $key = config('app.majapahit_key');
+            $decoded = JWT::decode($jwt, new Key($key, 'HS256'));
 
-                $user = User::where('email', $decoded->email)->first();
+            $user = User::where('email', $decoded->email)->first();
 
-                $regencyId = null;
-                if ($decoded->satker !== '3500') {
-                    $regency = Regency::where('long_code', $decoded->satker)->first();
-                    $regencyId = $regency?->id; // safer null handling
-                }
+            $regencyId = null;
+            if ($decoded->satker !== '3500') {
+                $regency = Regency::where('long_code', $decoded->satker)->first();
+                $regencyId = $regency?->id; // safer null handling
+            }
 
-                $userData = [
-                    'email' => $decoded->email,
-                    'username' => $decoded->email,
-                    'firstname' => $decoded->nama,
-                    'regency_id' => $regencyId,
-                    'organization_id' => $decoded->satker,
-                ];
+            $userData = [
+                'email' => $decoded->email,
+                'username' => $decoded->email,
+                'firstname' => $decoded->nama,
+                'regency_id' => $regencyId,
+                'organization_id' => $decoded->satker,
+            ];
 
-                if (!$user) {
-                    $userData['role'] = 'operator';
-                    $userData['password'] = Hash::make('se26Sukses');
+            if (!$user) {
+                $userData['role'] = 'operator';
+                $userData['password'] = Hash::make('se26Sukses');
 
-                    $user = User::create($userData);
-                } else {
-                    $user->update([
-                        'firstname' => $userData['firstname'],
-                        'regency_id' => $userData['regency_id'],
-                        'organization_id' => $userData['organization_id'],
-                    ]);
-                }
+                $user = User::create($userData);
+            } else {
+                $user->update([
+                    'firstname' => $userData['firstname'],
+                    'regency_id' => $userData['regency_id'],
+                    'organization_id' => $userData['organization_id'],
+                ]);
+            }
 
-                $user = $user->load(['organization', 'roles']);
+            $user = $user->load(['organization', 'roles']);
 
-                // $user = User::find($user->id)->with('organization', 'roles')->first();
+            // $user = User::find($user->id)->with('organization', 'roles')->first();
 
-                $token = $user->createToken('mobile-token')->plainTextToken;
+            $token = $user->createToken('mobile-token')->plainTextToken;
 
-                $userPayload = [
-                    'token' => $token,
-                    'user' => $user,
-                ];
+            $userPayload = [
+                'token' => $token,
+                'user' => $user,
+            ];
 
-                $encoded = base64_encode(json_encode($userPayload));
+            $encoded = base64_encode(json_encode($userPayload));
 
-                return redirect('/login-redirect?data=' . $encoded);
-            } catch (Exception $e) {
-                if (str_contains($e->getMessage(), 'Expired token') || str_contains($e->getMessage(), 'Signature verification failed')) {
-                    return $this->errorResponse('Token Majapahit tidak valid, silahkan buka ulang Majapahit', 401);
-                } else {
-                    return $this->errorResponse('Terjadi kesalahan pada aplikasi ini, silahkan coba lagi', 500);
-                }
+            return redirect('/login-redirect?data=' . $encoded);
+        } catch (Exception $e) {
+            if (str_contains($e->getMessage(), 'Expired token') || str_contains($e->getMessage(), 'Signature verification failed')) {
+                return $this->errorResponse('Token Majapahit tidak valid, silahkan buka ulang Majapahit', 401);
+            } else {
+                return $this->errorResponse('Terjadi kesalahan pada aplikasi ini, silahkan coba lagi', 500);
             }
         }
+
 
         return $this->errorResponse('Anda belum masuk ke akun Kendedes, silahkan buka melalui Majapahit', 401);
     }
 
     public function redirectApi(Request $request)
     {
-        // $data = $request->query('data');
-
-        // if (!$data) {
-        //     return $this->errorResponse('Token tidak ditemukan', 400);
-        // }
-
-        // try {
-        //     $decoded = json_decode(base64_decode($data), true);
-        //     return response()->json($decoded, 200);
-        // } catch (Exception $e) {
-        //     return $this->errorResponse('Token tidak valid', 400);
-        // }
-
-        return 'Seharusnya langsung kembali ke aplikasi Kendedes Mobile, jika tidak, silahkan login kembali. Oh iya, pastikan browser default adalah Google Chrome, kalau bukan Chrome kemungkinan tidak bisa kembali ke aplikasi Kendedes Mobile. Semangat!!!';
+        return view('mobile/info');
     }
 }
