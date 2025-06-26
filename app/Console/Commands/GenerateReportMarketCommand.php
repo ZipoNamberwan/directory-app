@@ -132,7 +132,7 @@ class GenerateReportMarketCommand extends Command
         foreach (array_chunk($reportUserData, 1000) as $chunk) {
             ReportMarketBusinessUser::insert($chunk);
         }
-        
+
         $businessCountByMarket = DB::table('markets')
             ->leftJoin('market_business', 'markets.id', '=', 'market_business.market_id')
             ->select(
@@ -169,5 +169,54 @@ class GenerateReportMarketCommand extends Command
         foreach (array_chunk($reportMarketData, 1000) as $chunk) {
             ReportMarketBusinessMarket::insert($chunk);
         }
+
+
+        // Generate report for supplement
+        // Delete existing reports for today
+        DB::table('report_supplement')
+            ->whereDate('date', $today)
+            ->delete();
+
+        $businessCounts = DB::table('supplement_business')
+            ->join('projects', 'supplement_business.project_id', '=', 'projects.id')
+            ->whereNull('supplement_business.deleted_at') // ✅ Exclude soft-deleted rows
+            ->select(
+                'projects.type',
+                'supplement_business.organization_id',
+                DB::raw('COUNT(*) as uploaded')
+            )
+            ->groupBy('projects.type', 'supplement_business.organization_id')
+            ->get()
+            ->keyBy(fn($item) => $item->type . '|' . $item->organization_id);
+        $rows = [];
+
+        $organizationIds = DB::table('organizations')
+            ->pluck('id')
+            ->toArray();
+
+        $types = [
+            'swmaps supplement',
+            'kendedes mobile',
+            'swmaps market',
+        ];
+
+        foreach ($types as $type) {
+            foreach ($organizationIds as $orgId) {
+                $key = $type . '|' . $orgId;
+                $uploaded = $businessCounts[$key]->uploaded ?? 0;
+
+                $rows[] = [
+                    'id' => Str::uuid(),
+                    'uploaded' => $uploaded,
+                    'type' => $type,
+                    'organization_id' => $orgId,
+                    'date' => $today,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        DB::table('report_supplement')->insert($rows);
     }
 }

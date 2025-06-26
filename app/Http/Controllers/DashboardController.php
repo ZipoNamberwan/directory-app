@@ -4,21 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ReportExportJob;
 use App\Models\AssignmentStatus;
-use App\Models\Market;
 use App\Models\MarketType;
-use App\Models\Organization;
 use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
 use App\Models\ReportMarketBusinessUser;
+use App\Models\ReportSupplementBusinessRegency;
 use App\Models\User;
 use Exception;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use League\Csv\Writer;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class DashboardController extends Controller
@@ -31,32 +29,87 @@ class DashboardController extends Controller
         $latestDate = $latestRow->date;
 
         $organizations = [];
-        $chartReportByRegency = [];
+        $chartReport = collect();
         $numberOfDays = 10;
-        $totalBusiness = 0;
+        $latestTotalBusiness = 0;
 
-        if ($user->hasRole('adminprov')) {
-            $chartReportByRegency = ReportMarketBusinessRegency::selectRaw('date, SUM(uploaded) as uploaded')
+        // --- Query upload totals by organization for today ---
+        $marketReports = ReportMarketBusinessRegency::select('organization_id', DB::raw('SUM(uploaded) as total_uploaded'))
+            ->where('date', $latestDate)
+            ->groupBy('organization_id')
+            ->with('organization')
+            ->get();
+
+        $supplementReports = ReportSupplementBusinessRegency::select('organization_id', DB::raw('SUM(uploaded) as total_uploaded'))
+            ->where('date', $latestDate)
+            ->groupBy('organization_id')
+            ->with('organization')
+            ->get();
+
+        $marketByOrg = $marketReports->keyBy('organization_id');
+        $supplementByOrg = $supplementReports->keyBy('organization_id');
+
+        $allOrgIds = $marketByOrg->keys()->merge($supplementByOrg->keys())->unique();
+
+        $reportTotalByRegency = $allOrgIds->map(function ($orgId) use ($marketByOrg, $supplementByOrg) {
+            $marketUploaded = $marketByOrg->get($orgId)?->total_uploaded ?? 0;
+            $supplementUploaded = $supplementByOrg->get($orgId)?->total_uploaded ?? 0;
+            $organizationName = $marketByOrg->get($orgId)?->organization?->name
+                ?? $supplementByOrg->get($orgId)?->organization?->name
+                ?? '-';
+
+            return [
+                'organization_id' => $orgId,
+                'organization_name' => $organizationName,
+                'market_uploaded' => $marketUploaded,
+                'supplement_uploaded' => $supplementUploaded,
+                'total_uploaded' => $marketUploaded + $supplementUploaded,
+            ];
+        });
+
+        // --- Helper to generate chart data ---
+        $generateChartData = function ($query) use ($numberOfDays) {
+            return $query->selectRaw('date, SUM(uploaded) as uploaded')
                 ->where('date', '>=', Carbon::now()->subDays($numberOfDays)->toDateString())
                 ->groupBy('date')
                 ->orderByDesc('date')
-                ->get();
+                ->get()
+                ->keyBy('date');
+        };
 
-            $totalBusiness = $chartReportByRegency->first()->uploaded;
+        // --- Role-specific filtering ---
+        $organizationFilter = $user->hasRole('adminkab') ? ['organization_id' => $user->organization_id] : [];
 
-            $organizations = Organization::all();
-        } else if ($user->hasRole('adminkab')) {
-            $chartReportByRegency = ReportMarketBusinessRegency::selectRaw('date, SUM(uploaded) as uploaded')
-                ->where('organization_id', $user->organization_id)
-                ->where('date', '>=', Carbon::now()->subDays($numberOfDays)->toDateString())
-                ->groupBy('date')
-                ->orderByDesc('date')
-                ->get();
+        // --- Generate chart data ---
+        $chartMarketReportByRegency = $generateChartData(
+            ReportMarketBusinessRegency::where($organizationFilter)
+        );
 
-            $totalBusiness = $chartReportByRegency->first()->uploaded;
-        }
+        $chartSupplementReportByRegency = $generateChartData(
+            ReportSupplementBusinessRegency::where($organizationFilter)
+        );
 
-        $chartData = ['data' => ($chartReportByRegency->pluck('uploaded'))->reverse()->values(), 'dates' => ($chartReportByRegency->pluck('date'))->reverse()->values()];
+        $allDates = $chartMarketReportByRegency->keys()
+            ->merge($chartSupplementReportByRegency->keys())
+            ->unique()
+            ->sortDesc();
+
+        $chartReport = $allDates->map(function ($date) use ($chartMarketReportByRegency, $chartSupplementReportByRegency) {
+            $market = $chartMarketReportByRegency->get($date)?->uploaded ?? 0;
+            $supplement = $chartSupplementReportByRegency->get($date)?->uploaded ?? 0;
+
+            return [
+                'date' => $date,
+                'market_uploaded' => $market,
+                'supplement_uploaded' => $supplement,
+                'total_uploaded' => $market + $supplement,
+            ];
+        });
+
+        $latestTotalBusiness = $chartReport->first()['total_uploaded'] ?? 0;
+
+
+        $chartData = ['data' => ($chartReport->pluck('uploaded'))->reverse()->values(), 'dates' => ($chartReport->pluck('date'))->reverse()->values()];
 
         $updateDate = Carbon::parse($latestDate)->translatedFormat('d F Y');
         $updateTime = Carbon::parse($latestRow->created_at)->format('H:i');
@@ -69,10 +122,11 @@ class DashboardController extends Controller
                 'chartData' => $chartData,
                 'updateDate' => $updateDate,
                 'updateTime' => $updateTime,
-                'totalBusiness' => $totalBusiness,
+                'latestTotalBusiness' => $latestTotalBusiness,
                 'marketTypes' => $marketTypes,
                 'organizations' => $organizations,
-                'date' => $latestDate
+                'date' => $latestDate,
+                'reportTotalByRegency' => $reportTotalByRegency,
             ]
         );
     }

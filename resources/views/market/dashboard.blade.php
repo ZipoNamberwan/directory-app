@@ -75,7 +75,8 @@
 
                                     </h5>
                                     <p class="mb-0">
-                                        <span class="text-sm"><strong class="text-success">{{ $totalBusiness }}</strong>
+                                        <span class="text-sm"><strong
+                                                class="text-success">{{ $latestTotalBusiness }}</strong>
                                             usaha sentra ekonomi sudah dimutakhirkan.</span>
                                     </p>
                                     <p class="text-xs text-secondary mb-0">
@@ -99,7 +100,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h6 class="text-capitalize">
-                            Report Jumlah Usaha Berdasarkan Kabupaten/Kota
+                            Report Jumlah Usaha Total (Sentra Ekonomi + Suplemen) Berdasarkan Kabupaten/Kota
                         </h6>
                         <p class="text-sm mb-1"><strong>Report tidak realtime</strong>, report akan diupdate pada jam
                             <strong>06.00, 12.00, 18.00,
@@ -110,33 +111,73 @@
                             <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
                             <span class="ml-3 btn-inner--text">Download Report Di Sini</span>
                         </a>
-                        {{-- @if (Auth::user()->organization_id == '3578' || Auth::user()->organization_id == '3500')
-                            <div class="marquee-container">
-                                <p class="text-sm marquee-text">
-                                    <strong>Nb: * Progres Provinsi dan Kota Surabaya sudah Terpisah. Progres sentra ekonomi sekarang
-                                        juga hanya muncul sentra ekonomi yang menjadi tanggung jawab satker masing-masing.</strong>
-                                </p>
-                            </div>
-                        @endif --}}
+
                     </div>
                     <div class="card-body">
                         <div style="width: 75%; margin: auto;">
                             <canvas id="proggress_chart"></canvas>
                         </div>
-                        {{-- <div class="custom-note">
-                            <strong>Note:</strong><br>
-                            Sentra Ekonomi <code>target</code> dan <code>non target</code> adalah status sentra ekonomi yang ditentukan oleh
-                            provinsi sesuai petunjuk dari kabupaten/kota.
-                            Sentra Ekonomi <code>non target</code> adalah sentra ekonomi yang tidak dicacah karena berbagai alasan seperti
-                            akses yang sulit, keamanan, bencana dll.
-                            Pengajuan sentra ekonomi jenis ini bisa menghubungi <strong>Tim Garda Provinsi</strong>.<br><br>
 
-                            Status penyelesaian sentra ekonomi ada 3 yaitu <code>Belum Dimulai</code>, <code>Sedang
-                                Dikerjakan</code>, dan <code>Sudah Selesai</code>.
-                            Untuk menandai sentra ekonomi yang sudah selesai, bisa menggunakan <strong>menu sentra ekonomi</strong> kemudian
-                            <strong>ganti flag status penyelesaian</strong> pada tabel.
+                        <table id="totalTable" class="align-items-center text-sm mt-6">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                        Kabupaten
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Usaha Sentra Ekonomi
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Usaha Suplemen
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Total
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($reportTotalByRegency as $report)
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex gap-3 align-items-center">
+                                                <div>
+                                                    <p class="text-xs text-secondary mb-0 mt-1">
+                                                        [{{ $report['organization_id'] }}]
+                                                    </p>
+                                                    <h6 class="text-sm mb-1">{{ $report['organization_name'] }}</h6>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">{{ $report['market_uploaded'] }}</td>
+                                        <td class="text-center">{{ $report['supplement_uploaded'] }}</td>
+                                        <td class="text-center">{{ $report['total_uploaded'] }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
 
-                        </div> --}}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 col-sm-12 mb-3">
+                <div class="card">
+                    <div class="card-header pb-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-capitalize">
+                                    Report Jumlah Usaha Berdasarkan Sentra Ekonomi
+                                </h6>
+                                <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
+                            </div>
+                            <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0"
+                                role="button">
+                                <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
+                                <span class="ml-3 btn-inner--text">Download</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body pt-0">
                         <div class="row mt-4">
                             <div class="col-md-4 {{-- border-secondary rounded border p-3 --}}">
                                 <h5 class="card-title text-primary font-weight-bold mb-3">
@@ -163,7 +204,6 @@
                                 <small class="text-muted mt-2 d-block">Pilih tipe sentra ekonomi untuk melihat hasil</small>
                             </div>
                         </div>
-
 
                         <table id="regencyTable" class="align-items-center text-sm">
                             <thead>
@@ -464,6 +504,39 @@
     </script>
 
     <script>
+        let totalTable = new DataTable('#totalTable', {
+            responsive: true,
+            ordering: true,
+            paging: false,
+            searching: false,
+            info: false,
+            pageLength: 39,
+            lengthChange: false,
+            columns: [{
+                    responsivePriority: 1,
+                    width: "10%",
+                },
+                {
+                    responsivePriority: 3,
+                    width: "5%",
+                },
+                {
+                    responsivePriority: 3,
+                    width: "5%",
+                },
+                {
+                    responsivePriority: 2,
+                    width: "5%",
+                },
+            ],
+            language: {
+                paginate: {
+                    previous: '<i class="fas fa-angle-left"></i>',
+                    next: '<i class="fas fa-angle-right"></i>'
+                }
+            }
+        });
+
         let regencyTable = new DataTable('#regencyTable', {
             responsive: true,
             ordering: true,
@@ -613,12 +686,15 @@
                         if (type === 'display') {
                             // Safely get IDs for area code
                             const regencyId = data.regency && data.regency.id ? data.regency.id : '';
-                            const subdistrictId = data.subdistrict && data.subdistrict.short_code ? data.subdistrict.short_code : '';
-                            const villageId = data.village && data.village.short_code ? data.village.short_code : '';
+                            const subdistrictId = data.subdistrict && data.subdistrict.short_code ? data
+                                .subdistrict.short_code : '';
+                            const villageId = data.village && data.village.short_code ? data.village
+                                .short_code : '';
                             const areaCode = [regencyId, subdistrictId, villageId].filter(Boolean).join('');
 
                             const regencyName = data.regency && data.regency.name ? data.regency.name : '';
-                            const subdistrictName = data.subdistrict && data.subdistrict.name ? data.subdistrict.name : '';
+                            const subdistrictName = data.subdistrict && data.subdistrict.name ? data
+                                .subdistrict.name : '';
                             const villageName = data.village && data.village.name ? data.village.name : '';
 
                             // Build location string without trailing/extra commas
@@ -700,7 +776,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Progres Pemutakhiran Sentra Ekonomi',
+                        label: 'Progres Pemutakhiran Usaha Total (Sentra Ekonomi + Suplemen)',
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         borderColor: 'rgba(75, 192, 192, 1)',
                         data: data
