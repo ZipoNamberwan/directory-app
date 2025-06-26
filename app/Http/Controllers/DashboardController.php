@@ -109,7 +109,7 @@ class DashboardController extends Controller
         $latestTotalBusiness = $chartReport->first()['total_uploaded'] ?? 0;
 
 
-        $chartData = ['data' => ($chartReport->pluck('uploaded'))->reverse()->values(), 'dates' => ($chartReport->pluck('date'))->reverse()->values()];
+        $chartData = ['data' => ($chartReport->pluck('total_uploaded'))->reverse()->values(), 'dates' => ($chartReport->pluck('date'))->reverse()->values()];
 
         $updateDate = Carbon::parse($latestDate)->translatedFormat('d F Y');
         $updateTime = Carbon::parse($latestRow->created_at)->format('H:i');
