@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\ReportExportJob;
 use App\Models\AssignmentStatus;
 use App\Models\MarketType;
+use App\Models\Organization;
 use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
 use App\Models\ReportMarketBusinessUser;
@@ -28,7 +29,7 @@ class DashboardController extends Controller
         $latestRow = ReportMarketBusinessRegency::orderByDesc('date')->first();
         $latestDate = $latestRow->date;
 
-        $organizations = [];
+        $organizations = $user->hasRole('adminprov') ? Organization::all() : [];
         $chartReport = collect();
         $numberOfDays = 10;
         $latestTotalBusiness = 0;

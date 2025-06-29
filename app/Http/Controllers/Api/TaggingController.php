@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MarketBusiness;
 use App\Models\Project;
 use App\Models\SupplementBusiness;
+use App\Models\SurveyBusiness;
 use Illuminate\Http\Request;
 use App\Traits\ApiResponser;
 use Exception;
@@ -48,8 +49,12 @@ class TaggingController extends Controller
         $minLng = $request->input('min_lng'); // left side (western longitude)
         $maxLng = $request->input('max_lng'); // right side (eastern longitude)
 
+
+        // Query SWMAPS market businesses within the bounding box
+        // We use the first project of type 'swmaps market' to attach to each business
+        // This is to ensure that the project field is always present in the response
         $project = Project::where('type', 'swmaps market')->first();
-        // 🔍 Query businesses within the bounding box
+
         $marketBusinesses = MarketBusiness::with(['user'])->whereBetween('latitude', [$minLat, $maxLat])
             ->whereBetween('longitude', [$minLng, $maxLng])
             ->get()
@@ -69,12 +74,43 @@ class TaggingController extends Controller
                 return $business;
             });
 
-        $supplementSwmapsBusinesses = SupplementBusiness::with(['project', 'user'])->whereBetween('latitude', [$minLat, $maxLat])
+        // Query Supplement SWMAPS businesses within the bounding box
+        $supplementSwmapsBusinesses = SupplementBusiness::with(['project', 'user'])
+            ->whereBetween('latitude', [$minLat, $maxLat])
             ->whereBetween('longitude', [$minLng, $maxLng])
             ->get();
 
-        $combinedBusiness = $marketBusinesses->merge($supplementSwmapsBusinesses);
 
+        // Project field in mobile is mandatory, so we create a dummy project for survey businesses
+        // This is a workaround to ensure the project field is always present
+        $project = [
+            'id' => 'survey',
+            'name' => 'Survey Project',
+            'type' => 'survey',
+            'description' => null,
+            'created_at' => '2024-06-28 10:15:30',
+            'updated_at' => '2024-06-28 10:15:30',
+        ];
+        // Dummy user temporary only before all have migrated to new mobile version
+        $dummyUser = [
+            'id' => 'dummy-user',
+            'firstname' => 'Survei BPS',
+            'email' => 'dummy@example.com',
+        ];
+        // Query Survey businesses within the bounding box
+        $surveyBusinesses = SurveyBusiness::with(['survey'])
+            ->whereBetween('latitude', [$minLat, $maxLat])
+            ->whereBetween('longitude', [$minLng, $maxLng])
+            ->get()
+            ->map(function ($business) use ($project, $dummyUser) {
+                $business->project = $project;
+                $business->user = $dummyUser;
+                return $business;
+            });
+
+        // Combine all businesses into a single collection
+        $combinedBusiness = $marketBusinesses->merge($supplementSwmapsBusinesses)
+            ->merge($surveyBusinesses);
 
         return $this->successResponse($combinedBusiness, 'Businesses retrieved successfully');
     }

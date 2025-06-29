@@ -101,7 +101,7 @@
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Deskripsi</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Sektor</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Catatan</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Kabupaten</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Satker</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">User yang Upload</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Jenis Projek</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Created At</th>
@@ -319,37 +319,37 @@
                     }
                 },
                 {
-                    responsivePriority: 2,
+                    responsivePriority: 4,
                     width: "10%",
                     data: "status",
                     type: "text",
                 },
                 {
-                    responsivePriority: 2,
+                    responsivePriority: 4,
                     width: "10%",
                     data: "address",
                     type: "text",
                 },
                 {
-                    responsivePriority: 2,
+                    responsivePriority: 4,
                     width: "10%",
                     data: "description",
                     type: "text",
                 },
                 {
-                    responsivePriority: 2,
+                    responsivePriority: 4,
                     width: "10%",
                     data: "sector",
                     type: "text",
                 },
                 {
-                    responsivePriority: 3,
+                    responsivePriority: 4,
                     width: "10%",
                     data: "note",
                     type: "text",
                 },
                 {
-                    responsivePriority: 4,
+                    responsivePriority: 3,
                     width: "10%",
                     data: "organization",
                     type: "text",
@@ -363,7 +363,7 @@
                     }
                 },
                 {
-                    responsivePriority: 4,
+                    responsivePriority: 2,
                     width: "10%",
                     data: "user",
                     type: "text",
