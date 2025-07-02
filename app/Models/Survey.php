@@ -14,4 +14,5 @@ class Survey extends Model
     protected $guarded = [];
     protected $table = 'surveys';
     public $incrementing = false;
+    public $timestamps = false;
 }
