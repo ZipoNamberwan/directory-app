@@ -7,6 +7,7 @@ use App\Models\Market;
 use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
 use App\Models\ReportMarketBusinessUser;
+use App\Models\ReportTotalBusinessUser;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -51,9 +52,9 @@ class ReportExportJob implements ShouldQueue
             if ($this->type == 'user') {
                 $records = [];
                 if ($user->hasRole('adminkab')) {
-                    $records = ReportMarketBusinessUser::where(['organization_id' => $user->organization_id, 'date' => $this->date]);
+                    $records = ReportTotalBusinessUser::where(['organization_id' => $user->organization_id, 'date' => $this->date]);
                 } else if ($user->hasRole('adminprov')) {
-                    $records = ReportMarketBusinessUser::where(['date' => $this->date]);
+                    $records = ReportTotalBusinessUser::where(['date' => $this->date]);
                 }
 
                 if (!$records->exists()) {
@@ -66,7 +67,7 @@ class ReportExportJob implements ShouldQueue
                 $csv->setDelimiter(',');
                 $csv->setEnclosure('"');
 
-                $csv->insertOne(['Nama', 'Satker', 'Jumlah Muatan', 'Tanggal']);
+                $csv->insertOne(['Nama', 'Satker', 'Sentra Ekonomi', 'Suplemen', 'Total', 'Tanggal']);
                 $records
                     ->with(['user'])
                     ->chunk(1000, function ($businesses) use ($csv) {
@@ -74,7 +75,9 @@ class ReportExportJob implements ShouldQueue
                             $csv->insertOne([
                                 $row->user->firstname,
                                 "[" . $row->user->organization->id . "] " . $row->user->organization->name,
-                                $row->uploaded,
+                                $row->market,
+                                $row->supplement,
+                                $row->total,
                                 $row->date,
                             ]);
                         }
@@ -249,6 +252,8 @@ class ReportExportJob implements ShouldQueue
 
                     fclose($stream);
                 }
+            } else if ($this->type == 'supplement'){
+
             }
 
             AssignmentStatus::find($this->uuid)->update(['status' => 'success']);

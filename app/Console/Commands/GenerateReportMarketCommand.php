@@ -5,6 +5,11 @@ namespace App\Console\Commands;
 use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
 use App\Models\ReportMarketBusinessUser;
+use App\Models\ReportSupplementBusinessRegency;
+use App\Models\ReportSupplementBusinessUser;
+use App\Models\ReportTotalBusinessRegency;
+use App\Models\ReportTotalBusinessUser;
+use App\Models\User;
 use DateTime;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +42,7 @@ class GenerateReportMarketCommand extends Command
         $today = $datetime->format('Y-m-d');
         $now = now();
 
+        // START OF REPORT MARKET BUSINESS BY REGENCY
         $businessCountByOrganizationAndMarketType = DB::table('organizations')
             ->crossJoin('market_types')
             ->leftJoin('markets', function ($join) {
@@ -66,8 +72,6 @@ class GenerateReportMarketCommand extends Command
             ->get();
 
         ReportMarketBusinessRegency::where('date', $today)->delete();
-
-        // Step 1: Prepare data for bulk insert
         $reportData = [];
 
         foreach ($businessCountByOrganizationAndMarketType as $regency) {
@@ -88,10 +92,10 @@ class GenerateReportMarketCommand extends Command
                 'market_type_id' => $regency->market_type_id,
             ];
         }
-
-        // Step 2: Bulk insert
         ReportMarketBusinessRegency::insert($reportData);
+        // === END OF REPORT MARKET BUSINESS BY REGENCY ===
 
+        // START OF REPORT MARKET BUSINESS BY USER
         $pml = Role::where('name', 'pml')->value('id');
         $operator = Role::where('name', 'operator')->value('id');
         $adminkab = Role::where('name', 'adminkab')->value('id');
@@ -132,7 +136,10 @@ class GenerateReportMarketCommand extends Command
         foreach (array_chunk($reportUserData, 1000) as $chunk) {
             ReportMarketBusinessUser::insert($chunk);
         }
+        // === END OF REPORT MARKET BUSINESS BY USER ===
 
+
+        // START OF REPORT MARKET BUSINESS BY MARKET
         $businessCountByMarket = DB::table('markets')
             ->leftJoin('market_business', 'markets.id', '=', 'market_business.market_id')
             ->select(
@@ -169,12 +176,10 @@ class GenerateReportMarketCommand extends Command
         foreach (array_chunk($reportMarketData, 1000) as $chunk) {
             ReportMarketBusinessMarket::insert($chunk);
         }
+        // === END OF REPORT MARKET BUSINESS BY MARKET ===
 
-
-        // Generate report for supplement
-        // Delete existing reports for today
-        DB::table('report_supplement')
-            ->whereDate('date', $today)
+        // START OF REPORT SUPPLEMENT BUSINESS BY REGENCY ===
+        ReportSupplementBusinessRegency::whereDate('date', $today)
             ->delete();
 
         $businessCounts = DB::table('supplement_business')
@@ -217,6 +222,132 @@ class GenerateReportMarketCommand extends Command
             }
         }
 
-        DB::table('report_supplement')->insert($rows);
+        ReportSupplementBusinessRegency::insert($rows);
+        // === END OF REPORT SUPPLEMENT BUSINESS BY REGENCY ===
+
+
+        // START OF REPORT SUPPLEMENT BUSINESS BY USER ===
+        ReportSupplementBusinessUser::whereDate('date', $today)
+            ->delete();
+
+        $reportData = DB::table('users')
+            ->leftJoin('supplement_business', function ($join) {
+                $join->on('users.id', '=', 'supplement_business.user_id')
+                    ->whereNull('supplement_business.deleted_at');
+            })
+            ->select(
+                'users.id as user_id',
+                'users.organization_id',
+                DB::raw('COUNT(supplement_business.id) as uploaded')
+            )
+            ->groupBy(
+                'users.id',
+                'users.organization_id'
+            )
+            ->get();
+
+        $insertData = [];
+
+        foreach ($reportData as $row) {
+            $insertData[] = [
+                'id' => Str::uuid()->toString(),
+                'uploaded' => $row->uploaded,
+                'user_id' => $row->user_id,
+                'organization_id' => $row->organization_id,
+                'date' => $today,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (!empty($insertData)) {
+            collect($insertData)->chunk(1000)->each(function ($chunk) {
+                ReportSupplementBusinessUser::insert($chunk->toArray());
+            });
+        }
+        // END OF REPORT SUPPLEMENT BUSINESS BY USER ===
+
+        // START OF REPORT TOTAL BUSINESS BY USER ===
+        ReportTotalBusinessUser::whereDate('date', $today)
+            ->delete();
+
+        $supplements = ReportSupplementBusinessUser::query()
+            ->where('date', $today)
+            ->select('user_id', DB::raw('SUM(uploaded) as supplement'))
+            ->groupBy('user_id')
+            ->pluck('supplement', 'user_id');
+
+        $markets = ReportMarketBusinessUser::query()
+            ->where('date', $today)
+            ->select('user_id', DB::raw('SUM(uploaded) as market'))
+            ->groupBy('user_id')
+            ->pluck('market', 'user_id');
+
+        $userIds = $supplements->keys()->merge($markets->keys())->unique();
+
+        $userOrgs = User::whereIn('id', $userIds)
+            ->pluck('organization_id', 'id'); // [user_id => organization_id]
+
+        $insertData = [];
+
+        foreach ($userIds as $userId) {
+            $insertData[] = [
+                'id' => Str::uuid()->toString(),
+                'user_id' => $userId,
+                'organization_id' => $userOrgs->get($userId),
+                'market' => $markets->get($userId, 0),
+                'supplement' => $supplements->get($userId, 0),
+                'total' => ($markets->get($userId, 0) + $supplements->get($userId, 0)),
+                'date' => $today,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        collect($insertData)->chunk(1000)->each(function ($chunk) {
+            ReportTotalBusinessUser::insert($chunk->toArray());
+        });
+
+        // END OF REPORT TOTAL BUSINESS BY USER ===
+
+        // START OF REPORT TOTAL BUSINESS BY REGENCY ===
+
+        ReportTotalBusinessRegency::whereDate('date', $today)
+            ->delete();
+
+        $marketReports = ReportMarketBusinessRegency::select('organization_id', DB::raw('SUM(uploaded) as market_uploaded'))
+            ->where('date', $today)
+            ->groupBy('organization_id')
+            ->get()
+            ->keyBy('organization_id'); // ✅ this is the fix
+
+        $supplementReports = ReportSupplementBusinessRegency::select('organization_id', DB::raw('SUM(uploaded) as supplement_uploaded'))
+            ->where('date', $today)
+            ->groupBy('organization_id')
+            ->get()
+            ->keyBy('organization_id'); // ✅ fix here too
+
+        $combined = collect();
+
+        // Now this will be an array of actual UUIDs or organization IDs
+        $allOrganizationIds = $marketReports->keys()->merge($supplementReports->keys())->unique();
+        foreach ($allOrganizationIds as $orgId) {
+            $market = $marketReports[$orgId]->market_uploaded ?? 0;
+            $supplement = $supplementReports[$orgId]->supplement_uploaded ?? 0;
+
+            $combined->push([
+                'id' => Str::uuid()->toString(),
+                'organization_id' => $orgId,
+                'market' => $market,
+                'supplement' => $supplement,
+                'total' => $market + $supplement,
+                'date' => $today,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+        ReportTotalBusinessRegency::insert($combined->toArray());
+
+        // END OF REPORT TOTAL BUSINESS BY REGENCY ===
     }
 }

@@ -59,23 +59,16 @@ class SupplementBusinessExportJob implements ShouldQueue
                 'Latitude',
                 'Longitude',
                 'User_Upload',
+                'Tipe',
                 'Kabupaten',
             ]);
 
             $business = null;
             $business = SupplementBusiness::query();
 
-            if ($this->role == 'adminprov') {
-                if ($this->organizationId != null) {
-                    $business->whereHas('market', function ($query) {
-                        $query->where('organization_id', $this->organizationId);
-                    });
-                }
-            } else if ($this->role == 'adminkab') {
-                $business->whereHas('market', function ($query) use ($status) {
-                    $query->where('organization_id', $status->user->organization_id);
-                });
-            } else if ($this->role == 'pml' || $this->role == 'operator') {
+            if ($this->role == 'adminkab') {
+                $business->where('organization_id', $status->user->organization_id);
+            } else if ($this->role == 'pml' || $this->role == 'operator' || $this->role == 'pcl') {
                 $business->where('user_id', $status->user_id);
             }
 
@@ -94,7 +87,8 @@ class SupplementBusinessExportJob implements ShouldQueue
                             $row->latitude,
                             $row->longitude,
                             $row->user->firstname,
-                            "[" . $row->organization->long_code . "] " . $row->organization->name,
+                            $row->project->type,
+                            $row->organization != null ? "[" . $row->organization->long_code . "] " . $row->organization->name : null,
                         ]);
                     }
                 });

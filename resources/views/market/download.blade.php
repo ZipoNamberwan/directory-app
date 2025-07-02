@@ -54,7 +54,11 @@
                                 data-toggle="select">
                                 <option value="0" disabled selected> -- Pilih Jenis Report -- </option>
                                 <option value="regency" {{ old('report') == 'regency' ? 'selected' : '' }}>
-                                    Report Jumlah Usaha Berdasarkan Kabupaten/Kota
+                                    Report Jumlah Usaha Sentra Ekonomi Berdasarkan Kabupaten/Kota
+                                </option>
+                                <option value="supplement"
+                                    {{ old('report') == 'total_supplement_regency' ? 'selected' : '' }}>
+                                    Report Jumlah Usaha Suplemen Berdasarkan Kabupaten/Kota
                                 </option>
                                 <option value="market" {{ old('report') == 'market' ? 'selected' : '' }}>
                                     Report Jumlah Usaha Berdasarkan Sentra Ekonomi

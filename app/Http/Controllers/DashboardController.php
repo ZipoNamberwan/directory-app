@@ -10,6 +10,7 @@ use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
 use App\Models\ReportMarketBusinessUser;
 use App\Models\ReportSupplementBusinessRegency;
+use App\Models\ReportTotalBusinessUser;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -238,29 +239,25 @@ class DashboardController extends Controller
         $user = User::find(Auth::id());
 
         // Start base query
-        $records = ReportMarketBusinessUser::query()->where('date', $date);
+        $records = ReportTotalBusinessUser::query()->where('date', $date);
 
         // Role-based filtering
         if ($user->hasRole('adminkab')) {
-            $records->where('report_market_business_user.organization_id', $user->organization_id);
+            $records->where('report_total_business_user.organization_id', $user->organization_id);
         }
 
         // Organization filter
         if ($request->organization && $request->organization !== 'all') {
-            $records->where('report_market_business_user.organization_id', $request->organization);
+            $records->where('report_total_business_user.organization_id', $request->organization);
         }
 
         // Total count before filtering
         $recordsTotal = $records->count();
 
-        // Join markets table to allow sorting by market name
-        $data = $records->leftJoin('users', 'report_market_business_user.user_id', '=', 'users.id')
-            ->select('report_market_business_user.*'); // keep base model fields
-
         // Search logic
         $searchkeyword = $request->search['value'];
         if (!empty($searchkeyword)) {
-            $data->where(function ($query) use ($searchkeyword) {
+            $records->where(function ($query) use ($searchkeyword) {
                 $query->whereHas('user', function ($userQuery) use ($searchkeyword) {
                     $userQuery->whereRaw('LOWER(firstname) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
                 });
@@ -268,7 +265,7 @@ class DashboardController extends Controller
         }
 
         // Filtered count
-        $recordsFiltered = $data->count();
+        $recordsFiltered = $records->count();
 
         // Determine ordering
         $orderColumn = 'created_at'; // default
@@ -284,7 +281,10 @@ class DashboardController extends Controller
                     $orderColumn = 'users.firstname'; // market name
                     break;
                 case 1:
-                    $orderColumn = 'uploaded';
+                    $orderColumn = 'market';
+                    break;
+                case 2:
+                    $orderColumn = 'supplement';
                     break;
                 // add more as needed
                 default:
@@ -293,16 +293,16 @@ class DashboardController extends Controller
         }
 
         // Apply ordering
-        $data->orderBy($orderColumn, $orderDir);
+        $records->orderBy($orderColumn, $orderDir);
 
         // Pagination
         if ($request->length != -1) {
-            $data = $data->skip($request->start)
+            $records = $records->skip($request->start)
                 ->take($request->length);
         }
 
         // Get data and eager-load relations
-        $result = $data->with(['user', /* 'organization' */])->get();
+        $result = $records->with(['user', /* 'organization' */])->get();
 
         return response()->json([
             "draw" => $request->draw,

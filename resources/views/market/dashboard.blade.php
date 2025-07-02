@@ -245,7 +245,7 @@
                 </div>
             </div>
 
-            <div class="col-md-9 col-sm-12 mb-3">
+            <div class="col-md-12 col-sm-12 mb-3">
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-start">
@@ -328,7 +328,7 @@
                 </div>
             </div>
 
-            <div class="col-md-3 col-sm-12 mb-3">
+            <div class="col-md-12 col-sm-12 mb-3">
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-start">
@@ -368,7 +368,13 @@
                                         Nama Petugas
                                     </th>
                                     <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                        Usaha yang Sudah Dimutakhirkan
+                                        Sentra Ekonomi
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Suplemen
+                                    </th>
+                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                        Total
                                     </th>
                                 </tr>
                             </thead>
@@ -642,7 +648,19 @@
                 {
                     responsivePriority: 2,
                     width: "10%",
-                    data: "uploaded",
+                    data: "market",
+                    className: 'text-center'
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "supplement",
+                    className: 'text-center'
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "total",
                     className: 'text-center'
                 },
             ],
