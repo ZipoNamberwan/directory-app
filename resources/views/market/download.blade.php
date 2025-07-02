@@ -248,7 +248,11 @@
                                 } else if (data == 'dashboard-market') {
                                     return 'Report Sentra Ekonomi'
                                 } else if (data == 'dashboard-regency') {
-                                    return 'Report Kabupaten/Kota'
+                                    return 'Report Sentra Ekonomi by Kabupaten/Kota'
+                                } else if (data == 'dashboard-supplement') {
+                                    return 'Report Suplemen by Kabupaten/Kota'
+                                } else {
+                                    return '-'
                                 }
 
                                 return '';

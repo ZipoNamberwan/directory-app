@@ -7,6 +7,7 @@ use App\Models\Market;
 use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
 use App\Models\ReportMarketBusinessUser;
+use App\Models\ReportSupplementBusinessRegency;
 use App\Models\ReportTotalBusinessUser;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -252,8 +253,40 @@ class ReportExportJob implements ShouldQueue
 
                     fclose($stream);
                 }
-            } else if ($this->type == 'supplement'){
+            } else if ($this->type == 'supplement') {
+                $records = ReportSupplementBusinessRegency::where('date', $this->date)
+                    ->whereIn('type', ['swmaps supplement', 'kendedes mobile'])
+                    ->with('organization')
+                    ->orderBy('organization_id')
+                    ->get();
 
+                if ($records->isEmpty()) {
+                    throw new Exception('Report kosong, silakan coba lagi dalam beberapa saat');
+                }
+
+                $stream = fopen(Storage::path('/dashboard_report/' . $this->uuid . ".csv"), 'w+');
+
+                $csv = Writer::createFromStream($stream);
+                $csv->setDelimiter(',');
+                $csv->setEnclosure('"');
+
+                $csv->insertOne([
+                    'Satker',
+                    'Total Usaha',
+                    'Tipe',
+                    'Tanggal'
+                ]);
+
+                foreach ($records as $record) {
+                    $csv->insertOne([
+                        "[" . $record['organization']->id . "] " . $record['organization']->name,
+                        $record['uploaded'],
+                        $record['type'],
+                        $this->date,
+                    ]);
+                }
+
+                fclose($stream);
             }
 
             AssignmentStatus::find($this->uuid)->update(['status' => 'success']);

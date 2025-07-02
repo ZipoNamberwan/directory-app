@@ -286,6 +286,9 @@ class DashboardController extends Controller
                 case 2:
                     $orderColumn = 'supplement';
                     break;
+                case 3:
+                    $orderColumn = 'total';
+                    break;
                 // add more as needed
                 default:
                     $orderColumn = 'created_at';
@@ -364,7 +367,7 @@ class DashboardController extends Controller
         $marketTypeIds[] = 'all'; // Add 'all' to the allowed values
 
         $validateArray = [
-            'report' => 'required|in:regency,user,market',
+            'report' => 'required|in:regency,user,market,supplement',
             'marketType' => [
                 'required_if:report,regency',
                 'nullable',

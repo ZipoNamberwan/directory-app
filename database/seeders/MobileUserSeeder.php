@@ -1011,6 +1011,37 @@ class MobileUserSeeder extends Seeder
             ['firstname' => "Irawati", 'email' => "iraputri25289@gmail.com", 'username' => "iraputri25289@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3508, 'regency_id' => 3508,],
             ['firstname' => "Ifa Lismawati", 'email' => "ifalismawati22@gmail.com", 'username' => "ifalismawati22@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3508, 'regency_id' => 3508,],
             ['firstname' => "MOKHAMAD ZAINUKHI ", 'email' => "mzainukhi@gmail.com", 'username' => "mzainukhi@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3508, 'regency_id' => 3508,],
+
+            // Additional
+            ['firstname' => "Achmad Fauzi (Sawah Pulo)", 'email' => "kecenk66@gmail.com", 'username' => "kecenk66@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Cecilia Novitasari", 'email' => "cecilianovitasari32@gmail.com", 'username' => "cecilianovitasari32@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Deay Choirony Azizah", 'email' => "desy.choi99@gmail.com", 'username' => "desy.choi99@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Devi Indah Permata Febrianty", 'email' => "dindah306@gmail.com", 'username' => "dindah306@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Ernawati (Petemon)", 'email' => "ernawati.awan@gmail.com", 'username' => "ernawati.awan@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Fitri Annisa Marsaid Putri, Sh", 'email' => "V3annisamp@gmail.com", 'username' => "V3annisamp@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Hadi Agus Wahyudiono, St", 'email' => "hadiawe@gmail.com", 'username' => "hadiawe@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Istiqomah", 'email' => "hisyam71117@gmail.com", 'username' => "hisyam71117@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Janti Sulistijowati", 'email' => "Sulistijowatijanti@gmail.com", 'username' => "Sulistijowatijanti@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Julaikah", 'email' => "dewikosasihhd@gmail.com", 'username' => "dewikosasihhd@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Kharisma Purnamasari,S.Hum", 'email' => "reezmapurnama@gmail.com", 'username' => "reezmapurnama@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Likiyati", 'email' => "Likiyati123@gmail.com", 'username' => "Likiyati123@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Mia Slamet", 'email' => "miaslamet08@gmail.com", 'username' => "miaslamet08@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Moh Irfan", 'email' => "ulyatimaret@gmail.com", 'username' => "ulyatimaret@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Muhammad Avin Nabily", 'email' => "muhammadnabily@gmail.com", 'username' => "muhammadnabily@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Muhammad Fathoni Sidqi Rizaldy", 'email' => "muhammadtoni1@gmail.com", 'username' => "muhammadtoni1@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Qonita Rahma Humairo", 'email' => "qonitarahma21@gmail.com", 'username' => "qonitarahma21@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Siti Romelah", 'email' => "sitiafandi45@gmail.com", 'username' => "sitiafandi45@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Sri Wulandari (Simo Gunung)", 'email' => "Sri.90003@gmail.com", 'username' => "Sri.90003@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Sulistyowati (Sidotopo)", 'email' => "st060278@gmail.com", 'username' => "st060278@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Sumiatiningsih,S.Pd", 'email' => "ningsihsumiati279@gmail.com", 'username' => "ningsihsumiati279@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Tri Indah Yanti S.Kom", 'email' => "in426ya@gmail.com", 'username' => "in426ya@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Umi Kalsum, S.Pdi", 'email' => "umikalsum.pbi@gmail.com", 'username' => "umikalsum.pbi@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Winarni (Tenggumung)", 'email' => "wwin21047@gmail.com", 'username' => "wwin21047@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Yunita Kusmiawati", 'email' => "yunitakusmia206@gmail.com", 'username' => "yunitakusmia206@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Yunita Widhiayanti", 'email' => "pininietha@yahoo.com", 'username' => "pininietha@yahoo.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "M Akmal Izziy Mukhtar", 'email' => "akmallizziy@gmail.com", 'username' => "akmallizziy@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+            ['firstname' => "Rizky Wahyu Mahesa", 'email' => "rizkywahyucbt028@gmail.com", 'username' => "rizkywahyucbt028@gmail.com", 'password' => Hash::make('se26sukses'), 'organization_id' => 3578, 'regency_id' => 3578,],
+
         ];
 
         foreach ($users as $user) {
@@ -1018,7 +1049,7 @@ class MobileUserSeeder extends Seeder
             if (!User::where('email', $user['email'])->exists()) {
                 $u = User::create(['firstname' => $user['firstname'], 'email' => $user['email'], 'regency_id' => $user['regency_id'], 'organization_id' => $user['organization_id'], 'username' => $user['username'], 'password' => Hash::make('se26sukses')]);
                 $u->assignRoleAllDatabase('pml');
-            } 
+            }
         }
     }
 }
