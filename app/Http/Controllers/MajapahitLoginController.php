@@ -118,7 +118,7 @@ class MajapahitLoginController extends Controller
                 $user->update([
                     'firstname' => $userData['firstname'],
                     'regency_id' => $userData['regency_id'],
-                    'organization_id' => $userData['organization_id'],
+                    // 'organization_id' => $userData['organization_id'],
                 ]);
             }
 
