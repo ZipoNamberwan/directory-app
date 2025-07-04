@@ -160,4 +160,16 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Organization::class, 'organization_id');
     }
+
+    public function wilkerstatSls()
+    {
+        return $this->belongsToMany(
+            Sls::class,
+            'sls_user_wilkerstat', // Pivot table name
+            'user_id',              // Foreign key on pivot table pointing to this model
+            'sls_id',               // Foreign key on pivot table pointing to the related model
+            'id',                   // Local key on the User model (default is 'id')
+            'id'                    // Local key on the Sls model (default is 'id')
+        );
+    }
 }

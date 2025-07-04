@@ -8,6 +8,7 @@ use App\Http\Controllers\MajapahitLoginController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login/wilkerstat', [AuthController::class, 'loginWilkerstat']);
 
 Route::middleware('auth:sanctum')->group(function () {
 

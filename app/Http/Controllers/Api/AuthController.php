@@ -41,4 +41,35 @@ class AuthController extends Controller
 
         return $this->successResponse(null, 'Logout berhasil');
     }
+
+    public function loginWilkerstat(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return $this->errorResponse('Email atau password keliru', 422);
+        }
+
+        // Only eager load wilkerstatSls WITHOUT nested village
+        $user = User::where('email', $request->email)
+            ->with(['organization', 'roles', 'wilkerstatSls'])
+            ->first();
+
+        $token = $user->createToken('mobile-token')->plainTextToken;
+
+        // Get unique village_ids from wilkerstatSls
+        $villageIds = $user->wilkerstatSls->pluck('village_id')->unique()->values();
+
+        // Fetch actual villages by ID
+        $villages = \App\Models\Village::whereIn('id', $villageIds)->get();
+
+        return $this->successResponse([
+            'user' => $user,
+            'villages' => $villages,
+            'token' => $token
+        ], 'Login successful');
+    }
 }
