@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Village;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponser;
@@ -64,7 +65,7 @@ class AuthController extends Controller
         $villageIds = $user->wilkerstatSls->pluck('village_id')->unique()->values();
 
         // Fetch actual villages by ID
-        $villages = \App\Models\Village::whereIn('id', $villageIds)->get();
+        $villages = Village::whereIn('id', $villageIds)->get();
 
         return $this->successResponse([
             'user' => $user,

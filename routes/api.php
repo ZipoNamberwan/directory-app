@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\TaggingController;
 use App\Http\Controllers\Api\VersionController;
+use App\Http\Controllers\Api\WilkerstatController;
 use App\Http\Controllers\MajapahitLoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/test', function () {
         return 'test';
     });
+
+    Route::get('/assignments/wilkerstat', [WilkerstatController::class, 'getAssignments']);
+    Route::get('/assignments/wilkerstat/village/{villageId}', [WilkerstatController::class, 'getBusinessByVillage']);
+    Route::get('/assignments/wilkerstat/sls/{slsId}', [WilkerstatController::class, 'getBusinessBySls']);
 
     Route::get('/business-in-box', [TaggingController::class, 'getBusinessInBoundingBox']);
     Route::get('/business/project/{projectId}', [TaggingController::class, 'getBusinessByProject']);
