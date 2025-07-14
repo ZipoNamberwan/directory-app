@@ -59,7 +59,7 @@ class WilkerstatController extends Controller
         $sls = $user->wilkerstatSls;
 
         // Filter SLS by village_id
-        $filteredSls = $sls->where('sls_id', $slsId);
+        $filteredSls = $sls->where('id', $slsId);
 
         if ($filteredSls->isEmpty()) {
             return $this->errorResponse('Tidak ada assignment untuk SLS ini', 404);
