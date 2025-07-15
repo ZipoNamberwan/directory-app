@@ -35,7 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('mobile-projects/{id}', [ProjectController::class, 'updateMobileProject']);
     Route::delete('mobile-projects/{id}', [ProjectController::class, 'destroyMobileProject']);
 
-    Route::get('/version/check', [VersionController::class, 'shouldUpdate']);
+    Route::get('/version/check', [VersionController::class, 'shouldUpdateKendedes']);
+    Route::get('/version/check/leres-pak', [VersionController::class, 'shouldUpdateLeresPak']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
 });
