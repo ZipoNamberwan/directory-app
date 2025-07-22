@@ -50,11 +50,14 @@ class MajapahitLoginController extends Controller
 
                     $user = User::create($userData);
                 } else {
-                    $user->update([
+                    $updateData = [
                         'firstname' => $userData['firstname'],
                         'regency_id' => $userData['regency_id'],
-                        'organization_id' => $userData['organization_id'],
-                    ]);
+                    ];
+                    if (array_key_exists('organization_id', $userData) && !is_null($userData['organization_id'])) {
+                        $updateData['organization_id'] = $userData['organization_id'];
+                    }
+                    $user->update($updateData);
                 }
 
                 Auth::login($user, true);
@@ -115,11 +118,14 @@ class MajapahitLoginController extends Controller
 
                 $user = User::create($userData);
             } else {
-                $user->update([
+                $updateData = [
                     'firstname' => $userData['firstname'],
                     'regency_id' => $userData['regency_id'],
-                    // 'organization_id' => $userData['organization_id'],
-                ]);
+                ];
+                if (array_key_exists('organization_id', $userData) && !is_null($userData['organization_id'])) {
+                    $updateData['organization_id'] = $userData['organization_id'];
+                }
+                $user->update($updateData);
             }
 
             $user = $user->load(['organization', 'roles']);

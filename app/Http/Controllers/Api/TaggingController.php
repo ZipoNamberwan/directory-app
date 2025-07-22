@@ -137,8 +137,9 @@ class TaggingController extends Controller
         ]);
 
         try {
-            $project = Project::find($request->project['id']);
-            if ($project == null) {
+            $project = Project::withTrashed()->find($request->project['id']);
+            if ($project === null) {
+                // Doesn't exist at all, safe to create
                 $project = Project::create([
                     'id' => $request->project['id'],
                     'name' => $request->project['name'],
@@ -146,6 +147,9 @@ class TaggingController extends Controller
                     'type' => 'kendedes mobile',
                     'user_id' => $request->user,
                 ]);
+            } elseif ($project->trashed()) {
+                // It exists but is soft-deleted — restore and optionally update it
+                $project->restore();
             }
 
             $business = SupplementBusiness::create([
@@ -186,8 +190,9 @@ class TaggingController extends Controller
         ]);
 
         try {
-            $project = Project::find($request->project['id']);
-            if ($project == null) {
+            $project = Project::withTrashed()->find($request->project['id']);
+            if ($project === null) {
+                // Doesn't exist at all, safe to create
                 $project = Project::create([
                     'id' => $request->project['id'],
                     'name' => $request->project['name'],
@@ -195,6 +200,9 @@ class TaggingController extends Controller
                     'type' => 'kendedes mobile',
                     'user_id' => $request->user,
                 ]);
+            } elseif ($project->trashed()) {
+                // It exists but is soft-deleted — restore and optionally update it
+                $project->restore();
             }
 
             $business = SupplementBusiness::updateOrCreate(
@@ -243,8 +251,10 @@ class TaggingController extends Controller
 
         foreach ($request->tags as $tagData) {
             try {
-                $project = Project::find($tagData['project']['id']);
-                if ($project == null) {
+                $project = Project::withTrashed()->find($tagData['project']['id']);
+
+                if ($project === null) {
+                    // ── 1. It doesn’t exist at all → create it
                     $project = Project::create([
                         'id' => $tagData['project']['id'],
                         'name' => $tagData['project']['name'],
@@ -252,6 +262,8 @@ class TaggingController extends Controller
                         'type' => 'kendedes mobile',
                         'user_id' => $tagData['user'],
                     ]);
+                } elseif ($project->trashed()) {
+                    $project->restore();
                 }
                 $tag = SupplementBusiness::updateOrCreate(
                     ['id' => $tagData['id']],

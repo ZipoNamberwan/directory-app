@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PolygonController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\TaggingController;
 use App\Http\Controllers\Api\VersionController;
@@ -37,6 +38,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/version/check', [VersionController::class, 'shouldUpdateKendedes']);
     Route::get('/version/check/leres-pak', [VersionController::class, 'shouldUpdateLeresPak']);
+
+    Route::get('/villages/{subdistrict}', [PolygonController::class, 'getVillagesBySubdistrict']);
+    Route::get('/sls/{village}', [PolygonController::class, 'getSlsByVillage']);
+    Route::post('/polygon/download', [PolygonController::class, 'downloadPolygonData']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
 });
