@@ -222,21 +222,6 @@
                             return data[0].name
                         }
                     },
-                     {
-                        responsivePriority: 2,
-                        width: "10%",
-                        data: "roles",
-                        type: "text",
-                        render: function(data, type, row) {
-                            if (type === 'display') {
-                                const roleNames = data.map(role => role.name).join(', ');
-                                return `<div class="my-1"> 
-                                            <p style='font-size: 0.7rem' class='text-secondary mb-0'>${roleNames}</p>
-                                        </div>`
-                            }
-                            return data[0].name
-                        }
-                    },
                     {
                         responsivePriority: 2,
                         width: "10%",
