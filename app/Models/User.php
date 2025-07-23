@@ -29,6 +29,7 @@ class User extends Authenticatable
         'regency_id',
         'organization_id',
         'must_change_password',
+        'is_wilkerstat_user',
     ];
 
     /**

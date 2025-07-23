@@ -154,6 +154,7 @@
                     label.textContent = 'Tidak';
                 }
             }
+            toggleLabel()
         </script>
 
         <script>

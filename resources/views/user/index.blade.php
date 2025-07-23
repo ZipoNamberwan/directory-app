@@ -73,12 +73,21 @@
                                 <option value="viewer">Viewer</option>
                             </select>
                         </div>
+                        <div class="col-md-3">
+                            <label class="form-control-label">Tampikan Hanya Petugas Wilkerstat Saja<span class="text-danger">*</span></label>
+                            <div class="form-check form-switch">
+                                <input onchange="toggleWilkerstat()" value="1" class="form-check-input" 
+                                    type="checkbox" id="is_wilkerstat_user">
+                                <label id="switchlabel" class="form-check-label" for="is_wilkerstat_user">Tidak</label>
+                            </div>
+                        </div>
                     </div>
                     <table id="myTable" class="align-items-center mb-0 text-sm">
                         <thead>
                             <tr>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama dan email</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Role</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Petugas Wilkerstat?</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Satker</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
                             </tr>
@@ -135,15 +144,25 @@
                 $(selector).on('change', handler);
             });
 
-            function getFilterUrl(filter) {
+             function getFilterUrl(filter) {
                 var filterUrl = ''
-                var e = document.getElementById(filter);
-                if (e != null) {
-                    var filterselected = e.options[e.selectedIndex];
-                    if (filterselected != null) {
-                        var filterid = filterselected.value
-                        if (filterid != 0) {
-                            filterUrl = `&${filter}=` + filterid
+                if (filter === 'is_wilkerstat_user') {
+                    const checkbox = document.getElementById('is_wilkerstat_user');
+
+                    if (checkbox.checked) {
+                        filterUrl = `&${filter}=1`;
+                    } else {
+                        filterUrl = `&${filter}=0`;
+                    }
+                } else {
+                    var e = document.getElementById(filter);
+                    if (e != null) {
+                        var filterselected = e.options[e.selectedIndex];
+                        if (filterselected != null) {
+                            var filterid = filterselected.value
+                            if (filterid != 0) {
+                                filterUrl = `&${filter}=` + filterid
+                            }
                         }
                     }
                 }
@@ -153,7 +172,7 @@
 
             function renderTable() {
                 filterUrl = ''
-                filterTypes = ['role', 'organization']
+                filterTypes = ['role', 'organization', 'is_wilkerstat_user']
                 filterTypes.forEach(f => {
                     filterUrl += getFilterUrl(f)
                 });
@@ -201,6 +220,35 @@
                                         </div>`
                             }
                             return data[0].name
+                        }
+                    },
+                     {
+                        responsivePriority: 2,
+                        width: "10%",
+                        data: "roles",
+                        type: "text",
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                const roleNames = data.map(role => role.name).join(', ');
+                                return `<div class="my-1"> 
+                                            <p style='font-size: 0.7rem' class='text-secondary mb-0'>${roleNames}</p>
+                                        </div>`
+                            }
+                            return data[0].name
+                        }
+                    },
+                    {
+                        responsivePriority: 2,
+                        width: "10%",
+                        data: "is_wilkerstat_user",
+                        type: "text",
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                return `<div class="my-1"> 
+                                            <p style='font-size: 0.7rem' class='text-secondary mb-0'>${data ? 'Ya' : 'Tidak'}</p>
+                                        </div>`
+                            }
+                            return data ? 'Ya' : 'Tidak'
                         }
                     },
                     {
@@ -277,6 +325,19 @@
                         document.getElementById('formdelete' + id).submit();
                     }
                 })
+            }
+
+            function toggleWilkerstat() {
+                const checkbox = document.getElementById('is_wilkerstat_user');
+                const label = document.getElementById('switchlabel');
+
+                if (checkbox.checked) {
+                    label.textContent = 'Ya';
+                } else {
+                    label.textContent = 'Tidak';
+                }
+
+                renderTable();
             }
         </script>
     @endpush

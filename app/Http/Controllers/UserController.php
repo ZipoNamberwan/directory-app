@@ -76,7 +76,8 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? $request->organization : null) : $admin->regency->id,
             'organization_id' => $admin->hasRole('adminprov') ? $request->organization  : $admin->organization->id,
-            'must_change_password' => false
+            'must_change_password' => false,
+            'is_wilkerstat_user' => $request->has('is_wilkerstat_user') ? $request->is_wilkerstat_user : false,
         ]);
         $user->assignRoleAllDatabase($request->role);
 
@@ -144,6 +145,7 @@ class UserController extends Controller
             'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? $request->organization : null) : $admin->regency->id,
             'organization_id' => $admin->hasRole('adminprov') ? $request->organization  : $admin->organization->id,
             'password' => $request->password != $user->password ? Hash::make($request->password) : $user->password,
+            'is_wilkerstat_user' => $request->has('is_wilkerstat_user') ? $request->is_wilkerstat_user : false,
         ]);
         // $user->syncRoles([$request->role]);
         $user->assignRoleAllDatabase($request->role);
@@ -184,6 +186,11 @@ class UserController extends Controller
         }
         if ($request->organization != null && $request->organization != '0') {
             $records->where('organization_id', $request->organization);
+        }
+        if ($request->is_wilkerstat_user != null) {
+            if ($request->is_wilkerstat_user == "1") {
+                $records->where('is_wilkerstat_user', true);
+            }
         }
 
         $recordsTotal = $records->count();
