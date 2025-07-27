@@ -27,9 +27,11 @@ yarn-error.log
 /python_script/result/usaha/*
 /python_script/result/market/*
 /python_script/result/assignment/*
+/python_script/result/sipw-assignment/*
 /python_script/usaha/*
 /python_script/market/*
-python_script/assignment/*
+/python_script/assignment/*
+/python_script/sipw-assignment/*
 # **/caddy
 frankenphp
 frankenphp-worker.php
