@@ -411,4 +411,9 @@ class DashboardController extends Controller
             return redirect('/pasar-dashboard/download')->with('error-delete', 'Download tidak diproses karena masih ada proses download yang belum selesai');
         }
     }
+
+    public function showDashboardKenarok()
+    {
+        return view('home.kenarok');
+    }
 }

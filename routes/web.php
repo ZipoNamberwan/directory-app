@@ -143,6 +143,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::delete('/pasar/manajemen/{id}', [MarketManagementController::class, 'deleteMarket']);
 
 		Route::get('/pasar-dashboard', [DashboardController::class, 'showDashboardPage'])->name('market-dashboard');
+		Route::get('/kenarok-dashboard', [DashboardController::class, 'showDashboardKenarok']);
 		Route::get('/pasar-dashboard/download', [DashboardController::class, 'showDownloadReportPage']);
 		Route::post('/pasar-dashboard/download', [DashboardController::class, 'downloadReport']);
 		Route::get('/pasar-dashboard/market/data/{date}', [DashboardController::class, 'getMarketReportData']);

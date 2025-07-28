@@ -116,13 +116,13 @@
                 </li>
                 @hasrole('adminkab|adminprov')
                     <li class="nav-item">
-                        <a class="nav-link {{ Route::currentRouteName() == 'market-dashboard' ? 'active' : '' }}"
-                            href="{{ route('market-dashboard') }}">
+                        <a class="nav-link {{ Route::currentRouteName() == 'home' ? 'active' : '' }}"
+                            href="{{ route('home') }}">
                             <div
                                 class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
                                 <i class="fas fa-table-columns text-primary text-sm opacity-10"></i>
                             </div>
-                            <span class="nav-link-text ms-1">Proggress</span>
+                            <span class="nav-link-text ms-1">Home</span>
                         </a>
                     </li>
                 @endhasrole

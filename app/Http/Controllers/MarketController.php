@@ -438,7 +438,7 @@ class MarketController extends Controller
         $user = User::find(Auth::id());
 
         if ($user->hasRole('adminprov') || $user->hasRole('adminkab')) {
-            return redirect('/pasar-dashboard');
+            return view('home.home');
         } else {
             return redirect('/pasar');
         }
