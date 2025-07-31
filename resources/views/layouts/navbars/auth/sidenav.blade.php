@@ -201,6 +201,21 @@
                     <span class="nav-link-text ms-1">Download Project Suplemen</span>
                 </a>
             </li>
+            {{-- @hasrole('adminprov')
+                <li class="nav-item mt-3">
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Wilkerstat</h6>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'suplemen/download') == true ? 'active' : '' }}"
+                        href="/suplemen/download">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-book text-sm opacity-10" style="color: #6d03ef"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Assignment Wilkerstat</span>
+                    </a>
+                </li>
+            @endhasrole --}}
             @hasrole('adminkab|adminprov')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Petugas</h6>
