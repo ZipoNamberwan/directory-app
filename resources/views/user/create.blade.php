@@ -100,10 +100,9 @@
                                     {{ $message }}
                                 </div>
                             @enderror
-
                         </div>
                     </div>
-                    <div class="row">
+                    {{-- <div class="row">
                         <div class="col-md-4 mt-3">
                             <label class="form-control-label" for="address">Apakah Petugas Wilkerstat?</label>
                             <input type="hidden" name="is_wilkerstat_user" value="0">
@@ -113,6 +112,31 @@
                                     {{ old('is_wilkerstat_user', ($user->is_wilkerstat_user ?? 0) == 1) ? 'checked' : '' }}>
                                 <label id="switchlabel" class="form-check-label" for="is_wilkerstat_user">Tidak</label>
                             </div>
+                        </div>
+                    </div> --}}
+                    <div class="row">
+                        <div class="col-md-4 mt-3">
+                            <label class="form-control-label" for="address">Jenis Akun</label>
+                            <div class="form-check">
+                                <input class="form-check-input" @if($user != null) @if($user->is_kendedes_user) checked @endif @endif type="checkbox" value="kendedes" id="kendedesCheckbox"
+                                    name="type[]">
+                                <label class="form-check-label" for="kendedesCheckbox">
+                                    Ken Dedes Mobile
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" @if($user != null) @if($user->is_kenarok_user) checked @endif @endif type="checkbox" value="kenarok" id="kenarokCheckbox"
+                                    name="type[]">
+                                <label class="form-check-label" for="kenarokCheckbox">
+                                    Ken Arok
+                                </label>
+                            </div>
+                            @error('type')
+                                <div class="error-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
                     </div>
                     @hasrole('adminprov')

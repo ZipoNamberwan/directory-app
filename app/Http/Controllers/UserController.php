@@ -50,6 +50,8 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => ['required', Password::min(8)->mixedCase()],
             'role' => ['required', Rule::in(['adminprov', 'adminkab', 'pml', 'pcl', 'operator'])],
+            'type' => ['required', 'array', 'min:1'],
+            'type.*' => ['in:kendedes,kenarok'],
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['organization'] = 'required';
@@ -77,7 +79,9 @@ class UserController extends Controller
             'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? $request->organization : null) : $admin->regency->id,
             'organization_id' => $admin->hasRole('adminprov') ? $request->organization  : $admin->organization->id,
             'must_change_password' => false,
-            'is_wilkerstat_user' => $request->has('is_wilkerstat_user') ? $request->is_wilkerstat_user : false,
+            'is_kendedes_user' => in_array('kendedes', $request->type ?? []),
+            'is_kenarok_user'  => in_array('kenarok', $request->type ?? []),
+            'is_wilkerstat_user' => in_array('kenarok', $request->type ?? []),
         ]);
         $user->assignRoleAllDatabase($request->role);
 
@@ -117,6 +121,8 @@ class UserController extends Controller
             ],
             'password' => ['required', Password::min(8)->mixedCase()],
             'role' => ['required', Rule::in(['adminprov', 'adminkab', 'pml', 'pcl', 'operator'])],
+            'type' => ['required', 'array', 'min:1'],
+            'type.*' => ['in:kendedes,kenarok'],
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['organization'] = 'required';
@@ -145,7 +151,9 @@ class UserController extends Controller
             'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? $request->organization : null) : $admin->regency->id,
             'organization_id' => $admin->hasRole('adminprov') ? $request->organization  : $admin->organization->id,
             'password' => $request->password != $user->password ? Hash::make($request->password) : $user->password,
-            'is_wilkerstat_user' => $request->has('is_wilkerstat_user') ? $request->is_wilkerstat_user : false,
+            'is_kendedes_user' => in_array('kendedes', $request->type ?? []),
+            'is_kenarok_user'  => in_array('kenarok', $request->type ?? []),
+            'is_wilkerstat_user' => in_array('kenarok', $request->type ?? []),
         ]);
         // $user->syncRoles([$request->role]);
         $user->assignRoleAllDatabase($request->role);
@@ -186,6 +194,13 @@ class UserController extends Controller
         }
         if ($request->organization != null && $request->organization != '0') {
             $records->where('organization_id', $request->organization);
+        }
+        if ($request->type != null && $request->type != '0' && $request->type != 'all') {
+            if ($request->type == 'kenarok') {
+                $records->where('is_kenarok_user', true);
+            } else if ($request->type == 'kendedes') {
+                $records->where('is_kendedes_user', true);
+            }
         }
         if ($request->is_wilkerstat_user != null) {
             if ($request->is_wilkerstat_user == "1") {

@@ -30,6 +30,8 @@ class User extends Authenticatable
         'organization_id',
         'must_change_password',
         'is_wilkerstat_user',
+        'is_kendedes_user',
+        'is_kenarok_user'
     ];
 
     /**

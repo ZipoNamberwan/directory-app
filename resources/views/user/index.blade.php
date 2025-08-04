@@ -38,15 +38,46 @@
         <div class="card">
             <div class="card-header pb-0">
                 <div class="d-flex align-items-center">
-                    <h4 class="text-capitalize">Daftar Petugas</h4>
-                    <a href="/users/create" class="btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
-                        <span class="btn-inner--icon"><i class="fas fa-plus"></i></span>
-                        <span class="ml-3 btn-inner--text">Tambah</span>
-                    </a>
+                    <div>
+                        <h4 class="text-capitalize mb-3 d-flex align-items-center">Daftar Petugas</h4>
+                        <div class="text-sm mb-3">
+                            <p class="mb-2">
+                                Menu ini digunakan untuk mengelola akun petugas untuk Login <strong>Kendedes Web</strong>, 
+                                <strong>Kendedes Mobile</strong>, maupun <strong>Ken Arok</strong>.
+                            </p>
+                            <ul class="mb-2 ps-4">
+                                <li>
+                                    Karena Ken Dedes dan Ken Arok menggunakan <strong>database yang sama</strong>, 
+                                    maka satu akun petugas bisa ditambahkan:
+                                    <ul>
+                                        <li><strong>Hanya sebagai akun Ken Arok</strong>, atau</li>
+                                        <li><strong>Hanya sebagai akun Ken Dedes Mobile</strong>, atau</li>
+                                        <li><strong>Keduanya sekaligus</strong></li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    Akun mana saja yang merupakan akun Ken Arok dan Kendedes bisa difilter menggunakan 
+                                    <strong>filter jenis akun</strong>.
+                                </li>
+                                <li>
+                                    Untuk mengubah jenis akun petugas, silakan edit petugas tersebut dan centang atau hilangkan centang pada opsi
+                                    <strong>Ken Arok</strong> atau <strong>Ken Dedes Mobile</strong>.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="card-body pt-1">
                 <div>
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <a href="/users/create" class="btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
+                                <span class="btn-inner--icon"><i class="fas fa-plus"></i></span>
+                                <span class="ml-3 btn-inner--text">Tambah</span>
+                            </a>
+                        </div>
+                    </div>
                     <div class="row mb-3">
                         @hasrole('adminprov')
                             <div class="col-md-3">
@@ -73,13 +104,22 @@
                                 <option value="viewer">Viewer</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        {{-- <div class="col-md-3">
                             <label class="form-control-label">Tampikan Hanya Petugas Wilkerstat Saja<span class="text-danger">*</span></label>
                             <div class="form-check form-switch">
                                 <input onchange="toggleWilkerstat()" value="1" class="form-check-input" 
                                     type="checkbox" id="is_wilkerstat_user">
                                 <label id="switchlabel" class="form-check-label" for="is_wilkerstat_user">Tidak</label>
                             </div>
+                        </div> --}}
+                        <div class="col-md-3">
+                            <label class="form-control-label">Filter Jenis Akun <span class="text-danger">*</span></label>
+                            <select id="type" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Jenis Akun -- </option>
+                                <option value="all">Semua</option>
+                                <option value="kendedes">Akun Ken Dedes Mobile</option>
+                                <option value="kenarok">Akun Ken Arok</option>
+                            </select>
                         </div>
                     </div>
                     <table id="myTable" class="align-items-center mb-0 text-sm">
@@ -87,7 +127,7 @@
                             <tr>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama dan email</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Role</th>
-                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Petugas Wilkerstat?</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Jenis Akun</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Satker</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
                             </tr>
@@ -119,7 +159,10 @@
             }, {
                 selector: '#organization',
                 placeholder: 'Pilih Satker'
-            }, ];
+            }, {
+                selector: '#type',
+                placeholder: 'Pilih Jenis Akun'
+            }];
 
             selectConfigs.forEach(({
                 selector,
@@ -136,6 +179,9 @@
                     renderTable()
                 },
                 '#organization': () => {
+                    renderTable()
+                },
+                '#type': () => {
                     renderTable()
                 },
             };
@@ -172,7 +218,7 @@
 
             function renderTable() {
                 filterUrl = ''
-                filterTypes = ['role', 'organization', 'is_wilkerstat_user']
+                filterTypes = ['role', 'organization', /* 'is_wilkerstat_user', */ 'type']
                 filterTypes.forEach(f => {
                     filterUrl += getFilterUrl(f)
                 });
@@ -209,7 +255,7 @@
                     },
                     {
                         responsivePriority: 2,
-                        width: "10%",
+                        width: "5%",
                         data: "roles",
                         type: "text",
                         render: function(data, type, row) {
@@ -225,15 +271,20 @@
                     {
                         responsivePriority: 2,
                         width: "10%",
-                        data: "is_wilkerstat_user",
+                        data: "is_kendedes_user",
                         type: "text",
                         render: function(data, type, row) {
                             if (type === 'display') {
-                                return `<div class="my-1"> 
-                                            <p style='font-size: 0.7rem' class='text-secondary mb-0'>${data ? 'Ya' : 'Tidak'}</p>
-                                        </div>`
+                                let type = ''
+                                if (data === 1){
+                                    type = type + `<span class="badge bg-success me-2">KDM</span>`
+                                }
+                                if (row.is_kenarok_user === 1) {
+                                    type = type + `<span class="badge bg-info">Ken Arok</span>`
+                                }
+                                return '<div class="d-flex">'+type+'</div>'
                             }
-                            return data ? 'Ya' : 'Tidak'
+                            return data
                         }
                     },
                     {
@@ -255,7 +306,7 @@
                     },
                     {
                         responsivePriority: 3,
-                        width: "10%",
+                        width: "5%",
                         data: "id",
                         type: "text",
                         render: function(data, type, row) {
