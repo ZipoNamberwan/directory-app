@@ -110,6 +110,7 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        // dd($request->change_password);
         $admin = User::find(Auth::id());
 
         $validateArray = [

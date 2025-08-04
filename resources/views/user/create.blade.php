@@ -118,16 +118,20 @@
                         <div class="col-md-4 mt-3">
                             <label class="form-control-label" for="address">Jenis Akun</label>
                             <div class="form-check">
-                                <input class="form-check-input" @if($user != null) @if($user->is_kendedes_user) checked @endif @endif type="checkbox" value="kendedes" id="kendedesCheckbox"
-                                    name="type[]">
+                                <input class="form-check-input"
+                                    @if ($user != null) @if ($user->is_kendedes_user) checked @endif
+                                    @endif type="checkbox" value="kendedes" id="kendedesCheckbox"
+                                name="type[]">
                                 <label class="form-check-label" for="kendedesCheckbox">
                                     Ken Dedes Mobile
                                 </label>
                             </div>
 
                             <div class="form-check">
-                                <input class="form-check-input" @if($user != null) @if($user->is_kenarok_user) checked @endif @endif type="checkbox" value="kenarok" id="kenarokCheckbox"
-                                    name="type[]">
+                                <input class="form-check-input"
+                                    @if ($user != null) @if ($user->is_kenarok_user) checked @endif
+                                    @endif type="checkbox" value="kenarok" id="kenarokCheckbox"
+                                name="type[]">
                                 <label class="form-check-label" for="kenarokCheckbox">
                                     Ken Arok
                                 </label>
@@ -161,14 +165,35 @@
                             </div>
                         </div>
                     @endhasrole
+                    @if ($user != null)
+                        <div class="col-md-4 mt-3">
+                            <label class="form-control-label" for="change_password">Apakah Mau Ganti Password?</label>
+                            <input type="hidden" name="change_password" value="0">
+                            <div class="form-check form-switch">
+                                <input value="1" onchange="toggleChangePassword()" class="form-check-input"
+                                    name="change_password" type="checkbox" id="change_password"
+                                    {{ old('change_password', 0) == 1 ? 'checked' : '' }}>
+                                <label id="switchlabel" class="form-check-label" for="change_password">Tidak</label>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="row">
                         <div class="col-md-6 mt-3 mb-3">
-                            <label class="form-control-label" for="password">Password <span
-                                    class="text-danger">*</span></label>
-                            <input type="password" name="password"
-                                class="form-control @error('password') is-invalid @enderror" id="password"
-                                value="{{ @old('password', $user != null ? $user->password : '') }}"
-                                autocomplete="new-password" placeholder="Password">
+                            <label class="form-control-label" for="password">
+                                Password <span class="text-danger">*</span>
+                            </label>
+
+                            <div class="input-group">
+                                <input type="password" name="password"
+                                    class="form-control @error('password') is-invalid @enderror" id="password"
+                                    value="{{ old('password') }}" autocomplete="new-password" placeholder="Password"
+                                    {{-- Disable password input only when editing and checkbox is not checked --}} @if ($user != null && old('change_password', 0) != 1) disabled @endif>
+                                <span class="input-group-text bg-white">
+                                    <i class="fas fa-eye" id="togglePassword" style="cursor: pointer;"></i>
+                                </span>
+                            </div>
+
                             @error('password')
                                 <div class="error-feedback">
                                     {{ $message }}
@@ -176,6 +201,7 @@
                             @enderror
                         </div>
                     </div>
+
                     <button class="btn btn-primary mt-3" id="submit" type="submit">Submit</button>
                 </form>
             </div>
@@ -187,7 +213,42 @@
         <script src="/vendor/jquery/jquery-3.7.1.min.js"></script>
         <script src="/vendor/select2/select2.min.js"></script>
 
+        @if ($user != null)
+            <script>
+                function toggleChangePassword() {
+                    const checkbox = document.getElementById('change_password');
+                    const passwordInput = document.getElementById('password');
+                    const label = document.getElementById('switchlabel');
+
+                    if (checkbox.checked) {
+                        passwordInput.removeAttribute('disabled');
+                        label.textContent = 'Ya';
+                    } else {
+                        passwordInput.setAttribute('disabled', true);
+                        label.textContent = 'Tidak';
+                    }
+                }
+
+                // Ensure correct state after page reload (e.g., after validation error)
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (document.getElementById('change_password')) {
+                        toggleChangePassword();
+                    }
+                });
+            </script>
+        @endif
+
         <script>
+            document.getElementById('togglePassword').addEventListener('click', function() {
+                const passwordInput = document.getElementById('password');
+                const icon = this;
+
+                const isHidden = passwordInput.type === 'password';
+                passwordInput.type = isHidden ? 'text' : 'password';
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            });
+
             [{
                 selector: '#organization',
                 placeholder: 'Pilih Satker',
@@ -199,7 +260,7 @@
             });
         </script>
 
-        <script>
+        {{-- <script>
             function toggleLabel() {
                 const checkbox = document.getElementById('is_wilkerstat_user');
                 const label = document.getElementById('switchlabel');
@@ -211,6 +272,6 @@
                 }
             }
             toggleLabel()
-        </script>
+        </script> --}}
     @endpush
 @endsection
