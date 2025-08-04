@@ -26,6 +26,10 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->with(['organization', 'roles'])->first();
 
+        if (!$user->is_kendedes_user) {
+            return $this->errorResponse('Akun ini tidak memiliki akses ke KDM. Silakan hubungi admin kab/kota untuk mengubah akses melalui Admin Kendedes Web', 422);
+        }
+
         // Create new personal access token
         $token = $user->createToken('mobile-token')->plainTextToken;
 
@@ -58,6 +62,10 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)
             ->with(['organization', 'roles', 'wilkerstatSls'])
             ->first();
+
+        if (!$user->is_kenarok_user) {
+            return $this->errorResponse('Akun ini tidak memiliki akses ke Ken Arok. Silakan hubungi admin kab/kota untuk mengubah akses melalui Admin Kendedes Web', 422);
+        }
 
         $token = $user->createToken('mobile-token')->plainTextToken;
 
