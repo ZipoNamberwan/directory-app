@@ -110,7 +110,6 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // dd($request->change_password);
         $admin = User::find(Auth::id());
 
         $validateArray = [
@@ -120,11 +119,14 @@ class UserController extends Controller
                 'email',
                 Rule::unique('users')->ignore($id),
             ],
-            'password' => ['required', Password::min(8)->mixedCase()],
             'role' => ['required', Rule::in(['adminprov', 'adminkab', 'pml', 'pcl', 'operator'])],
             'type' => ['required', 'array', 'min:1'],
             'type.*' => ['in:kendedes,kenarok'],
+            'change_password' => 'required',
         ];
+        if ($request->change_password == "1") {
+            $validateArray['password'] = ['required', Password::min(8)->mixedCase()];
+        }
         if ($admin->hasRole('adminprov')) {
             $validateArray['organization'] = 'required';
         }
@@ -151,7 +153,7 @@ class UserController extends Controller
             'username' => $request->email,
             'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? $request->organization : null) : $admin->regency->id,
             'organization_id' => $admin->hasRole('adminprov') ? $request->organization  : $admin->organization->id,
-            'password' => $request->password != $user->password ? Hash::make($request->password) : $user->password,
+            'password' => $request->change_password == "1" ? Hash::make($request->password) : $user->password,
             'is_kendedes_user' => in_array('kendedes', $request->type ?? []),
             'is_kenarok_user'  => in_array('kenarok', $request->type ?? []),
             'is_wilkerstat_user' => in_array('kenarok', $request->type ?? []),
