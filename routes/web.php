@@ -66,7 +66,7 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('/status/data/{type}', [HomeController::class, 'getAssignmentStatusData']);
 	Route::post('/status/download/{type}', [HomeController::class, 'getAssigmentFile']);
 
-	Route::group(['middleware' => ['role:pml|operator|adminkab|adminprov']], function () {
+	Route::group(['middleware' => ['role:pcl|pml|operator|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-non-sls', [AdminKabController::class, 'updatePage'])->name('updating-non-sls');
 		Route::get('/tambah-direktori', [AdminKabController::class, 'showAddition'])->name('tambah-direktori');
 

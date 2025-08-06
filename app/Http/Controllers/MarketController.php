@@ -64,6 +64,9 @@ class MarketController extends Controller
     public function showUploadPage()
     {
         $user = User::find(Auth::id());
+        if (!$user->is_allowed_swmaps) {
+            return abort(403, 'Upload SW Maps sudah di non-aktifkan. Hubungi admin provinsi untuk mengaktifkan kembali.');
+        }
         $markets = [];
         $users = [];
         if ($user->hasRole('superadmin')) {
@@ -440,7 +443,7 @@ class MarketController extends Controller
         if ($user->hasRole('adminprov') || $user->hasRole('adminkab')) {
             return view('home.home');
         } else {
-            return redirect('/pasar');
+            return redirect('/suplemen');
         }
     }
 

@@ -155,19 +155,21 @@
                             class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
                             <i class="fas fa-shop text-success text-sm opacity-10"></i>
                         </div>
-                        <span class="nav-link-text ms-1">Usaha</span>
+                        <span class="nav-link-text ms-1">Usaha Sentra Ekonomi</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ Route::currentRouteName() == 'market-upload' ? 'active' : '' }}"
-                        href="{{ route('market-upload') }}">
-                        <div
-                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                            <i class="fas fa-store text-danger text-sm opacity-10"></i>
-                        </div>
-                        <span class="nav-link-text ms-1">Upload</span>
-                    </a>
-                </li>
+                @hasrole('adminprov')
+                    <li class="nav-item">
+                        <a class="nav-link {{ Route::currentRouteName() == 'market-upload' ? 'active' : '' }}"
+                            href="{{ route('market-upload') }}">
+                            <div
+                                class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-store text-danger text-sm opacity-10"></i>
+                            </div>
+                            <span class="nav-link-text ms-1">Upload</span>
+                        </a>
+                    </li>
+                @endhasrole
             @endhasrole
             <li class="nav-item mt-3">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Suplemen</h6>
@@ -181,26 +183,28 @@
                     <span class="nav-link-text ms-1">Usaha Suplemen</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {{ str_contains(request()->url(), 'suplemen/upload') == true ? 'active' : '' }}"
-                    href="/suplemen/upload">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-file-import text-sm opacity-10" style="color: #D50000"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Upload Suplemen</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ str_contains(request()->url(), 'suplemen/download') == true ? 'active' : '' }}"
-                    href="/suplemen/download">
-                    <div
-                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-download text-sm opacity-10" style="color: #ef03b4"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Download Project Suplemen</span>
-                </a>
-            </li>
+            @hasrole('adminprov')
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'suplemen/upload') == true ? 'active' : '' }}"
+                        href="/suplemen/upload">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-file-import text-sm opacity-10" style="color: #D50000"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Upload Suplemen</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'suplemen/download') == true ? 'active' : '' }}"
+                        href="/suplemen/download">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-download text-sm opacity-10" style="color: #ef03b4"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Download Project Suplemen</span>
+                    </a>
+                </li>
+            @endhasrole
             {{-- @hasrole('adminprov')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Wilkerstat</h6>

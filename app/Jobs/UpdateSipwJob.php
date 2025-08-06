@@ -40,7 +40,16 @@ class UpdateSipwJob implements ShouldQueue
                     $idsls = $record['idsls'] . '00';
 
                     if (!User::where('email', $email)->exists()) {
-                        $u = User::create(['firstname' => $record['petugas_nama'], 'email' => $email, 'regency_id' => substr($record['idsls'], 0, 4), 'organization_id' => substr($record['idsls'], 0, 4), 'username' => $email, 'password' => Hash::make('se26sukses'), 'is_wilkerstat_user' => true]);
+                        $u = User::create([
+                            'firstname' => $record['petugas_nama'],
+                            'email' => $email,
+                            'regency_id' => substr($record['idsls'], 0, 4),
+                            'organization_id' => substr($record['idsls'], 0, 4),
+                            'username' => $email,
+                            'password' => Hash::make('se26sukses'),
+                            'is_kenarok_user' => true,
+                            'is_wilkerstat_user' => true
+                        ]);
                         $u->assignRoleAllDatabase('pcl');
                     }
 

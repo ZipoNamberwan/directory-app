@@ -102,18 +102,6 @@
                             @enderror
                         </div>
                     </div>
-                    {{-- <div class="row">
-                        <div class="col-md-4 mt-3">
-                            <label class="form-control-label" for="address">Apakah Petugas Wilkerstat?</label>
-                            <input type="hidden" name="is_wilkerstat_user" value="0">
-                            <div class="form-check form-switch">
-                                <input value="1" onchange="toggleLabel()" class="form-check-input"
-                                    name="is_wilkerstat_user" type="checkbox" id="is_wilkerstat_user"
-                                    {{ old('is_wilkerstat_user', ($user->is_wilkerstat_user ?? 0) == 1) ? 'checked' : '' }}>
-                                <label id="switchlabel" class="form-check-label" for="is_wilkerstat_user">Tidak</label>
-                            </div>
-                        </div>
-                    </div> --}}
                     <div class="row">
                         <div class="col-md-4 mt-3">
                             <label class="form-control-label" for="address">Jenis Akun</label>
@@ -144,6 +132,18 @@
                         </div>
                     </div>
                     @hasrole('adminprov')
+                        <div class="row">
+                            <div class="col-md-4 mt-3">
+                                <label class="form-control-label" for="address">Apakah Diijinkan Upload SW Maps?</label>
+                                <input type="hidden" name="is_allowed_swmaps" value="0">
+                                <div class="form-check form-switch">
+                                    <input value="1" onchange="toggleLabel()" class="form-check-input"
+                                        name="is_allowed_swmaps" type="checkbox" id="is_allowed_swmaps"
+                                        {{ old('is_allowed_swmaps', ($user->is_allowed_swmaps ?? 0) == 1) ? 'checked' : '' }}>
+                                    <label id="switchlabel" class="form-check-label" for="is_allowed_swmaps">Tidak</label>
+                                </div>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-6 mt-3">
                                 <label class="form-control-label">Satker <span class="text-danger">*</span></label>
@@ -260,9 +260,10 @@
             });
         </script>
 
-        {{-- <script>
+        @hasrole('adminprov')
+        <script>
             function toggleLabel() {
-                const checkbox = document.getElementById('is_wilkerstat_user');
+                const checkbox = document.getElementById('is_allowed_swmaps');
                 const label = document.getElementById('switchlabel');
 
                 if (checkbox.checked) {
@@ -272,6 +273,7 @@
                 }
             }
             toggleLabel()
-        </script> --}}
+        </script>
+        @endhasrole
     @endpush
 @endsection

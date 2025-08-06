@@ -55,6 +55,7 @@ class UserController extends Controller
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['organization'] = 'required';
+            $validateArray['is_allowed_swmaps'] = 'required';
         }
 
         $validator = Validator::make($request->all(), $validateArray);
@@ -82,6 +83,7 @@ class UserController extends Controller
             'is_kendedes_user' => in_array('kendedes', $request->type ?? []),
             'is_kenarok_user'  => in_array('kenarok', $request->type ?? []),
             'is_wilkerstat_user' => in_array('kenarok', $request->type ?? []),
+            'is_allowed_swmaps' => $admin->hasRole('adminprov') ? ($request->is_allowed_swmaps == "1" ? true : false) : false,
         ]);
         $user->assignRoleAllDatabase($request->role);
 
@@ -129,6 +131,7 @@ class UserController extends Controller
         }
         if ($admin->hasRole('adminprov')) {
             $validateArray['organization'] = 'required';
+            $validateArray['is_allowed_swmaps'] = 'required';
         }
 
         $validator = Validator::make($request->all(), $validateArray);
@@ -157,6 +160,7 @@ class UserController extends Controller
             'is_kendedes_user' => in_array('kendedes', $request->type ?? []),
             'is_kenarok_user'  => in_array('kenarok', $request->type ?? []),
             'is_wilkerstat_user' => in_array('kenarok', $request->type ?? []),
+            'is_allowed_swmaps' => $admin->hasRole('adminprov') ? ($request->is_allowed_swmaps == "1" ? true : false) : $user->is_allowed_swmaps,
         ]);
         // $user->syncRoles([$request->role]);
         $user->assignRoleAllDatabase($request->role);
@@ -205,9 +209,9 @@ class UserController extends Controller
                 $records->where('is_kendedes_user', true);
             }
         }
-        if ($request->is_wilkerstat_user != null) {
-            if ($request->is_wilkerstat_user == "1") {
-                $records->where('is_wilkerstat_user', true);
+        if ($request->is_allowed_swmaps != null) {
+            if ($request->is_allowed_swmaps == "1") {
+                $records->where('is_allowed_swmaps', true);
             }
         }
 
