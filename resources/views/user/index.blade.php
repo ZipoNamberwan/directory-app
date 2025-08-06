@@ -104,14 +104,6 @@
                                 <option value="viewer">Viewer</option>
                             </select>
                         </div>
-                        {{-- <div class="col-md-3">
-                            <label class="form-control-label">Tampikan Hanya Petugas Wilkerstat Saja<span class="text-danger">*</span></label>
-                            <div class="form-check form-switch">
-                                <input onchange="toggleWilkerstat()" value="1" class="form-check-input" 
-                                    type="checkbox" id="is_wilkerstat_user">
-                                <label id="switchlabel" class="form-check-label" for="is_wilkerstat_user">Tidak</label>
-                            </div>
-                        </div> --}}
                         <div class="col-md-3">
                             <label class="form-control-label">Filter Jenis Akun <span class="text-danger">*</span></label>
                             <select id="type" class="form-control" data-toggle="select">
@@ -121,6 +113,16 @@
                                 <option value="kenarok">Akun Ken Arok</option>
                             </select>
                         </div>
+                        @hasrole('adminprov')
+                        <div class="col-md-3">
+                            <label class="form-control-label">Tampikan Yang Diijinkan Upload SW Maps<span class="text-danger">*</span></label>
+                            <div class="form-check form-switch">
+                                <input onchange="toggleSwmaps()" value="1" class="form-check-input" 
+                                    type="checkbox" id="is_allowed_swmaps">
+                                <label id="switchlabel" class="form-check-label" for="is_allowed_swmaps">Tidak</label>
+                            </div>
+                        </div>
+                        @endhasrole
                     </div>
                     <table id="myTable" class="align-items-center mb-0 text-sm">
                         <thead>
@@ -128,6 +130,9 @@
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama dan email</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Role</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Jenis Akun</th>
+                                @hasrole('adminprov')
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Bisa Upload SW Maps?</th>
+                                @endhasrole
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Satker</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
                             </tr>
@@ -192,8 +197,8 @@
 
              function getFilterUrl(filter) {
                 var filterUrl = ''
-                if (filter === 'is_wilkerstat_user') {
-                    const checkbox = document.getElementById('is_wilkerstat_user');
+                if (filter === 'is_allowed_swmaps') {
+                    const checkbox = document.getElementById('is_allowed_swmaps');
 
                     if (checkbox.checked) {
                         filterUrl = `&${filter}=1`;
@@ -218,7 +223,7 @@
 
             function renderTable() {
                 filterUrl = ''
-                filterTypes = ['role', 'organization', /* 'is_wilkerstat_user', */ 'type']
+                filterTypes = ['role', 'organization', 'is_allowed_swmaps', 'type']
                 filterTypes.forEach(f => {
                     filterUrl += getFilterUrl(f)
                 });
@@ -287,6 +292,26 @@
                             return data
                         }
                     },
+                    @hasrole('adminprov')
+                    {
+                        responsivePriority: 2,
+                        width: "10%",
+                        data: "is_allowed_swmaps",
+                        type: "text",
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                let label = ''
+                                if (data == 1){
+                                    label = `<span class="badge bg-success me-2">Ya</span>`
+                                } else {
+                                    label = `<span class="badge bg-danger">Tidak</span>`
+                                }
+                                return label
+                            }
+                            return data
+                        }
+                    },
+                    @endhasrole
                     {
                         responsivePriority: 2,
                         width: "10%",
@@ -363,8 +388,8 @@
                 })
             }
 
-            function toggleWilkerstat() {
-                const checkbox = document.getElementById('is_wilkerstat_user');
+            function toggleSwmaps() {
+                const checkbox = document.getElementById('is_allowed_swmaps');
                 const label = document.getElementById('switchlabel');
 
                 if (checkbox.checked) {

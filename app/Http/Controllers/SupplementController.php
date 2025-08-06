@@ -52,6 +52,9 @@ class SupplementController extends Controller
     public function showSupplementUploadPage()
     {
         $user = User::find(Auth::id());
+        if (!$user->is_allowed_swmaps) {
+            return abort(403, 'Upload SW Maps sudah di non-aktifkan. Hubungi admin provinsi untuk mengaktifkan kembali.');
+        }
         $users = [];
 
         if ($user->hasRole('adminprov') || $user->hasRole('adminkab')) {
@@ -121,6 +124,10 @@ class SupplementController extends Controller
 
     public function showSupplementDownloadPage()
     {
+        $user = Auth::user();
+        if (!$user->is_allowed_swmaps) {
+            return abort(403, 'Download SW Maps sudah di non-aktifkan. Hubungi admin provinsi untuk mengaktifkan kembali.');
+        }
         return view('supplement.download-general', ['color' => 'success']);
     }
 

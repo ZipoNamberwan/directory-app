@@ -1,4 +1,2 @@
-# * * * * * www-data cd /var/www && php artisan schedule:run >> /dev/stdout 2>&1
-# restore command mysql -h db -P 3306 -u root -pGe4Q0IUKvbto9lq pemutakhiran_usaha < backup/backup_2025-02-27.sql
 * * * * * cd /var/www && /usr/local/bin/php artisan schedule:run > /dev/stdout 2>&1
-30 21 * * * mysqldump -h db -P 3306 -u root -pGe4Q0IUKvbto9lq pemutakhiran_usaha > /var/www/backup/backup_$(date +\%Y-\%m-\%d).sql
+30 0 * * * /var/www/docker/scripts/backup.sh >> /var/www/backup/cron.log 2>&1

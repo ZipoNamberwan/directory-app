@@ -135,7 +135,7 @@ class HomeController extends Controller
                 'statuses' => $statuses,
                 'subdistricts' => $subdistricts
             ]);
-        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
+        } else if ($user->hasRole('pml') || $user->hasRole('operator') || $user->hasRole('pcl')) {
             $businessBase = NonSlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->where(['last_modified_by' => Auth::id()]);
             $total = (clone $businessBase)->count();
             $not_done = (clone $businessBase)->where(['status_id' => 1])->count();
@@ -727,7 +727,7 @@ class HomeController extends Controller
             $records = AssignmentStatus::whereHas('user', function ($query) use ($user) {
                 $query->where('organization_id', $user->organization_id);
             });
-        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
+        } else if ($user->hasRole('pcl') || $user->hasRole('pml') || $user->hasRole('operator')) {
             $records = AssignmentStatus::where(['user_id' => $user->id]);
         }
 

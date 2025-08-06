@@ -22,7 +22,17 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     cron \
     default-mysql-client \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    python3 \
+    python3-pip \
+    python3-venv \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && apt-get clean
+
+# Setup Python packages    
+RUN python3 -m venv /venv
+RUN /venv/bin/pip install --upgrade pip
+ENV PATH="/venv/bin:$PATH"
+RUN pip install mysql-connector-python geojson shapely python-dotenv geopandas
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
