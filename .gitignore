@@ -32,7 +32,10 @@ yarn-error.log
 /python_script/market/*
 /python_script/assignment/*
 /python_script/sipw-assignment/*
-/python_script/geojson/*
+/python_script/geojson/regency/*
+/python_script/geojson/subdistrict/*
+/python_script/geojson/village/*
+/python_script/geojson/sls/*
 # **/caddy
 frankenphp
 frankenphp-worker.php

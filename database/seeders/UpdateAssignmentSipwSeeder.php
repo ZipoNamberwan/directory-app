@@ -13,7 +13,7 @@ class UpdateAssignmentSipwSeeder extends Seeder
      */
     public function run(): void
     {
-        $folderPath = storage_path('../python_script/result/sipw-assignment'); // Adjust this path to your folder
+        $folderPath = storage_path('../backup/result/sipw-assignment'); // Adjust this path to your folder
 
         // Get all files in the folder
         $files = File::files($folderPath);
