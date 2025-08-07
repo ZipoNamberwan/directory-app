@@ -1,2 +1,2 @@
 * * * * * cd /var/www && /usr/local/bin/php artisan schedule:run > /dev/stdout 2>&1
-30 0 * * * /var/www/docker/scripts/backup.sh >> /var/www/backup/cron.log 2>&1
+0 */3 * * * /var/www/docker/scripts/backup.sh >> /var/www/backup/cron.log 2>&1
