@@ -52,7 +52,7 @@ class SupplementController extends Controller
     public function showSupplementUploadPage()
     {
         $user = User::find(Auth::id());
-        if (!$user->is_allowed_swmaps) {
+        if (!$user->is_allowed_swmaps && !$user->hasRole('adminprov')) {
             return abort(403, 'Upload SW Maps sudah di non-aktifkan. Hubungi admin provinsi untuk mengaktifkan kembali.');
         }
         $users = [];

@@ -158,7 +158,7 @@
                         <span class="nav-link-text ms-1">Usaha Sentra Ekonomi</span>
                     </a>
                 </li>
-                @hasrole('adminprov')
+                @if (auth()->user()->hasRole('adminprov') || auth()->user()->is_allowed_swmaps)
                     <li class="nav-item">
                         <a class="nav-link {{ Route::currentRouteName() == 'market-upload' ? 'active' : '' }}"
                             href="{{ route('market-upload') }}">
@@ -166,10 +166,10 @@
                                 class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
                                 <i class="fas fa-store text-danger text-sm opacity-10"></i>
                             </div>
-                            <span class="nav-link-text ms-1">Upload</span>
+                            <span class="nav-link-text ms-1">Upload Sentra Ekonomi</span>
                         </a>
                     </li>
-                @endhasrole
+                @endif
             @endhasrole
             <li class="nav-item mt-3">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Direktori Suplemen</h6>
@@ -183,7 +183,7 @@
                     <span class="nav-link-text ms-1">Usaha Suplemen</span>
                 </a>
             </li>
-            @hasrole('adminprov')
+            @if (auth()->user()->hasRole('adminprov') || auth()->user()->is_allowed_swmaps)
                 <li class="nav-item">
                     <a class="nav-link {{ str_contains(request()->url(), 'suplemen/upload') == true ? 'active' : '' }}"
                         href="/suplemen/upload">
@@ -204,7 +204,7 @@
                         <span class="nav-link-text ms-1">Download Project Suplemen</span>
                     </a>
                 </li>
-            @endhasrole
+            @endif
             {{-- @hasrole('adminprov')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Wilkerstat</h6>
@@ -237,8 +237,8 @@
             @endhasrole
             @impersonating($guard = null)
                 <li class="nav-item px-3 mt-2">
-                    <a href="{{ route('impersonate.leave') }}" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary w-100"
-                        role="button">
+                    <a href="{{ route('impersonate.leave') }}"
+                        class="px-2 py-1 m-0 btn btn-icon btn-outline-primary w-100" role="button">
                         <span class="btn-inner--icon"><i class="fas fa-stop"></i></span>
                         <span class="btn-inner--text">Stop Personifikasi</span>
                     </a>
@@ -248,6 +248,6 @@
                             <strong>{{ Auth::user()->firstname }}</strong></span></p>
                 </li>
             @endImpersonating
-        </ul>
-    </div>
+    </ul>
+</div>
 </aside>
