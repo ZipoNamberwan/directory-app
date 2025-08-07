@@ -39,6 +39,9 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Copy source code, except path inside .dockerignore
 COPY --chown=www-data:www-data . /var/www
 
+# Make backup database script executable
+RUN chmod +x /var/www/docker/scripts/backup.sh
+
 # Setup supervisord
 COPY --chown=www-data:www-data ./docker/supervisor/laravel-workers.conf /etc/supervisor/conf.d/laravel-workers.conf
 COPY --chown=www-data:www-data ./docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf

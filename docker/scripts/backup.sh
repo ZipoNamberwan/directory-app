@@ -26,8 +26,9 @@ dump_database() {
   DB_PORT="$3"
   DB_USER="$4"
   DB_PASS="$5"
+  CUSTOM_NAME="$6"
 
-  OUTFILE="$BACKUP_DIR/backup_${DB_NAME}_${DATE}.sql"
+  OUTFILE="$BACKUP_DIR/${CUSTOM_NAME}_${DATE}.sql"
 
   echo "📦 Backing up $DB_NAME to $OUTFILE"
   export MYSQL_PWD="$DB_PASS"
@@ -35,7 +36,7 @@ dump_database() {
   unset MYSQL_PWD
 }
 
-# Backup all 3 DBs
-dump_database "$DB_MAIN_DATABASE" "$DB_MAIN_HOST" "$DB_MAIN_PORT" "$DB_MAIN_USERNAME" "$DB_MAIN_PASSWORD"
-dump_database "$DB_2_DATABASE" "$DB_2_HOST" "$DB_2_PORT" "$DB_2_USERNAME" "$DB_2_PASSWORD"
-dump_database "$DB_3_DATABASE" "$DB_3_HOST" "$DB_3_PORT" "$DB_3_USERNAME" "$DB_3_PASSWORD"
+# Backup all 3 DBs with custom names
+dump_database "$DB_MAIN_DATABASE" "$DB_MAIN_HOST" "$DB_MAIN_PORT" "$DB_MAIN_USERNAME" "$DB_MAIN_PASSWORD" "DB_MAIN"
+dump_database "$DB_2_DATABASE" "$DB_2_HOST" "$DB_2_PORT" "$DB_2_USERNAME" "$DB_2_PASSWORD" "DB_2"
+dump_database "$DB_3_DATABASE" "$DB_3_HOST" "$DB_3_PORT" "$DB_3_USERNAME" "$DB_3_PASSWORD" "DB_3"
