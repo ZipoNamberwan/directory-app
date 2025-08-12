@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\Version;
 use App\Models\VersionLeresPak;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VersionController extends Controller
 {
@@ -47,15 +49,20 @@ class VersionController extends Controller
 
         try {
             $latestVersion = VersionLeresPak::orderBy('version_code', 'desc')->first();
+            $user = User::find(Auth::user()->id);
+            $sls = $user->wilkerstatSls()->with('updatePrelist')->get();
+
             if ($latestVersion->version_code > $request->version) {
                 return $this->successResponse([
                     'should_update' => true,
                     'latest_version' => $latestVersion,
+                    'assignments' => $sls
                 ]);
             } else {
                 return $this->successResponse([
                     'should_update' => false,
                     'latest_version' => $latestVersion,
+                    'assignments' => $sls
                 ]);
             }
         } catch (\Exception $e) {

@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\SlsBusiness;
+use App\Models\SlsUpdatePrelist;
 use App\Models\Village;
 use App\Traits\ApiResponser;
+use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WilkerstatController extends Controller
@@ -70,5 +73,41 @@ class WilkerstatController extends Controller
             ->get();
 
         return $this->successResponse($businesses, 'SLS retrieved successfully');
+    }
+
+    public function getBusinessByMultipleSls(Request $request)
+    {
+        // Validate the request
+        $request->validate([
+            'sls_ids' => 'required|array|min:1',
+            'sls_ids.*' => 'required|integer|exists:sls,id'
+        ]);
+
+        $businesses = SlsBusiness::whereIn('sls_id', $request->input('sls_ids'))
+            // ->with(['sls', 'village'])
+            ->get();
+
+        return $this->successResponse($businesses, 'SLS retrieved successfully');
+    }
+
+    public function updateNewPrelistSlsStatus(Request $request)
+    {
+        // Validate the request
+        $request->validate([
+            'sls_ids' => 'required|array|min:1',
+            'sls_ids.*' => 'required|string',
+            'downloaded' => 'required|boolean'
+        ]);
+
+        $slsIds = $request->input('sls_ids');
+        $downloaded = $request->input('downloaded');
+        try {
+            SlsUpdatePrelist::whereIn('sls_id', $slsIds)
+                ->update(['has_been_downloaded' => $downloaded]);
+
+            return $this->successResponse('Sukses mengubah status download prelist baru');
+        } catch (Exception $e) {
+            return $this->errorResponse('Gagal mengubah status prelist: ' . $e->getMessage(), 500);
+        }
     }
 }

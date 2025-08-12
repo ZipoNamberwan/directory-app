@@ -21,6 +21,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/assignments/wilkerstat', [WilkerstatController::class, 'getAssignments']);
     Route::get('/assignments/wilkerstat/village/{villageId}', [WilkerstatController::class, 'getBusinessByVillage']);
     Route::get('/assignments/wilkerstat/sls/{slsId}', [WilkerstatController::class, 'getBusinessBySls']);
+    Route::post('/assignments/wilkerstat/multiple-sls', [WilkerstatController::class, 'getBusinessByMultipleSls']);
+    Route::post('/assignments/wilkerstat/prelist-status', [WilkerstatController::class, 'updateNewPrelistSlsStatus']);
 
     Route::get('/business-in-box', [TaggingController::class, 'getBusinessInBoundingBox']);
     Route::get('/business/project/{projectId}', [TaggingController::class, 'getBusinessByProject']);

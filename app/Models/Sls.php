@@ -16,4 +16,8 @@ class Sls extends Model
     {
         return $this->belongsTo(Village::class, 'village_id');
     }
+    public function updatePrelist()
+    {
+        return $this->hasOne(SlsUpdatePrelist::class, 'sls_id', 'id');
+    }
 }
