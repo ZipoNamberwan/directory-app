@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && docker-php-ext-install pdo_mysql mysqli mbstring exif pcntl bcmath gd zip \
     && apt-get clean
 
 # Setup Python packages    
