@@ -570,7 +570,7 @@
                         </div>
                         <div class="dashboard-card-title text-dark fw-bold" style="font-size:1.2rem; letter-spacing:0.5px;">Ken Arok Dashboard</div>
                         <div class="dashboard-card-subtitle mb-3 text-secondary text-center" style="font-size:0.98rem;">Dashboard Hasil Verifikasi Big Data Snapwangi</div>
-                        <a href="https://kendedes.cathajatim.id/dashboard_kenarok/index.php" target="_blank" class="btn btn-secondary w-100 btn-lg mt-2"
+                        <a href="https://kendedes.cathajatim.id/dashboard-kenarok/index.php" target="_blank" class="btn btn-secondary w-100 btn-lg mt-2"
                             style="background-color: #34495e; border-color: #34495e;">
                             <i class="fas fa-arrow-right me-2"></i>
                             Akses Dashboard Ken Arok
