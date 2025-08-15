@@ -32,7 +32,23 @@ dump_database() {
 
   echo "📦 Backing up $DB_NAME to $OUTFILE"
   export MYSQL_PWD="$DB_PASS"
-  mysqldump --no-tablespaces -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" "$DB_NAME" > "$OUTFILE"
+
+  # 1. Dump all tables except the ones we want structure-only
+  mysqldump --no-tablespaces \
+    -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" \
+    "$DB_NAME" \
+    --ignore-table="$DB_NAME.pulse_aggregates" \
+    --ignore-table="$DB_NAME.pulse_entries" \
+    --ignore-table="$DB_NAME.pulse_values" \
+    > "$OUTFILE"
+
+  # 2. Append structure-only dump for the excluded tables
+  mysqldump --no-tablespaces --no-data \
+    -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" \
+    "$DB_NAME" \
+    pulse_aggregates pulse_entries pulse_values \
+    >> "$OUTFILE"
+
   unset MYSQL_PWD
 }
 
