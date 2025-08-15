@@ -51,3 +51,4 @@ frankenphp-worker.php
 /python_script/level/other/*
 /python_script/level/processed_other/*
 /python_script/level/*.xlsx
+docker-compose.override.yml
