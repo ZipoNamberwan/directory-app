@@ -14,6 +14,8 @@ class SupplementBusinessExportJob implements ShouldQueue
 {
     use Queueable;
 
+    public $timeout = 0;
+
     public $organizationId;
     public $uuid;
     public $role;

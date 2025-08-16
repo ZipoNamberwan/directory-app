@@ -29,6 +29,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_MAIN_PASSWORD}
     volumes:
       - dbdata:/var/lib/mysql
+      - ./backup:/var/www/backup
       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
     ports:
       - "3310:3306"

@@ -32,7 +32,7 @@ class DashboardController extends Controller
 
         $organizations = $user->hasRole('adminprov') ? Organization::all() : [];
         $chartReport = collect();
-        $numberOfDays = 10;
+        $numberOfDays = 15;
         $latestTotalBusiness = 0;
 
         // --- Query upload totals by organization for today ---
@@ -109,7 +109,6 @@ class DashboardController extends Controller
         });
 
         $latestTotalBusiness = $chartReport->first()['total_uploaded'] ?? 0;
-
 
         $chartData = ['data' => ($chartReport->pluck('total_uploaded'))->reverse()->values(), 'dates' => ($chartReport->pluck('date'))->reverse()->values()];
 
@@ -353,6 +352,52 @@ class DashboardController extends Controller
         }
 
         return $reportByRegency;
+    }
+
+    public function getGraphReportData($regency)
+    {
+        $numberOfDays = 15;
+
+        $generateChartData = function ($query) use ($numberOfDays) {
+            return $query->selectRaw('date, SUM(uploaded) as uploaded')
+                ->where('date', '>=', Carbon::now()->subDays($numberOfDays)->toDateString())
+                ->groupBy('date')
+                ->orderByDesc('date')
+                ->get()
+                ->keyBy('date');
+        };
+
+        // --- Role-specific filtering ---
+        $organizationFilter = $regency != 'all' ? ['organization_id' => $regency] : [];
+
+        $chartMarketReportByRegency = $generateChartData(
+            ReportMarketBusinessRegency::where($organizationFilter)
+        );
+
+        $chartSupplementReportByRegency = $generateChartData(
+            ReportSupplementBusinessRegency::where($organizationFilter)
+        );
+
+        $allDates = $chartMarketReportByRegency->keys()
+            ->merge($chartSupplementReportByRegency->keys())
+            ->unique()
+            ->sortDesc();
+
+        $chartReport = $allDates->map(function ($date) use ($chartMarketReportByRegency, $chartSupplementReportByRegency) {
+            $market = $chartMarketReportByRegency->get($date)?->uploaded ?? 0;
+            $supplement = $chartSupplementReportByRegency->get($date)?->uploaded ?? 0;
+
+            return [
+                'date' => $date,
+                'market_uploaded' => $market,
+                'supplement_uploaded' => $supplement,
+                'total_uploaded' => $market + $supplement,
+            ];
+        });
+
+        $chartData = ['data' => ($chartReport->pluck('total_uploaded'))->reverse()->values(), 'dates' => ($chartReport->pluck('date'))->reverse()->values()];
+
+        return response()->json($chartData);
     }
 
     public function showDownloadReportPage()

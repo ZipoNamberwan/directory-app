@@ -15,6 +15,8 @@ class MarketBusinessExportJob implements ShouldQueue
 {
     use Queueable;
 
+    public $timeout = 0;
+
     public $organizationId;
     public $marketId;
     public $uuid;

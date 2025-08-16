@@ -112,13 +112,10 @@
                     <thead>
                         <tr>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Usaha</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Status Bangunan</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Alamat Lengkap</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Deskripsi</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Sektor</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Catatan</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Detail Usaha</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Koordinat</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Sentra Ekonomi</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Kabupaten</th>
+                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Satker</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">User yang Upload</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Created At</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
@@ -379,6 +376,13 @@
             })
         }
 
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) {
+                return text;
+            }
+            return text.substring(0, maxLength) + "...";
+        }
+
         let table = new DataTable('#myTable', {
             order: [],
             serverSide: true,
@@ -393,45 +397,101 @@
                     responsivePriority: 1,
                     width: "10%",
                     data: "name",
+                    className: 'px-3 fw-bold text-dark',
                     type: "text",
                     render: function(data, type, row) {
                         return $('<div>').text(data).html();
                     }
                 },
                 {
-                    responsivePriority: 2,
-                    width: "10%",
-                    data: "status",
-                    type: "text",
-                },
-                {
-                    responsivePriority: 2,
-                    width: "10%",
-                    data: "address",
-                    type: "text",
-                },
-                {
-                    responsivePriority: 2,
-                    width: "10%",
-                    data: "description",
-                    type: "text",
-                },
-                {
-                    responsivePriority: 2,
-                    width: "10%",
-                    data: "sector",
-                    type: "text",
-                },
-                {
                     responsivePriority: 3,
-                    width: "10%",
-                    data: "note",
-                    type: "text",
+                    width: "25%",
+                    data: null,
+                    className: 'px-3',
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            let html = `<div class="my-1 small">`;
+
+                            if (row.owner) {
+                                html += `
+                                    <div class="mb-1">
+                                        <span class="text-muted">Pemilik:</span>
+                                        <span class="fw-semibold text-dark">${row.owner}</span>
+                                    </div>`;
+                            }
+
+                            if (row.status) {
+                                html += `
+                                    <div class="mb-1">
+                                        <span class="text-muted">Status:</span>
+                                        <span class="fw-semibold text-dark">${row.status}</span>
+                                    </div>`;
+                            }
+
+                            if (row.address) {
+                                html += `
+                                    <div class="mb-1">
+                                        <span class="text-muted">Alamat:</span>
+                                        <span class="fw-semibold text-dark">${row.address}</span>
+                                    </div>`;
+                            }
+
+                            if (row.description) {
+                                html += `
+                                    <div class="mb-1">
+                                        <span class="text-muted">Deskripsi:</span>
+                                        <span class="fw-semibold text-dark">${truncateText(row.description, 40)}</span>
+                                    </div>`;
+                            }
+
+                            if (row.sector) {
+                                html += `
+                                    <div class="mb-1">
+                                        <span class="text-muted">Sektor:</span>
+                                        <span class="fw-semibold text-dark">${truncateText(row.sector, 30)}</span>
+                                    </div>`;
+                            }
+
+                            if (row.notes) {
+                                html += `
+                                    <div>
+                                        <span class="text-muted">Catatan:</span>
+                                        <span class="fw-semibold text-dark">${row.notes}</span>
+                                    </div>`;
+                            }
+
+                            html += `</div>`;
+                            return html;
+                        }
+                        return data;
+                    }
+                },
+                {
+                    responsivePriority: 2,
+                    width: "8%",
+                    data: null,
+                    className: 'px-3 text-center',
+                    render: function(data, type, row) {
+                        if (type === 'display' && row.latitude && row.longitude) {
+                            const lat = row.latitude;
+                            const lng = row.longitude;
+                            const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+                            return `
+                                <a href="${mapsUrl}" target="_blank" class="d-inline-flex align-items-center justify-content-center 
+                                    rounded-circle bg-light text-primary" 
+                                    style="width:32px; height:32px;" title="Lihat Lokasi">
+                                    <i class="fas fa-map-marker-alt fa-lg"></i>
+                                </a>
+                            `;
+                        }
+                        return '-';
+                    }
                 },
                 {
                     responsivePriority: 4,
                     width: "10%",
                     data: "market",
+                    className: 'px-3',
                     type: "text",
                     render: function(data, type, row) {
                         return data.name
@@ -441,6 +501,7 @@
                     responsivePriority: 4,
                     width: "10%",
                     data: "regency",
+                    className: 'px-3',
                     type: "text",
                     render: function(data, type, row) {
                         var doneBy = '';
@@ -460,6 +521,7 @@
                     responsivePriority: 4,
                     width: "10%",
                     data: "user",
+                    className: 'px-3',
                     type: "text",
                     render: function(data, type, row) {
                         return data.firstname;
@@ -469,6 +531,7 @@
                     responsivePriority: 4,
                     width: "10%",
                     data: "created_at",
+                    className: 'px-3',
                     type: "text",
                     render: function(data, type, row) {
                         return formatDate(data)
@@ -478,6 +541,7 @@
                     responsivePriority: 3,
                     width: "10%",
                     data: "id",
+                    className: 'px-3',
                     type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
