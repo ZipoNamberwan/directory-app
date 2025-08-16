@@ -876,7 +876,7 @@
             const regencyId = $('#organizationGraph').val();
             const loader = document.getElementById("chart-loader");
 
-            if (regencyId > 0) {
+            if (regencyId != null) {
                 loader.style.display = "block";
                 fetch(`/pasar-dashboard/graph/data/${regencyId}`)
                     .then(response => response.json())

@@ -96,7 +96,6 @@
                     <thead>
                         <tr>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Usaha</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Pemilik</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Detail Usaha</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Koordinat</th>
                             <th class="text-uppercase text-small font-weight-bolder opacity-7">Satker</th>
@@ -322,13 +321,6 @@
                     render: function(data, type, row) {
                         return $('<div>').text(data).html();
                     }
-                },
-                {
-                    responsivePriority: 4,
-                    width: "10%",
-                    data: "owner",
-                    className: 'px-3',
-                    type: "text",
                 },
                 {
                     responsivePriority: 3,
