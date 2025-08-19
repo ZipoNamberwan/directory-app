@@ -14,6 +14,7 @@ services:
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
       - ./backup:/var/www/backup
       - storagedata:/var/www/storage/app
+      - geojson:/var/www/python_script/geojson
       # - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
     depends_on:
       - db
@@ -30,7 +31,7 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
       - ./backup:/var/www/backup
-      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+      # - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
     ports:
       - "3310:3306"
     networks:
@@ -59,4 +60,6 @@ volumes:
   dbdata:
     driver: local
   storagedata:
+    driver: local
+  geojson:
     driver: local
