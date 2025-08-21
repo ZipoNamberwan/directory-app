@@ -1,6 +1,5 @@
 services:
   app:
-    # Mount Laravel source code for live reload
     volumes:
       - .:/var/www
       - /var/www/vendor
@@ -12,3 +11,16 @@ services:
       APP_ENV: local
       APP_DEBUG: "true"
       APP_LOG_LEVEL: debug
+    entrypoint: 
+      - bash
+      - -c
+      - |
+        echo 'Fixing permissions...'
+        chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+        chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+        mkdir -p /var/www/storage/logs
+        touch /var/www/storage/logs/laravel.log
+        chown www-data:www-data /var/www/storage/logs/laravel.log
+        chmod 664 /var/www/storage/logs/laravel.log
+        echo 'Starting supervisord...'
+        exec supervisord -c /etc/supervisor/supervisord.conf
