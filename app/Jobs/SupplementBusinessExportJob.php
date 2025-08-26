@@ -62,14 +62,21 @@ class SupplementBusinessExportJob implements ShouldQueue
                 'Longitude',
                 'User_Upload',
                 'Tipe',
+                'Satker',
                 'Kabupaten',
+                'Kecamatan',
+                'Desa',
+                'SLS'
             ]);
 
             $business = null;
             $business = SupplementBusiness::query();
 
             if ($this->role == 'adminkab') {
-                $business->where('organization_id', $status->user->organization_id);
+                $business->where(function ($query) use ($status) {
+                    $query->where('organization_id', $status->user->organization_id)
+                        ->orWhere('regency_id', $status->user->organization_id);
+                });
             } else if ($this->role == 'pml' || $this->role == 'operator' || $this->role == 'pcl') {
                 $business->where('user_id', $status->user_id);
             }
@@ -91,6 +98,10 @@ class SupplementBusinessExportJob implements ShouldQueue
                             $row->user->firstname,
                             $row->project->type,
                             $row->organization != null ? "[" . $row->organization->long_code . "] " . $row->organization->name : null,
+                            $row->regency != null ? "[" . $row->regency->long_code . "] " . $row->regency->name : null,
+                            $row->subdistrict != null ? "[" . $row->subdistrict->short_code . "] " . $row->subdistrict->name : null,
+                            $row->village != null ? "[" . $row->village->short_code . "] " . $row->village->name : null,
+                            $row->sls != null ? "[" . $row->sls->short_code . "] " . $row->sls->name : null,
                         ]);
                     }
                 });

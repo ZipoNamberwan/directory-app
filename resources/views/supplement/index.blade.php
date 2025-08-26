@@ -3,8 +3,10 @@
 @section('css')
     <link href="/assets/css/app.css" rel="stylesheet" />
     <link href="/vendor/select2/select2.min.css" rel="stylesheet" />
+    <link href="/vendor/tabulator/tabulator.min.css" rel="stylesheet" />
     <link href="/vendor/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="/vendor/datatables/responsive.bootstrap5.min.css" rel="stylesheet" />
+   
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endsection
 
@@ -55,7 +57,7 @@
                 <div class="row mb-3">
                     @hasrole('adminprov')
                         <div class="col-md-3">
-                            <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                            <label class="form-control-label">Satker</label>
                             <select id="organization" class="form-control" data-toggle="select">
                                 <option value="0" disabled selected> -- Pilih Satker -- </option>
                                 @foreach ($organizations as $organization)
@@ -69,7 +71,7 @@
                     @endhasrole
                     @hasrole('adminkab')
                         <div class="col-md-3">
-                            <label class="form-control-label">Petugas <span class="text-danger">*</span></label>
+                            <label class="form-control-label">Petugas</label>
                             <select id="user" class="form-control" data-toggle="select">
                                 <option value="0" disabled selected> -- Pilih Petugas -- </option>
                                 @foreach ($users as $user)
@@ -81,7 +83,7 @@
                         </div>
                     @endhasrole
                     <div class="col-md-3">
-                        <label class="form-control-label">Tipe Projek <span class="text-danger">*</span></label>
+                        <label class="form-control-label">Tipe Projek</label>
                         <select id="projectType" class="form-control" data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Tipe Projek -- </option>
                             @foreach ($projectTypes as $projectType)
@@ -91,23 +93,67 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-control-label">Status Matching Wilayah</label>
+                        <select id="statusMatching" class="form-control" data-toggle="select">
+                            <option value="0" disabled selected> -- Pilih Status -- </option>
+                            <option value="all">Semua</option>
+                            <option value="success">Sukses Matching</option>
+                            <option value="failed">Gagal Matching</option>
+                            <option value="notyet">Belum Matching</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-control-label" for="keyword">Cari</label>
+                        <input type="text" name="keyword" class="form-control" id="keyword" placeholder="Cari By Keyword">
+                    </div>
                 </div>
-                <table id="myTable" class="align-items-center mb-0 text-sm">
-                    <thead>
-                        <tr>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Nama Usaha</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Detail Usaha</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Koordinat</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Satker</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">User yang Upload</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Jenis Projek</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Created At</th>
-                            <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-control-label">Filter Kabupaten</label>
+                        <select style="width: 100%;" id="regency" name="regency" class="form-control"
+                            data-toggle="select">
+                            <option value="0" disabled selected> -- Filter Kabupaten -- </option>
+                            @foreach ($regencies as $regency)
+                                <option value="{{ $regency->id }}"
+                                    {{ old('regency') == $regency->id ? 'selected' : '' }}>
+                                    [{{ $regency->short_code }}] {{ $regency->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-control-label">Kecamatan</label>
+                        <select style="width: 100%;" id="subdistrict" name="subdistrict" class="form-control"
+                            data-toggle="select">
+                            <option value="0" disabled selected> -- Filter Kecamatan -- </option>
+                            @foreach ($subdistricts as $subdistrict)
+                                <option value="{{ $subdistrict->id }}"
+                                    {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
+                                    [{{ $subdistrict->short_code }}] {{ $subdistrict->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-control-label">Desa</label>
+                        <select id="village" name="village" class="form-control" data-toggle="select"
+                            name="village"></select>
+                    </div>
+                    <div id="sls_div" class="col-md-3">
+                        <label class="form-control-label">SLS</label>                        
+                        <select id="sls" name="sls" class="form-control"
+                            data-toggle="select"></select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <p class="mb-2 text-muted small">
+                        Jumlah usaha yang difilter: <span id="total-records" class="fw-bold">0</span>
+                        </p>                  
+                    </div>
+                </div>
+                <div id="data-table"></div>
             </div>
         </div>
     </div>
@@ -146,13 +192,15 @@
 @push('js')
     <script src="/vendor/jquery/jquery-3.7.1.min.js"></script>
     <script src="/vendor/select2/select2.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.js"></script>
+
+    <script src="/vendor/tabulator/tabulator.min.js"></script>
     <script src="/vendor/datatables/dataTables.min.js"></script>
     <script src="/vendor/datatables/dataTables.bootstrap5.min.js"></script>
 
     <script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
     <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
-    <script src="/vendor/sweetalert2/sweetalert2.js"></script>
-
+ 
     <script>
         const selectConfigs = [{
                 selector: '#organization',
@@ -169,6 +217,26 @@
             {
                 selector: '#projectType',
                 placeholder: 'Pilih Tipe Projek'
+            },
+            {
+                selector: '#statusMatching',
+                placeholder: 'Pilih Status Matching'
+            },
+            {
+                selector: '#regency',
+                placeholder: 'Pilih Kabupaten'
+            },
+            {
+                selector: '#subdistrict',
+                placeholder: 'Pilih Kecamatan'
+            },
+            {
+                selector: '#village',
+                placeholder: 'Pilih Desa'
+            },
+            {
+                selector: '#sls',
+                placeholder: 'Pilih SLS'
             },
         ];
 
@@ -197,7 +265,137 @@
             '#projectType': () => {
                 renderTable()
             },
+            '#statusMatching': () => {
+                renderTable()
+            },
+            '#regency': () => {
+                loadSubdistrict(null, null);
+                renderTable()
+            },
+            '#subdistrict': () => {
+                loadVillage(null, null);
+                renderTable()
+            },
+            '#village': () => {
+                loadSls(null, null);
+                renderTable()
+            },
+            '#sls': () => {
+                renderTable()
+            },
         };
+
+        function loadSubdistrict(regencyid = null, selectedvillage = null) {
+
+            let regencySelector = `#regency`;
+            let subdistrictSelector = `#subdistrict`;
+            let villageSelector = `#village`;
+            let slsSelector = `#sls`;
+
+            let id = $(regencySelector).val();
+            if (regencyid != null) {
+                id = regencyid;
+            }
+
+            $(subdistrictSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+            $(villageSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+            $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/kec/' + id,
+                    success: function(response) {
+                        $(subdistrictSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Kecamatan -- </option>`);
+                        $(villageSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Desa -- </option>`);
+                        $(slsSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                        
+                        response.forEach(element => {
+                            let selected = selectedvillage == String(element.id) ? 'selected' : '';
+                            $(subdistrictSelector).append(
+                                `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(subdistrictSelector).empty().append(`<option value="0" disabled> -- Pilih Kecamatan -- </option>`);
+                $(villageSelector).empty().append(`<option value="0" disabled> -- Pilih Desa -- </option>`);
+                $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
+
+        function loadVillage(subdistrictid = null, selectedvillage = null) {
+
+            let subdistrictSelector = `#subdistrict`;
+            let villageSelector = `#village`;
+            let slsSelector = `#sls`;
+
+            let id = $(subdistrictSelector).val();
+            if (subdistrictid != null) {
+                id = subdistrictid;
+            }
+
+            $(villageSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+            $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/desa/' + id,
+                    success: function(response) {
+                        $(villageSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Desa -- </option>`);
+                        $(slsSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                        response.forEach(element => {
+                            let selected = selectedvillage == String(element.id) ? 'selected' : '';
+                            $(villageSelector).append(
+                                `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(villageSelector).empty().append(`<option value="0" disabled> -- Pilih Desa -- </option>`);
+                $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
+
+        function loadSls(villageid = null, selectedsls = null) {
+
+            let villageSelector = `#village`;
+            let slsSelector = `#sls`;
+
+            let id = $(villageSelector).val();
+            if (villageid != null) {
+                id = villageid;
+            }
+
+            $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/sls/' + id,
+                    success: function(response) {
+                        $(slsSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                        response.forEach(element => {
+                            let selected = selectedsls == String(element.id) ? 'selected' : '';
+                            $(slsSelector).append(
+                                `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
 
         Object.entries(eventHandlers).forEach(([selector, handler]) => {
             $(selector).on('change', handler);
@@ -244,14 +442,239 @@
             return filterUrl
         }
 
+        //Build Tabulator
+        var table = new Tabulator("#data-table", {
+            height:"800px",
+            layout:"fitDataStretch", // Changed from fitColumns for better responsiveness
+            ajaxURL:"/suplemen/data",
+            responsiveLayout:"collapse",
+            progressiveLoad:"scroll",
+            paginationSize:20,
+            placeholder:"Tidak ada usaha yang ditemukan",
+            // Enable text wrapping globally
+            textDirection:"auto",
+            ajaxResponse: function(url, params, response) {
+                // show total records somewhere in your page
+                document.getElementById("total-records").textContent =
+                    response.total_records;
+
+                // Tabulator only needs the "data" array
+                return response;
+            },
+            columns:[
+                {
+                    title: "Name",
+                    field: "name",
+                    widthGrow: 3,
+                    minWidth: 150, // Added minimum width
+                    responsive: 0, // Highest priority - always visible
+                    formatter: function (cell) {
+                        return `<div class="text-wrap lh-sm">${$("<div>").text(cell.getValue()).html()}</div>`;
+                    }
+                },
+                {
+                    title: "Detail",
+                    field: "detail",
+                    width: 250, // Increased width for better readability
+                    minWidth: 200,
+                    responsive: 1, // Second priority
+                    formatter: function (cell) {
+                        let row = cell.getRow().getData();
+                        let html = `<div class="my-1 small text-wrap lh-sm">`;
+
+                        if (row.owner) {
+                            html += `<div class="mb-1"><span class="text-muted">Pemilik:</span> <span class="fw-semibold text-dark">${row.owner}</span></div>`;
+                        }
+                        if (row.status) {
+                            html += `<div class="mb-1"><span class="text-muted">Status:</span> <span class="fw-semibold text-dark">${row.status}</span></div>`;
+                        }
+                        if (row.address) {
+                            html += `<div class="mb-1"><span class="text-muted">Alamat:</span> <span class="fw-semibold text-dark">${row.address}</span></div>`;
+                        }
+                        if (row.description) {
+                            html += `<div class="mb-1"><span class="text-muted">Deskripsi:</span> <span class="fw-semibold text-dark">${truncateText(row.description, 60)}</span></div>`; // Increased truncate limit
+                        }
+                        if (row.sector) {
+                            html += `<div class="mb-1"><span class="text-muted">Sektor:</span> <span class="fw-semibold text-dark">${truncateText(row.sector, 40)}</span></div>`; // Increased truncate limit
+                        }
+                        if (row.notes) {
+                            html += `<div><span class="text-muted">Catatan:</span> <span class="fw-semibold text-dark">${row.notes}</span></div>`;
+                        }
+
+                        html += `</div>`;
+                        return html;
+                    }
+                },
+                {
+                    title: "Lokasi",
+                    field: "location",
+                    width: 100,
+                    minWidth: 80,
+                    responsive: 4, // Lower priority
+                    hozAlign: "center",
+                    formatter: function (cell) {
+                        let row = cell.getRow().getData();
+                        if (row.latitude && row.longitude) {
+                            const lat = row.latitude;
+                            const lng = row.longitude;
+                            const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+                            return `
+                                <a href="${mapsUrl}" target="_blank" class="d-inline-flex align-items-center justify-content-center 
+                                    rounded-circle bg-light text-primary" 
+                                    style="width:32px; height:32px;" title="Lihat Lokasi">
+                                    <i class="fas fa-map-marker-alt fa-lg"></i>
+                                </a>`;
+                        }
+                        return "-";
+                    }
+                },
+                {
+                    title: "Wilayah",
+                    field: "sls",
+                    width: 200,
+                    minWidth: 150,
+                    responsive: 2, // Third priority
+                    formatter: function (cell) {
+                        let row = cell.getRow().getData();
+                        
+                        if (row.match_level === 'failed') {
+                            return `<div class="text-wrap lh-sm">
+                                <div class="text-warning fw-semibold small">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Tidak ada polygon yang pas untuk titik ini, bisa cek koordinatnya dulu
+                                </div>
+                            </div>`;
+                        }
+
+                        // Determine which ID to show (priority: sls > village > subdistrict > regency)
+                        let areaId = "";
+                        if (row.sls && row.sls.id) {
+                            areaId = row.sls.id;
+                        } else if (row.village && row.village.id) {
+                            areaId = row.village.id;
+                        } else if (row.subdistrict && row.subdistrict.id) {
+                            areaId = row.subdistrict.id;
+                        } else if (row.regency && row.regency.id) {
+                            areaId = row.regency.id;
+                        }
+                        
+                        // Build hierarchical name (regency > subdistrict > village > sls)
+                        let areaNames = [];
+                        if (row.regency && row.regency.name) {
+                            areaNames.push(row.regency.name);
+                        }
+                        if (row.subdistrict && row.subdistrict.name) {
+                            areaNames.push(row.subdistrict.name);
+                        }
+                        if (row.village && row.village.name) {
+                            areaNames.push(row.village.name);
+                        }
+                        if (row.sls && row.sls.name) {
+                            areaNames.push(row.sls.name);
+                        }
+                        
+                        let areaName = areaNames.length > 0 ? areaNames.join(", ") : "-";
+                        
+                        if (!areaId && !areaName) return "-";
+                        
+                        return `<div class="text-wrap lh-sm">
+                            ${areaId ? `<div class="fw-semibold text-success">${toTitleCase(areaId)}</div>` : ""}
+                            ${areaName !== "-" ? `<div class="small text-muted">${toTitleCase(areaName)}</div>` : ""}
+                        </div>`;
+                    }
+                },
+                {
+                    title: "Satker",
+                    field: "organization",
+                    width: 200,
+                    minWidth: 150,
+                    responsive: 2, // Third priority
+                    formatter: function (cell) {
+                        let data = cell.getValue();
+                        if (!data) return "-";
+                        return `<div class="text-wrap lh-sm"><span class="small mb-0">[${data.long_code}] ${data.name}</span></div>`;
+                    }
+                },
+                {
+                    title: "Petugas",
+                    field: "user",
+                    width: 150,
+                    minWidth: 120,
+                    responsive: 3, // Fourth priority
+                    formatter: function (cell) {
+                        const value = cell.getValue()?.firstname ?? "-";
+                        return `<div class="small text-wrap lh-sm">${value}</div>`;
+                    }
+                },
+                {
+                    title: "Projek",
+                    field: "project",
+                    width: 150,
+                    minWidth: 120,
+                    responsive: 5, // Lower priority
+                    formatter: function (cell) {
+                        let data = cell.getValue();
+                        if (!data) return "-";
+                        const projectName = (data.type === "kendedes mobile") ? "Kendedes Mobile" : "SWMAPS";
+                        return `<div class="small text-wrap lh-sm">${projectName}</div>`;
+                    }
+                },
+                {
+                    title: "Dibuat Pada",
+                    field: "created_at",
+                    width: 150,
+                    minWidth: 120,
+                    responsive: 6, // Lower priority
+                    formatter: function (cell) {
+                        return `<div class="small text-wrap lh-sm">${formatDate(cell.getValue())}</div>`;
+                    }
+                },
+                {
+                    title: "Aksi",
+                    field: "id",
+                    width: 70,
+                    minWidth: 60,
+                    responsive: 7, // High priority - actions should be accessible
+                    hozAlign: "center",
+                    formatter: function (cell) {
+                        let row = cell.getRow().getData();
+                        if (canDelete(row.user.id) && row.project?.type !== "kendedes mobile") {
+                            return `
+                                <form id="formdelete${row.id}" name="formdelete${row.id}" 
+                                    onSubmit="deleteBusiness('${row.id}','${row.name}')" 
+                                    class="d-inline" action="/suplemen/${row.id}" method="POST">
+                                    @csrf
+                                    @method('delete')
+                                    <button class="btn btn-outline-danger btn-sm p-1" type="submit">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>`;
+                        }
+                        return "-";
+                    }
+                },
+            ],
+        });
+
+        function toTitleCase(input) {
+            const str = String(input); // ensure it's a string
+            return str
+                .toLowerCase()
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ");
+        }
+
+
         function renderTable() {
             filterUrl = ''
-            filterTypes = ['organization', 'market', 'user', 'projectType'];
+            filterTypes = ['organization', 'market', 'user', 'projectType', 'statusMatching', 'regency', 'subdistrict', 'village', 'sls'];
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
             });
 
-            table.ajax.url('/suplemen/data?' + filterUrl).load();
+            table.setData('/suplemen/data?' + filterUrl);
         }
 
         function formatDate(isoString) {
@@ -301,198 +724,6 @@
             }
             return text.substring(0, maxLength) + "...";
         }
-
-        let table = new DataTable('#myTable', {
-            order: [],
-            serverSide: true,
-            processing: true,
-            ajax: {
-                url: '/suplemen/data',
-                type: 'GET',
-            },
-            responsive: true,
-            columns: [
-                {
-                    responsivePriority: 1,
-                    width: "15%",
-                    data: "name",
-                    className: 'px-3 fw-bold text-dark',
-                    type: "text",
-                    render: function(data, type, row) {
-                        return $('<div>').text(data).html();
-                    }
-                },
-                {
-                    responsivePriority: 3,
-                    width: "25%",
-                    data: null,
-                    className: 'px-3',
-                    render: function(data, type, row) {
-                        if (type === 'display') {
-                            let html = `<div class="my-1 small">`;
-
-                            if (row.owner) {
-                                html += `
-                                    <div class="mb-1">
-                                        <span class="text-muted">Pemilik:</span>
-                                        <span class="fw-semibold text-dark">${row.owner}</span>
-                                    </div>`;
-                            }
-
-                            if (row.status) {
-                                html += `
-                                    <div class="mb-1">
-                                        <span class="text-muted">Status:</span>
-                                        <span class="fw-semibold text-dark">${row.status}</span>
-                                    </div>`;
-                            }
-
-                            if (row.address) {
-                                html += `
-                                    <div class="mb-1">
-                                        <span class="text-muted">Alamat:</span>
-                                        <span class="fw-semibold text-dark">${row.address}</span>
-                                    </div>`;
-                            }
-
-                            if (row.description) {
-                                html += `
-                                    <div class="mb-1">
-                                        <span class="text-muted">Deskripsi:</span>
-                                        <span class="fw-semibold text-dark">${truncateText(row.description, 40)}</span>
-                                    </div>`;
-                            }
-
-                            if (row.sector) {
-                                html += `
-                                    <div class="mb-1">
-                                        <span class="text-muted">Sektor:</span>
-                                        <span class="fw-semibold text-dark">${truncateText(row.sector, 30)}</span>
-                                    </div>`;
-                            }
-
-                            if (row.notes) {
-                                html += `
-                                    <div>
-                                        <span class="text-muted">Catatan:</span>
-                                        <span class="fw-semibold text-dark">${row.notes}</span>
-                                    </div>`;
-                            }
-
-                            html += `</div>`;
-                            return html;
-                        }
-                        return data;
-                    }
-                },
-                {
-                    responsivePriority: 2,
-                    width: "8%",
-                    data: null,
-                    className: 'px-3 text-center',
-                    render: function(data, type, row) {
-                        if (type === 'display' && row.latitude && row.longitude) {
-                            const lat = row.latitude;
-                            const lng = row.longitude;
-                            const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-                            return `
-                                <a href="${mapsUrl}" target="_blank" class="d-inline-flex align-items-center justify-content-center 
-                                    rounded-circle bg-light text-primary" 
-                                    style="width:32px; height:32px;" title="Lihat Lokasi">
-                                    <i class="fas fa-map-marker-alt fa-lg"></i>
-                                </a>
-                            `;
-                        }
-                        return '-';
-                    }
-                },
-                {
-                    responsivePriority: 3,
-                    width: "15%",
-                    data: "organization",
-                    className: 'px-3',
-                    type: "text",
-                    render: function(data, type, row) {
-                        if (type === 'display') {
-                            return `<span class="mb-0">[${data.long_code}] ${data.name}</span>`;
-                        }
-                        return data;
-                    }
-                },
-                {
-                    responsivePriority: 2,
-                    width: "10%",
-                    data: "user",
-                    className: 'px-3',
-                    type: "text",
-                    render: function(data, type, row) {
-                        return data.firstname;
-                    }
-                },
-                {
-                    responsivePriority: 4,
-                    width: "10%",
-                    data: "project",
-                    className: 'px-3',
-                    type: "text",
-                    render: function(data, type, row) {
-                        if (data == null){
-                            return '-';
-                        }
-                        if (data.type == 'kendedes mobile'){
-                            return 'Kendedes Mobile';
-                        } else {
-                            return 'SWMAPS';
-                        }
-                        return data.type;
-                    },
-                },
-                {
-                    responsivePriority: 4,
-                    width: "10%",
-                    data: "created_at",
-                    className: 'px-3',
-                    type: "text",
-                    render: function(data, type, row) {
-                        return formatDate(data)
-                    }
-                },
-                {
-                    responsivePriority: 3,
-                    width: "8%",
-                    data: "id",
-                    className: 'px-3 text-center',
-                    type: "text",
-                    render: function(data, type, row) {
-                        if (type === 'display') {
-                            if (canDelete(row.user.id) && row.project.type != 'kendedes mobile') {
-                                return `
-                                    <form id="formdelete${data}" name="formdelete${data}" 
-                                        onSubmit="deleteBusiness('${data}','${row.name}')" 
-                                        class="d-inline" action="/suplemen/${data}" method="POST">
-                                        @csrf
-                                        @method('delete')
-                                        <button class="btn btn-outline-danger btn-sm p-1" type="submit">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                `;
-                            } else {
-                                return '-'
-                            }
-                        }
-                        return data;
-                    }
-                },
-            ],
-            language: {
-                paginate: {
-                    previous: '<i class="fas fa-angle-left"></i>',
-                    next: '<i class="fas fa-angle-right"></i>'
-                }
-            }
-        });
-
 
         function refresh() {
             tableStatus.ajax.url('/status/data/2').load();
