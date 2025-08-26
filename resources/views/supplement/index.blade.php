@@ -147,7 +147,7 @@
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-3">
+                    <div class="col-md-12">
                         <label class="form-label d-block">Mode Tampilan Tabel:</label>
 
                         <div class="form-check form-check-inline">
