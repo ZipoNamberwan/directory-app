@@ -276,7 +276,6 @@ class SupplementController extends Controller
         if ($user->hasRole('adminprov')) {
             $records = SupplementBusiness::query();
         } elseif ($user->hasRole('adminkab')) {
-            // $records = SupplementBusiness::where('organization_id', $user->organization_id);
             $records = SupplementBusiness::where(function ($query) use ($user) {
                 $query->where('organization_id', $user->organization_id)
                     ->orWhere('regency_id', $user->organization_id);
@@ -295,23 +294,18 @@ class SupplementController extends Controller
         if ($request->user && $request->user !== 'all') {
             $records->where('user_id', $request->user);
         }
-        // if ($request->projectType && $request->projectType !== 'all') {
-        //     $records->whereHas('project', function ($query) use ($request) {
-        //         $query->where('type', $request->projectType);
-        //     });
-        // }
         if ($request->projectType && $request->projectType !== 'all') {
             if ($request->projectType === 'swmaps supplement') {
                 $records->where('upload_id', '!=', null);
             } else if ($request->projectType === 'kendedes mobile') {
                 $records->where('upload_id', '=', null);
-            } 
+            }
         }
         if ($request->statusMatching && $request->statusMatching !== 'all') {
             if ($request->statusMatching === 'failed') {
                 $records->where('match_level', 'failed');
-            } else if ($request->statusMatching === 'success'){
-                $records->where('match_level', '!=' ,'failed');
+            } else if ($request->statusMatching === 'success') {
+                $records->where('match_level', '!=', 'failed');
             } else {
                 $records->where('match_level', null);
             }
@@ -330,8 +324,8 @@ class SupplementController extends Controller
         }
 
         // search
-        if ($request->search) {
-            $search = strtolower($request->search);
+        if ($request->keyword) {
+            $search = strtolower($request->keyword);
             $records->where(function ($query) use ($search) {
                 $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
                     ->orWhereRaw('LOWER(address) LIKE ?', ["%{$search}%"])
@@ -344,28 +338,40 @@ class SupplementController extends Controller
         $orderColumn = $request->get('sort_by', 'created_at');
         $orderDir = $request->get('sort_dir', 'desc');
 
-        // page size
-        $perPage = (int) $request->get('size', 50);
-
-        // ✅ get total BEFORE limiting
+        // ✅ get total BEFORE applying pagination
         $totalRecords = (clone $records)->count();
 
         // ✅ cap total count at 1000
-        $total = min((clone $records)->count(), 1000);
+        $total = min($totalRecords, 1000);
+
+        // Progressive loading with page-based pagination
+        $perPage = (int) $request->get('size', 20); // Match your paginationSize
+        $page = (int) $request->get('page', 1);
+
+        // Calculate offset for the current page
+        $offset = ($page - 1) * $perPage;
 
         // ✅ stop fetching more than 1000 rows
-        $records->limit(1000);
+        if ($offset >= 1000) {
+            return response()->json([
+                "total_records" => $totalRecords,
+                "last_page" => (int) ceil($total / $perPage),
+                "data" => [],
+            ]);
+        }
 
-        // cursor pagination
+        // Apply pagination with offset and limit
         $data = $records
             ->with(['user', 'organization', 'project', 'regency', 'subdistrict', 'village', 'sls'])
             ->orderBy($orderColumn, $orderDir)
-            ->cursorPaginate($perPage, ['*'], 'cursor', $request->cursor);
+            ->offset($offset)
+            ->limit(min($perPage, 1000 - $offset)) // Don't exceed the 1000 cap
+            ->get();
 
         return response()->json([
             "total_records" => $totalRecords,
             "last_page" => (int) ceil($total / $perPage),
-            "data" => $data->items(),
+            "data" => $data->toArray(),
         ]);
     }
 
