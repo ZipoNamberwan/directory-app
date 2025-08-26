@@ -68,6 +68,7 @@ class MarketBusinessExportJob implements ShouldQueue
                 'Kabupaten',
                 'Kecamatan',
                 'Desa',
+                'SLS'
             ]);
 
             $business = null;
@@ -108,9 +109,10 @@ class MarketBusinessExportJob implements ShouldQueue
                             $row->longitude,
                             $row->market->name,
                             $row->user->firstname,
-                            $row->market->regency != null ? "[" . $row->market->regency->long_code . "] " . $row->market->regency->name : null,
-                            $row->market->subdistrict != null ? "[" . $row->market->subdistrict->short_code . "] " . $row->market->subdistrict->name : null,
-                            $row->market->village != null ? "[" . $row->market->village->short_code . "] " . $row->market->village->name : null,
+                            $row->regency != null ? "[" . $row->regency->long_code . "] " . $row->regency->name : null,
+                            $row->subdistrict != null ? "[" . $row->subdistrict->short_code . "] " . $row->subdistrict->name : null,
+                            $row->village != null ? "[" . $row->village->short_code . "] " . $row->village->name : null,
+                            $row->sls != null ? "[" . $row->sls->short_code . "] " . $row->sls->name : null,
                         ]);
                     }
                 });
