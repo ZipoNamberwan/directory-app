@@ -66,7 +66,8 @@ class SupplementBusinessExportJob implements ShouldQueue
                 'Kabupaten',
                 'Kecamatan',
                 'Desa',
-                'SLS'
+                'SLS',
+                'Ditagging pada'
             ]);
 
             $business = null;
@@ -102,6 +103,7 @@ class SupplementBusinessExportJob implements ShouldQueue
                             $row->subdistrict != null ? "[" . $row->subdistrict->short_code . "] " . $row->subdistrict->name : null,
                             $row->village != null ? "[" . $row->village->short_code . "] " . $row->village->name : null,
                             $row->sls != null ? "[" . $row->sls->short_code . "] " . $row->sls->name : null,
+                            $row->created_at->format('d-m-Y H:i:s'),
                         ]);
                     }
                 });

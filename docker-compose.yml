@@ -12,6 +12,7 @@ services:
     entrypoint: ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
     volumes:
       - ./docker/php/php-prod.ini:/usr/local/etc/php/php.ini
+      - ./docker/supervisor/laravel-workers-prod.conf:/etc/supervisor/conf.d/laravel-workers.conf
       - ./backup:/var/www/backup
       - storagedata:/var/www/storage/app
       - geojson:/var/www/python_script/geojson

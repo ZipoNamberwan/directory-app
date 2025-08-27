@@ -8,6 +8,7 @@ services:
       - /var/www/storage/logs
       - /var/www/storage/framework
       - ./docker/php/php-dev.ini:/usr/local/etc/php/php.ini
+      - ./docker/supervisor/laravel-workers-dev.conf:/etc/supervisor/conf.d/laravel-workers.conf
       - ./backup:/var/www/backup
       - storagedata:/var/www/storage/app
     environment:

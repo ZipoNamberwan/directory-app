@@ -43,7 +43,7 @@ COPY --chown=www-data:www-data . /var/www
 RUN chmod +x /var/www/docker/scripts/backup.sh
 
 # Setup supervisord
-COPY --chown=www-data:www-data ./docker/supervisor/laravel-workers.conf /etc/supervisor/conf.d/laravel-workers.conf
+# COPY --chown=www-data:www-data ./docker/supervisor/laravel-workers.conf /etc/supervisor/conf.d/laravel-workers.conf
 COPY --chown=www-data:www-data ./docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 
 # Setup cron
