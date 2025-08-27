@@ -8,6 +8,25 @@
     <link href="/vendor/datatables/responsive.bootstrap5.min.css" rel="stylesheet" />
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <style>
+        /* Collapsible chevron rotation */
+        .toggle-btn .toggle-icon { transition: transform .2s ease; }
+        .toggle-btn[aria-expanded="true"] .toggle-icon { transform: rotate(90deg); }
+        /* Remove button shadow & outline */
+        .toggle-btn, .toggle-btn:focus, .toggle-btn:active, .toggle-btn:hover { box-shadow:none !important; outline:none !important; }
+        /* Header spacing */
+        #matchingInfoHeader { gap:.4rem; }
+        /* Smaller title styling */
+        .matching-info-title { font-size:.9rem; font-weight:600; line-height:1.2; }
+        .matching-info-title i { font-size:.85rem; }
+        /* Chevron button sizing & centering */
+        #matchingInfoToggle { width:26px; height:26px; display:flex; align-items:center; justify-content:center; }
+        #matchingInfoToggle .toggle-icon { font-size:.85rem; }
+        /* List item spacing */
+        #matchingInfoBody ul li { margin-bottom:.4rem; }
+        #matchingInfoBody ul li:last-child { margin-bottom:0; }
+    </style>
 @endsection
 
 @section('content')
@@ -37,7 +56,7 @@
         <div class="card mt-2">
             <div class="card-header pb-0">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="text-capitalize">Daftar Usaha Suplemen</h6>
+                    <h5 class="text-capitalize">Daftar Usaha Suplemen</h5>
                     <div class="d-flex">
                         <form action="/suplemen/download/raw" class="me-2" method="POST">
                             @csrf
@@ -54,6 +73,27 @@
                 </div>
             </div>
             <div class="card-body">
+                {{-- Informational bullet list (collapsible) --}}
+                <div class="alert border mb-4" role="alert" id="matchingInfoAlert" style="background-color:#f5f9ff;">
+                    <div id="matchingInfoHeader" class="d-flex align-items-center mb-0" style="cursor:pointer;">
+                        <button id="matchingInfoToggle" class="btn btn-sm p-0 border-0 bg-transparent toggle-btn mb-0" type="button" data-bs-toggle="collapse" data-bs-target="#matchingInfoBody" aria-expanded="false" aria-controls="matchingInfoBody" aria-label="Toggle info">
+                            <i class="fas fa-chevron-right toggle-icon text-primary"></i>
+                        </button>
+                        <div class="matching-info-title text-dark mb-0 d-flex align-items-center">
+                            <i class="fas fa-info-circle me-1 text-primary"></i>
+                            <span>Info Matching Wilayah Terkecil (SLS)</span>
+                        </div>
+                    </div>
+                    <div id="matchingInfoBody" class="collapse mt-3" data-bs-parent="#matchingInfoAlert">
+                        <ul class="mb-0 ps-3 small">
+                            <li>Matching wilayah dilakukan secara otomatis dengan jadwal <strong>setiap hari jam 3 pagi</strong>.</li>
+                            <li>Proses matching <strong>bisa berhasil bisa gagal</strong>, usaha yang gagal di matching bisa dilihat dengan filter <strong>Status Matching Wilayah</strong>.</li>
+                            <li>Jika <strong>matching gagal</strong> ada <strong>2 kemungkinan</strong>: - Koordinatnya keliru (misal di laut) - Polygonnya yg keliru. Silakan kontak tim garda prov terkait ini jika butuh bantuan.</li>
+                            <li>Jika <strong>koordinat berubah</strong>, maka matching akan <strong>dilakukan lagi</strong> untuk usaha tersebut.</li>
+                            <li><strong>Menu download</strong> data juga sudah memasukkan wilayah.</li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="row mb-3">
                     @hasrole('adminprov')
                         <div class="col-md-3">
@@ -980,6 +1020,22 @@
             const initialMode = checkedRadio ? checkedRadio.value : "fit";
 
             initializeTable(initialMode);
+        });
+    </script>
+
+    <script>
+        // Make entire header clickable to toggle collapse
+        document.addEventListener('DOMContentLoaded', function () {
+            const header = document.getElementById('matchingInfoHeader');
+            const btn = document.getElementById('matchingInfoToggle');
+            if(header && btn){
+                header.addEventListener('click', function(e){
+                    // Avoid double-trigger if button itself clicked
+                    if(!btn.contains(e.target)) {
+                        btn.click();
+                    }
+                });
+            }
         });
     </script>
 @endpush
