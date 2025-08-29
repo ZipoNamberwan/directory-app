@@ -159,11 +159,11 @@ class MarketBusinessImportSheet implements
                 }
 
                 $this->status->update([
-                    'processed_count' => $processedCount,
+                    'processed_count' => $this->status->processed_count + $processedCount,
                 ]);
 
                 // 🧨 Case 1: File is completely empty (no rows processed)
-                if ($processedCount === 0) {
+                if ($this->status->processed_count === 0) {
                     throw new Exception('File kosong atau tidak memiliki baris yang dapat diproses.');
                 }
 
