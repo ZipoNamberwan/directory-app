@@ -220,7 +220,7 @@ class SupplementController extends Controller
     public function upload(Request $request)
     {
         $validateArray = [
-            'file' => 'required|file|mimes:xlsx|max:2048',
+            'file' => 'required|file|mimes:xlsx|max:10240',
         ];
 
         $request->validate($validateArray);
