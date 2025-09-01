@@ -45,10 +45,11 @@ class MajapahitLoginController extends Controller
                 ];
 
                 if (!$user) {
-                    $userData['role'] = 'operator';
+                    // $userData['role'] = 'operator';
                     $userData['password'] = Hash::make('se26Sukses');
 
                     $user = User::create($userData);
+                    $user->assignRoleAllDatabase('operator');
                 } else {
                     $updateData = [
                         'firstname' => $userData['firstname'],
@@ -113,10 +114,11 @@ class MajapahitLoginController extends Controller
             ];
 
             if (!$user) {
-                $userData['role'] = 'operator';
+                // $userData['role'] = 'operator';
                 $userData['password'] = Hash::make('se26Sukses');
 
                 $user = User::create($userData);
+                $user->assignRoleAllDatabase('operator');
             } else {
                 $updateData = [
                     'firstname' => $userData['firstname'],
