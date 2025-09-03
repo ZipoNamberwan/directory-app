@@ -374,7 +374,7 @@
                 event.preventDefault();
                 Swal.fire({
                     title: `Yakin Hapus Petugas Ini? ${name}`,
-                    text: 'Menghapus petugas akan mempengaruhi Direktori Perusahaan',
+                    text: 'Menghapus petugas akan menghapus seluruh usaha yang sudah ditaging. Yakin?',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',

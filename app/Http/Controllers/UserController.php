@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MarketBusiness;
 use App\Models\Organization;
 use App\Models\Regency;
+use App\Models\SupplementBusiness;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
@@ -178,7 +180,11 @@ class UserController extends Controller
         if ($user->hasRole('adminkab') && ($userToDelete->hasRole('adminkab') || $userToDelete->hasRole('adminprov'))) {
             return redirect('/users')->with('error-delete', 'Admin tidak bisa dihapus.');
         } else {
-            User::destroy($id);
+            if (SupplementBusiness::where('user_id', $id)->exists() || MarketBusiness::where('user_id', $id)->exists()) {
+                return redirect('/users')->with('error-delete', 'User tidak bisa dihapus karena memiliki data usaha.');
+            } else {
+                User::destroy($id);
+            }
         }
 
         return redirect('/users')->with('success-edit', 'Petugas telah dihapus!');
