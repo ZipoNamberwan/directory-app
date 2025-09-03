@@ -11,6 +11,8 @@ use App\Models\MarketBusiness;
 use App\Models\MarketType;
 use App\Models\MarketUploadStatus;
 use App\Models\Organization;
+use App\Models\Regency;
+use App\Models\Subdistrict;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -25,6 +27,8 @@ class MarketController extends Controller
     {
         $user = User::find(Auth::id());
         $organizations = [];
+        $regencies = [];
+        $subdistricts = [];
         $markets = [];
         $users = [];
         $isAdmin = false;
@@ -32,10 +36,13 @@ class MarketController extends Controller
 
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
+            $regencies = Regency::all();
             $isAdmin = true;
         } else if ($user->hasRole('adminkab')) {
             $markets = Market::where('organization_id', $user->organization_id)->get();
             $users = User::where('organization_id', $user->organization_id)->get();
+            $regencies = Regency::where('id', $user->regency_id)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
             $isAdmin = true;
             $marketTypes = MarketType::all();
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
@@ -52,6 +59,8 @@ class MarketController extends Controller
             'market.index',
             [
                 'organizations' => $organizations,
+                'regencies' => $regencies,
+                'subdistricts' => $subdistricts,
                 'markets' => $markets,
                 'isAdmin' => $isAdmin,
                 'userId' => $user->id,
@@ -193,72 +202,78 @@ class MarketController extends Controller
             });
         }
 
-        $recordsTotal = $records->count();
-
-        $orderColumn = 'created_at';
-        $orderDir = 'desc';
-        if ($request->order != null) {
-            if ($request->order[0]['dir'] == 'asc') {
-                $orderDir = 'asc';
+        if ($request->statusMatching && $request->statusMatching !== 'all') {
+            if ($request->statusMatching === 'failed') {
+                $records->where('match_level', 'failed');
+            } else if ($request->statusMatching === 'success') {
+                $records->where('match_level', '!=', 'failed');
             } else {
-                $orderDir = 'desc';
-            }
-            if ($request->order[0]['column'] == '0') {
-                $orderColumn = 'name';
-            } else if ($request->order[0]['column'] == '1') {
-                $orderColumn = 'status';
-            } else if ($request->order[0]['column'] == '2') {
-                $orderColumn = 'address';
-            } else if ($request->order[0]['column'] == '3') {
-                $orderColumn = 'description';
-            } else if ($request->order[0]['column'] == '4') {
-                $orderColumn = 'sector';
-            } else if ($request->order[0]['column'] == '5') {
-                $orderColumn = 'note';
+                $records->where('match_level', null);
             }
         }
-
-        $searchkeyword = null;
-        if ($request->search != null) {
-            $searchkeyword = $request->search['value'];
+        if ($request->regency && $request->regency !== 'all') {
+            $records->where('regency_id', $request->regency);
+        }
+        if ($request->subdistrict && $request->subdistrict !== 'all') {
+            $records->where('subdistrict_id', $request->subdistrict);
+        }
+        if ($request->village && $request->village !== 'all') {
+            $records->where('village_id', $request->village);
+        }
+        if ($request->sls && $request->sls !== 'all') {
+            $records->where('sls_id', $request->sls);
         }
 
-        $data = $records->with(['user', 'market', 'regency', 'market.organization']);
-        // $data = $records;
 
-        if ($searchkeyword != null) {
-            $data->where(function ($query) use ($searchkeyword) {
-                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                    ->orWhereRaw('LOWER(address) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                    ->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                    ->orWhereRaw('LOWER(note) LIKE ?', ['%' . strtolower($searchkeyword) . '%'])
-                    ->orWhereHas('user', function ($q) use ($searchkeyword) {
-                        $q->whereRaw('LOWER(firstname) LIKE ?', ['%' . strtolower($searchkeyword) . '%']);
-                    });
+        // search
+        if ($request->keyword) {
+            $search = strtolower($request->keyword);
+            $records->where(function ($query) use ($search) {
+                $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(address) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(note) LIKE ?', ["%{$search}%"]);
             });
         }
-        $recordsFiltered = $data->count();
 
-        if ($orderDir == 'asc') {
-            $data = $data->orderBy($orderColumn);
-        } else {
-            $data = $data->orderByDesc($orderColumn);
+        // sorting
+        $orderColumn = $request->get('sort_by', 'created_at');
+        $orderDir = $request->get('sort_dir', 'desc');
+
+        // ✅ get total BEFORE applying pagination
+        $totalRecords = (clone $records)->count();
+
+        // ✅ cap total count at 1000
+        $total = min($totalRecords, 1000);
+
+        // Progressive loading with page-based pagination
+        $perPage = (int) $request->get('size', 20); // Match your paginationSize
+        $page = (int) $request->get('page', 1);
+
+        // Calculate offset for the current page
+        $offset = ($page - 1) * $perPage;
+
+        // ✅ stop fetching more than 1000 rows
+        if ($offset >= 1000) {
+            return response()->json([
+                "total_records" => $totalRecords,
+                "last_page" => (int) ceil($total / $perPage),
+                "data" => [],
+            ]);
         }
 
-        if ($request->length != -1 && $request->length != null) {
-            $data = $data->skip($request->start)
-                ->take($request->length)->get();
-        } else {
-            $data = $data->get();
-        }
-
-        $data = $data->values();
+        // Apply pagination with offset and limit
+        $data = $records
+            ->with(['user', 'regency', 'subdistrict', 'village', 'sls', 'market', 'market.organization'])
+            ->orderBy($orderColumn, $orderDir)
+            ->offset($offset)
+            ->limit(min($perPage, 1000 - $offset)) // Don't exceed the 1000 cap
+            ->get();
 
         return response()->json([
-            "draw" => $request->draw,
-            "recordsTotal" => $recordsTotal,
-            "recordsFiltered" => $recordsFiltered,
-            "data" => $data
+            "total_records" => $totalRecords,
+            "last_page" => (int) ceil($total / $perPage),
+            "data" => $data->toArray(),
         ]);
     }
 
