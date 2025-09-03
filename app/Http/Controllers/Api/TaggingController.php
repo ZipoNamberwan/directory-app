@@ -205,7 +205,7 @@ class TaggingController extends Controller
                 $project->restore();
             }
 
-            $business = SupplementBusiness::updateOrCreate(
+            $business = SupplementBusiness::withTrashed()->updateOrCreate(
                 ['id' => $id],
                 [
                     'name' => $request->name,
@@ -220,6 +220,7 @@ class TaggingController extends Controller
                     'user_id' => $request->user,
                     'project_id' => $request->project['id'],
                     'organization_id' => $request->organization,
+                    'deleted_at' => null
                 ]
             );
             $business->load(['user', 'project']);
@@ -265,7 +266,7 @@ class TaggingController extends Controller
                 } elseif ($project->trashed()) {
                     $project->restore();
                 }
-                $tag = SupplementBusiness::updateOrCreate(
+                $tag = SupplementBusiness::withTrashed()->updateOrCreate(
                     ['id' => $tagData['id']],
                     [
                         'name' => $tagData['name'],
@@ -280,6 +281,7 @@ class TaggingController extends Controller
                         'user_id' => $tagData['user'],
                         'project_id' => $tagData['project']['id'],
                         'organization_id' => $tagData['organization'],
+                        'deleted_at' => null
                     ]
                 );
 
