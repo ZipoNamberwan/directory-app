@@ -925,17 +925,6 @@
                     }
                 },
                 {
-                    title: "Projek",
-                    field: "project",
-                    responsive: 5,
-                    formatter: function(cell) {
-                        let data = cell.getValue();
-                        if (!data) return "-";
-                        const projectName = (data.type === "kendedes mobile") ? "Kendedes Mobile" : "SWMAPS";
-                        return `<div class="small text-wrap lh-sm">${projectName}</div>`;
-                    }
-                },
-                {
                     title: "Dibuat Pada",
                     field: "created_at",
                     responsive: 6,
