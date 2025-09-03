@@ -773,6 +773,29 @@
     </script>
 
     <script>
+        // debounce function
+        function debounce(func, delay) {
+            let timer;
+            return function(...args) {
+                clearTimeout(timer); // clear previous timer
+                timer = setTimeout(() => {
+                    func.apply(this, args);
+                }, delay);
+            };
+        }
+
+        // your action when typing finished
+        function handleSearch(e) {
+            const keyword = e.target.value.trim();
+            renderTable();
+        }
+
+        // attach to input with debounce
+        const input = document.getElementById("keyword");
+        input.addEventListener("input", debounce(handleSearch, 500));
+    </script>
+
+    <script>
         // Global table variable
         let table;
 
