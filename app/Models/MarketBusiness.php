@@ -42,4 +42,9 @@ class MarketBusiness extends Model
     {
         return $this->belongsTo(Sls::class, 'sls_id');
     }
+    
+    public function anomalies()
+    {
+        return $this->morphMany(AnomalyRepair::class, 'business');
+    }
 }

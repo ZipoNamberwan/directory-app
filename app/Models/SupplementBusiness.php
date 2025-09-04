@@ -45,4 +45,9 @@ class SupplementBusiness extends Model
     {
         return $this->belongsTo(Project::class, 'project_id');
     }
+
+    public function anomalies()
+    {
+        return $this->morphMany(AnomalyRepair::class, 'business');
+    }
 }
