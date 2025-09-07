@@ -337,7 +337,7 @@
                                             <span id="user-name" class="d-block d-sm-inline ms-sm-2"></span>
                                         </div>
                                         <div class="mb-2">
-                                            <strong>Organisasi:</strong>
+                                            <strong>Satker:</strong>
                                             <span id="organization-name" class="d-block d-sm-inline ms-sm-2"></span>
                                         </div>
                                     </div>
@@ -1128,6 +1128,11 @@
                             </div>
                         </div>
                         <!-- <small class="text-muted d-block mt-1">${anomaly.description}</small> -->
+                        ${anomaly.last_repaired_by_firstname ? `
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-user me-1"></i>Terakhir diperbaiki oleh: <strong>${anomaly.last_repaired_by_firstname}</strong> (${anomaly.last_repaired_by_email})
+                        </small>
+                        ` : ''}
                     </div>
                     <div class="card-body pt-1 pb-3 px-3">
                         <!-- Action buttons first -->
@@ -1146,7 +1151,7 @@
                             </div>
                         </div>
                         
-                        <!-- Then old value and fixed value -->
+                        <!-- Then old value and fixed value/note -->
                         <div class="row g-3">
                             <div class="col-lg-6 col-12">
                                 <label class="form-label"><strong>Nilai Lama:</strong></label>
@@ -1165,6 +1170,18 @@
                             </div>
                         </div>
                         
+                        <!-- Note field for dismissed action -->
+                        <div class="row g-3 mt-2">
+                            <div class="col-12">
+                                <label class="form-label"><strong>Catatan (untuk aksi diabaikan):</strong></label>
+                                <textarea class="form-control note-input" 
+                                          name="note_${anomaly.id}"
+                                          rows="3"
+                                          ${anomaly.status === 'fixed' || anomaly.status === 'notconfirmed' || !anomaly.status ? 'disabled' : ''}
+                                          placeholder="Masukkan alasan mengapa anomali ini diabaikan">${anomaly.note || ''}</textarea>
+                            </div>
+                        </div>
+                        
                         <!-- Error message placeholder -->
                         <small class="text-danger mt-6 d-none" id="error_${anomaly.id}"></small>
                     </div>
@@ -1177,17 +1194,24 @@
             const fixedRadio = document.getElementById(`fixed_${index}`);
             const dismissedRadio = document.getElementById(`dismissed_${index}`);
             const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`);
+            const noteInput = document.querySelector(`textarea[name="note_${anomalyId}"]`);
             const anomalyCard = document.querySelector(`[data-anomaly-id="${anomalyId}"]`);
 
             function updateInputState() {
                 if (dismissedRadio.checked) {
+                    // Dismissed: enable note input, disable fixed value input
                     fixedValueInput.disabled = true;
                     fixedValueInput.value = '';
+                    noteInput.disabled = false;
                 } else if (fixedRadio.checked) {
+                    // Fixed: enable fixed value input, disable note input
                     fixedValueInput.disabled = false;
+                    noteInput.disabled = true;
+                    noteInput.value = '';
                 } else {
-                    // No action selected - disable input field
+                    // No action selected - disable both input fields
                     fixedValueInput.disabled = true;
+                    noteInput.disabled = true;
                 }
 
                 // Clear any previous errors
@@ -1226,6 +1250,7 @@
                 const anomalyId = card.dataset.anomalyId;
                 const statusRadios = document.getElementsByName(`status_${anomalyId}`);
                 const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`);
+                const noteInput = document.querySelector(`textarea[name="note_${anomalyId}"]`);
 
                 let selectedStatus = null;
                 for (const radio of statusRadios) {
@@ -1238,7 +1263,8 @@
                 anomaliesData.push({
                     id: anomalyId,
                     status: selectedStatus,
-                    fixed_value: selectedStatus === 'fixed' ? fixedValueInput.value : null
+                    fixed_value: selectedStatus === 'fixed' ? fixedValueInput.value : null,
+                    note: selectedStatus === 'dismissed' ? noteInput.value : null
                 });
             });
 
@@ -1373,6 +1399,7 @@
                 const anomalyId = card.dataset.anomalyId;
                 const statusRadios = document.getElementsByName(`status_${anomalyId}`);
                 const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`);
+                const noteInput = document.querySelector(`textarea[name="note_${anomalyId}"]`);
 
                 let selectedStatus = null;
                 for (const radio of statusRadios) {
@@ -1387,6 +1414,15 @@
                     const fixedValue = fixedValueInput ? fixedValueInput.value.trim() : '';
                     if (!fixedValue || fixedValue === '') {
                         showAnomalyError(anomalyId, 'Nilai perbaikan wajib diisi ketika memilih "Perbaiki"');
+                        hasValidationErrors = true;
+                    }
+                }
+                
+                // Validation: if status is 'dismissed', note must not be empty
+                if (selectedStatus === 'dismissed') {
+                    const noteValue = noteInput ? noteInput.value.trim() : '';
+                    if (!noteValue || noteValue === '') {
+                        showAnomalyError(anomalyId, 'Catatan wajib diisi ketika memilih "Abaikan"');
                         hasValidationErrors = true;
                     }
                 }

@@ -15,6 +15,10 @@ return new class extends Migration
             $table->boolean('is_locked')->default(false);
         });
 
+        Schema::table('market_business', function (Blueprint $table) {
+            $table->boolean('is_locked')->default(false);
+        });
+
         Schema::create('anomaly_types', function (Blueprint $table) {
             $table->id()->autoincrement();
             $table->string('name');
@@ -39,14 +43,15 @@ return new class extends Migration
             $table->string('fixed_value')->nullable();
             $table->string('note')->nullable();
 
-            $table->uuid('user_id')->nullable();
-            $table->foreign('user_id')
+            $table->uuid('last_repaired_by')->nullable();
+            $table->foreign('last_repaired_by')
                 ->references('id')
                 ->on('users')
                 ->onDelete('set null');
             $table->timestamp('repaired_at')->nullable();
 
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['business_id', 'business_type']);
             $table->index('status');
@@ -59,6 +64,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('supplement_business', function (Blueprint $table) {
+            $table->dropColumn(['is_locked']);
+        });
+        Schema::table('market_business', function (Blueprint $table) {
             $table->dropColumn(['is_locked']);
         });
         Schema::dropIfExists('anomaly_repairs');

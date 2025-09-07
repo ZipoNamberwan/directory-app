@@ -168,6 +168,7 @@ class AnomalyController extends Controller
     {
         $query = DB::table('anomaly_repairs as ar')
             ->leftJoin('anomaly_types as at', 'ar.anomaly_type_id', '=', 'at.id')
+            ->leftJoin('users as u', 'ar.last_repaired_by', '=', 'u.id')
             ->whereIn('ar.business_id', $businessIds)
             ->select([
                 'ar.id',
@@ -178,12 +179,15 @@ class AnomalyController extends Controller
                 'ar.old_value',
                 'ar.fixed_value',
                 'ar.note',
+                'ar.last_repaired_by',
                 'ar.repaired_at',
                 'ar.created_at',
                 'ar.updated_at',
                 'at.code as anomaly_type_code',
                 'at.name as anomaly_type_name',
-                'at.description as anomaly_type_description'
+                'at.description as anomaly_type_description',
+                'u.firstname as last_repaired_by_firstname',
+                'u.email as last_repaired_by_email'
             ]);
 
         // Apply anomaly-specific filters only
@@ -313,6 +317,9 @@ class AnomalyController extends Controller
                         'old_value' => $anomaly->old_value,
                         'fixed_value' => $anomaly->fixed_value,
                         'note' => $anomaly->note,
+                        'last_repaired_by' => $anomaly->last_repaired_by,
+                        'last_repaired_by_firstname' => $anomaly->last_repaired_by_firstname,
+                        'last_repaired_by_email' => $anomaly->last_repaired_by_email,
                         'repaired_at' => $anomaly->repaired_at,
                         'created_at' => $anomaly->created_at,
                         'updated_at' => $anomaly->updated_at,
@@ -328,7 +335,7 @@ class AnomalyController extends Controller
     {
         try {
             $validated = $this->validateAnomalyRequest($request);
-            
+
             if (!$this->validateBusinessExists($validated['business_id'])) {
                 return $this->errorResponse('Usaha tidak ditemukan.', [], 422);
             }
@@ -356,7 +363,6 @@ class AnomalyController extends Controller
                 'updated_count' => $updatedCount,
                 'data' => $responseData
             ]);
-
         } catch (ValidationException $e) {
             return $this->errorResponse('Data yang dikirim tidak valid.', $e->errors(), 422);
         } catch (Exception $e) {
@@ -365,8 +371,11 @@ class AnomalyController extends Controller
                 'request_data' => $request->all(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return $this->errorResponse('Terjadi kesalahan sistem. Silakan coba lagi.', 
-                config('app.debug') ? ['error' => $e->getMessage()] : [], 500);
+            return $this->errorResponse(
+                'Terjadi kesalahan sistem. Silakan coba lagi.',
+                config('app.debug') ? ['error' => $e->getMessage()] : [],
+                500
+            );
         }
     }
 
@@ -376,22 +385,26 @@ class AnomalyController extends Controller
     private function findBusiness($businessId, $withRelations = true)
     {
         $baseRelations = $withRelations ? ['user:id,firstname,email'] : [];
-        
+
         // Try MarketBusiness first
-        $marketBusiness = MarketBusiness::with(array_merge($baseRelations, 
-            $withRelations ? ['market.organization:id,name,long_code'] : []))
+        $marketBusiness = MarketBusiness::with(array_merge(
+            $baseRelations,
+            $withRelations ? ['market.organization:id,name,long_code'] : []
+        ))
             ->find($businessId);
-        
+
         if ($marketBusiness) {
             return ['business' => $marketBusiness, 'type' => 'App\\Models\\MarketBusiness'];
         }
 
         // Try SupplementBusiness
-        $supplementBusiness = SupplementBusiness::with(array_merge($baseRelations,
-            $withRelations ? ['organization:id,name,long_code'] : []))
+        $supplementBusiness = SupplementBusiness::with(array_merge(
+            $baseRelations,
+            $withRelations ? ['organization:id,name,long_code'] : []
+        ))
             ->find($businessId);
-        
-        return $supplementBusiness 
+
+        return $supplementBusiness
             ? ['business' => $supplementBusiness, 'type' => 'App\\Models\\SupplementBusiness']
             : null;
     }
@@ -403,7 +416,7 @@ class AnomalyController extends Controller
     {
         $business = $businessInfo['business'];
         $isMarketBusiness = $businessInfo['type'] === 'App\\Models\\MarketBusiness';
-        
+
         return [
             'id' => $business->id,
             'type' => $businessInfo['type'],
@@ -418,7 +431,10 @@ class AnomalyController extends Controller
      */
     private function getAnomaliesForBusiness($businessId)
     {
-        return AnomalyRepair::with('anomalyType:id,code,name,description')
+        return AnomalyRepair::with([
+            'anomalyType:id,code,name,description',
+            'lastRepairedBy:id,firstname,email'
+        ])
             ->where('business_id', $businessId)
             ->orderBy('created_at', 'desc')
             ->get()
@@ -431,6 +447,9 @@ class AnomalyController extends Controller
                 'old_value' => $anomaly->old_value,
                 'fixed_value' => $anomaly->fixed_value,
                 'note' => $anomaly->note,
+                'last_repaired_by' => $anomaly->last_repaired_by,
+                'last_repaired_by_firstname' => $anomaly->lastRepairedBy?->firstname,
+                'last_repaired_by_email' => $anomaly->lastRepairedBy?->email,
                 'repaired_at' => $anomaly->repaired_at,
                 'created_at' => $anomaly->created_at,
                 'updated_at' => $anomaly->updated_at,
@@ -444,14 +463,14 @@ class AnomalyController extends Controller
     private function applyBusinessUpdatesWithBusiness($business, $anomalies)
     {
         $updates = $this->buildBusinessUpdates($anomalies);
-        
+
         if (empty($updates)) {
             return;
         }
 
         $updates['updated_at'] = now();
         $updates['is_locked'] = true;
-        
+
         $business->update($updates);
     }
 
@@ -468,6 +487,7 @@ class AnomalyController extends Controller
             'anomalies.*.id' => 'required|exists:anomaly_repairs,id',
             'anomalies.*.status' => 'required|in:fixed,dismissed',
             'anomalies.*.fixed_value' => 'nullable|string|max:500',
+            'anomalies.*.note' => 'nullable|string|max:1000',
         ], [
             'business_id.required' => 'ID usaha tidak boleh kosong.',
             'business_id.uuid' => 'Format ID usaha tidak valid.',
@@ -479,6 +499,7 @@ class AnomalyController extends Controller
             'anomalies.*.status.required' => 'Status anomali wajib diisi.',
             'anomalies.*.status.in' => 'Status anomali harus berupa "fixed" atau "dismissed".',
             'anomalies.*.fixed_value.max' => 'Nilai perbaikan maksimal 500 karakter.',
+            'anomalies.*.note.max' => 'Catatan maksimal 1000 karakter.',
         ]);
     }
 
@@ -487,8 +508,8 @@ class AnomalyController extends Controller
      */
     private function validateBusinessExists($businessId)
     {
-        return DB::table('market_business')->where('id', $businessId)->exists() || 
-               DB::table('supplement_business')->where('id', $businessId)->exists();
+        return DB::table('market_business')->where('id', $businessId)->exists() ||
+            DB::table('supplement_business')->where('id', $businessId)->exists();
     }
 
     /**
@@ -500,7 +521,7 @@ class AnomalyController extends Controller
         $invalidCount = AnomalyRepair::whereIn('id', $anomalyIds)
             ->where('business_id', '!=', $businessId)
             ->count();
-        
+
         return $invalidCount === 0;
     }
 
@@ -515,7 +536,7 @@ class AnomalyController extends Controller
 
         foreach ($anomalies as $anomalyData) {
             $error = $this->validateAndUpdateAnomaly($anomalyData, $user);
-            
+
             if ($error) {
                 $errors[] = $error;
             } else {
@@ -542,8 +563,19 @@ class AnomalyController extends Controller
             }
         }
 
+        // Validate note for 'dismissed' status
+        if ($anomalyData['status'] === 'dismissed') {
+            $note = trim($anomalyData['note'] ?? '');
+            if (empty($note)) {
+                return [
+                    'anomaly_id' => $anomalyData['id'],
+                    'message' => 'Catatan wajib diisi ketika memilih "Abaikan"'
+                ];
+            }
+        }
+
         $anomaly = AnomalyRepair::find($anomalyData['id']);
-        
+
         if (!$anomaly) {
             return [
                 'anomaly_id' => $anomalyData['id'],
@@ -554,9 +586,10 @@ class AnomalyController extends Controller
         $anomaly->update([
             'status' => $anomalyData['status'],
             'fixed_value' => $anomalyData['status'] === 'fixed' ? trim($anomalyData['fixed_value']) : null,
+            'note' => $anomalyData['status'] === 'dismissed' ? trim($anomalyData['note']) : null,
             'updated_at' => now(),
             'repaired_at' => now(),
-            'user_id' => $user->id,
+            'last_repaired_by' => $user->id,
         ]);
 
         return null; // No error
@@ -568,7 +601,7 @@ class AnomalyController extends Controller
     private function buildResponseData($businessId, $anomalies)
     {
         $businessInfo = $this->findBusiness($businessId, true);
-        
+
         if (!$businessInfo) {
             throw new Exception('Business not found after update');
         }
@@ -578,7 +611,7 @@ class AnomalyController extends Controller
 
         $businessData = $this->formatBusinessData($businessInfo);
         $anomaliesData = $this->getAnomaliesForBusiness($businessId);
-        
+
         return array_merge($businessData, ['anomalies' => $anomaliesData]);
     }
 
@@ -651,10 +684,10 @@ class AnomalyController extends Controller
      */
     private function extractOrganizationFields($business, $isMarketBusiness)
     {
-        $organization = $isMarketBusiness 
+        $organization = $isMarketBusiness
             ? ($business->market->organization ?? null)
             : $business->organization;
-            
+
         return $organization ? [
             'name' => $organization->name,
             'long_code' => $organization->long_code,
