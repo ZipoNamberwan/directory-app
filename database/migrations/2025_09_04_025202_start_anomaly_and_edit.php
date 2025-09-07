@@ -30,7 +30,7 @@ return new class extends Migration
             $table->uuid('business_id');
             $table->string('business_type');
 
-            $table->enum('status', ['notconfirmed', 'dismissed', 'fixed', 'deleted', 'moved']);
+            $table->enum('status', ['notconfirmed', 'dismissed', 'fixed', 'deleted', 'moved'])->default('notconfirmed');
 
             $table->foreignId('anomaly_type_id')->constrained('anomaly_types');
 
