@@ -182,7 +182,7 @@
                             placeholder="Cari By Keyword">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-control-label">Filter Kabupaten</label>
+                        <label class="form-control-label">Kabupaten</label>
                         <select style="width: 100%;" id="regency" name="regency" class="form-control"
                             data-toggle="select">
                             <option value="0" disabled selected> -- Filter Kabupaten -- </option>
@@ -802,7 +802,7 @@
         // Define column configurations for different modes
         const getColumnConfig = (mode) => {
             const baseColumns = [{
-                    title: "Name",
+                    title: "Nama",
                     field: "name",
                     responsive: 0,
                     formatter: function(cell) {

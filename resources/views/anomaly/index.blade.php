@@ -8,19 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <style>
-        .anomaly-item {
-            display: flex;
-            align-items: center;
-            align-content: center;
-            font-size: 12px;
-        }
-
-        .anomaly-type {
-            margin-right: 8px;
-            font-weight: 500;
-            color: #333;
-        }
-
+        /* Custom status circle styles - not available in Bootstrap */
         .status-circle {
             width: 12px;
             height: 12px;
@@ -43,18 +31,79 @@
             background-color: #f44336;
         }
 
-        .edit-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
+        /* Custom badge colors */
+        .badge.notconfirmed {
+            background-color: #ff9800;
         }
 
-        .edit-btn:hover {
-            background: #0056b3;
+        .badge.fixed {
+            background-color: #4caf50;
+        }
+
+        .badge.dismissed {
+            background-color: #2196f3;
+        }
+
+        /* Fix z-index issue - Modal should be above sidenav */
+        .modal {
+            z-index: 1055 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
+
+        /* Ensure sidenav stays behind modal */
+        .sidenav {
+            z-index: 1030 !important;
+        }
+
+        /* Fix button hover issue - remove white background on hover for radio button labels */
+        .btn-outline-success:hover,
+        .btn-outline-info:hover,
+        .btn-check+.btn-outline-success:hover,
+        .btn-check+.btn-outline-info:hover {
+            background-color: transparent !important;
+            border-color: currentColor !important;
+        }
+
+        .btn-outline-success:hover,
+        .btn-check+.btn-outline-success:hover {
+            color: #4caf50 !important;
+        }
+
+        .btn-outline-info:hover,
+        .btn-check+.btn-outline-info:hover {
+            color: #2196f3 !important;
+        }
+
+        /* Ensure checked state maintains proper styling with matching badge colors */
+        .btn-check:checked+.btn-outline-success,
+        .btn-check:checked+.btn-outline-info {
+            background-color: transparent !important;
+        }
+
+        .btn-check:checked+.btn-outline-success {
+            background-color: #4caf50 !important;
+            color: white !important;
+            border-color: #4caf50 !important;
+        }
+
+        .btn-check:checked+.btn-outline-info {
+            background-color: #2196f3 !important;
+            color: white !important;
+            border-color: #2196f3 !important;
+        }
+
+        /* Custom button colors to match badge colors */
+        .btn-outline-success {
+            color: #4caf50 !important;
+            border-color: #4caf50 !important;
+        }
+
+        .btn-outline-info {
+            color: #2196f3 !important;
+            border-color: #2196f3 !important;
         }
     </style>
 @endsection
@@ -216,6 +265,113 @@
 
         @include('layouts.footers.auth.footer')
     </div>
+
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Perbaiki Anomali</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Loading Indicator -->
+                    <div id="modal-loading" class="d-none">
+                        <div class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Success Message -->
+                    <div id="modal-success" class="alert alert-success d-none">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span id="success-message">Anomali berhasil diperbaiki!</span>
+                    </div>
+
+                    <!-- Business Information -->
+                    <div id="modal-content">
+                        <div class="card mb-3">
+                            <div class="card-header pb-0">
+                                <h6 class="mb-0">Informasi Usaha</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-lg-6 col-md-12">
+                                        <div class="mb-2">
+                                            <strong>Nama Usaha:</strong>
+                                            <span id="business-name" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Tipe Usaha:</strong>
+                                            <span id="business-type" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                        <div class="mb-2" id="market-name-container" style="display: none;">
+                                            <strong>Nama Pasar:</strong>
+                                            <span id="market-name" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Deskripsi:</strong>
+                                            <span id="business-description" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Status:</strong>
+                                            <span id="business-status" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Alamat:</strong>
+                                            <span id="business-address" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-12">
+                                        <div class="mb-2">
+                                            <strong>Sektor:</strong>
+                                            <span id="business-sector" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Pemilik:</strong>
+                                            <span id="business-owner" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Petugas:</strong>
+                                            <span id="user-name" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Organisasi:</strong>
+                                            <span id="organization-name" class="d-block d-sm-inline ms-sm-2"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Anomalies Section -->
+                        <div class="card">
+                            <div class="card-header pb-0">
+                                <h6 class="mb-0">Daftar Anomali</h6>
+                            </div>
+                            <div class="card-body">
+                                <form id="anomalyForm">
+                                    <input type="hidden" id="business-id" name="business_id" value="">
+                                    <div id="anomalies-container">
+                                        <!-- Anomalies will be populated here -->
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success" id="save-anomalies">
+                        <span class="btn-text">Simpan Perubahan</span>
+                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('js')
@@ -444,8 +600,6 @@
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
             });
-
-            console.log(filterUrl)
 
             table.setData('/anomali/data?' + filterUrl);
         }
@@ -696,8 +850,8 @@
                             }
 
                             html += `
-                <div class="anomaly-item">
-                    <span class="anomaly-type" title="${anomaly.name}">${anomaly.type}</span>
+                <div class="d-flex align-items-center mb-1" style="font-size: 12px;">
+                    <span class="me-2 fw-medium text-dark" title="${anomaly.name}">${anomaly.type}</span>
                     <div class="status-circle ${statusClass}" title="${statusLabel}"></div>
                 </div>`;
                         });
@@ -712,17 +866,18 @@
                     hozAlign: "center",
                     headerSort: false,
                     formatter: function(cell) {
-                        let row = cell.getRow().getData();
-                        return `
-                        <form id="formdelete${row.id}" name="formdelete${row.id}" 
-                            onSubmit="deleteBusiness('${row.id}','${row.name}')" 
-                            class="d-inline" action="/suplemen/${row.id}" method="POST">
-                            @csrf
-                            @method('delete')
-                            <button class="btn btn-outline-danger btn-sm p-1" type="submit">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>`;;
+                        let row = cell.getRow();
+                        let rowData = row.getData();
+
+                        // attach row object to button via event
+                        let button = document.createElement("button");
+                        button.className = "btn btn-success btn-sm px-2 py-1";
+                        button.innerHTML = `<i class="fas fa-pencil-alt"></i>`;
+                        button.onclick = function() {
+                            openEditDialog(rowData);
+                        };
+
+                        return button;
                     }
                 }
             ];
@@ -843,14 +998,13 @@
         document.querySelectorAll('input[name="mode"]').forEach(radio => {
             radio.addEventListener("change", function(e) {
                 let mode = e.target.value;
-                console.log("Mode changed to:", mode);
 
                 // Reset all Select2 filters
                 resetSelect2Filters();
 
                 // Recreate table with new mode configuration
                 recreateTable(mode);
-            });
+            }); 
         });
 
         // Initialize table on page load
@@ -877,5 +1031,375 @@
                 });
             }
         });
+    </script>
+
+    <script>
+        function openEditDialog(rowData) {
+            // Reset modal state
+            resetModalState();
+
+            // Populate business information
+            populateBusinessInfo(rowData);
+
+            // Populate anomalies
+            populateAnomalies(rowData.anomalies);
+
+            // Show modal
+            let modal = new bootstrap.Modal(document.getElementById("editModal"));
+            modal.show();
+        }
+
+        function resetModalState() {
+            // Hide loading and success messages
+            document.getElementById('modal-loading').classList.add('d-none');
+            document.getElementById('modal-success').classList.add('d-none');
+            document.getElementById('modal-content').classList.remove('d-none');
+
+            // Reset save button
+            const saveBtn = document.getElementById('save-anomalies');
+            saveBtn.disabled = false;
+            saveBtn.querySelector('.btn-text').textContent = 'Simpan Perubahan';
+            saveBtn.querySelector('.spinner-border').classList.add('d-none');
+
+            // Clear previous anomalies
+            document.getElementById('anomalies-container').innerHTML = '';
+        }
+
+        function populateBusinessInfo(rowData) {
+            const business = rowData.business;
+            const user = rowData.user;
+            const organization = rowData.organization;
+
+            // Store business ID in hidden input
+            document.getElementById('business-id').value = rowData.id;
+
+            document.getElementById('business-name').textContent = business.name || '-';
+
+            // Populate business type based on the type field
+            let businessType = '-';
+            if (rowData.type === "App\\Models\\SupplementBusiness") {
+                businessType = "Suplemen";
+            } else if (rowData.type === "App\\Models\\MarketBusiness") {
+                businessType = "Sentra Ekonomi";
+            } else {
+                businessType = "Lainnya";
+            }
+            document.getElementById('business-type').textContent = businessType;
+
+            // Handle market_name - only show if not null
+            const marketNameContainer = document.getElementById('market-name-container');
+            const marketNameElement = document.getElementById('market-name');
+            if (business.market_name && business.market_name.trim() !== '') {
+                marketNameElement.textContent = business.market_name;
+                marketNameContainer.style.display = 'block';
+            } else {
+                marketNameContainer.style.display = 'none';
+            }
+
+            document.getElementById('business-description').textContent = business.description || '-';
+            document.getElementById('business-status').textContent = business.status || '-';
+            document.getElementById('business-address').textContent = business.address || '-';
+            document.getElementById('business-sector').textContent = business.sector || '-';
+            document.getElementById('business-owner').textContent = business.owner || '-';
+            document.getElementById('user-name').textContent = user ? user.firstname : '-';
+            document.getElementById('organization-name').textContent = organization ? organization.name : '-';
+        }
+
+        function populateAnomalies(anomalies) {
+            const container = document.getElementById('anomalies-container');
+
+            anomalies.forEach((anomaly, index) => {
+                const anomalyHtml = createAnomalyCard(anomaly, index);
+                container.insertAdjacentHTML('beforeend', anomalyHtml);
+
+                // Add event listeners for this anomaly
+                setupAnomalyEventListeners(anomaly.id, index);
+            });
+        }
+
+        function createAnomalyCard(anomaly, index) {
+            return `
+                <div class="card mb-3 border anomaly-card" data-anomaly-id="${anomaly.id}">
+                    <div class="card-header bg-light py-3 px-3">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                            <div class="flex-grow-1">
+                                <strong>[${anomaly.type}] ${anomaly.name}</strong>
+                                <span class="badge ms-2 ${anomaly.status}">${getStatusText(anomaly.status)}</span>
+                            </div>
+                        </div>
+                        <!-- <small class="text-muted d-block mt-1">${anomaly.description}</small> -->
+                    </div>
+                    <div class="card-body pt-1 pb-3 px-3">
+                        <!-- Action buttons first -->
+                        <div>
+                            <label class="form-label"><strong>Aksi:</strong></label>
+                            <div class="btn-group d-flex flex-column flex-sm-row gap-1" role="group">
+                                <input type="radio" class="btn-check" name="status_${anomaly.id}" id="fixed_${index}" value="fixed" ${anomaly.status === 'fixed' ? 'checked' : ''}>
+                                <label class="btn btn-outline-success btn-sm flex-fill" for="fixed_${index}">
+                                    <i class="fas fa-check me-1"></i>Perbaiki
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="status_${anomaly.id}" id="dismissed_${index}" value="dismissed" ${anomaly.status === 'dismissed' ? 'checked' : ''}>
+                                <label class="btn btn-outline-info btn-sm flex-fill" for="dismissed_${index}">
+                                    <i class="fas fa-times me-1"></i>Abaikan
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Then old value and fixed value -->
+                        <div class="row g-3">
+                            <div class="col-lg-6 col-12">
+                                <label class="form-label"><strong>Nilai Lama:</strong></label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light text-break">
+                                    ${anomaly.old_value || '-'}
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-12">
+                                <label class="form-label"><strong>Nilai Perbaikan:</strong></label>
+                                <input type="text" 
+                                       class="form-control fixed-value-input" 
+                                       name="fixed_value_${anomaly.id}"
+                                       value="${anomaly.fixed_value || ''}"
+                                       ${anomaly.status === 'dismissed' || anomaly.status === 'notconfirmed' || !anomaly.status ? 'disabled' : ''}
+                                       placeholder="Masukkan nilai perbaikan">
+                            </div>
+                        </div>
+                        
+                        <!-- Error message placeholder -->
+                        <small class="text-danger mt-6 d-none" id="error_${anomaly.id}"></small>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setupAnomalyEventListeners(anomalyId, index) {
+            // Listen for status changes
+            const fixedRadio = document.getElementById(`fixed_${index}`);
+            const dismissedRadio = document.getElementById(`dismissed_${index}`);
+            const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`);
+            const anomalyCard = document.querySelector(`[data-anomaly-id="${anomalyId}"]`);
+
+            function updateInputState() {
+                if (dismissedRadio.checked) {
+                    fixedValueInput.disabled = true;
+                    fixedValueInput.value = '';
+                } else if (fixedRadio.checked) {
+                    fixedValueInput.disabled = false;
+                } else {
+                    // No action selected - disable input field
+                    fixedValueInput.disabled = true;
+                }
+
+                // Clear any previous errors
+                document.getElementById(`error_${anomalyId}`).classList.add('d-none');
+            }
+
+            // Initialize state on load
+            updateInputState();
+
+            fixedRadio.addEventListener('change', updateInputState);
+            dismissedRadio.addEventListener('change', updateInputState);
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'fixed':
+                    return 'Diperbaiki';
+                case 'dismissed':
+                    return 'Diabaikan';
+                case 'notconfirmed':
+                    return 'Belum Dikonfirmasi';
+                default:
+                    return status;
+            }
+        }
+
+        // Save anomalies function
+        document.getElementById('save-anomalies').addEventListener('click', function() {
+            saveAnomalies();
+        });
+
+        function generateAnomalyUpdateRequestBody() {
+            // Collect anomaly data
+            const anomaliesData = [];
+            document.querySelectorAll('.anomaly-card').forEach(card => {
+                const anomalyId = card.dataset.anomalyId;
+                const statusRadios = document.getElementsByName(`status_${anomalyId}`);
+                const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`);
+
+                let selectedStatus = null;
+                for (const radio of statusRadios) {
+                    if (radio.checked) {
+                        selectedStatus = radio.value;
+                        break;
+                    }
+                }
+
+                anomaliesData.push({
+                    id: anomalyId,
+                    status: selectedStatus,
+                    fixed_value: selectedStatus === 'fixed' ? fixedValueInput.value : null
+                });
+            });
+
+            // Get business ID from hidden input
+            const businessId = document.getElementById('business-id').value;
+
+            return {
+                business_id: businessId,
+                anomalies: anomaliesData
+            };
+        }
+
+        function saveAnomalies() {
+            const saveBtn = document.getElementById('save-anomalies');
+            const modalContent = document.getElementById('modal-content');
+            const modalLoading = document.getElementById('modal-loading');
+            const modalSuccess = document.getElementById('modal-success');
+
+            // Show loading state
+            saveBtn.disabled = true;
+            saveBtn.querySelector('.btn-text').textContent = 'Menyimpan...';
+            saveBtn.querySelector('.spinner-border').classList.remove('d-none');
+
+            // Clear previous errors
+            document.querySelectorAll('[id^="error_"]').forEach(el => el.classList.add('d-none'));
+
+            // Validate all anomalies
+            if (isValidAnomalyRepair()) {
+                resetSaveButton();
+                return;
+            }
+
+            // Generate request body
+            const requestBody = generateAnomalyUpdateRequestBody();
+
+            fetch('/anomali/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(requestBody)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the table row with new data
+                        updateTableRowWithNewData(data.data);
+                        showSuccessMessage(true);
+                    } else {
+                        // Handle validation errors
+                        if (data.errors && Array.isArray(data.errors)) {
+                            data.errors.forEach(error => {
+                                showAnomalyError(error.anomaly_id, error.message);
+                            });
+                        } else {
+                            console.error('Unexpected error format:', data);
+                        }
+                        resetSaveButton();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan sistem. Silakan coba lagi.');
+                    resetSaveButton();
+                });
+        }
+
+        function updateTableRowWithNewData(updatedBusinessData) {
+            // Find the row in the table by business ID
+            const businessId = updatedBusinessData.id;
+            
+            // Get the current table data
+            const currentData = table.getData();
+            
+            // Find the index of the row to update
+            const rowIndex = currentData.findIndex(row => row.id === businessId);
+            
+            if (rowIndex !== -1) {
+                // Update the row data in place
+                table.updateRow(businessId, updatedBusinessData);
+                
+                // Force redraw of the updated row to refresh formatted columns
+                const updatedRow = table.getRow(businessId);
+                if (updatedRow) {
+                    updatedRow.reformat();
+                }
+            } else {
+                console.warn('Row not found in table for business:', businessId);
+            }
+        }
+
+        function showSuccessMessage(autoHide = true) {
+            const saveBtn = document.getElementById('save-anomalies');
+            const modalContent = document.getElementById('modal-content');
+            const modalLoading = document.getElementById('modal-loading');
+            const modalSuccess = document.getElementById('modal-success');
+
+            // Hide loading and content
+            modalLoading.classList.add('d-none');
+            modalContent.classList.add('d-none');
+
+            // Show success message
+            modalSuccess.classList.remove('d-none');
+
+            // Reset save button
+            saveBtn.disabled = false;
+            saveBtn.querySelector('.btn-text').textContent = 'Simpan Perubahan';
+            saveBtn.querySelector('.spinner-border').classList.add('d-none');
+
+            if (autoHide) {
+                // Close modal immediately
+                bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+            } else {
+                // Wait 2 seconds before closing (current behavior)
+                setTimeout(() => {
+                    bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+                }, 2000);
+            }
+        }
+
+        function showAnomalyError(anomalyId, errorMessage) {
+            const errorElement = document.getElementById(`error_${anomalyId}`);
+            errorElement.textContent = errorMessage;
+            errorElement.classList.remove('d-none');
+        }
+
+        function isValidAnomalyRepair() {
+            let hasValidationErrors = false;
+
+            document.querySelectorAll('.anomaly-card').forEach(card => {
+                const anomalyId = card.dataset.anomalyId;
+                const statusRadios = document.getElementsByName(`status_${anomalyId}`);
+                const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`);
+
+                let selectedStatus = null;
+                for (const radio of statusRadios) {
+                    if (radio.checked) {
+                        selectedStatus = radio.value;
+                        break;
+                    }
+                }
+
+                // Validation: if status is 'fixed', fixed_value must not be empty
+                if (selectedStatus === 'fixed') {
+                    const fixedValue = fixedValueInput ? fixedValueInput.value.trim() : '';
+                    if (!fixedValue || fixedValue === '') {
+                        showAnomalyError(anomalyId, 'Nilai perbaikan wajib diisi ketika memilih "Perbaiki"');
+                        hasValidationErrors = true;
+                    }
+                }
+            });
+
+            return hasValidationErrors;
+        }
+
+        function resetSaveButton() {
+            const saveBtn = document.getElementById('save-anomalies');
+            saveBtn.disabled = false;
+            saveBtn.querySelector('.btn-text').textContent = 'Simpan Perubahan';
+            saveBtn.querySelector('.spinner-border').classList.add('d-none');
+        }
     </script>
 @endpush

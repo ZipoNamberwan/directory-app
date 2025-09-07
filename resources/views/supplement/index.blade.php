@@ -151,7 +151,7 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3">
-                        <label class="form-control-label">Filter Kabupaten</label>
+                        <label class="form-control-label">Kabupaten</label>
                         <select style="width: 100%;" id="regency" name="regency" class="form-control"
                             data-toggle="select">
                             <option value="0" disabled selected> -- Filter Kabupaten -- </option>
@@ -709,7 +709,7 @@
         // Define column configurations for different modes
         const getColumnConfig = (mode) => {
             const baseColumns = [{
-                    title: "Name",
+                    title: "Nama",
                     field: "name",
                     responsive: 0,
                     formatter: function(cell) {
@@ -1003,7 +1003,6 @@
         document.querySelectorAll('input[name="mode"]').forEach(radio => {
             radio.addEventListener("change", function(e) {
                 let mode = e.target.value;
-                console.log("Mode changed to:", mode);
 
                 // Reset all Select2 filters
                 resetSelect2Filters();

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('code');
             $table->text('description')->nullable();
+            $table->text('column');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

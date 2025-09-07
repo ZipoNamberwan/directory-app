@@ -158,6 +158,7 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::group(['middleware' => ['role:adminprov|adminkab|operator']], function () {
 		Route::get('/anomali', [AnomalyController::class, 'index']);
 		Route::get('/anomali/data', [AnomalyController::class, 'getAnomalyListData']);
+		Route::post('/anomali/update', [AnomalyController::class, 'updateAnomaly']);
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');

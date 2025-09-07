@@ -4,13 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\AnomalyRepair;
 use App\Models\AnomalyType;
+use App\Models\MarketBusiness;
 use App\Models\Organization;
 use App\Models\Regency;
 use App\Models\Subdistrict;
+use App\Models\SupplementBusiness;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class AnomalyController extends Controller
 {
@@ -138,6 +143,9 @@ class AnomalyController extends Controller
 
                 // 👇 Business owner (only from sb, will be NULL for mb)
                 DB::raw('sb.owner as owner'),
+
+                // 👇 Market name (only mb)
+                DB::raw('m.name as market_name'),
             ])
             ->distinct('ar.business_id')
             ->offset($offset)
@@ -284,6 +292,7 @@ class AnomalyController extends Controller
                     'village_id' => $business['village_id'],
                     'sls_id' => $business['sls_id'],
                     'owner' => $business['owner'],
+                    'market_name' => $business['market_name'],
                 ],
                 // 👇 User info
                 'user' => [
@@ -313,5 +322,354 @@ class AnomalyController extends Controller
         }
 
         return $result;
+    }
+
+    public function updateAnomaly(Request $request)
+    {
+        try {
+            $validated = $this->validateAnomalyRequest($request);
+            
+            if (!$this->validateBusinessExists($validated['business_id'])) {
+                return $this->errorResponse('Usaha tidak ditemukan.', [], 422);
+            }
+
+            if (!$this->validateAnomaliesOwnership($validated['anomalies'], $validated['business_id'])) {
+                return $this->errorResponse('Beberapa anomali tidak terkait dengan usaha yang dipilih.', [], 422);
+            }
+
+            DB::beginTransaction();
+
+            [$errors, $updatedCount] = $this->processAnomalyUpdates($validated['anomalies']);
+
+            if (!empty($errors)) {
+                DB::rollBack();
+                return $this->errorResponse('Terdapat kesalahan validasi pada beberapa anomali.', $errors, 422);
+            }
+
+            DB::commit();
+
+            $responseData = $this->buildResponseData($validated['business_id'], $validated['anomalies']);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil memperbarui {$updatedCount} anomali.",
+                'updated_count' => $updatedCount,
+                'data' => $responseData
+            ]);
+
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Data yang dikirim tidak valid.', $e->errors(), 422);
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating anomalies: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->errorResponse('Terjadi kesalahan sistem. Silakan coba lagi.', 
+                config('app.debug') ? ['error' => $e->getMessage()] : [], 500);
+        }
+    }
+
+    /**
+     * Find business record with optimal eager loading
+     */
+    private function findBusiness($businessId, $withRelations = true)
+    {
+        $baseRelations = $withRelations ? ['user:id,firstname,email'] : [];
+        
+        // Try MarketBusiness first
+        $marketBusiness = MarketBusiness::with(array_merge($baseRelations, 
+            $withRelations ? ['market.organization:id,name,long_code'] : []))
+            ->find($businessId);
+        
+        if ($marketBusiness) {
+            return ['business' => $marketBusiness, 'type' => 'App\\Models\\MarketBusiness'];
+        }
+
+        // Try SupplementBusiness
+        $supplementBusiness = SupplementBusiness::with(array_merge($baseRelations,
+            $withRelations ? ['organization:id,name,long_code'] : []))
+            ->find($businessId);
+        
+        return $supplementBusiness 
+            ? ['business' => $supplementBusiness, 'type' => 'App\\Models\\SupplementBusiness']
+            : null;
+    }
+
+    /**
+     * Format business data for API response
+     */
+    private function formatBusinessData($businessInfo)
+    {
+        $business = $businessInfo['business'];
+        $isMarketBusiness = $businessInfo['type'] === 'App\\Models\\MarketBusiness';
+        
+        return [
+            'id' => $business->id,
+            'type' => $businessInfo['type'],
+            'business' => $this->extractBusinessFields($business, $isMarketBusiness),
+            'user' => $this->extractUserFields($business->user),
+            'organization' => $this->extractOrganizationFields($business, $isMarketBusiness),
+        ];
+    }
+
+    /**
+     * Get formatted anomalies for a business
+     */
+    private function getAnomaliesForBusiness($businessId)
+    {
+        return AnomalyRepair::with('anomalyType:id,code,name,description')
+            ->where('business_id', $businessId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($anomaly) => [
+                'id' => $anomaly->id,
+                'type' => $anomaly->anomalyType->code,
+                'name' => $anomaly->anomalyType->name,
+                'description' => $anomaly->anomalyType->description,
+                'status' => $anomaly->status,
+                'old_value' => $anomaly->old_value,
+                'fixed_value' => $anomaly->fixed_value,
+                'note' => $anomaly->note,
+                'repaired_at' => $anomaly->repaired_at,
+                'created_at' => $anomaly->created_at,
+                'updated_at' => $anomaly->updated_at,
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Apply business updates efficiently
+     */
+    private function applyBusinessUpdatesWithBusiness($business, $anomalies)
+    {
+        $updates = $this->buildBusinessUpdates($anomalies);
+        
+        if (empty($updates)) {
+            return;
+        }
+
+        $updates['updated_at'] = now();
+        $updates['is_locked'] = true;
+        
+        $business->update($updates);
+    }
+
+    // ===== HELPER METHODS =====
+
+    /**
+     * Validate anomaly request data
+     */
+    private function validateAnomalyRequest($request)
+    {
+        return $request->validate([
+            'business_id' => 'required|uuid',
+            'anomalies' => 'required|array|min:1',
+            'anomalies.*.id' => 'required|exists:anomaly_repairs,id',
+            'anomalies.*.status' => 'required|in:fixed,dismissed',
+            'anomalies.*.fixed_value' => 'nullable|string|max:500',
+        ], [
+            'business_id.required' => 'ID usaha tidak boleh kosong.',
+            'business_id.uuid' => 'Format ID usaha tidak valid.',
+            'anomalies.required' => 'Data anomali tidak boleh kosong.',
+            'anomalies.array' => 'Format data anomali tidak valid.',
+            'anomalies.min' => 'Minimal harus ada satu anomali.',
+            'anomalies.*.id.required' => 'ID anomali wajib diisi.',
+            'anomalies.*.id.exists' => 'Anomali tidak ditemukan.',
+            'anomalies.*.status.required' => 'Status anomali wajib diisi.',
+            'anomalies.*.status.in' => 'Status anomali harus berupa "fixed" atau "dismissed".',
+            'anomalies.*.fixed_value.max' => 'Nilai perbaikan maksimal 500 karakter.',
+        ]);
+    }
+
+    /**
+     * Check if business exists in either table
+     */
+    private function validateBusinessExists($businessId)
+    {
+        return DB::table('market_business')->where('id', $businessId)->exists() || 
+               DB::table('supplement_business')->where('id', $businessId)->exists();
+    }
+
+    /**
+     * Validate that all anomalies belong to the specified business
+     */
+    private function validateAnomaliesOwnership($anomalies, $businessId)
+    {
+        $anomalyIds = collect($anomalies)->pluck('id');
+        $invalidCount = AnomalyRepair::whereIn('id', $anomalyIds)
+            ->where('business_id', '!=', $businessId)
+            ->count();
+        
+        return $invalidCount === 0;
+    }
+
+    /**
+     * Process all anomaly updates and return errors and count
+     */
+    private function processAnomalyUpdates($anomalies)
+    {
+        $errors = [];
+        $updatedCount = 0;
+        $user = User::find(Auth::id());
+
+        foreach ($anomalies as $anomalyData) {
+            $error = $this->validateAndUpdateAnomaly($anomalyData, $user);
+            
+            if ($error) {
+                $errors[] = $error;
+            } else {
+                $updatedCount++;
+            }
+        }
+
+        return [$errors, $updatedCount];
+    }
+
+    /**
+     * Validate and update a single anomaly
+     */
+    private function validateAndUpdateAnomaly($anomalyData, $user)
+    {
+        // Validate fixed value for 'fixed' status
+        if ($anomalyData['status'] === 'fixed') {
+            $fixedValue = trim($anomalyData['fixed_value'] ?? '');
+            if (empty($fixedValue)) {
+                return [
+                    'anomaly_id' => $anomalyData['id'],
+                    'message' => 'Nilai perbaikan wajib diisi ketika memilih "Perbaiki"'
+                ];
+            }
+        }
+
+        $anomaly = AnomalyRepair::find($anomalyData['id']);
+        
+        if (!$anomaly) {
+            return [
+                'anomaly_id' => $anomalyData['id'],
+                'message' => 'Anomali tidak ditemukan'
+            ];
+        }
+
+        $anomaly->update([
+            'status' => $anomalyData['status'],
+            'fixed_value' => $anomalyData['status'] === 'fixed' ? trim($anomalyData['fixed_value']) : null,
+            'updated_at' => now(),
+            'repaired_at' => now(),
+            'user_id' => $user->id,
+        ]);
+
+        return null; // No error
+    }
+
+    /**
+     * Build complete response data
+     */
+    private function buildResponseData($businessId, $anomalies)
+    {
+        $businessInfo = $this->findBusiness($businessId, true);
+        
+        if (!$businessInfo) {
+            throw new Exception('Business not found after update');
+        }
+
+        $this->applyBusinessUpdatesWithBusiness($businessInfo['business'], $anomalies);
+        $businessInfo['business']->refresh();
+
+        $businessData = $this->formatBusinessData($businessInfo);
+        $anomaliesData = $this->getAnomaliesForBusiness($businessId);
+        
+        return array_merge($businessData, ['anomalies' => $anomaliesData]);
+    }
+
+    /**
+     * Build business updates from fixed anomalies
+     */
+    private function buildBusinessUpdates($anomalies)
+    {
+        $fixedAnomalies = collect($anomalies)
+            ->filter(fn($anomaly) => $anomaly['status'] === 'fixed' && !empty(trim($anomaly['fixed_value'] ?? '')));
+
+        if ($fixedAnomalies->isEmpty()) {
+            return [];
+        }
+
+        $anomalyIds = $fixedAnomalies->pluck('id')->toArray();
+        $anomalyDetails = AnomalyRepair::with('anomalyType:id,column')
+            ->whereIn('id', $anomalyIds)
+            ->get()
+            ->keyBy('id');
+
+        $updates = [];
+        foreach ($fixedAnomalies as $anomaly) {
+            $anomalyDetail = $anomalyDetails->get($anomaly['id']);
+            if ($anomalyDetail?->anomalyType) {
+                $updates[$anomalyDetail->anomalyType->column] = trim($anomaly['fixed_value']);
+            }
+        }
+
+        return $updates;
+    }
+
+    /**
+     * Extract business fields for response
+     */
+    private function extractBusinessFields($business, $isMarketBusiness)
+    {
+        return [
+            'id' => $business->id,
+            'name' => $business->name,
+            'description' => $business->description,
+            'status' => $business->status,
+            'address' => $business->address,
+            'sector' => $business->sector,
+            'note' => $business->note ?? null,
+            'latitude' => $business->latitude,
+            'longitude' => $business->longitude,
+            'regency_id' => $business->regency_id,
+            'subdistrict_id' => $business->subdistrict_id,
+            'village_id' => $business->village_id,
+            'sls_id' => $business->sls_id,
+            'owner' => $business->owner ?? null,
+            'market_name' => $isMarketBusiness ? ($business->market->name ?? null) : null,
+        ];
+    }
+
+    /**
+     * Extract user fields for response
+     */
+    private function extractUserFields($user)
+    {
+        return $user ? [
+            'firstname' => $user->firstname,
+            'email' => $user->email,
+        ] : null;
+    }
+
+    /**
+     * Extract organization fields for response
+     */
+    private function extractOrganizationFields($business, $isMarketBusiness)
+    {
+        $organization = $isMarketBusiness 
+            ? ($business->market->organization ?? null)
+            : $business->organization;
+            
+        return $organization ? [
+            'name' => $organization->name,
+            'long_code' => $organization->long_code,
+        ] : null;
+    }
+
+    /**
+     * Create standardized error response
+     */
+    private function errorResponse($message, $errors = [], $status = 422)
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'errors' => $errors
+        ], $status);
     }
 }
