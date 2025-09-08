@@ -201,6 +201,20 @@ class AnomalyController extends Controller
 
     private function applyOptimizedFilters($query, Request $request): void
     {
+        // Filter Business by user's role
+        $user = User::find(Auth::id());
+        if ($user->hasrole('adminprov')) {
+            // Adminprov can see all
+        } else if ($user->hasrole('adminkab') || $user->hasrole('operator')) {
+            $query->where(function ($q) use ($user) {
+                $q->where('sb.organization_id', $user->organization_id)
+                    ->orWhere('m.organization_id', $user->organization_id);
+            });
+        } else {
+            // For other roles, show empty result by adding impossible condition
+            $query->whereRaw('1 = 0');
+        }
+
         // Business filters - using COALESCE to check both business types
         if ($request->filled('regency')) {
             $query->where(function ($q) use ($request) {
