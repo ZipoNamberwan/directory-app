@@ -694,19 +694,24 @@
                     type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
-                            if (row.status == 'success') {
-                                return `
-                        <form class="my-2" action="/status/download/3" method="POST">
-                            @csrf
-                            <input type="hidden" name="id" value="${data}"> 
-                            <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
-                                <i class="fas fa-download mx-1"></i>
-                            </button>
-                        </form>
-                        `
+                            if (row.status === 'success') {
+                                if (row.file_has_deleted == 0) {
+                                    return `
+                                        <form class="my-2" action="/status/download/3" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="id" value="${data}"> 
+                                            <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
+                                                <i class="fas fa-download mx-1"></i>
+                                            </button>
+                                        </form>
+                                    `;
+                                } else {
+                                    return `<span class="badge bg-danger">Dihapus</span>`;
+                                }
                             } else {
-                                return '-'
+                                return `<span class="badge bg-secondary">-</span>`;
                             }
+
                         }
                         return data;
                     }

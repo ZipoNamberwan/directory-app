@@ -11,21 +11,60 @@
 
     <style>
         /* Collapsible chevron rotation */
-        .toggle-btn .toggle-icon { transition: transform .2s ease; }
-        .toggle-btn[aria-expanded="true"] .toggle-icon { transform: rotate(90deg); }
+        .toggle-btn .toggle-icon {
+            transition: transform .2s ease;
+        }
+
+        .toggle-btn[aria-expanded="true"] .toggle-icon {
+            transform: rotate(90deg);
+        }
+
         /* Remove button shadow & outline */
-        .toggle-btn, .toggle-btn:focus, .toggle-btn:active, .toggle-btn:hover { box-shadow:none !important; outline:none !important; }
+        .toggle-btn,
+        .toggle-btn:focus,
+        .toggle-btn:active,
+        .toggle-btn:hover {
+            box-shadow: none !important;
+            outline: none !important;
+        }
+
         /* Header spacing */
-        #matchingInfoHeader { gap:.4rem; }
+        #matchingInfoHeader {
+            gap: .4rem;
+        }
+
         /* Smaller title styling */
-        .matching-info-title { font-size:.9rem; font-weight:600; line-height:1.2; }
-        .matching-info-title i { font-size:.85rem; }
+        .matching-info-title {
+            font-size: .9rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .matching-info-title i {
+            font-size: .85rem;
+        }
+
         /* Chevron button sizing & centering */
-        #matchingInfoToggle { width:26px; height:26px; display:flex; align-items:center; justify-content:center; }
-        #matchingInfoToggle .toggle-icon { font-size:.85rem; }
+        #matchingInfoToggle {
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #matchingInfoToggle .toggle-icon {
+            font-size: .85rem;
+        }
+
         /* List item spacing */
-        #matchingInfoBody ul li { margin-bottom:.4rem; }
-        #matchingInfoBody ul li:last-child { margin-bottom:0; }
+        #matchingInfoBody ul li {
+            margin-bottom: .4rem;
+        }
+
+        #matchingInfoBody ul li:last-child {
+            margin-bottom: 0;
+        }
     </style>
 @endsection
 
@@ -76,7 +115,9 @@
                 {{-- Informational bullet list (collapsible) --}}
                 <div class="alert border mb-4" role="alert" id="matchingInfoAlert" style="background-color:#f5f9ff;">
                     <div id="matchingInfoHeader" class="d-flex align-items-center mb-0" style="cursor:pointer;">
-                        <button id="matchingInfoToggle" class="btn btn-sm p-0 border-0 bg-transparent toggle-btn mb-0" type="button" data-bs-toggle="collapse" data-bs-target="#matchingInfoBody" aria-expanded="false" aria-controls="matchingInfoBody" aria-label="Toggle info">
+                        <button id="matchingInfoToggle" class="btn btn-sm p-0 border-0 bg-transparent toggle-btn mb-0"
+                            type="button" data-bs-toggle="collapse" data-bs-target="#matchingInfoBody"
+                            aria-expanded="false" aria-controls="matchingInfoBody" aria-label="Toggle info">
                             <i class="fas fa-chevron-right toggle-icon text-primary"></i>
                         </button>
                         <div class="matching-info-title text-dark mb-0 d-flex align-items-center">
@@ -86,10 +127,15 @@
                     </div>
                     <div id="matchingInfoBody" class="collapse mt-3" data-bs-parent="#matchingInfoAlert">
                         <ul class="mb-0 ps-3 small">
-                            <li>Matching wilayah dilakukan secara otomatis dengan jadwal <strong>setiap hari jam 3 pagi</strong>.</li>
-                            <li>Proses matching <strong>bisa berhasil bisa gagal</strong>, usaha yang gagal di matching bisa dilihat dengan filter <strong>Status Matching Wilayah</strong>.</li>
-                            <li>Jika <strong>matching gagal</strong> ada <strong>2 kemungkinan</strong>: - Koordinatnya keliru (misal di laut) - Polygonnya yg keliru. Silakan kontak tim garda prov terkait ini jika butuh bantuan.</li>
-                            <li>Jika <strong>koordinat berubah</strong>, maka matching akan <strong>dilakukan lagi</strong> untuk usaha tersebut.</li>
+                            <li>Matching wilayah dilakukan secara otomatis dengan jadwal <strong>setiap hari jam 3
+                                    pagi</strong>.</li>
+                            <li>Proses matching <strong>bisa berhasil bisa gagal</strong>, usaha yang gagal di matching bisa
+                                dilihat dengan filter <strong>Status Matching Wilayah</strong>.</li>
+                            <li>Jika <strong>matching gagal</strong> ada <strong>2 kemungkinan</strong>: - Koordinatnya
+                                keliru (misal di laut) - Polygonnya yg keliru. Silakan kontak tim garda prov terkait ini
+                                jika butuh bantuan.</li>
+                            <li>Jika <strong>koordinat berubah</strong>, maka matching akan <strong>dilakukan lagi</strong>
+                                untuk usaha tersebut.</li>
                             <li><strong>Menu download</strong> data juga sudah memasukkan wilayah.</li>
                         </ul>
                     </div>
@@ -601,18 +647,22 @@
                     type: "text",
                     render: function(data, type, row) {
                         if (type === 'display') {
-                            if (row.status == 'success') {
-                                return `
-                        <form class="my-2" action="/status/download/2" method="POST">
-                            @csrf
-                            <input type="hidden" name="id" value="${data}"> 
-                            <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
-                                <i class="fas fa-download mx-1"></i>
-                            </button>
-                        </form>
-                        `
+                            if (row.status === 'success') {
+                                if (row.file_has_deleted == 0) {
+                                    return `
+                                        <form class="my-2" action="/status/download/2" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="id" value="${data}"> 
+                                            <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
+                                                <i class="fas fa-download mx-1"></i>
+                                            </button>
+                                        </form>
+                                    `;
+                                } else {
+                                    return `<span class="badge bg-danger">Dihapus</span>`;
+                                }
                             } else {
-                                return '-'
+                                return '-';
                             }
                         }
                         return data;
@@ -1025,13 +1075,13 @@
 
     <script>
         // Make entire header clickable to toggle collapse
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const header = document.getElementById('matchingInfoHeader');
             const btn = document.getElementById('matchingInfoToggle');
-            if(header && btn){
-                header.addEventListener('click', function(e){
+            if (header && btn) {
+                header.addEventListener('click', function(e) {
                     // Avoid double-trigger if button itself clicked
-                    if(!btn.contains(e.target)) {
+                    if (!btn.contains(e.target)) {
                         btn.click();
                     }
                 });
