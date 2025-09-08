@@ -1409,6 +1409,13 @@
                     }
                 }
 
+                // Validation: check if no action is selected
+                if (!selectedStatus) {
+                    showAnomalyError(anomalyId, 'Silakan pilih aksi untuk anomali ini (Perbaiki atau Abaikan)');
+                    hasValidationErrors = true;
+                    return; // Skip other validations for this anomaly
+                }
+
                 // Validation: if status is 'fixed', fixed_value must not be empty
                 if (selectedStatus === 'fixed') {
                     const fixedValue = fixedValueInput ? fixedValueInput.value.trim() : '';

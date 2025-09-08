@@ -159,6 +159,8 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/anomali', [AnomalyController::class, 'index']);
 		Route::get('/anomali/data', [AnomalyController::class, 'getAnomalyListData']);
 		Route::post('/anomali/update', [AnomalyController::class, 'updateAnomaly']);
+
+		Route::patch('/suplemen/{id}', [SupplementController::class, 'updateSupplement']);
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');

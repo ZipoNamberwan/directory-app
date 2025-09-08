@@ -847,9 +847,9 @@
                             html +=
                                 `<div class="mb-1"><span class="text-muted">Sektor:</span> <span class="fw-semibold text-dark">${truncateText(row.sector, 40)}</span></div>`;
                         }
-                        if (row.notes) {
+                        if (row.note) {
                             html +=
-                                `<div><span class="text-muted">Catatan:</span> <span class="fw-semibold text-dark">${row.notes}</span></div>`;
+                                `<div><span class="text-muted">Catatan:</span> <span class="fw-semibold text-dark">${row.note}</span></div>`;
                         }
 
                         html += `</div>`;

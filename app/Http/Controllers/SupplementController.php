@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SupplementController extends Controller
 {
@@ -423,6 +424,67 @@ class SupplementController extends Controller
             return redirect('/suplemen')->with('success-upload', 'Usaha Telah Dihapus');
         } else {
             return redirect('/suplemen')->with('failed-upload', 'Usaha gagal dihapus, menyimpan log');
+        }
+    }
+
+    public function updateSupplement(Request $request, $id)
+    {
+        try {
+            // Validation rules
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'required|string|max:1000',
+                'status' => 'required|in:Tetap,Tidak Tetap',
+                'sector' => 'required|string|max:255',
+                'owner' => 'nullable|string|max:255',
+                'address' => 'nullable|string|max:500',
+                'note' => 'nullable|string|max:1000',
+            ]);
+
+            // Find the supplement business
+            $supplement = SupplementBusiness::find($id);
+            
+            if (!$supplement) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data usaha tidak ditemukan'
+                ], 404);
+            }
+
+            // Add is_locked = true to the validated data
+            $validated['is_locked'] = true;
+
+            // Update the supplement business
+            $supplement->update($validated);
+
+            // Load all required relationships for the response
+            $supplement->load([
+                'user',
+                'organization', 
+                'project',
+                'regency',
+                'subdistrict',
+                'village',
+                'sls'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data usaha berhasil diperbarui',
+                'business' => $supplement
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui data usaha'
+            ], 500);
         }
     }
 }
