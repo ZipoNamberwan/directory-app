@@ -628,19 +628,11 @@
             return formatted.replace(" pukul ", " ").replace(/\./g, ":");
         }
 
-
-        var isAdmin = @json($isAdmin);
-        var userId = @json($userId);
-
-        function canDelete($id) {
-            return isAdmin || $id == userId;
-        }
-
-        function deleteBusiness(id, name) {
+        function confirmDeleteBusiness(id, name) {
             event.preventDefault();
             Swal.fire({
                 title: `Hapus Usaha Ini?`,
-                text: name,
+                html: `<strong>${name}</strong><br>Data yang sudah dihapus tidak bisa dikembalikan lagi.`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
@@ -649,7 +641,59 @@
                 cancelButtonText: 'Tidak',
             }).then((result) => {
                 if (result.isConfirmed) {
-                    document.getElementById('formdelete' + id).submit();
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Menghapus...',
+                        text: 'Mohon tunggu sebentar',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Make AJAX request to delete business
+                    fetch(`/suplemen/${id}/delete`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                                    'content')
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Remove row from table
+                                if (table) {
+                                    table.deleteRow(id);
+                                }
+
+                                // Show success message
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    text: 'Data usaha berhasil dihapus',
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                // Show error message
+                                Swal.fire({
+                                    title: 'Gagal!',
+                                    text: data.message || 'Terjadi kesalahan saat menghapus data',
+                                    icon: 'error'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Terjadi kesalahan sistem. Silakan coba lagi.',
+                                icon: 'error'
+                            });
+                        });
                 }
             })
         }
@@ -786,6 +830,17 @@
     <script>
         // Global table variable
         let table;
+        let organizationId = @json($organizationId);
+        let canEditPermission = @json($canEdit);
+        let canDeletePermission = @json($canDelete);
+
+        function canEdit(permission, businessOrganizationId) {
+            return permission && (organizationId == businessOrganizationId);
+        }
+
+        function canDelete(permission, businessOrganizationId) {
+            return permission && (organizationId == businessOrganizationId);
+        }
 
         // Define column configurations for different modes
         const getColumnConfig = (mode) => {
@@ -950,33 +1005,47 @@
                     responsive: 7,
                     hozAlign: "center",
                     formatter: function(cell) {
-                        // let row = cell.getRow().getData();
-                        // if (canDelete(row.user.id) && row.project?.type !== "kendedes mobile") {
-                        //     return `
-                    // <form id="formdelete${row.id}" name="formdelete${row.id}" 
-                    //     onSubmit="deleteBusiness('${row.id}','${row.name}')" 
-                    //     class="d-inline" action="/suplemen/${row.id}" method="POST">
-                    //     @csrf
-                    //     @method('delete')
-                    //     <button class="btn btn-outline-danger btn-sm p-1" type="submit">
-                    //         <i class="fas fa-trash"></i>
-                    //     </button>
-                    // </form>`;
-                        // }
-                        // return "-";
                         let row = cell.getRow();
                         let rowData = row.getData();
 
-                        // attach row object to button via event
-                        let button = document.createElement("button");
-                        button.className = "btn btn-success btn-sm px-2 py-1";
-                        button.innerHTML = `<i class="fas fa-pencil-alt"></i>`;
-                        button.onclick = function() {
-                            openEditDialog(rowData);
-                        };
+                        // Get permissions from backend
+                        const e = canEdit(canEditPermission, rowData.organization_id);
+                        const d = canDelete(canDeletePermission, rowData.organization_id);
+                        // Create container for buttons
+                        let container = document.createElement("div");
+                        container.className = "d-flex gap-1 justify-content-center";
 
-                        return button;
+                        if (e && rowData.not_confirmed_anomalies > 0) {
+                            // TODO
+                            return 'ada anomali'
+                        } else {
+                            // Edit button - visible if canEdit is true
+                            if (e) {
+                                let editButton = document.createElement("button");
+                                editButton.className = "btn btn-success btn-sm px-2 py-1";
+                                editButton.innerHTML = `<i class="fas fa-pencil-alt"></i>`;
+                                editButton.onclick = function() {
+                                    openEditDialog(rowData);
+                                };
+                                container.appendChild(editButton);
+                            }
+
+                            // Delete button - visible if canDelete is true
+                            if (d) {
+                                let deleteButton = document.createElement("button");
+                                deleteButton.className = "btn btn-danger btn-sm px-2 py-1";
+                                deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
+                                deleteButton.onclick = function() {
+                                    confirmDeleteBusiness(rowData.id, rowData.name);
+                                };
+                                container.appendChild(deleteButton);
+                            }
+
+                            // Return container if it has buttons, otherwise return "-"
+                            return container.children.length > 0 ? container : "-";
+                        }
                     }
+
                 }
             ];
 
@@ -1244,27 +1313,27 @@
                     <input type="hidden" id="businessId" value="${businessData.id}">
                     
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label for="businessName" class="form-label">Nama Usaha <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="businessName" value="${businessData.name || ''}" required>
                             <div class="invalid-feedback" id="businessNameError"></div>
                         </div>
                         
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label for="businessOwner" class="form-label">Pemilik Usaha</label>
                             <input type="text" class="form-control" id="businessOwner" value="${businessData.owner || ''}">
                             <div class="invalid-feedback" id="businessOwnerError"></div>
                         </div>
                         
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label for="businessDescription" class="form-label">Deskripsi Usaha <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="businessDescription" rows="3" required>${businessData.description || ''}</textarea>
                             <div class="invalid-feedback" id="businessDescriptionError"></div>
                         </div>
                         
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label for="businessAddress" class="form-label">Alamat Usaha</label>
-                            <textarea class="form-control" id="businessAddress" rows="2">${businessData.address || ''}</textarea>
+                            <textarea class="form-control" id="businessAddress" rows="3">${businessData.address || ''}</textarea>
                             <div class="invalid-feedback" id="businessAddressError"></div>
                         </div>
                         
@@ -1331,7 +1400,7 @@
 
             // Clear previous errors
             clearValidationErrors();
-            
+
             // Get form data
             const formData = {
                 id: document.getElementById('businessId').value,
@@ -1343,12 +1412,12 @@
                 sector: document.getElementById('businessSector').value,
                 note: document.getElementById('businessNotes').value.trim()
             };
-            
+
             // Validate form data
             if (!validateBusinessForm(formData)) {
                 return;
             }
-            
+
             // Save the business data
             saveBusinessData(formData, saveBtn);
         });
@@ -1389,65 +1458,65 @@
 
             // Send update request
             fetch(`/suplemen/${formData.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                if (data.success) {
-                    // Update table row with new data
-                    if (table && data.business) {
-                        table.updateRow(data.business.id, data.business);
-                        
-                        // Force redraw of the updated row to refresh formatted columns
-                        const updatedRow = table.getRow(data.business.id);
-                        if (updatedRow) {
-                            updatedRow.reformat();
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    if (data.success) {
+                        // Update table row with new data
+                        if (table && data.business) {
+                            table.updateRow(data.business.id, data.business);
+
+                            // Force redraw of the updated row to refresh formatted columns
+                            const updatedRow = table.getRow(data.business.id);
+                            if (updatedRow) {
+                                updatedRow.reformat();
+                            }
+                        }
+
+                        // Close modal
+                        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+
+                    } else {
+                        // Handle validation errors
+                        if (data.errors) {
+                            Object.keys(data.errors).forEach(field => {
+                                const fieldMapping = {
+                                    'name': 'businessName',
+                                    'owner': 'businessOwner',
+                                    'description': 'businessDescription',
+                                    'address': 'businessAddress',
+                                    'status': 'buildingStatus',
+                                    'sector': 'businessSector',
+                                    'note': 'businessNotes'
+                                };
+
+                                const mappedField = fieldMapping[field];
+                                if (mappedField) {
+                                    showFieldError(mappedField, data.errors[field][0]);
+                                }
+                            });
+                        } else {
+                            showGeneralError(data.message || 'Terjadi kesalahan saat menyimpan data');
                         }
                     }
-
-                    // Close modal
-                    bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-
-                } else {
-                    // Handle validation errors
-                    if (data.errors) {
-                        Object.keys(data.errors).forEach(field => {
-                            const fieldMapping = {
-                                'name': 'businessName',
-                                'owner': 'businessOwner',
-                                'description': 'businessDescription',
-                                'address': 'businessAddress',
-                                'status': 'buildingStatus',
-                                'sector': 'businessSector',
-                                'note': 'businessNotes'
-                            };
-
-                            const mappedField = fieldMapping[field];
-                            if (mappedField) {
-                                showFieldError(mappedField, data.errors[field][0]);
-                            }
-                        });
-                    } else {
-                        showGeneralError(data.message || 'Terjadi kesalahan saat menyimpan data');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showGeneralError('Terjadi kesalahan sistem. Silakan coba lagi.');
-            })
-            .finally(() => {
-                // Reset button state
-                saveBtn.disabled = false;
-                saveBtn.querySelector('.btn-text').textContent = 'Simpan';
-                saveBtn.querySelector('.spinner-border').classList.add('d-none');
-            });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showGeneralError('Terjadi kesalahan sistem. Silakan coba lagi.');
+                })
+                .finally(() => {
+                    // Reset button state
+                    saveBtn.disabled = false;
+                    saveBtn.querySelector('.btn-text').textContent = 'Simpan';
+                    saveBtn.querySelector('.spinner-border').classList.add('d-none');
+                });
         }
 
         function clearValidationErrors() {

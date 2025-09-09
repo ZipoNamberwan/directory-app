@@ -44,6 +44,26 @@
             background-color: #2196f3;
         }
 
+        .badge.deleted {
+            background-color: #f44336;
+        }
+
+        /* Disabled state styles for deleted businesses */
+        .business-deleted .anomaly-card {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .business-deleted .btn {
+            opacity: 0.6;
+        }
+
+        .business-deleted .form-control,
+        .business-deleted textarea {
+            background-color: #f8f9fa;
+            opacity: 0.6;
+        }
+
         /* Fix z-index issue - Modal should be above sidenav */
         .modal {
             z-index: 1055 !important;
@@ -292,9 +312,6 @@
                     <!-- Business Information -->
                     <div id="modal-content">
                         <div class="card mb-3">
-                            <div class="card-header pb-0">
-                                <h6 class="mb-0">Informasi Usaha</h6>
-                            </div>
                             <div class="card-body">
                                 <div class="row g-3">
                                     <div class="col-lg-6 col-md-12">
@@ -345,6 +362,9 @@
                             </div>
                         </div>
 
+                        <!-- Deleted Business Warning -->
+                        <!-- This warning is now moved to modal footer when business is deleted -->
+
                         <!-- Anomalies Section -->
                         <div class="card">
                             <div class="card-header pb-0">
@@ -362,11 +382,50 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-success" id="save-anomalies">
-                        <span class="btn-text">Simpan Perubahan</span>
-                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
-                    </button>
+                    <!-- Normal business footer (when not deleted) -->
+                    <div id="normal-business-footer" class="d-flex justify-content-between w-100">
+                        <!-- Left side: Business-level action (destructive) -->
+                        <div>
+                            <button type="button" class="btn btn-outline-danger" id="delete-business">
+                                <i class="fas fa-trash me-1"></i>
+                                Hapus Usaha
+                            </button>
+                        </div>
+
+                        <!-- Right side: Anomaly-level actions + Cancel -->
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-success" id="save-anomalies">
+                                <span class="btn-text">Simpan Perubahan</span>
+                                <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Deleted business footer (when business is deleted) -->
+                    <div id="deleted-business-footer" class="d-none w-100">
+                        <!-- Custom alert with embedded buttons -->
+                        <div class="alert alert-danger mb-0 d-flex align-items-center justify-content-between text-white">
+                            <!-- Left side: Warning information -->
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <div>
+                                    <strong>Usaha Dihapus:</strong> Usaha ini telah dihapus.
+                                </div>
+                            </div>
+
+                            <!-- Right side: Action buttons -->
+                            <div class="d-flex gap-2 ms-3 align-items-center justify-content-center">
+                                <button type="button" class="btn btn-light m-0" id="restore-business">
+                                    <i class="fas fa-undo me-1"></i>
+                                    Pulihkan
+                                </button>
+                                <button type="button" class="btn btn-light text-dark m-0" data-bs-dismiss="modal">
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -701,7 +760,7 @@
                 {
                     title: "Tipe Usaha",
                     field: "type",
-                    responsive: 0,
+                    responsive: 4,
                     formatter: function(cell) {
                         let value = cell.getValue();
 
@@ -720,7 +779,7 @@
                 {
                     title: "Detail",
                     field: "detail",
-                    responsive: 1,
+                    responsive: 3,
                     formatter: function(cell) {
                         let row = cell.getRow().getData();
                         let html = `<div class="mb-3 small text-wrap lh-sm">`;
@@ -757,7 +816,7 @@
                 {
                     title: "Lokasi",
                     field: "location",
-                    responsive: 4,
+                    responsive: 5,
                     hozAlign: "center",
                     formatter: function(cell) {
                         let row = cell.getRow().getData();
@@ -778,7 +837,7 @@
                 {
                     title: "Wilayah",
                     field: "sls",
-                    responsive: 2,
+                    responsive: 6,
                     formatter: function(cell) {
                         let row = cell.getRow().getData().business;
 
@@ -803,7 +862,7 @@
                 {
                     title: "Satker",
                     field: "organization",
-                    responsive: 2,
+                    responsive: 7,
                     formatter: function(cell) {
                         let data = cell.getValue();
                         if (!data) return "-";
@@ -813,7 +872,7 @@
                 {
                     title: "Petugas",
                     field: "user",
-                    responsive: 3,
+                    responsive: 8,
                     formatter: function(cell) {
                         const value = cell.getValue()?.firstname ?? "-";
                         return `<div class="small text-wrap lh-sm">${value}</div>`;
@@ -822,7 +881,7 @@
                 {
                     title: "Anomali",
                     field: "anomalies",
-                    responsive: 2,
+                    responsive: 1,
                     resizable: true,
                     formatter: function(cell) {
                         const anomalies = cell.getValue();
@@ -843,10 +902,13 @@
                                 statusLabel = 'Sudah Diperbaiki';
                             } else if (anomaly.status === 'dismissed') {
                                 statusClass = 'status-dismissed';
-                                statusLabel = 'Sesuai Kondisi Lapangan';
+                                statusLabel = 'Diabaikan';
+                            } else if (anomaly.status === 'deleted') {
+                                statusClass = 'status-other';
+                                statusLabel = 'Dihapus';
                             } else {
                                 statusClass = 'status-other';
-                                statusLabel = 'Status Lainnya';
+                                statusLabel = 'Status Lain';
                             }
 
                             html += `
@@ -862,7 +924,7 @@
                 {
                     title: "Actions",
                     field: "id",
-                    width: 100,
+                    responsive: 2,
                     hozAlign: "center",
                     headerSort: false,
                     formatter: function(cell) {
@@ -1004,7 +1066,7 @@
 
                 // Recreate table with new mode configuration
                 recreateTable(mode);
-            }); 
+            });
         });
 
         // Initialize table on page load
@@ -1049,20 +1111,115 @@
             modal.show();
         }
 
+        // Business State Management Utility
+        const BusinessStateManager = {
+            isDeleted(business) {
+                return business.deleted_at !== null && business.deleted_at !== undefined;
+            },
+
+            updateModalVisualState(isDeleted) {
+                const modalContent = document.getElementById('modal-content');
+                const normalFooter = document.getElementById('normal-business-footer');
+                const deletedFooter = document.getElementById('deleted-business-footer');
+
+                if (!modalContent || !normalFooter || !deletedFooter) return;
+
+                if (isDeleted) {
+                    modalContent.classList.add('business-deleted');
+                    normalFooter.classList.add('d-none');
+                    deletedFooter.classList.remove('d-none');
+                } else {
+                    modalContent.classList.remove('business-deleted');
+                    normalFooter.classList.remove('d-none');
+                    deletedFooter.classList.add('d-none');
+                }
+            },
+
+            updateBusinessNameDisplay(businessName, isDeleted) {
+                const businessNameElement = document.getElementById('business-name');
+                if (!businessNameElement) return;
+
+                if (isDeleted) {
+                    businessNameElement.innerHTML =
+                        `${businessName || '-'} <span class="badge bg-danger ms-2">DIHAPUS</span>`;
+                } else {
+                    businessNameElement.textContent = businessName || '-';
+                }
+            },
+
+            updateButtonStates(isDeleted) {
+                // For deleted businesses, the footer layout handles the UI changes
+                // We just need to handle the anomaly controls
+                if (isDeleted) {
+                    this.disableAllAnomalyControls();
+                    this.setupRestoreButton();
+                }
+            },
+
+            setupRestoreButton() {
+                const restoreBtn = document.getElementById('restore-business');
+                if (restoreBtn) {
+                    // Clear any existing event listeners
+                    restoreBtn.replaceWith(restoreBtn.cloneNode(true));
+
+                    // Add new event listener
+                    const newRestoreBtn = document.getElementById('restore-business');
+                    newRestoreBtn.addEventListener('click', function() {
+                        // TODO: Implement restore functionality
+                        console.log('Restore business clicked - functionality to be implemented');
+                    });
+                }
+            },
+
+            disableAllAnomalyControls() {
+                const radioButtons = document.querySelectorAll('.btn-check');
+                const radioLabels = document.querySelectorAll('.btn-check + label');
+                const textareas = document.querySelectorAll('#anomalies-container textarea');
+                const inputs = document.querySelectorAll('#anomalies-container input[type="text"]');
+
+                radioButtons.forEach(radio => radio.disabled = true);
+
+                radioLabels.forEach(label => {
+                    label.classList.add('disabled');
+                    label.style.pointerEvents = 'none';
+                    label.style.opacity = '0.6';
+                });
+
+                textareas.forEach(textarea => textarea.disabled = true);
+                inputs.forEach(input => input.disabled = true);
+            },
+
+            resetModalToDefaults() {
+                // Hide loading and success messages
+                const modalLoading = document.getElementById('modal-loading');
+                const modalSuccess = document.getElementById('modal-success');
+                const modalContent = document.getElementById('modal-content');
+
+                if (modalLoading) modalLoading.classList.add('d-none');
+                if (modalSuccess) modalSuccess.classList.add('d-none');
+                if (modalContent) modalContent.classList.remove('d-none');
+
+                // Reset to non-deleted state (show normal footer, hide deleted footer)
+                this.updateModalVisualState(false);
+                this.updateBusinessNameDisplay('', false);
+
+                // Clear previous anomalies
+                const anomaliesContainer = document.getElementById('anomalies-container');
+                if (anomaliesContainer) {
+                    anomaliesContainer.innerHTML = '';
+                }
+
+                // Reset delete business button attributes
+                const deleteBtn = document.getElementById('delete-business');
+                if (deleteBtn) {
+                    deleteBtn.removeAttribute('data-business-id');
+                    deleteBtn.removeAttribute('data-business-name');
+                }
+            }
+        };
+
         function resetModalState() {
-            // Hide loading and success messages
-            document.getElementById('modal-loading').classList.add('d-none');
-            document.getElementById('modal-success').classList.add('d-none');
-            document.getElementById('modal-content').classList.remove('d-none');
-
-            // Reset save button
-            const saveBtn = document.getElementById('save-anomalies');
-            saveBtn.disabled = false;
-            saveBtn.querySelector('.btn-text').textContent = 'Simpan Perubahan';
-            saveBtn.querySelector('.spinner-border').classList.add('d-none');
-
-            // Clear previous anomalies
-            document.getElementById('anomalies-container').innerHTML = '';
+            BusinessStateManager.resetModalToDefaults();
         }
 
         function populateBusinessInfo(rowData) {
@@ -1072,8 +1229,6 @@
 
             // Store business ID in hidden input
             document.getElementById('business-id').value = rowData.id;
-
-            document.getElementById('business-name').textContent = business.name || '-';
 
             // Populate business type based on the type field
             let businessType = '-';
@@ -1096,6 +1251,7 @@
                 marketNameContainer.style.display = 'none';
             }
 
+            // Populate basic business information
             document.getElementById('business-description').textContent = business.description || '-';
             document.getElementById('business-status').textContent = business.status || '-';
             document.getElementById('business-address').textContent = business.address || '-';
@@ -1103,6 +1259,27 @@
             document.getElementById('business-owner').textContent = business.owner || '-';
             document.getElementById('user-name').textContent = user ? user.firstname : '-';
             document.getElementById('organization-name').textContent = organization ? organization.name : '-';
+
+            // Set up delete business button attributes
+            const deleteBusinessBtn = document.getElementById('delete-business');
+            if (deleteBusinessBtn) {
+                deleteBusinessBtn.setAttribute('data-business-id', rowData.id);
+                deleteBusinessBtn.setAttribute('data-business-name', business.name || 'Usaha Tanpa Nama');
+            }
+
+            // Set up restore business button attributes
+            const restoreBusinessBtn = document.getElementById('restore-business');
+            if (restoreBusinessBtn) {
+                restoreBusinessBtn.setAttribute('data-business-id', rowData.id);
+                restoreBusinessBtn.setAttribute('data-business-name', business.name || 'Usaha Tanpa Nama');
+            }
+
+            // Handle business deleted state using our utility
+            const isBusinessDeleted = BusinessStateManager.isDeleted(business);
+
+            BusinessStateManager.updateModalVisualState(isBusinessDeleted);
+            BusinessStateManager.updateBusinessNameDisplay(business.name, isBusinessDeleted);
+            BusinessStateManager.updateButtonStates(isBusinessDeleted);
         }
 
         function populateAnomalies(anomalies) {
@@ -1129,10 +1306,10 @@
                         </div>
                         <!-- <small class="text-muted d-block mt-1">${anomaly.description}</small> -->
                         ${anomaly.last_repaired_by_firstname ? `
-                        <small class="text-muted d-block mt-2">
-                            <i class="fas fa-user me-1"></i>Terakhir diperbaiki oleh: <strong>${anomaly.last_repaired_by_firstname}</strong> (${anomaly.last_repaired_by_email})
-                        </small>
-                        ` : ''}
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="fas fa-user me-1"></i>Terakhir diubah oleh: <strong>${anomaly.last_repaired_by_firstname}</strong> (${anomaly.last_repaired_by_email})
+                                        </small>
+                                        ` : ''}
                     </div>
                     <div class="card-body pt-1 pb-3 px-3">
                         <!-- Action buttons first -->
@@ -1215,7 +1392,10 @@
                 }
 
                 // Clear any previous errors
-                document.getElementById(`error_${anomalyId}`).classList.add('d-none');
+                const errorElement = document.getElementById(`error_${anomalyId}`);
+                if (errorElement) {
+                    errorElement.classList.add('d-none');
+                }
             }
 
             // Initialize state on load
@@ -1233,6 +1413,8 @@
                     return 'Diabaikan';
                 case 'notconfirmed':
                     return 'Belum Dikonfirmasi';
+                case 'deleted':
+                    return 'Dihapus';
                 default:
                     return status;
             }
@@ -1242,6 +1424,97 @@
         document.getElementById('save-anomalies').addEventListener('click', function() {
             saveAnomalies();
         });
+
+        // Delete business function
+        document.getElementById('delete-business').addEventListener('click', function() {
+            const businessId = this.getAttribute('data-business-id');
+            const businessName = this.getAttribute('data-business-name');
+
+            if (!businessId) {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'ID usaha tidak ditemukan',
+                    icon: 'error'
+                });
+                return;
+            }
+
+            // Show confirmation dialog
+            Swal.fire({
+                title: 'Hapus Usaha?',
+                html: `<strong>${businessName}</strong><br><br>
+                       <span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Usaha akan dihapus dari database, dan anomali akan ditandai dengan status "Dihapus"</span><br>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus Usaha',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    deleteBusinessAction(businessId, businessName);
+                }
+            });
+        });
+
+        function deleteBusinessAction(businessId, businessName) {
+            // Show loading state
+            Swal.fire({
+                title: 'Menghapus Usaha...',
+                text: 'Mohon tunggu sebentar',
+                icon: 'info',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Make AJAX request to delete business
+            fetch(`/anomali/delete/${businessId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Close the modal first
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+                        modal.hide();
+
+                        // Refresh the table
+                        if (typeof table !== 'undefined' && table) {
+                            table.setData();
+                        }
+
+                        // Show success message
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: 'Usaha berhasil dihapus dan semua anomalinya ditandai sebagai deleted.',
+                            icon: 'success',
+                            timer: 4000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        // Show error message
+                        Swal.fire({
+                            title: 'Gagal!',
+                            text: data.message || 'Terjadi kesalahan saat menghapus usaha',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Terjadi kesalahan sistem. Silakan coba lagi.',
+                        icon: 'error'
+                    });
+                });
+        }
 
         function generateAnomalyUpdateRequestBody() {
             // Collect anomaly data
@@ -1336,17 +1609,17 @@
         function updateTableRowWithNewData(updatedBusinessData) {
             // Find the row in the table by business ID
             const businessId = updatedBusinessData.id;
-            
+
             // Get the current table data
             const currentData = table.getData();
-            
+
             // Find the index of the row to update
             const rowIndex = currentData.findIndex(row => row.id === businessId);
-            
+
             if (rowIndex !== -1) {
                 // Update the row data in place
                 table.updateRow(businessId, updatedBusinessData);
-                
+
                 // Force redraw of the updated row to refresh formatted columns
                 const updatedRow = table.getRow(businessId);
                 if (updatedRow) {
@@ -1424,7 +1697,6 @@
                         hasValidationErrors = true;
                     }
                 }
-                
                 // Validation: if status is 'dismissed', note must not be empty
                 if (selectedStatus === 'dismissed') {
                     const noteValue = noteInput ? noteInput.value.trim() : '';

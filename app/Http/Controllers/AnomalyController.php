@@ -111,6 +111,7 @@ class AnomalyController extends Controller
     {
         // Clone query for count (without select to avoid issues)
         $countQuery = clone $baseQuery;
+        
         $total = $countQuery->distinct('ar.business_id')->count('ar.business_id');
 
         // Get paginated business data in one query using COALESCE to merge both business types
@@ -131,7 +132,7 @@ class AnomalyController extends Controller
                 DB::raw('COALESCE(sb.village_id, mb.village_id) as village_id'),
                 DB::raw('COALESCE(sb.sls_id, mb.sls_id) as sls_id'),
                 DB::raw('COALESCE(sb.organization_id, m.organization_id) as organization_id'),
-                // DB::raw('COALESCE(sb.owner, mb.owner) as owner')
+                DB::raw('COALESCE(sb.deleted_at, mb.deleted_at) as deleted_at'),
 
                 // 👇 User fields
                 DB::raw('COALESCE(u_sb.firstname, u_mb.firstname) as firstname'),
@@ -311,6 +312,7 @@ class AnomalyController extends Controller
                     'sls_id' => $business['sls_id'],
                     'owner' => $business['owner'],
                     'market_name' => $business['market_name'],
+                    'deleted_at' => $business['deleted_at'],
                 ],
                 // 👇 User info
                 'user' => [
@@ -718,5 +720,66 @@ class AnomalyController extends Controller
             'message' => $message,
             'errors' => $errors
         ], $status);
+    }
+
+    public function deleteAnomalyBusiness($id)
+    {
+        try {
+            // Check if user has permission to delete business
+            $user = User::find(Auth::id());
+
+            if (!$user->hasPermissionTo('delete_business')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk menghapus data usaha'
+                ], 403);
+            }
+
+            // Find the business (could be MarketBusiness or SupplementBusiness)
+            $businessInfo = $this->findBusiness($id, false);
+
+            if (!$businessInfo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data usaha tidak ditemukan atau sudah dihapus oleh user lain'
+                ], 404);
+            }
+
+            $business = $businessInfo['business'];
+            $businessType = $businessInfo['type'];
+
+            DB::beginTransaction();
+
+            // First, mark all anomalies for this business as "deleted"
+            $updatedCount = AnomalyRepair::where('business_id', $id)
+                ->where('business_type', $businessType)
+                ->update([
+                    'status' => 'deleted',
+                    'last_repaired_by' => $user->id,
+                    'updated_at' => now(),
+                    'repaired_at' => now()
+                ]);
+
+            // Then delete the business record
+            $business->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Usaha berhasil dihapus dan {$updatedCount} anomali ditandai sebagai deleted"
+            ]);
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error deleting business and marking anomalies as deleted: ' . $e->getMessage(), [
+                'business_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus usaha dan menandai anomali sebagai dihapus'
+            ], 500);
+        }
     }
 }

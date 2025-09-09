@@ -220,7 +220,7 @@
                     </a>
                 </li>
             @endhasrole --}}
-            @hasrole('adminkab|adminprov|operator')
+            @haspermission('edit_business')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Anomali</h6>
                 </li>
@@ -234,7 +234,7 @@
                         <span class="nav-link-text ms-1">List Anomali</span>
                     </a>
                 </li>
-            @endhasrole
+            @endhaspermission
             @hasrole('adminkab|adminprov')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Petugas</h6>

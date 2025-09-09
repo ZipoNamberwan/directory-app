@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('code');
             $table->text('description')->nullable();
             $table->text('column');
+            $table->enum('type', ['text', 'dropdown', 'radio', 'other'])->default('text');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -63,13 +64,20 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('supplement_business', function (Blueprint $table) {
-            $table->dropColumn(['is_locked']);
-        });
-        Schema::table('market_business', function (Blueprint $table) {
-            $table->dropColumn(['is_locked']);
-        });
+        // Drop anomaly_repairs first (depends on anomaly_types)
         Schema::dropIfExists('anomaly_repairs');
+
+        // Drop anomaly_types
         Schema::dropIfExists('anomaly_types');
+
+        // Remove is_locked from supplement_business
+        Schema::table('supplement_business', function (Blueprint $table) {
+            $table->dropColumn('is_locked');
+        });
+
+        // Remove is_locked from market_business
+        Schema::table('market_business', function (Blueprint $table) {
+            $table->dropColumn('is_locked');
+        });
     }
 };

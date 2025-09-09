@@ -28,16 +28,14 @@ class SupplementController extends Controller
         $regencies = [];
         $subdistricts = [];
         $users = [];
-        $isAdmin = false;
+
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
             $regencies = Regency::all();
-            $isAdmin = true;
         } else if ($user->hasRole('adminkab')) {
             $users = User::where('organization_id', $user->organization_id)->get();
             $regencies = Regency::where('id', $user->regency_id)->get();
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
-            $isAdmin = true;
         }
 
         $projectTypes = [
@@ -50,10 +48,11 @@ class SupplementController extends Controller
             'regencies' => $regencies,
             'subdistricts' => $subdistricts,
             'users' => $users,
-            'isAdmin' => $isAdmin,
-            'userId' => $user->id,
             'color' => 'success',
             'projectTypes' => $projectTypes,
+            'canEdit' => $user->hasPermissionTo('edit_business') || $user->hasRole('adminprov'),
+            'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
+            'organizationId' => $user->organization_id,
         ]);
     }
 
@@ -364,6 +363,9 @@ class SupplementController extends Controller
         // Apply pagination with offset and limit
         $data = $records
             ->with(['user', 'organization', 'project', 'regency', 'subdistrict', 'village', 'sls'])
+            ->withCount(['anomalies as not_confirmed_anomalies' => function ($query) {
+                $query->where('status', '=', 'notconfirmed');
+            }])
             ->orderBy($orderColumn, $orderDir)
             ->offset($offset)
             ->limit(min($perPage, 1000 - $offset)) // Don't exceed the 1000 cap
@@ -427,6 +429,43 @@ class SupplementController extends Controller
         }
     }
 
+    public function confirmDeleteBusiness($id)
+    {
+        try {
+            $business = SupplementBusiness::find($id);
+
+            if (!$business) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data usaha tidak ditemukan atau sudah dihapus oleh user lain'
+                ], 404);
+            }
+
+            // Check if user has permission to delete business
+            $user = User::find(Auth::id());
+
+            if (!$user->hasPermissionTo('delete_business')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk menghapus data usaha'
+                ], 403);
+            }
+
+            // Delete the business
+            $business->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data usaha berhasil dihapus'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus data usaha'
+            ], 500);
+        }
+    }
+
     public function updateSupplement(Request $request, $id)
     {
         try {
@@ -443,7 +482,7 @@ class SupplementController extends Controller
 
             // Find the supplement business
             $supplement = SupplementBusiness::find($id);
-            
+
             if (!$supplement) {
                 return response()->json([
                     'success' => false,
@@ -460,7 +499,7 @@ class SupplementController extends Controller
             // Load all required relationships for the response
             $supplement->load([
                 'user',
-                'organization', 
+                'organization',
                 'project',
                 'regency',
                 'subdistrict',
@@ -473,7 +512,6 @@ class SupplementController extends Controller
                 'message' => 'Data usaha berhasil diperbarui',
                 'business' => $supplement
             ]);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
