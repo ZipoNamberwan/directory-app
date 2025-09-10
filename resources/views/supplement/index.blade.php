@@ -1013,7 +1013,7 @@
 
                         if (e && rowData.not_confirmed_anomalies > 0) {
                             // TODO
-                            return 'ada anomali'
+                            return 'Menu Edit dan Hapus akan tersedia setelah Anomali diperbaiki'
                         } else {
                             // Edit button - visible if canEdit is true
                             if (e) {
