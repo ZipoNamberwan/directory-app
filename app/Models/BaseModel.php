@@ -38,5 +38,35 @@ class BaseModel extends Model
                 ]);
             }
         });
+
+        // Log when model is soft deleted
+        static::deleting(function ($model) {
+            DB::table('audits')->insert([
+                'model_type'  => get_class($model),
+                'table_name'  => $model->getTable(),
+                'model_id'    => $model->getKey(),
+                'column_name' => 'deleted_at',
+                'old_value'   => null,
+                'new_value'   => now(),
+                'edited_by'   => auth()->id(),
+                'medium'      => 'deletion',
+                'edited_at'   => now(),
+            ]);
+        });
+
+        // Log when model is restored from soft delete
+        static::restoring(function ($model) {
+            DB::table('audits')->insert([
+                'model_type'  => get_class($model),
+                'table_name'  => $model->getTable(),
+                'model_id'    => $model->getKey(),
+                'column_name' => 'deleted_at',
+                'old_value'   => $model->deleted_at,
+                'new_value'   => null,
+                'edited_by'   => auth()->id(),
+                'medium'      => 'restoration',
+                'edited_at'   => now(),
+            ]);
+        });
     }
 }

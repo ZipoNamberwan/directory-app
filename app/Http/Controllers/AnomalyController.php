@@ -37,7 +37,8 @@ class AnomalyController extends Controller
             'organizations' => $organizations,
             'anomalyTypes' => $anomalyTypes,
             'regencies' => $regencies,
-            'subdistricts' => $subdistricts
+            'subdistricts' => $subdistricts,
+            'color' => 'info'
         ]);
     }
 
@@ -111,7 +112,7 @@ class AnomalyController extends Controller
     {
         // Clone query for count (without select to avoid issues)
         $countQuery = clone $baseQuery;
-        
+
         $total = $countQuery->distinct('ar.business_id')->count('ar.business_id');
 
         // Get paginated business data in one query using COALESCE to merge both business types
@@ -398,27 +399,37 @@ class AnomalyController extends Controller
     /**
      * Find business record with optimal eager loading
      */
-    private function findBusiness($businessId, $withRelations = true)
+    private function findBusiness($businessId, $withRelations = true, $includeTrashed = false)
     {
         $baseRelations = $withRelations ? ['user:id,firstname,email'] : [];
 
         // Try MarketBusiness first
-        $marketBusiness = MarketBusiness::with(array_merge(
+        $marketQuery = MarketBusiness::with(array_merge(
             $baseRelations,
             $withRelations ? ['market.organization:id,name,long_code'] : []
-        ))
-            ->find($businessId);
+        ));
+
+        if ($includeTrashed) {
+            $marketQuery = $marketQuery->withTrashed();
+        }
+
+        $marketBusiness = $marketQuery->find($businessId);
 
         if ($marketBusiness) {
             return ['business' => $marketBusiness, 'type' => 'App\\Models\\MarketBusiness'];
         }
 
         // Try SupplementBusiness
-        $supplementBusiness = SupplementBusiness::with(array_merge(
+        $supplementQuery = SupplementBusiness::with(array_merge(
             $baseRelations,
             $withRelations ? ['organization:id,name,long_code'] : []
-        ))
-            ->find($businessId);
+        ));
+
+        if ($includeTrashed) {
+            $supplementQuery = $supplementQuery->withTrashed();
+        }
+
+        $supplementBusiness = $supplementQuery->find($businessId);
 
         return $supplementBusiness
             ? ['business' => $supplementBusiness, 'type' => 'App\\Models\\SupplementBusiness']
@@ -681,6 +692,7 @@ class AnomalyController extends Controller
             'sls_id' => $business->sls_id,
             'owner' => $business->owner ?? null,
             'market_name' => $isMarketBusiness ? ($business->market->name ?? null) : null,
+            'deleted_at' => $business->deleted_at,
         ];
     }
 
@@ -763,10 +775,21 @@ class AnomalyController extends Controller
             // Then delete the business record
             $business->delete();
 
+            // Get fresh business data with relations after deletion to include deleted_at
+            $deletedBusinessInfo = $this->findBusiness($id, true, true);
+            $deletedBusinessData = $this->formatBusinessData($deletedBusinessInfo);
+
+            // Get the anomalies that were marked as deleted
+            $deletedAnomaliesData = $this->getAnomaliesForBusiness($id);
+
+            // Combine business and anomalies data
+            $completeDeletedData = array_merge($deletedBusinessData, ['anomalies' => $deletedAnomaliesData]);
+
             DB::commit();
 
             return response()->json([
                 'success' => true,
+                'data' => $completeDeletedData,
                 'message' => "Usaha berhasil dihapus dan {$updatedCount} anomali ditandai sebagai deleted"
             ]);
         } catch (Exception $e) {

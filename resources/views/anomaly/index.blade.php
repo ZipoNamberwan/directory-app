@@ -291,7 +291,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Perbaiki Anomali</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <!-- Loading Indicator -->
@@ -415,7 +415,7 @@
                             </div>
 
                             <!-- Right side: Action buttons -->
-                            <div class="d-flex gap-2 ms-3 align-items-center justify-content-center">
+                            {{-- <div class="d-flex gap-2 ms-3 align-items-center justify-content-center">
                                 <button type="button" class="btn btn-light m-0" id="restore-business">
                                     <i class="fas fa-undo me-1"></i>
                                     Pulihkan
@@ -423,7 +423,7 @@
                                 <button type="button" class="btn btn-light text-dark m-0" data-bs-dismiss="modal">
                                     Tutup
                                 </button>
-                            </div>
+                            </div> --}}
                         </div>
                     </div>
                 </div>
@@ -754,7 +754,18 @@
                     field: "business.name",
                     responsive: 0,
                     formatter: function(cell) {
-                        return `<div class="text-wrap font-weight-bold">${$("<div>").text(cell.getValue()).html()}</div>`;
+                        const businessName = cell.getValue();
+                        const rowData = cell.getRow().getData();
+                        const isDeleted = rowData.business.deleted_at !== null && rowData.business.deleted_at !== undefined;
+                        
+                        let html = `<div class="text-wrap font-weight-bold">${$("<div>").text(businessName).html()}`;
+                        
+                        if (isDeleted) {
+                            html += ` <span class="badge bg-danger">DIHAPUS</span>`;
+                        }
+                        
+                        html += `</div>`;
+                        return html;
                     }
                 },
                 {
@@ -1479,15 +1490,13 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Delete response data:', data);
                     if (data.success) {
                         // Close the modal first
                         const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
                         modal.hide();
 
-                        // Refresh the table
-                        if (typeof table !== 'undefined' && table) {
-                            table.setData();
-                        }
+                        updateTableRowWithNewData(data.data);
 
                         // Show success message
                         Swal.fire({
