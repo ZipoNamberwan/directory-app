@@ -545,10 +545,6 @@
             $(selector).on('change', handler);
         });
 
-        function refresh() {
-            tableStatus.ajax.url('/suplemen/download/status').load();
-        }
-
         function formatDate(isoString) {
             const date = new Date(isoString);
 

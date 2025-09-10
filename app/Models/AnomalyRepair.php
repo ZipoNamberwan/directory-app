@@ -14,6 +14,10 @@ class AnomalyRepair extends Model
     protected $table = 'anomaly_repairs';
     public $incrementing = false;
 
+    protected $casts = [
+        'repaired_at' => 'datetime',
+    ];
+
     public function anomalyType()
     {
         return $this->belongsTo(AnomalyType::class);

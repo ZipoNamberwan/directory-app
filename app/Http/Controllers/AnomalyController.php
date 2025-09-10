@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\AnomalyExportJob;
 use App\Models\AnomalyRepair;
 use App\Models\AnomalyType;
+use App\Models\AssignmentStatus;
 use App\Models\MarketBusiness;
 use App\Models\Organization;
 use App\Models\Regency;
@@ -16,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class AnomalyController extends Controller
 {
@@ -803,6 +806,44 @@ class AnomalyController extends Controller
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menghapus usaha dan menandai anomali sebagai dihapus'
             ], 500);
+        }
+    }
+
+    public function downloadAnomaly(Request $request)
+    {
+        $user = User::find(Auth::id());
+        $uuid = Str::uuid();
+
+        $status = AssignmentStatus::where('user_id', Auth::id())
+            ->where('type', 'download-anomaly')
+            ->whereIn('status', ['start', 'loading'])->first();
+
+        if ($status == null) {
+            $status = AssignmentStatus::create([
+                'id' => $uuid,
+                'status' => 'start',
+                'user_id' => $user->id,
+                'type' => 'download-anomaly',
+            ]);
+
+            $organization = $request->organization;
+            if ($user->hasRole('adminkab')) {
+                $organization = $user->organization_id;
+            }
+
+            try {
+                AnomalyExportJob::dispatch($organization, $uuid);
+            } catch (Exception $e) {
+                $status->update([
+                    'status' => 'failed',
+                    'message' => $e->getMessage(),
+                ]);
+
+                return redirect('/anomali')->with('failed-upload', 'Download gagal diproses, log sudah disimpan');
+            }
+            return redirect('/anomali')->with('success-upload', 'Download telah di proses, cek status pada tombol status');
+        } else {
+            return redirect('/anomali')->with('failed-upload', 'Download tidak diproses karena masih ada proses download yang belum selesai');
         }
     }
 }

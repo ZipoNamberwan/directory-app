@@ -4,6 +4,8 @@
     <link href="/assets/css/app.css" rel="stylesheet" />
     <link href="/vendor/select2/select2.min.css" rel="stylesheet" />
     <link href="/vendor/tabulator/tabulator_bootstrap3.min.css" rel="stylesheet" />
+    <link href="/vendor/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="/vendor/datatables/responsive.bootstrap5.min.css" rel="stylesheet" />
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -155,6 +157,17 @@
             <div class="card-header pb-0">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="text-capitalize">Daftar Anomali</h5>
+                    <div class="d-flex">
+                        <form action="/anomali/download" class="me-2" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-info mb-0 p-2">Download</button>
+                        </form>
+                        <button onclick="refresh()" class="btn btn-info mb-0 p-2" data-bs-toggle="modal"
+                            data-bs-target="#statusDialog">
+                            <i class="fas fa-circle-info me-2"></i>
+                            Status
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -431,6 +444,36 @@
         </div>
     </div>
 
+    <div class="modal fade" id="statusDialog" tabindex="-1" role="dialog" aria-labelledby="statusDialogLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Status Download</h5>
+                    <button onclick="refresh()" class="btn btn-sm btn-outline-primary mb-0 p-2">
+                        Refresh
+                    </button>
+                    {{-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> --}}
+                </div>
+                <div class="modal-body">
+                    <table id="statusTable" class="align-items-center mb-0 text-sm">
+                        <thead>
+                            <tr>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">File</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Dibuat Oleh</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Status</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Dibuat pada</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Pesan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('js')
@@ -438,8 +481,12 @@
     <script src="/vendor/select2/select2.min.js"></script>
     <script src="/vendor/sweetalert2/sweetalert2.js"></script>
     <script src="/vendor/tabulator/tabulator.min.js"></script>
+    <script src="/vendor/datatables/dataTables.min.js"></script>
+    <script src="/vendor/datatables/dataTables.bootstrap5.min.js"></script>
 
-    <script src="/vendor/tabulator/tabulator.min.js"></script>
+    <script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
+    <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
+
 
     <script>
         const selectConfigs = [{
@@ -756,14 +803,16 @@
                     formatter: function(cell) {
                         const businessName = cell.getValue();
                         const rowData = cell.getRow().getData();
-                        const isDeleted = rowData.business.deleted_at !== null && rowData.business.deleted_at !== undefined;
-                        
-                        let html = `<div class="text-wrap font-weight-bold">${$("<div>").text(businessName).html()}`;
-                        
+                        const isDeleted = rowData.business.deleted_at !== null && rowData.business
+                            .deleted_at !== undefined;
+
+                        let html =
+                            `<div class="text-wrap font-weight-bold">${$("<div>").text(businessName).html()}`;
+
                         if (isDeleted) {
                             html += ` <span class="badge bg-danger">DIHAPUS</span>`;
                         }
-                        
+
                         html += `</div>`;
                         return html;
                     }
@@ -1317,10 +1366,10 @@
                         </div>
                         <!-- <small class="text-muted d-block mt-1">${anomaly.description}</small> -->
                         ${anomaly.last_repaired_by_firstname ? `
-                                        <small class="text-muted d-block mt-2">
-                                            <i class="fas fa-user me-1"></i>Terakhir diubah oleh: <strong>${anomaly.last_repaired_by_firstname}</strong> (${anomaly.last_repaired_by_email})
-                                        </small>
-                                        ` : ''}
+                                                        <small class="text-muted d-block mt-2">
+                                                            <i class="fas fa-user me-1"></i>Terakhir diubah oleh: <strong>${anomaly.last_repaired_by_firstname}</strong> (${anomaly.last_repaired_by_email})
+                                                        </small>
+                                                        ` : ''}
                     </div>
                     <div class="card-body pt-1 pb-3 px-3">
                         <!-- Action buttons first -->
@@ -1725,5 +1774,105 @@
             saveBtn.querySelector('.btn-text').textContent = 'Simpan Perubahan';
             saveBtn.querySelector('.spinner-border').classList.add('d-none');
         }
+    </script>
+
+    <script>
+        function refresh() {
+            tableStatus.ajax.url('/status/data/6').load();
+        }
+
+        let tableStatus = new DataTable('#statusTable', {
+            order: [],
+            serverSide: true,
+            processing: true,
+            // deferLoading: 0,
+            ajax: {
+                url: '/status/data/6',
+                type: 'GET',
+            },
+            responsive: true,
+            columns: [{
+                    responsivePriority: 1,
+                    width: "10%",
+                    data: "id",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            if (row.status == 'success') {
+                                return `
+                        <form class="my-2" action="/status/download/6" method="POST">
+                            @csrf
+                            <input type="hidden" name="id" value="${data}"> 
+                            <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
+                                <i class="fas fa-download mx-1"></i>
+                            </button>
+                        </form>
+                        `
+                            } else {
+                                return '-'
+                            }
+                        }
+                        return data;
+                    }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "user.firstname",
+                    type: "text",
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "status",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+
+                            var color = 'info'
+                            if (data == 'success') {
+                                color = 'success'
+                            } else if (data == 'failed') {
+                                color = 'danger'
+                            } else if (data == 'success') {
+                                color = 'success'
+                            } else if (data == 'loading' || data == 'processing') {
+                                color = 'secondary'
+                            } else if (data == 'success with error') {
+                                color = 'danger'
+                            } else {
+                                color = 'info'
+                            }
+
+                            return '<p class="mb-0"><span class="badge badge-small bg-' + color +
+                                '">' +
+                                data + '</span></p>';
+                        }
+                        return data;
+                    }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "created_at",
+                    type: "text",
+                    render: function(data, type, row) {
+                        return formatDate(data)
+                    }
+                },
+                {
+                    responsivePriority: 4,
+                    width: "10%",
+                    data: "message",
+                    type: "text",
+                },
+            ],
+            language: {
+                paginate: {
+                    previous: '<i class="fas fa-angle-left"></i>',
+                    next: '<i class="fas fa-angle-right"></i>'
+                }
+            }
+        });
     </script>
 @endpush

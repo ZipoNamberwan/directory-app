@@ -159,6 +159,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/anomali', [AnomalyController::class, 'index']);
 		Route::get('/anomali/data', [AnomalyController::class, 'getAnomalyListData']);
 		Route::post('/anomali/update', [AnomalyController::class, 'updateAnomaly']);
+		Route::post('/anomali/download', [AnomalyController::class, 'downloadAnomaly']);
 		Route::delete('/anomali/delete/{id}', [AnomalyController::class, 'deleteAnomalyBusiness']);
 
 		Route::patch('/suplemen/{id}', [SupplementController::class, 'updateSupplement']);
