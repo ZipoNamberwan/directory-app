@@ -191,6 +191,8 @@ class AnomalyController extends Controller
                 'at.code as anomaly_type_code',
                 'at.name as anomaly_type_name',
                 'at.description as anomaly_type_description',
+                'at.type as anomaly_type_type',
+                'at.column as anomaly_type_column',
                 'u.firstname as last_repaired_by_firstname',
                 'u.email as last_repaired_by_email'
             ]);
@@ -333,6 +335,8 @@ class AnomalyController extends Controller
                         'type' => $anomaly->anomaly_type_code,
                         'name' => $anomaly->anomaly_type_name,
                         'description' => $anomaly->anomaly_type_description,
+                        'input_type' => $anomaly->anomaly_type_type,
+                        'column' => $anomaly->anomaly_type_column,
                         'status' => $anomaly->status,
                         'old_value' => $anomaly->old_value,
                         'fixed_value' => $anomaly->fixed_value,
@@ -462,7 +466,7 @@ class AnomalyController extends Controller
     private function getAnomaliesForBusiness($businessId)
     {
         return AnomalyRepair::with([
-            'anomalyType:id,code,name,description',
+            'anomalyType:id,code,name,description,type,column',
             'lastRepairedBy:id,firstname,email'
         ])
             ->where('business_id', $businessId)
@@ -473,6 +477,8 @@ class AnomalyController extends Controller
                 'type' => $anomaly->anomalyType->code,
                 'name' => $anomaly->anomalyType->name,
                 'description' => $anomaly->anomalyType->description,
+                'input_type' => $anomaly->anomalyType->type,
+                'column' => $anomaly->anomalyType->column,
                 'status' => $anomaly->status,
                 'old_value' => $anomaly->old_value,
                 'fixed_value' => $anomaly->fixed_value,

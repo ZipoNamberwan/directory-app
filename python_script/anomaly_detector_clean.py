@@ -27,7 +27,8 @@ ANOMALY_TYPE_MAPPING = {
     'name': 1,
     'description': 2,
     'address': 3,
-    'owner': 4
+    'owner': 4,
+    'sector': 5
 }
 
 # Table to Laravel model mapping
@@ -40,7 +41,7 @@ BUSINESS_TYPE_MAPPING = {
 NULLABLE_COLUMNS = ['address', 'owner']
 
 # Columns to analyze
-COLUMNS_TO_ANALYZE = ['name', 'description', 'owner']
+COLUMNS_TO_ANALYZE = ['name', 'description', 'owner', 'sector']
 
 # Detection thresholds
 MIN_REPETITION_COUNT = 3
@@ -175,6 +176,31 @@ class AnomalyDetector:
             return float('inf') if vowels > 0 else 0
         return vowels / consonants
     
+    def detect_invalid_sector(self, text):
+        """
+        Detect invalid sector codes
+        
+        Business sector should be B-N, P-S, or U (valid sectors)
+        Invalid sectors are:
+        - A, O, T (forbidden sectors)
+        - Any character outside A-U range
+        - Empty/null values
+        """
+        if not isinstance(text, str) or not text:
+            return True  # Empty/null sector is invalid
+        
+        first_char = text.strip().upper()[:1]
+        
+        # Check if first character is A, O, T (forbidden) or outside A-U range
+        if first_char in ['A', 'O', 'T']:
+            return True
+        
+        # Check if first character is outside A-U range
+        if not ('A' <= first_char <= 'U'):
+            return True
+        
+        return False
+    
     def is_anomaly(self, text, column_name=None, strict=False, return_reason=False):
         """
         Main function to detect anomalous/random text
@@ -190,6 +216,12 @@ class AnomalyDetector:
         """
         if not isinstance(text, str):
             return (False, None) if return_reason else False
+        
+        # Special handling for sector column
+        if column_name == 'sector':
+            is_sector_anomaly = self.detect_invalid_sector(text)
+            reason = 'invalid_sector' if is_sector_anomaly else None
+            return (is_sector_anomaly, reason) if return_reason else is_sector_anomaly
         
         # Handle null/empty values based on column type
         if not text or len(text.strip()) < 1:
@@ -390,7 +422,7 @@ class AnomalyAnalyzer:
         try:
             # Analyze supplement_business table
             supplement_query = """
-            SELECT id, name, description, address, owner, regency_id, subdistrict_id, village_id, sls_id 
+            SELECT id, name, description, address, owner, sector, regency_id, subdistrict_id, village_id, sls_id 
             FROM supplement_business 
             WHERE deleted_at IS NULL
             """
@@ -399,7 +431,7 @@ class AnomalyAnalyzer:
             # Analyze market_business table
             print()
             market_query = """
-            SELECT id, name, description, address, market_id, regency_id, subdistrict_id, village_id, sls_id 
+            SELECT id, name, description, address, sector, market_id, regency_id, subdistrict_id, village_id, sls_id 
             FROM market_business 
             WHERE deleted_at IS NULL
             """

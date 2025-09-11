@@ -1355,6 +1355,9 @@
         }
 
         function createAnomalyCard(anomaly, index) {
+            // Generate the appropriate input based on anomaly type
+            const fixedValueInput = generateFixedValueInput(anomaly, index);
+            
             return `
                 <div class="card mb-3 border anomaly-card" data-anomaly-id="${anomaly.id}">
                     <div class="card-header bg-light py-3 px-3">
@@ -1398,12 +1401,7 @@
                             </div>
                             <div class="col-lg-6 col-12">
                                 <label class="form-label"><strong>Nilai Perbaikan:</strong></label>
-                                <input type="text" 
-                                       class="form-control fixed-value-input" 
-                                       name="fixed_value_${anomaly.id}"
-                                       value="${anomaly.fixed_value || ''}"
-                                       ${anomaly.status === 'dismissed' || anomaly.status === 'notconfirmed' || !anomaly.status ? 'disabled' : ''}
-                                       placeholder="Masukkan nilai perbaikan">
+                                ${fixedValueInput}
                             </div>
                         </div>
                         
@@ -1426,28 +1424,146 @@
             `;
         }
 
+        function generateFixedValueInput(anomaly, index) {
+            const isDisabled = anomaly.status === 'dismissed' || anomaly.status === 'notconfirmed' || !anomaly.status ? 'disabled' : '';
+            const currentValue = anomaly.fixed_value || '';
+            
+            switch (anomaly.input_type) {
+                case 'text':
+                    return `<input type="text" 
+                               class="form-control fixed-value-input" 
+                               name="fixed_value_${anomaly.id}"
+                               value="${currentValue}"
+                               ${isDisabled}
+                               placeholder="Masukkan nilai perbaikan">`;
+                
+                case 'dropdown':
+                    if (anomaly.column === 'sector') {
+                        return generateSectorDropdown(anomaly.id, currentValue, isDisabled);
+                    } else if (anomaly.column === 'status') {
+                        return generateStatusDropdown(anomaly.id, currentValue, isDisabled);
+                    } else {
+                        // Default text input for unknown dropdown types
+                        return `<input type="text" 
+                                   class="form-control fixed-value-input" 
+                                   name="fixed_value_${anomaly.id}"
+                                   value="${currentValue}"
+                                   ${isDisabled}
+                                   placeholder="Masukkan nilai perbaikan">`;
+                    }
+                
+                case 'radio':
+                    // For future implementation
+                    return `<input type="text" 
+                               class="form-control fixed-value-input" 
+                               name="fixed_value_${anomaly.id}"
+                               value="${currentValue}"
+                               ${isDisabled}
+                               placeholder="Radio input will be implemented later">`;
+                
+                case 'other':
+                    // For future implementation
+                    return `<input type="text" 
+                               class="form-control fixed-value-input" 
+                               name="fixed_value_${anomaly.id}"
+                               value="${currentValue}"
+                               ${isDisabled}
+                               placeholder="Other input type will be implemented later">`;
+                
+                default:
+                    return `<input type="text" 
+                               class="form-control fixed-value-input" 
+                               name="fixed_value_${anomaly.id}"
+                               value="${currentValue}"
+                               ${isDisabled}
+                               placeholder="Masukkan nilai perbaikan">`;
+            }
+        }
+
+        function generateSectorDropdown(anomalyId, currentValue, isDisabled) {
+            const sectors = [
+                { code: 'A', name: 'A. Pertanian, Kehutanan dan Perikanan' },
+                { code: 'B', name: 'B. Pertambangan dan Penggalian' },
+                { code: 'C', name: 'C. Industri Pengolahan' },
+                { code: 'D', name: 'D. Pengadaan Listrik, Gas, Uap/Air Panas Dan Udara Dingin' },
+                { code: 'E', name: 'E. Treatment Air, Treatment Air Limbah, Treatment dan Pemulihan Material Sampah, dan Aktivitas Remediasi' },
+                { code: 'F', name: 'F. Konstruksi' },
+                { code: 'G', name: 'G. Perdagangan Besar Dan Eceran, Reparasi Dan Perawatan Mobil Dan Sepeda Motor' },
+                { code: 'H', name: 'H. Pengangkutan dan Pergudangan' },
+                { code: 'I', name: 'I. Penyediaan Akomodasi Dan Penyediaan Makan Minum' },
+                { code: 'J', name: 'J. Informasi Dan Komunikasi' },
+                { code: 'K', name: 'K. Aktivitas Keuangan dan Asuransi' },
+                { code: 'L', name: 'L. Real Estat' },
+                { code: 'M', name: 'M. Aktivitas Profesional, Ilmiah Dan Teknis' },
+                { code: 'N', name: 'N. Aktivitas Penyewaan dan Sewa Guna Usaha Tanpa Hak Opsi, Ketenagakerjaan, Agen Perjalanan dan Penunjang Usaha Lainnya' },
+                { code: 'O', name: 'O. Administrasi Pemerintahan, Pertahanan Dan Jaminan Sosial Wajib' },
+                { code: 'P', name: 'P. Pendidikan' },
+                { code: 'Q', name: 'Q. Aktivitas Kesehatan Manusia Dan Aktivitas Sosial' },
+                { code: 'R', name: 'R. Kesenian, Hiburan Dan Rekreasi' },
+                { code: 'S', name: 'S. Aktivitas Jasa Lainnya' },
+                { code: 'T', name: 'T. Aktivitas Rumah Tangga Sebagai Pemberi Kerja; Aktivitas Yang Menghasilkan Barang Dan Jasa Oleh Rumah Tangga yang Digunakan untuk Memenuhi Kebutuhan Sendiri' },
+                { code: 'U', name: 'U. Aktivitas Badan Internasional Dan Badan Ekstra Internasional Lainnya' }
+            ];
+
+            let options = '<option value="" disabled>-- Pilih Sektor --</option>';
+            sectors.forEach(sector => {
+                const selected = currentValue === sector.name ? 'selected' : '';
+                options += `<option value="${sector.name}" ${selected}>${truncateText(sector.name, 30)}</option>`;
+            });
+
+            return `<select class="form-control fixed-value-input" 
+                           name="fixed_value_${anomalyId}"
+                           ${isDisabled}>
+                        ${options}
+                    </select>`;
+        }
+
+        function generateStatusDropdown(anomalyId, currentValue, isDisabled) {
+            const statusOptions = ['Tetap', 'Tidak Tetap'];
+
+            let options = '<option value="">-- Pilih Status --</option>';
+            statusOptions.forEach(status => {
+                const selected = currentValue === status ? 'selected' : '';
+                options += `<option value="${status}" ${selected}>${status}</option>`;
+            });
+
+            return `<select class="form-control fixed-value-input" 
+                           name="fixed_value_${anomalyId}"
+                           ${isDisabled}>
+                        ${options}
+                    </select>`;
+        }
+
         function setupAnomalyEventListeners(anomalyId, index) {
             // Listen for status changes
             const fixedRadio = document.getElementById(`fixed_${index}`);
             const dismissedRadio = document.getElementById(`dismissed_${index}`);
-            const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`);
+            // Handle both input and select elements for fixed_value
+            const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`) || 
+                                   document.querySelector(`select[name="fixed_value_${anomalyId}"]`);
             const noteInput = document.querySelector(`textarea[name="note_${anomalyId}"]`);
             const anomalyCard = document.querySelector(`[data-anomaly-id="${anomalyId}"]`);
 
             function updateInputState() {
                 if (dismissedRadio.checked) {
                     // Dismissed: enable note input, disable fixed value input
-                    fixedValueInput.disabled = true;
-                    fixedValueInput.value = '';
+                    if (fixedValueInput) {
+                        fixedValueInput.disabled = true;
+                        fixedValueInput.value = '';
+                    }
                     noteInput.disabled = false;
                 } else if (fixedRadio.checked) {
                     // Fixed: enable fixed value input, disable note input
-                    fixedValueInput.disabled = false;
+                    if (fixedValueInput) {
+                        fixedValueInput.disabled = false;
+                    }
                     noteInput.disabled = true;
                     noteInput.value = '';
                 } else {
                     // No action selected - disable both input fields
-                    fixedValueInput.disabled = true;
+                    if (fixedValueInput) {
+                        fixedValueInput.disabled = true;
+                    }
                     noteInput.disabled = true;
                 }
 
@@ -1580,7 +1696,9 @@
             document.querySelectorAll('.anomaly-card').forEach(card => {
                 const anomalyId = card.dataset.anomalyId;
                 const statusRadios = document.getElementsByName(`status_${anomalyId}`);
-                const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`);
+                // Handle both input and select elements for fixed_value
+                const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`) || 
+                                       document.querySelector(`select[name="fixed_value_${anomalyId}"]`);
                 const noteInput = document.querySelector(`textarea[name="note_${anomalyId}"]`);
 
                 let selectedStatus = null;
@@ -1729,7 +1847,9 @@
             document.querySelectorAll('.anomaly-card').forEach(card => {
                 const anomalyId = card.dataset.anomalyId;
                 const statusRadios = document.getElementsByName(`status_${anomalyId}`);
-                const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`);
+                // Handle both input and select elements for fixed_value
+                const fixedValueInput = document.querySelector(`input[name="fixed_value_${anomalyId}"]`) || 
+                                       document.querySelector(`select[name="fixed_value_${anomalyId}"]`);
                 const noteInput = document.querySelector(`textarea[name="note_${anomalyId}"]`);
 
                 let selectedStatus = null;
