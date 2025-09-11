@@ -50,8 +50,10 @@ class SupplementController extends Controller
             'users' => $users,
             'color' => 'success',
             'projectTypes' => $projectTypes,
-            'canEdit' => $user->hasPermissionTo('edit_business') || $user->hasRole('adminprov'),
-            'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
+            // 'canEdit' => $user->hasPermissionTo('edit_business') || $user->hasRole('adminprov'),
+            // 'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
+            'canEdit' => false,
+            'canDelete' => false,
             'organizationId' => $user->organization_id,
         ]);
     }
