@@ -9,8 +9,10 @@ use App\Models\MarketBusiness;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use League\Csv\Writer;
+use Throwable;
 
 class AnomalyExportJob implements ShouldQueue
 {
@@ -20,20 +22,14 @@ class AnomalyExportJob implements ShouldQueue
     public $uuid;
     public $organizationId;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct($organizationId, $uuid)
     {
         $this->organizationId = $organizationId;
         $this->uuid = $uuid;
 
-        AssignmentStatus::find($this->uuid)->update(['status' => 'loading',]);
+        AssignmentStatus::find($this->uuid)->update(['status' => 'loading']);
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
         try {
@@ -53,7 +49,6 @@ class AnomalyExportJob implements ShouldQueue
             $csv->setEnclosure('"');
 
             $csv->insertOne([
-                'Business_ID',
                 'Nama_Usaha',
                 'Status_Bangunan',
                 'Alamat',
@@ -71,137 +66,144 @@ class AnomalyExportJob implements ShouldQueue
                 'Desa',
                 'SLS',
                 'Ditagging_pada',
-                'Anomaly_Type',
-                'Anomaly_Name',
-                'Old_Value',
-                'Fixed_Value',
-                'Note',
-                'Repaired_At',
-                'Repaired_By_Name',
-                'Repaired_By_Email'
+                'Tipe_Anomali',
+                'Nama_Anomali',
+                'Status_Anomali',
+                'Nilai_Lama',
+                'Nilai_Perbaikan (Jika diperbaiki)',
+                'Catatan_Anomali (Jika Diabaikan)',
+                'Diperbaiki_pada',
+                'Diperbaiki_Oleh',
+                'Diperbaiki_Email',
             ]);
 
             $anomalies = AnomalyRepair::query();
 
-            // if ($user->hasRole('adminkab')) {
-            //     $anomalies->where(function ($query) use ($status) {
-            //         $query->where(function ($subQuery) use ($status) {
-            //             // For SupplementBusiness
-            //             $subQuery->where('business_type', 'App\\Models\\SupplementBusiness')
-            //                 ->whereIn('business_id', function ($businessQuery) use ($status) {
-            //                     $businessQuery->select('id')
-            //                         ->from('supplement_business')
-            //                         ->where(function ($orgQuery) use ($status) {
-            //                             $orgQuery->where('organization_id', $status->user->organization_id);
-            //                         });
-            //                 });
-            //         })->orWhere(function ($subQuery) use ($status) {
-            //             // For MarketBusiness
-            //             $subQuery->where('business_type', 'App\\Models\\MarketBusiness')
-            //                 ->whereIn('business_id', function ($businessQuery) use ($status) {
-            //                     $businessQuery->select('id')
-            //                         ->from('market_business')
-            //                         ->where(function ($orgQuery) use ($status) {
-            //                             $orgQuery->where('organization_id', $status->user->organization_id);
-            //                         });
-            //                 });
-            //         });
-            //     });
-            // } else if ($user->hasRole('pml') || $user->hasRole('operator') || $user->hasRole('pcl')) {
-            //     $anomalies->where(function ($query) use ($status) {
-            //         $query->where(function ($subQuery) use ($status) {
-            //             // For SupplementBusiness
-            //             $subQuery->where('business_type', 'App\\Models\\SupplementBusiness')
-            //                 ->whereIn('business_id', function ($businessQuery) use ($status) {
-            //                     $businessQuery->select('id')
-            //                         ->from('supplement_business')
-            //                         ->where('user_id', $status->user_id);
-            //                 });
-            //         })->orWhere(function ($subQuery) use ($status) {
-            //             // For MarketBusiness
-            //             $subQuery->where('business_type', 'App\\Models\\MarketBusiness')
-            //                 ->whereIn('business_id', function ($businessQuery) use ($status) {
-            //                     $businessQuery->select('id')
-            //                         ->from('market_business')
-            //                         ->where('user_id', $status->user_id);
-            //                 });
-            //         });
-            //     });
-            // }
+            if ($user->hasRole('adminkab')) {
+                $organizationId = $status->user->organization_id;
 
+                $anomalies->where(function ($query) use ($organizationId) {
+                    // SupplementBusiness with direct organization_id
+                    $query->where(function ($subQuery) use ($organizationId) {
+                        $subQuery->where('business_type', 'App\\Models\\SupplementBusiness')
+                            ->whereIn(
+                                'business_id',
+                                DB::table('supplement_business')
+                                    ->select('id')
+                                    ->where('organization_id', $organizationId)
+                            );
+                    })
+                        // MarketBusiness with organization_id through markets
+                        ->orWhere(function ($subQuery) use ($organizationId) {
+                            $subQuery->where('business_type', 'App\\Models\\MarketBusiness')
+                                ->whereIn(
+                                    'business_id',
+                                    DB::table('market_business')
+                                        ->select('market_business.id')
+                                        ->join('markets', 'market_business.market_id', '=', 'markets.id')
+                                        ->where('markets.organization_id', $organizationId)
+                                );
+                        });
+                });
+            }
+
+            $chunkCount = 0;
             $anomalies
                 ->with([
                     'anomalyType:id,code,name',
-                    'lastRepairedBy:id,firstname,email'
+                    'lastRepairedBy:id,firstname,email',
+                    'business' => function ($morphTo) {
+                        $morphTo->constrain([
+                            SupplementBusiness::class => function ($query) {
+                                $query->withTrashed()->with([
+                                    'organization',
+                                    'user',
+                                    'regency',
+                                    'subdistrict',
+                                    'village',
+                                    'sls'
+                                ]);
+                            },
+                            MarketBusiness::class => function ($query) {
+                                $query->withTrashed()->with([
+                                    'market.organization',
+                                    'user',
+                                    'regency',
+                                    'subdistrict',
+                                    'village',
+                                    'sls'
+                                ]);
+                            },
+                        ]);
+                    }
                 ])
                 ->orderBy('business_id')
                 ->orderBy('created_at')
-                ->chunk(1000, function ($anomalyRecords) use ($csv) {
+                ->chunk(1000, function ($anomalyRecords) use ($csv, &$chunkCount) {
+                    $chunkCount++;
+                    $chunkStart = microtime(true);
+
                     foreach ($anomalyRecords as $anomaly) {
-                        // Get business data based on business type
-                        $business = null;
-                        $businessType = '';
-
-                        if ($anomaly->business_type === 'App\\Models\\SupplementBusiness') {
-                            $business = SupplementBusiness::with([
-                                'organization',
-                                'user',
-                                'regency',
-                                'subdistrict',
-                                'village',
-                                'sls'
-                            ])->find($anomaly->business_id);
-                            $businessType = 'Suplemen';
-                        } else if ($anomaly->business_type === 'App\\Models\\MarketBusiness') {
-                            $business = MarketBusiness::with([
-                                'market.organization',
-                                'user',
-                                'regency',
-                                'subdistrict',
-                                'village',
-                                'sls'
-                            ])->find($anomaly->business_id);
-                            $businessType = 'Sentra Ekonomi';
+                        $business = $anomaly->business;
+                        if (!$business) {
+                            continue; // skip if missing
                         }
 
-                        if ($business) {
-                            $organization = null;
-                            if ($anomaly->business_type === 'App\\Models\\SupplementBusiness') {
-                                $organization = $business->organization;
-                            } else if ($anomaly->business_type === 'App\\Models\\MarketBusiness') {
-                                $organization = $business->market->organization ?? null;
-                            }
+                        $businessType = $anomaly->business_type === SupplementBusiness::class
+                            ? 'Suplemen'
+                            : 'Sentra Ekonomi';
 
-                            $csv->insertOne([
-                                $business->id,
-                                $business->name,
-                                $business->status,
-                                $business->address,
-                                $business->description,
-                                $business->sector,
-                                $business->note,
-                                $business->latitude,
-                                $business->longitude,
-                                $business->user->firstname ?? '',
-                                $business->user->email ?? '',
-                                $businessType,
-                                $organization ? "[" . $organization->long_code . "] " . $organization->name : '',
-                                $business->regency ? "[" . $business->regency->long_code . "] " . $business->regency->name : '',
-                                $business->subdistrict ? "[" . $business->subdistrict->short_code . "] " . $business->subdistrict->name : '',
-                                $business->village ? "[" . $business->village->short_code . "] " . $business->village->name : '',
-                                $business->sls ? "[" . $business->sls->short_code . "] " . $business->sls->name : '',
-                                $business->created_at->format('d-m-Y H:i:s'),
-                                $anomaly->anomalyType->code ?? '',
-                                $anomaly->anomalyType->name ?? '',
-                                $anomaly->old_value ?? '',
-                                $anomaly->fixed_value ?? '',
-                                $anomaly->note ?? '',
-                                $anomaly->repaired_at ? $anomaly->repaired_at->format('d-m-Y H:i:s') : '',
-                                $anomaly->lastRepairedBy?->firstname ?? '',
-                                $anomaly->lastRepairedBy?->email ?? '',
-                            ]);
+                        $organization = null;
+                        if ($business instanceof SupplementBusiness) {
+                            $organization = $business->organization;
+                        } elseif ($business instanceof MarketBusiness) {
+                            $organization = $business->market->organization ?? null;
                         }
+
+                        $status = 'Unknown';
+                        if ($anomaly->status === 'notconfirmed') {
+                            $status = 'Belum Dikonfirmasi';
+                        } elseif ($anomaly->status === 'fixed') {
+                            $status = 'Sudah Diperbaiki';
+                        } elseif ($anomaly->status === 'dismissed') {
+                            $status = 'Diabaikan';
+                        } elseif ($anomaly->status === 'deleted') {
+                            $status = 'Dihapus';
+                        } elseif ($anomaly->status === 'moved') {
+                            $status = 'Dipindahkan';
+                        }
+
+                        $csv->insertOne([
+                            $business->name,
+                            $business->status,
+                            $business->address,
+                            $business->description,
+                            $business->sector,
+                            $business->note,
+                            $business->latitude,
+                            $business->longitude,
+                            $business->user->firstname ?? '',
+                            $business->user->email ?? '',
+                            $businessType,
+                            $organization ? "[" . $organization->long_code . "] " . $organization->name : '',
+                            $business->regency ? "[" . $business->regency->long_code . "] " . $business->regency->name : '',
+                            $business->subdistrict ? "[" . $business->subdistrict->short_code . "] " . $business->subdistrict->name : '',
+                            $business->village ? "[" . $business->village->short_code . "] " . $business->village->name : '',
+                            $business->sls ? "[" . $business->sls->short_code . "] " . $business->sls->name : '',
+                            $business->created_at->format('d-m-Y H:i:s'),
+                            $anomaly->anomalyType->code ?? '',
+                            $anomaly->anomalyType->name ?? '',
+                            $status,
+                            $anomaly->old_value ?? '',
+                            $anomaly->fixed_value ?? '',
+                            $anomaly->note ?? '',
+                            $anomaly->repaired_at ? $anomaly->repaired_at->format('d-m-Y H:i:s') : '',
+                            $anomaly->lastRepairedBy?->firstname ?? '',
+                            $anomaly->lastRepairedBy?->email ?? '',
+                        ]);
                     }
+
+                    $chunkTime = microtime(true) - $chunkStart;
                 });
 
             fclose($stream);
@@ -210,5 +212,13 @@ class AnomalyExportJob implements ShouldQueue
         } catch (Exception $e) {
             AssignmentStatus::find($this->uuid)->update(['status' => 'failed', 'message' => $e->getMessage()]);
         }
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        AssignmentStatus::find($this->uuid)?->update([
+            'status'  => 'failed',
+            'message' => $exception->getMessage(),
+        ]);
     }
 }
