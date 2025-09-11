@@ -65,6 +65,20 @@
         #matchingInfoBody ul li:last-child {
             margin-bottom: 0;
         }
+
+        /* Fix z-index issue - Modal should be above sidenav */
+        .modal {
+            z-index: 1055 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
+
+        /* Ensure sidenav stays behind modal */
+        .sidenav {
+            z-index: 1030 !important;
+        }
     </style>
 @endsection
 
@@ -197,7 +211,7 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3">
-                        <label class="form-control-label">Filter Kabupaten</label>
+                        <label class="form-control-label">Kabupaten</label>
                         <select style="width: 100%;" id="regency" name="regency" class="form-control"
                             data-toggle="select">
                             <option value="0" disabled selected> -- Filter Kabupaten -- </option>
@@ -263,6 +277,27 @@
                     </div>
                 </div>
                 <div id="data-table"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ubah Data Usaha</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success" id="save-business">
+                        <span class="btn-text">Simpan</span>
+                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -510,10 +545,6 @@
             $(selector).on('change', handler);
         });
 
-        function refresh() {
-            tableStatus.ajax.url('/suplemen/download/status').load();
-        }
-
         function formatDate(isoString) {
             const date = new Date(isoString);
 
@@ -593,19 +624,11 @@
             return formatted.replace(" pukul ", " ").replace(/\./g, ":");
         }
 
-
-        var isAdmin = @json($isAdmin);
-        var userId = @json($userId);
-
-        function canDelete($id) {
-            return isAdmin || $id == userId;
-        }
-
-        function deleteBusiness(id, name) {
+        function confirmDeleteBusiness(id, name) {
             event.preventDefault();
             Swal.fire({
                 title: `Hapus Usaha Ini?`,
-                text: name,
+                html: `<strong>${name}</strong><br>Data yang sudah dihapus tidak bisa dikembalikan lagi.`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
@@ -614,7 +637,59 @@
                 cancelButtonText: 'Tidak',
             }).then((result) => {
                 if (result.isConfirmed) {
-                    document.getElementById('formdelete' + id).submit();
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Menghapus...',
+                        text: 'Mohon tunggu sebentar',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Make AJAX request to delete business
+                    fetch(`/suplemen/${id}/delete`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                                    'content')
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Remove row from table
+                                if (table) {
+                                    table.deleteRow(id);
+                                }
+
+                                // Show success message
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    text: 'Data usaha berhasil dihapus',
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                // Show error message
+                                Swal.fire({
+                                    title: 'Gagal!',
+                                    text: data.message || 'Terjadi kesalahan saat menghapus data',
+                                    icon: 'error'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Terjadi kesalahan sistem. Silakan coba lagi.',
+                                icon: 'error'
+                            });
+                        });
                 }
             })
         }
@@ -755,11 +830,22 @@
     <script>
         // Global table variable
         let table;
+        let organizationId = @json($organizationId);
+        let canEditPermission = @json($canEdit);
+        let canDeletePermission = @json($canDelete);
+
+        function canEdit(permission, businessOrganizationId) {
+            return permission && (organizationId == businessOrganizationId);
+        }
+
+        function canDelete(permission, businessOrganizationId) {
+            return permission && (organizationId == businessOrganizationId);
+        }
 
         // Define column configurations for different modes
         const getColumnConfig = (mode) => {
             const baseColumns = [{
-                    title: "Name",
+                    title: "Nama",
                     field: "name",
                     responsive: 0,
                     formatter: function(cell) {
@@ -794,9 +880,9 @@
                             html +=
                                 `<div class="mb-1"><span class="text-muted">Sektor:</span> <span class="fw-semibold text-dark">${truncateText(row.sector, 40)}</span></div>`;
                         }
-                        if (row.notes) {
+                        if (row.note) {
                             html +=
-                                `<div><span class="text-muted">Catatan:</span> <span class="fw-semibold text-dark">${row.notes}</span></div>`;
+                                `<div><span class="text-muted">Catatan:</span> <span class="fw-semibold text-dark">${row.note}</span></div>`;
                         }
 
                         html += `</div>`;
@@ -919,21 +1005,47 @@
                     responsive: 7,
                     hozAlign: "center",
                     formatter: function(cell) {
-                        let row = cell.getRow().getData();
-                        if (canDelete(row.user.id) && row.project?.type !== "kendedes mobile") {
-                            return `
-                        <form id="formdelete${row.id}" name="formdelete${row.id}" 
-                            onSubmit="deleteBusiness('${row.id}','${row.name}')" 
-                            class="d-inline" action="/suplemen/${row.id}" method="POST">
-                            @csrf
-                            @method('delete')
-                            <button class="btn btn-outline-danger btn-sm p-1" type="submit">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>`;
+                        let row = cell.getRow();
+                        let rowData = row.getData();
+
+                        // Get permissions from backend
+                        const e = canEdit(canEditPermission, rowData.organization_id);
+                        const d = canDelete(canDeletePermission, rowData.organization_id);
+                        // Create container for buttons
+                        let container = document.createElement("div");
+                        container.className = "d-flex gap-1 justify-content-center";
+
+                        if (e && rowData.not_confirmed_anomalies > 0) {
+                            // TODO
+                            return 'Menu Edit dan Hapus akan tersedia setelah Anomali diperbaiki'
+                        } else {
+                            // Edit button - visible if canEdit is true
+                            if (e) {
+                                let editButton = document.createElement("button");
+                                editButton.className = "btn btn-success btn-sm px-2 py-1";
+                                editButton.innerHTML = `<i class="fas fa-pencil-alt"></i>`;
+                                editButton.onclick = function() {
+                                    openEditDialog(rowData);
+                                };
+                                container.appendChild(editButton);
+                            }
+
+                            // Delete button - visible if canDelete is true
+                            if (d) {
+                                let deleteButton = document.createElement("button");
+                                deleteButton.className = "btn btn-danger btn-sm px-2 py-1";
+                                deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
+                                deleteButton.onclick = function() {
+                                    confirmDeleteBusiness(rowData.id, rowData.name);
+                                };
+                                container.appendChild(deleteButton);
+                            }
+
+                            // Return container if it has buttons, otherwise return "-"
+                            return container.children.length > 0 ? container : "-";
                         }
-                        return "-";
                     }
+
                 }
             ];
 
@@ -1053,7 +1165,6 @@
         document.querySelectorAll('input[name="mode"]').forEach(radio => {
             radio.addEventListener("change", function(e) {
                 let mode = e.target.value;
-                console.log("Mode changed to:", mode);
 
                 // Reset all Select2 filters
                 resetSelect2Filters();
@@ -1087,5 +1198,350 @@
                 });
             }
         });
+    </script>
+
+    <script>
+        // Define sectors data
+        const sectors = [{
+                code: 'A',
+                name: 'A. Pertanian, Kehutanan dan Perikanan'
+            },
+            {
+                code: 'B',
+                name: 'B. Pertambangan dan Penggalian'
+            },
+            {
+                code: 'C',
+                name: 'C. Industri Pengolahan'
+            },
+            {
+                code: 'D',
+                name: 'D. Pengadaan Listrik, Gas, Uap/Air Panas Dan Udara Dingin'
+            },
+            {
+                code: 'E',
+                name: 'E. Treatment Air, Treatment Air Limbah, Treatment dan Pemulihan Material Sampah, dan Aktivitas Remediasi'
+            },
+            {
+                code: 'F',
+                name: 'F. Konstruksi'
+            },
+            {
+                code: 'G',
+                name: 'G. Perdagangan Besar Dan Eceran, Reparasi Dan Perawatan Mobil Dan Sepeda Motor'
+            },
+            {
+                code: 'H',
+                name: 'H. Pengangkutan dan Pergudangan'
+            },
+            {
+                code: 'I',
+                name: 'I. Penyediaan Akomodasi Dan Penyediaan Makan Minum'
+            },
+            {
+                code: 'J',
+                name: 'J. Informasi Dan Komunikasi'
+            },
+            {
+                code: 'K',
+                name: 'K. Aktivitas Keuangan dan Asuransi'
+            },
+            {
+                code: 'L',
+                name: 'L. Real Estat'
+            },
+            {
+                code: 'M',
+                name: 'M. Aktivitas Profesional, Ilmiah Dan Teknis'
+            },
+            {
+                code: 'N',
+                name: 'N. Aktivitas Penyewaan dan Sewa Guna Usaha Tanpa Hak Opsi, Ketenagakerjaan, Agen Perjalanan dan Penunjang Usaha Lainnya'
+            },
+            {
+                code: 'O',
+                name: 'O. Administrasi Pemerintahan, Pertahanan Dan Jaminan Sosial Wajib'
+            },
+            {
+                code: 'P',
+                name: 'P. Pendidikan'
+            },
+            {
+                code: 'Q',
+                name: 'Q. Aktivitas Kesehatan Manusia Dan Aktivitas Sosial'
+            },
+            {
+                code: 'R',
+                name: 'R. Kesenian, Hiburan Dan Rekreasi'
+            },
+            {
+                code: 'S',
+                name: 'S. Aktivitas Jasa Lainnya'
+            },
+            {
+                code: 'T',
+                name: 'T. Aktivitas Rumah Tangga Sebagai Pemberi Kerja; Aktivitas Yang Menghasilkan Barang Dan Jasa Oleh Rumah Tangga yang Digunakan untuk Memenuhi Kebutuhan Sendiri'
+            },
+            {
+                code: 'U',
+                name: 'U. Aktivitas Badan Internasional Dan Badan Ekstra Internasional Lainnya'
+            }
+        ];
+
+        function getSectorFromValue(sectorValue) {
+            if (!sectorValue) return null;
+
+            // Get first letter of the sector value
+            const firstLetter = sectorValue.charAt(0).toUpperCase();
+
+            // Find matching sector
+            return sectors.find(sector => sector.code === firstLetter) || null;
+        }
+
+        function generateEditForm(businessData) {
+            // Get current sector
+            const currentSector = getSectorFromValue(businessData.sector);
+
+            // Generate sector options
+            const sectorOptions = sectors.map(sector => {
+                const isSelected = currentSector && currentSector.code === sector.code ? 'selected' : '';
+                return `<option value="${sector.name}" ${isSelected}>${sector.name}</option>`;
+            }).join('');
+
+            return `
+                <form id="editBusinessForm">
+                    <input type="hidden" id="businessId" value="${businessData.id}">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="businessName" class="form-label">Nama Usaha <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="businessName" value="${businessData.name || ''}" required>
+                            <div class="invalid-feedback" id="businessNameError"></div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="businessOwner" class="form-label">Pemilik Usaha</label>
+                            <input type="text" class="form-control" id="businessOwner" value="${businessData.owner || ''}">
+                            <div class="invalid-feedback" id="businessOwnerError"></div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="businessDescription" class="form-label">Deskripsi Usaha <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="businessDescription" rows="3" required>${businessData.description || ''}</textarea>
+                            <div class="invalid-feedback" id="businessDescriptionError"></div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="businessAddress" class="form-label">Alamat Usaha</label>
+                            <textarea class="form-control" id="businessAddress" rows="3">${businessData.address || ''}</textarea>
+                            <div class="invalid-feedback" id="businessAddressError"></div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="buildingStatus" class="form-label">Status Bangunan <span class="text-danger">*</span></label>
+                            <select class="form-control" id="buildingStatus" required>
+                                <option value="">-- Pilih Status Bangunan --</option>
+                                <option value="Tetap" ${businessData.status === 'Tetap' ? 'selected' : ''}>Tetap</option>
+                                <option value="Tidak Tetap" ${businessData.status === 'Tidak Tetap' ? 'selected' : ''}>Tidak Tetap</option>
+                            </select>
+                            <div class="invalid-feedback" id="buildingStatusError"></div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="businessSector" class="form-label">Sektor Usaha <span class="text-danger">*</span></label>
+                            <select class="form-control" id="businessSector" required>
+                                <option value="">-- Pilih Sektor Usaha --</option>
+                                ${sectorOptions}
+                            </select>
+                            <div class="invalid-feedback" id="businessSectorError"></div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="businessNotes" class="form-label">Catatan</label>
+                            <textarea class="form-control" id="businessNotes" rows="3">${businessData.note || ''}</textarea>
+                            <div class="invalid-feedback" id="businessNotesError"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-danger mt-3 d-none" id="generalError"></div>
+                </form>
+            `;
+        }
+
+        function openEditDialog(rowData) {
+            // Generate and populate form
+            const formHtml = generateEditForm(rowData);
+            document.querySelector('#editModal .modal-body').innerHTML = formHtml;
+
+            // Initialize Select2 for selects
+            $('#buildingStatus').select2({
+                placeholder: 'Pilih Status Bangunan',
+                allowClear: false,
+                dropdownParent: $('#editModal')
+            });
+
+            $('#businessSector').select2({
+                placeholder: 'Pilih Sektor Usaha',
+                allowClear: false,
+                dropdownParent: $('#editModal')
+            });
+
+            // Show modal
+            let modal = new bootstrap.Modal(document.getElementById("editModal"));
+            modal.show();
+        }
+
+        // Save business function
+        document.getElementById('save-business').addEventListener('click', function() {
+            const saveBtn = this;
+            const form = document.getElementById('editBusinessForm');
+
+            if (!form) return;
+
+            // Clear previous errors
+            clearValidationErrors();
+
+            // Get form data
+            const formData = {
+                id: document.getElementById('businessId').value,
+                name: document.getElementById('businessName').value.trim(),
+                owner: document.getElementById('businessOwner').value.trim(),
+                description: document.getElementById('businessDescription').value.trim(),
+                address: document.getElementById('businessAddress').value.trim(),
+                status: document.getElementById('buildingStatus').value,
+                sector: document.getElementById('businessSector').value,
+                note: document.getElementById('businessNotes').value.trim()
+            };
+
+            // Validate form data
+            if (!validateBusinessForm(formData)) {
+                return;
+            }
+
+            // Save the business data
+            saveBusinessData(formData, saveBtn);
+        });
+
+        function validateBusinessForm(formData) {
+            let hasErrors = false;
+
+            // Validate required fields
+            if (!formData.name) {
+                showFieldError('businessName', 'Nama usaha wajib diisi');
+                hasErrors = true;
+            }
+
+            if (!formData.description) {
+                showFieldError('businessDescription', 'Deskripsi usaha wajib diisi');
+                hasErrors = true;
+            }
+
+            if (!formData.status) {
+                showFieldError('buildingStatus', 'Status bangunan wajib dipilih');
+                hasErrors = true;
+            }
+
+            if (!formData.sector) {
+                showFieldError('businessSector', 'Sektor usaha wajib dipilih');
+                hasErrors = true;
+            }
+
+            // Return true if validation passes (no errors)
+            return !hasErrors;
+        }
+
+        function saveBusinessData(formData, saveBtn) {
+            // Show loading state
+            saveBtn.disabled = true;
+            saveBtn.querySelector('.btn-text').textContent = 'Menyimpan...';
+            saveBtn.querySelector('.spinner-border').classList.remove('d-none');
+
+            // Send update request
+            fetch(`/suplemen/${formData.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    if (data.success) {
+                        // Update table row with new data
+                        if (table && data.business) {
+                            table.updateRow(data.business.id, data.business);
+
+                            // Force redraw of the updated row to refresh formatted columns
+                            const updatedRow = table.getRow(data.business.id);
+                            if (updatedRow) {
+                                updatedRow.reformat();
+                            }
+                        }
+
+                        // Close modal
+                        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+
+                    } else {
+                        // Handle validation errors
+                        if (data.errors) {
+                            Object.keys(data.errors).forEach(field => {
+                                const fieldMapping = {
+                                    'name': 'businessName',
+                                    'owner': 'businessOwner',
+                                    'description': 'businessDescription',
+                                    'address': 'businessAddress',
+                                    'status': 'buildingStatus',
+                                    'sector': 'businessSector',
+                                    'note': 'businessNotes'
+                                };
+
+                                const mappedField = fieldMapping[field];
+                                if (mappedField) {
+                                    showFieldError(mappedField, data.errors[field][0]);
+                                }
+                            });
+                        } else {
+                            showGeneralError(data.message || 'Terjadi kesalahan saat menyimpan data');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showGeneralError('Terjadi kesalahan sistem. Silakan coba lagi.');
+                })
+                .finally(() => {
+                    // Reset button state
+                    saveBtn.disabled = false;
+                    saveBtn.querySelector('.btn-text').textContent = 'Simpan';
+                    saveBtn.querySelector('.spinner-border').classList.add('d-none');
+                });
+        }
+
+        function clearValidationErrors() {
+            // Remove error classes and clear error messages
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+            document.getElementById('generalError').classList.add('d-none');
+        }
+
+        function showFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorDiv = document.getElementById(fieldId + 'Error');
+
+            if (field && errorDiv) {
+                field.classList.add('is-invalid');
+                errorDiv.textContent = message;
+            }
+        }
+
+        function showGeneralError(message) {
+            const errorDiv = document.getElementById('generalError');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.remove('d-none');
+            }
+        }
     </script>
 @endpush

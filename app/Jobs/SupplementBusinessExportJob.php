@@ -84,7 +84,7 @@ class SupplementBusinessExportJob implements ShouldQueue
             }
 
             $business
-                ->with(['organization', 'user'])
+                ->with(['organization', 'user', 'project', 'regency', 'subdistrict', 'village', 'sls'])
                 ->chunk(1000, function ($businesses) use ($csv) {
                     foreach ($businesses as $row) {
                         $csv->insertOne([

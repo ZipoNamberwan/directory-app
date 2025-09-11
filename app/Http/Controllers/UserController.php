@@ -54,6 +54,8 @@ class UserController extends Controller
             'role' => ['required', Rule::in(['adminprov', 'adminkab', 'pml', 'pcl', 'operator'])],
             'type' => ['required', 'array', 'min:1'],
             'type.*' => ['in:kendedes,kenarok'],
+            'can_edit_business' => 'required',
+            'can_delete_business' => 'required',
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['organization'] = 'required';
@@ -88,6 +90,20 @@ class UserController extends Controller
             'is_allowed_swmaps' => $admin->hasRole('adminprov') ? ($request->is_allowed_swmaps == "1" ? true : false) : false,
         ]);
         $user->assignRoleAllDatabase($request->role);
+
+        // Handle permissions individually
+        $permissions = [];
+        
+        if ($request->can_edit_business == "1") {
+            $permissions[] = 'edit_business';
+        }
+        
+        if ($request->can_delete_business == "1") {
+            $permissions[] = 'delete_business';
+        }
+        
+        // Set permissions - always call with true first, then add specific permissions
+        $user->setPermissionAllDatabase(true, ...$permissions);
 
         return redirect('/users')->with('success-create', 'Petugas telah ditambah!');
     }
@@ -127,6 +143,8 @@ class UserController extends Controller
             'type' => ['required', 'array', 'min:1'],
             'type.*' => ['in:kendedes,kenarok'],
             'change_password' => 'required',
+            'can_edit_business' => 'required',
+            'can_delete_business' => 'required',
         ];
         if ($request->change_password == "1") {
             $validateArray['password'] = ['required', Password::min(8)->mixedCase()];
@@ -166,6 +184,20 @@ class UserController extends Controller
         ]);
         // $user->syncRoles([$request->role]);
         $user->assignRoleAllDatabase($request->role);
+
+        // Handle permissions individually
+        $permissions = [];
+        
+        if ($request->can_edit_business == "1") {
+            $permissions[] = 'edit_business';
+        }
+        
+        if ($request->can_delete_business == "1") {
+            $permissions[] = 'delete_business';
+        }
+        
+        // Set permissions - always call with true first, then add specific permissions
+        $user->setPermissionAllDatabase(true, ...$permissions);
 
         return redirect('/users')->with('success-edit', 'Petugas telah diubah!');
     }
@@ -257,7 +289,25 @@ class UserController extends Controller
         if ($request->length != -1) {
             $data = $data->skip($request->start)
                 ->take($request->length)->get();
+        } else {
+            $data = $data->get();
         }
+
+        // Add permissions to each user
+        $data = $data->map(function ($user) {
+            $permissions = [];
+
+            if ($user->hasPermissionTo('edit_business')) {
+                $permissions[] = 'edit_business';
+            }
+
+            if ($user->hasPermissionTo('delete_business')) {
+                $permissions[] = 'delete_business';
+            }
+
+            $user->permission = implode(', ', $permissions);
+            return $user;
+        });
 
         $data = $data->values();
 

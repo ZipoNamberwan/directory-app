@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SupplementController extends Controller
 {
@@ -27,16 +28,14 @@ class SupplementController extends Controller
         $regencies = [];
         $subdistricts = [];
         $users = [];
-        $isAdmin = false;
+
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
             $regencies = Regency::all();
-            $isAdmin = true;
         } else if ($user->hasRole('adminkab')) {
             $users = User::where('organization_id', $user->organization_id)->get();
             $regencies = Regency::where('id', $user->regency_id)->get();
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
-            $isAdmin = true;
         }
 
         $projectTypes = [
@@ -49,10 +48,11 @@ class SupplementController extends Controller
             'regencies' => $regencies,
             'subdistricts' => $subdistricts,
             'users' => $users,
-            'isAdmin' => $isAdmin,
-            'userId' => $user->id,
             'color' => 'success',
             'projectTypes' => $projectTypes,
+            'canEdit' => $user->hasPermissionTo('edit_business') || $user->hasRole('adminprov'),
+            'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
+            'organizationId' => $user->organization_id,
         ]);
     }
 
@@ -363,6 +363,9 @@ class SupplementController extends Controller
         // Apply pagination with offset and limit
         $data = $records
             ->with(['user', 'organization', 'project', 'regency', 'subdistrict', 'village', 'sls'])
+            ->withCount(['anomalies as not_confirmed_anomalies' => function ($query) {
+                $query->where('status', '=', 'notconfirmed');
+            }])
             ->orderBy($orderColumn, $orderDir)
             ->offset($offset)
             ->limit(min($perPage, 1000 - $offset)) // Don't exceed the 1000 cap
@@ -423,6 +426,103 @@ class SupplementController extends Controller
             return redirect('/suplemen')->with('success-upload', 'Usaha Telah Dihapus');
         } else {
             return redirect('/suplemen')->with('failed-upload', 'Usaha gagal dihapus, menyimpan log');
+        }
+    }
+
+    public function confirmDeleteBusiness($id)
+    {
+        try {
+            $business = SupplementBusiness::find($id);
+
+            if (!$business) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data usaha tidak ditemukan atau sudah dihapus oleh user lain'
+                ], 404);
+            }
+
+            // Check if user has permission to delete business
+            $user = User::find(Auth::id());
+
+            if (!$user->hasPermissionTo('delete_business')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk menghapus data usaha'
+                ], 403);
+            }
+
+            // Delete the business
+            $business->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data usaha berhasil dihapus'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus data usaha'
+            ], 500);
+        }
+    }
+
+    public function updateSupplement(Request $request, $id)
+    {
+        try {
+            // Validation rules
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'required|string|max:1000',
+                'status' => 'required|in:Tetap,Tidak Tetap',
+                'sector' => 'required|string|max:255',
+                'owner' => 'nullable|string|max:255',
+                'address' => 'nullable|string|max:500',
+                'note' => 'nullable|string|max:1000',
+            ]);
+
+            // Find the supplement business
+            $supplement = SupplementBusiness::find($id);
+
+            if (!$supplement) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data usaha tidak ditemukan'
+                ], 404);
+            }
+
+            // Add is_locked = true to the validated data
+            $validated['is_locked'] = true;
+
+            // Update the supplement business
+            $supplement->update($validated);
+
+            // Load all required relationships for the response
+            $supplement->load([
+                'user',
+                'organization',
+                'project',
+                'regency',
+                'subdistrict',
+                'village',
+                'sls'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data usaha berhasil diperbarui',
+                'business' => $supplement
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui data usaha'
+            ], 500);
         }
     }
 }

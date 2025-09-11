@@ -133,6 +133,7 @@
                                 @hasrole('adminprov')
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Bisa Upload SW Maps?</th>
                                 @endhasrole
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Permission</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Satker</th>
                                 <th class="text-uppercase text-small font-weight-bolder opacity-7">Aksi</th>
                             </tr>
@@ -312,6 +313,32 @@
                         }
                     },
                     @endhasrole
+                    {
+                        responsivePriority: 2,
+                        width: "10%",
+                        data: "permission",
+                        type: "text",
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                let permissions = [];
+                                
+                                if (data && data.includes('edit_business')) {
+                                    permissions.push('<span class="badge bg-info me-1 mb-1">Bisa Edit</span>');
+                                }
+                                
+                                if (data && data.includes('delete_business')) {
+                                    permissions.push('<span class="badge bg-warning mb-1">Bisa Hapus</span>');
+                                }
+                                
+                                if (permissions.length === 0) {
+                                    return '<span class="text-muted">-</span>';
+                                }
+                                
+                                return '<div class="d-flex flex-wrap m-1">' + permissions.join('') + '</div>';
+                            }
+                            return data;
+                        }
+                    },
                     {
                         responsivePriority: 2,
                         width: "10%",

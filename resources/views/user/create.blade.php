@@ -131,16 +131,55 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-4 mt-3">
+                            <label class="form-control-label d-flex align-items-center">
+                                <i class="fas fa-edit text-info me-2"></i>
+                                Apakah boleh mengubah usaha via Web?
+                            </label>
+                            <input type="hidden" name="can_edit_business" value="0">
+                            <div class="form-check form-switch">
+                                <input value="1" onchange="toggleLabelEditPermission()" class="form-check-input"
+                                    name="can_edit_business" type="checkbox" id="can_edit_business"
+                                    {{ old('can_edit_business', $user != null ? $user->hasPermissionTo('edit_business') : false) ? 'checked' : '' }}>
+                                <label id="switchlabeleditpermission" class="form-check-label"
+                                    for="can_edit_business">Tidak</label>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Memungkinkan pengguna untuk mengedit data usaha yang sudah ada
+                            </small>
+                        </div>
+                        <div class="col-md-4 mt-3">
+                            <label class="form-control-label d-flex align-items-center">
+                                <i class="fas fa-trash text-danger me-2"></i>
+                                Apakah boleh menghapus usaha via Web?
+                            </label>
+                            <input type="hidden" name="can_delete_business" value="0">
+                            <div class="form-check form-switch">
+                                <input value="1" onchange="toggleLabelDeletePermission()" class="form-check-input"
+                                    name="can_delete_business" type="checkbox" id="can_delete_business"
+                                    {{ old('can_delete_business', $user != null ? $user->hasPermissionTo('delete_business') : false) ? 'checked' : '' }}>
+                                <label id="switchlabeldeletepermission" class="form-check-label"
+                                    for="can_delete_business">Tidak</label>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                <strong>Hati-hati:</strong> Memungkinkan pengguna untuk menghapus data usaha secara permanen
+                            </small>
+                        </div>
+                    </div>
                     @hasrole('adminprov')
                         <div class="row">
                             <div class="col-md-4 mt-3">
                                 <label class="form-control-label" for="address">Apakah Diijinkan Upload SW Maps?</label>
                                 <input type="hidden" name="is_allowed_swmaps" value="0">
                                 <div class="form-check form-switch">
-                                    <input value="1" onchange="toggleLabel()" class="form-check-input"
+                                    <input value="1" onchange="toggleLabelSwmaps()" class="form-check-input"
                                         name="is_allowed_swmaps" type="checkbox" id="is_allowed_swmaps"
                                         {{ old('is_allowed_swmaps', ($user->is_allowed_swmaps ?? 0) == 1) ? 'checked' : '' }}>
-                                    <label id="switchlabel" class="form-check-label" for="is_allowed_swmaps">Tidak</label>
+                                    <label id="switchlabelpermission" class="form-check-label"
+                                        for="is_allowed_swmaps">Tidak</label>
                                 </div>
                             </div>
                         </div>
@@ -173,7 +212,8 @@
                                 <input value="1" onchange="toggleChangePassword()" class="form-check-input"
                                     name="change_password" type="checkbox" id="change_password"
                                     {{ old('change_password', 0) == 1 ? 'checked' : '' }}>
-                                <label id="switchlabel" class="form-check-label" for="change_password">Tidak</label>
+                                <label id="switchlabelpassword" class="form-check-label"
+                                    for="change_password">Tidak</label>
                             </div>
                         </div>
                     @endif
@@ -218,7 +258,7 @@
                 function toggleChangePassword() {
                     const checkbox = document.getElementById('change_password');
                     const passwordInput = document.getElementById('password');
-                    const label = document.getElementById('switchlabel');
+                    const label = document.getElementById('switchlabelpassword');
 
                     if (checkbox.checked) {
                         passwordInput.removeAttribute('disabled');
@@ -261,10 +301,25 @@
         </script>
 
         @hasrole('adminprov')
+            <script>
+                function toggleLabelSwmaps() {
+                    const checkbox = document.getElementById('is_allowed_swmaps');
+                    const label = document.getElementById('switchlabel');
+
+                    if (checkbox.checked) {
+                        label.textContent = 'Ya';
+                    } else {
+                        label.textContent = 'Tidak';
+                    }
+                }
+                toggleLabelSwmaps()
+            </script>
+        @endhasrole
+
         <script>
-            function toggleLabel() {
-                const checkbox = document.getElementById('is_allowed_swmaps');
-                const label = document.getElementById('switchlabel');
+            function toggleLabelEditPermission() {
+                const checkbox = document.getElementById('can_edit_business');
+                const label = document.getElementById('switchlabeleditpermission');
 
                 if (checkbox.checked) {
                     label.textContent = 'Ya';
@@ -272,8 +327,23 @@
                     label.textContent = 'Tidak';
                 }
             }
-            toggleLabel()
+
+            function toggleLabelDeletePermission() {
+                const checkbox = document.getElementById('can_delete_business');
+                const label = document.getElementById('switchlabeldeletepermission');
+
+                if (checkbox.checked) {
+                    label.textContent = 'Ya';
+                } else {
+                    label.textContent = 'Tidak';
+                }
+            }
+
+            // Initialize labels on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                toggleLabelEditPermission();
+                toggleLabelDeletePermission();
+            });
         </script>
-        @endhasrole
     @endpush
 @endsection

@@ -30,6 +30,8 @@ class AssignmentStatus extends Model
             return 'upload-market-assignment';
         } else if ($value == '5') {
             return ['dashboard-regency', 'dashboard-user', 'dashboard-market', 'dashboard-supplement'];
+        } else if ($value == '6') {
+            return 'download-anomaly';
         } else {
             return null;
         }
@@ -52,6 +54,9 @@ class AssignmentStatus extends Model
         } else if ($value == '5') {
             // ['dashboard-regency', 'dashboard-user', 'dashboard-market', 'dashboard-supplement'];
             return ['name' => 'dashboard_report', 'extension' => '.csv'];
+        } else if ($value == '6') {
+            // 'download-anomaly';
+            return ['name' => 'anomaly', 'extension' => '.csv'];
         } else {
             return null;
         }

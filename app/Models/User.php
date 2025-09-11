@@ -148,6 +148,25 @@ class User extends Authenticatable
         }
     }
 
+    public function setPermissionAllDatabase(bool $replace = false, ...$permissions)
+    {
+        $databases = DatabaseSelector::getListConnections();
+
+        foreach ($databases as $db) {
+            $userInOtherDb = self::on($db)->find($this->id);
+
+            if ($userInOtherDb) {
+                if ($replace) {
+                    // Replace all existing permissions with the new ones
+                    $userInOtherDb->syncPermissions($permissions);
+                } else {
+                    // Add new permissions, keep the old ones
+                    $userInOtherDb->givePermissionTo($permissions);
+                }
+            }
+        }
+    }
+
     public function markets()
     {
         return $this->belongsToMany(Market::class)

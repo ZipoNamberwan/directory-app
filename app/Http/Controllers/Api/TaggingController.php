@@ -190,6 +190,12 @@ class TaggingController extends Controller
         ]);
 
         try {
+            // Check if business exists and is locked
+            $existingBusiness = SupplementBusiness::withTrashed()->find($id);
+            if ($existingBusiness && $existingBusiness->is_locked) {
+                return $this->errorResponse('Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki', 423);
+            }
+
             $project = Project::withTrashed()->find($request->project['id']);
             if ($project === null) {
                 // Doesn't exist at all, safe to create
@@ -238,6 +244,12 @@ class TaggingController extends Controller
             if (!$business) {
                 return $this->successResponse(data: ['is_found' => false], message: 'Tagging tidak ditemukan', status: 200);
             }
+
+            // Check if business is locked
+            if ($business->is_locked) {
+                return $this->errorResponse('Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki', 423);
+            }
+
             $business->delete();
             return $this->successResponse(data: ['is_found' => true], message: 'Tagging berhasil dihapus', status: 200);
         } catch (Exception $e) {
@@ -249,13 +261,21 @@ class TaggingController extends Controller
     {
         // create method to handle multiple tags upload, no need to validate, the return will be ids successfully uploaded
         $uploadedIds = [];
+        $lockedIds = [];
 
         foreach ($request->tags as $tagData) {
             try {
+                // Check if existing business is locked
+                $existingBusiness = SupplementBusiness::withTrashed()->find($tagData['id']);
+                if ($existingBusiness && $existingBusiness->is_locked) {
+                    $lockedIds[] = $tagData['id'];
+                    continue;
+                }
+
                 $project = Project::withTrashed()->find($tagData['project']['id']);
 
                 if ($project === null) {
-                    // ── 1. It doesn’t exist at all → create it
+                    // ── 1. It doesn't exist at all → create it
                     $project = Project::create([
                         'id' => $tagData['project']['id'],
                         'name' => $tagData['project']['name'],
@@ -291,8 +311,13 @@ class TaggingController extends Controller
             }
         }
 
+        $responseData = ['uploaded_ids' => $uploadedIds];
+        if (!empty($lockedIds)) {
+            $responseData['locked_ids'] = $lockedIds;
+        }
+
         return $this->successResponse(
-            data: ['uploaded_ids' => $uploadedIds],
+            data: $responseData,
             message: 'Tagging berhasil diunggah',
             status: 201
         );
@@ -306,6 +331,20 @@ class TaggingController extends Controller
         ]);
 
         try {
+            // Check for locked businesses
+            $lockedBusinesses = SupplementBusiness::whereIn('id', $request->ids)
+                ->where('is_locked', true)
+                ->pluck('id')
+                ->toArray();
+
+            if (!empty($lockedBusinesses)) {
+                return $this->errorResponse(
+                    'Beberapa usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki. Update ke versi terbaru untuk lebih jelasnya.',
+                    423,
+                    ['locked_ids' => $lockedBusinesses]
+                );
+            }
+
             $deletedCount = SupplementBusiness::whereIn('id', $request->ids)->delete();
             return $this->successResponse(data: ['deleted_count' => $deletedCount, 'success' => true], message: 'Tagging berhasil dihapus', status: 200);
         } catch (Exception $e) {

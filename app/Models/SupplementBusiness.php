@@ -7,13 +7,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SupplementBusiness extends Model
+class SupplementBusiness extends BaseModel
 {
     use HasFactory, HasUuids, SoftDeletes;
     protected $guarded = [];
     protected $table = 'supplement_business';
     public $incrementing = false;
 
+    protected $casts = [
+        'is_locked' => 'boolean',
+    ];
+    
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -44,5 +48,10 @@ class SupplementBusiness extends Model
     public function project()
     {
         return $this->belongsTo(Project::class, 'project_id');
+    }
+
+    public function anomalies()
+    {
+        return $this->morphMany(AnomalyRepair::class, 'business');
     }
 }

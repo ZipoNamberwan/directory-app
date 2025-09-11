@@ -39,6 +39,7 @@ yarn-error.log
 /python_script/geojson/village/*
 /python_script/geojson/sls_by_village/*
 /python_script/geojson/sls_by_subdistrict/*
+/python_script/result/anomaly/*
 # **/caddy
 frankenphp
 frankenphp-worker.php

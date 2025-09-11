@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\AdminKabController;
 use App\Http\Controllers\AdminProvController;
+use App\Http\Controllers\AnomalyController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
@@ -152,6 +153,17 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pasar-dashboard/graph/data/{regency}', [DashboardController::class, 'getGraphReportData']);
 
 		Route::post('/pasar/savepolygon/{id}', [MarketManagementController::class, 'savePolygonMarket']);
+	});
+
+	Route::group(['middleware' => ['role:adminprov|adminkab|operator']], function () {
+		Route::get('/anomali', [AnomalyController::class, 'index']);
+		Route::get('/anomali/data', [AnomalyController::class, 'getAnomalyListData']);
+		Route::post('/anomali/update', [AnomalyController::class, 'updateAnomaly']);
+		Route::post('/anomali/download', [AnomalyController::class, 'downloadAnomaly']);
+		Route::delete('/anomali/delete/{id}', [AnomalyController::class, 'deleteAnomalyBusiness']);
+
+		Route::patch('/suplemen/{id}', [SupplementController::class, 'updateSupplement']);
+		Route::delete('/suplemen/{id}/delete', [SupplementController::class, 'confirmDeleteBusiness']);
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');
