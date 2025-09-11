@@ -76,15 +76,11 @@ class MarketBusinessExportJob implements ShouldQueue
             $market = Market::find($this->marketId);
             $business = MarketBusiness::query();
 
-            if ($this->role == 'adminprov') {
-                if ($this->organizationId != null) {
-                    $business->whereHas('market', function ($query) {
-                        $query->where('organization_id', $this->organizationId);
-                    });
-                }
-            } else if ($this->role == 'adminkab') {
-                $business->whereHas('market', function ($query) use ($status) {
-                    $query->where('organization_id', $status->user->organization_id);
+            if ($this->role == 'adminkab') {
+                $business->where(function ($q) use ($status) {
+                    $q->whereHas('market', function ($query) use ($status) {
+                        $query->where('organization_id', $status->user->organization_id);
+                    })->orWhere('regency_id', $status->user->regency_id);
                 });
             } else if ($this->role == 'pml' || $this->role == 'operator') {
                 $business->where('user_id', $status->user_id);
