@@ -1505,7 +1505,7 @@
                 { code: 'U', name: 'U. Aktivitas Badan Internasional Dan Badan Ekstra Internasional Lainnya' }
             ];
 
-            let options = '<option value="" disabled>-- Pilih Sektor --</option>';
+            let options = '<option value="">-- Pilih Sektor --</option>';
             sectors.forEach(sector => {
                 const selected = currentValue === sector.name ? 'selected' : '';
                 options += `<option value="${sector.name}" ${selected}>${truncateText(sector.name, 30)}</option>`;
