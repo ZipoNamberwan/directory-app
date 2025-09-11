@@ -64,6 +64,7 @@ class MarketBusinessExportJob implements ShouldQueue
                 'Latitude',
                 'Longitude',
                 'Pasar',
+                'Satker',
                 'User_Upload',
                 'User_Email',
                 'Kabupaten',
@@ -80,7 +81,7 @@ class MarketBusinessExportJob implements ShouldQueue
                 $business->where(function ($q) use ($status) {
                     $q->whereHas('market', function ($query) use ($status) {
                         $query->where('organization_id', $status->user->organization_id);
-                    })->orWhere('regency_id', $status->user->regency_id);
+                    })->orWhere('regency_id', $status->user->organization_id);
                 });
             } else if ($this->role == 'pml' || $this->role == 'operator') {
                 $business->where('user_id', $status->user_id);
@@ -91,7 +92,7 @@ class MarketBusinessExportJob implements ShouldQueue
             }
 
             $business
-                ->with(['market.regency', 'market.subdistrict', 'market.village', 'user', 'regency'])
+                ->with(['market', 'market.organization', 'user', 'regency', 'subdistrict', 'village', 'sls'])
                 ->chunk(1000, function ($businesses) use ($csv) {
                     foreach ($businesses as $row) {
                         $csv->insertOne([
@@ -105,6 +106,7 @@ class MarketBusinessExportJob implements ShouldQueue
                             $row->latitude,
                             $row->longitude,
                             $row->market->name,
+                            $row->market != null ? "[" . $row->market->organization->long_code . "] " . $row->market->organization->name : null,
                             $row->user->firstname,
                             $row->user->email,
                             $row->regency != null ? "[" . $row->regency->long_code . "] " . $row->regency->name : null,

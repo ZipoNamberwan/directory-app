@@ -174,8 +174,10 @@ class MarketController extends Controller
         if ($user->hasRole('adminprov')) {
             $records = MarketBusiness::query();
         } else if ($user->hasRole('adminkab')) {
-            $records = MarketBusiness::whereHas('market', function ($query) use ($user) {
-                $query->where('organization_id', $user->organization_id);
+            $records = MarketBusiness::where(function ($q) use ($user) {
+                $q->whereHas('market', function ($query) use ($user) {
+                    $query->where('organization_id', $user->organization_id);
+                })->orWhere('regency_id', $user->organization_id);
             });
         } else {
             $marketIds = $user->markets->pluck('id');
@@ -183,8 +185,10 @@ class MarketController extends Controller
         }
 
         if ($request->organization && $request->organization !== 'all') {
-            $records->whereHas('market', function ($query) use ($request) {
-                $query->where('organization_id', $request->organization);
+            $records->where(function ($q) use ($request) {
+                $q->whereHas('market', function ($query) use ($request) {
+                    $query->where('organization_id', $request->organization);
+                })->orWhere('regency_id', $request->organization);
             });
         }
 

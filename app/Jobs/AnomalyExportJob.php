@@ -50,6 +50,7 @@ class AnomalyExportJob implements ShouldQueue
 
             $csv->insertOne([
                 'Nama_Usaha',
+                'Pemilik',
                 'Status_Bangunan',
                 'Alamat',
                 'Deskripsi',
@@ -175,6 +176,7 @@ class AnomalyExportJob implements ShouldQueue
 
                         $csv->insertOne([
                             $business->name,
+                            $business->owner,
                             $business->status,
                             $business->address,
                             $business->description,
