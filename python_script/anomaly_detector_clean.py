@@ -3,6 +3,7 @@ import pandas as pd
 import string
 import mysql.connector
 import os
+import json
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -49,6 +50,93 @@ CHARACTER_FREQUENCY_THRESHOLD = 0.6
 ANOMALY_THRESHOLD_STRICT = 1
 ANOMALY_THRESHOLD_NORMAL = 2
 
+# Ignore words CSV file path (should be in same directory as this script)
+IGNORE_WORDS_CSV_PATH = os.path.join(os.path.dirname(__file__), 'ignore_words.csv')
+
+# =====================================================================
+# IGNORE WORDS MANAGER
+# =====================================================================
+
+class IgnoreWordsManager:
+    """Manages the ignore words list from CSV file"""
+    
+    def __init__(self, csv_path=IGNORE_WORDS_CSV_PATH):
+        self.csv_path = csv_path
+        self.ignore_words_dict = {}
+        self.load_ignore_words()
+    
+    def load_ignore_words(self):
+        """Load ignore words from CSV file"""
+        try:
+            if not os.path.exists(self.csv_path):
+                print(f"Ignore words CSV file not found at: {self.csv_path}")
+                print("Continuing analysis without ignore words filter.")
+                return
+            
+            df = pd.read_csv(self.csv_path)
+            
+            # Validate CSV structure
+            if 'word' not in df.columns or 'types' not in df.columns:
+                print("Error: CSV file must have 'word' and 'types' columns")
+                return
+            
+            # Process each row
+            for _, row in df.iterrows():
+                word = str(row['word']).strip().lower()
+                types_str = str(row['types']).strip()
+                
+                # Parse types - handle both JSON array format and comma-separated
+                try:
+                    # Try JSON format first: ['name', 'description']
+                    if types_str.startswith('[') and types_str.endswith(']'):
+                        types_list = eval(types_str)  # Using eval for list parsing
+                    else:
+                        # Handle comma-separated format: name, description
+                        types_list = [t.strip() for t in types_str.split(',') if t.strip()]
+                except:
+                    print(f"Warning: Could not parse types for word '{word}': {types_str}")
+                    continue
+                
+                # Add word to ignore dictionary for each applicable type
+                for column_type in types_list:
+                    column_type = column_type.strip().lower()
+                    if column_type not in self.ignore_words_dict:
+                        self.ignore_words_dict[column_type] = set()
+                    self.ignore_words_dict[column_type].add(word)
+            
+            total_words = sum(len(words) for words in self.ignore_words_dict.values())
+            print(f"Loaded {total_words} ignore words for {len(self.ignore_words_dict)} column types")
+            
+            # Show summary
+            for column_type, words in self.ignore_words_dict.items():
+                print(f"  {column_type}: {len(words)} words")
+                
+        except Exception as e:
+            print(f"Error loading ignore words CSV: {e}")
+            print("Continuing analysis without ignore words filter.")
+    
+    def should_ignore(self, text, column_name):
+        """Check if text should be ignored for specific column"""
+        if not text or not column_name:
+            return False
+        
+        text_clean = str(text).strip().lower()
+        column_name_clean = column_name.lower()
+        
+        # Check if this column has ignore words
+        ignore_words = self.ignore_words_dict.get(column_name_clean, set())
+        
+        # Check exact match
+        if text_clean in ignore_words:
+            return True
+        
+        # Check if any ignore word is contained in the text (for partial matches)
+        for ignore_word in ignore_words:
+            if ignore_word in text_clean:
+                return True
+        
+        return False
+
 # =====================================================================
 # ANOMALY DETECTION ALGORITHMS
 # =====================================================================
@@ -56,7 +144,7 @@ ANOMALY_THRESHOLD_NORMAL = 2
 class AnomalyDetector:
     """Detects anomalous/random text patterns in business data"""
     
-    def __init__(self):
+    def __init__(self, ignore_words_manager=None):
         # Indonesian vowels for linguistic pattern detection
         self.vowels = 'aiueo'
         # Keyboard sequences for pattern detection
@@ -67,6 +155,8 @@ class AnomalyDetector:
             '1234567890',
             'abcdefghijklmnopqrstuvwxyz'
         ]
+        # Ignore words manager
+        self.ignore_words_manager = ignore_words_manager
     
     def _clean_text(self, text):
         """Clean text for analysis"""
@@ -217,6 +307,11 @@ class AnomalyDetector:
         if not isinstance(text, str):
             return (False, None) if return_reason else False
         
+        # Check ignore words first - if word should be ignored, it's not an anomaly
+        if self.ignore_words_manager and column_name:
+            if self.ignore_words_manager.should_ignore(text, column_name):
+                return (False, 'ignored_word') if return_reason else False
+        
         # Special handling for sector column
         if column_name == 'sector':
             is_sector_anomaly = self.detect_invalid_sector(text)
@@ -331,7 +426,8 @@ class AnomalyAnalyzer:
     """Main class for analyzing business data anomalies"""
     
     def __init__(self):
-        self.detector = AnomalyDetector()
+        self.ignore_words_manager = IgnoreWordsManager()
+        self.detector = AnomalyDetector(ignore_words_manager=self.ignore_words_manager)
         self.db_manager = DatabaseManager()
     
     def _get_anomaly_type_id(self, column_name):
