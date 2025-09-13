@@ -134,15 +134,27 @@ def derive_ids_from_sls_code(sls_code: str):
 # =========================
 # DB HELPERS (modified for multi-table support)
 # =========================
+def validate_table_name(table_name: str) -> str:
+    """
+    Validate table name against allowed tables to prevent SQL injection.
+    Returns the validated table name or raises ValueError if invalid.
+    """
+    if table_name not in TABLES_TO_PROCESS:
+        raise ValueError(f"Invalid table name: {table_name}. Allowed tables: {TABLES_TO_PROCESS}")
+    return table_name
+
 def get_total_rows_to_process(cursor, table_name: str) -> int:
     """
     Returns the total number of rows in the specified table that are either:
     - not matched yet (matched_at IS NULL), OR
     - updated yesterday (DATE(updated_at) = CURDATE() - INTERVAL 1 DAY)
     """
+    # Validate table name to prevent SQL injection
+    validated_table = validate_table_name(table_name)
+    
     query = f"""
         SELECT COUNT(*) AS total
-        FROM {table_name}
+        FROM {validated_table}
         WHERE matched_at IS NULL
            OR DATE(updated_at) = CURDATE() - INTERVAL 1 DAY
     """
@@ -152,9 +164,12 @@ def get_total_rows_to_process(cursor, table_name: str) -> int:
 
 def fetch_batch(cursor, table_name: str, limit: int):
     """Fetch a batch of rows from the specified table."""
+    # Validate table name to prevent SQL injection
+    validated_table = validate_table_name(table_name)
+    
     query = f"""
         SELECT id, latitude, longitude
-        FROM {table_name}
+        FROM {validated_table}
         WHERE matched_at IS NULL
         OR DATE(updated_at) = CURDATE() - INTERVAL 1 DAY
         ORDER BY id
@@ -170,8 +185,11 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
     if not rows:
         return 0
     
+    # Validate table name to prevent SQL injection
+    validated_table = validate_table_name(table_name)
+    
     update_query = f"""
-        UPDATE {table_name}
+        UPDATE {validated_table}
         SET regency_id = %s,
             subdistrict_id = %s,
             village_id = %s,
@@ -185,78 +203,82 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
         cursor.executemany(update_query, rows)
         return cursor.rowcount
     except mysql.connector.errors.IntegrityError:
-        print(f"❌ Batch IntegrityError in {table_name} → retrying one by one...")
-        updated_count = 0
+                print(f"❌ Batch IntegrityError in {validated_table} → retrying one by one...")
+                updated_count = 0
 
-        for row in rows:
-            regency_id, subdistrict_id, village_id, sls_id, match_level, business_id = row
-            try:
-                # try full update first
-                cursor.execute(update_query, row)
-                updated_count += 1
-            except mysql.connector.errors.IntegrityError as e_sls:
-                print(f"❌ Failed sls_id for {table_name} row {business_id}, retrying with village_id and above...")
-                try:
-                    cursor.execute(f"""
-                        UPDATE {table_name}
-                        SET regency_id = %s,
-                            subdistrict_id = %s,
-                            village_id = %s,
-                            sls_id = NULL,
-                            match_level = 'village',
-                            matched_at = NOW()
-                        WHERE id = %s
-                    """, (regency_id, subdistrict_id, village_id, business_id))
-                    updated_count += 1
-                except mysql.connector.errors.IntegrityError as e_village:
-                    print(f"❌ Failed village_id for {table_name} row {business_id}, retrying with subdistrict_id and above...")
+                for row in rows:
+                    regency_id, subdistrict_id, village_id, sls_id, match_level, business_id = row
                     try:
-                        cursor.execute(f"""
-                            UPDATE {table_name}
-                            SET regency_id = %s,
-                                subdistrict_id = %s,
-                                village_id = NULL,
-                                sls_id = NULL,
-                                match_level = 'subdistrict',
-                                matched_at = NOW()
-                            WHERE id = %s
-                        """, (regency_id, subdistrict_id, business_id))
+                        # try full update first
+                        cursor.execute(update_query, row)
                         updated_count += 1
-                    except mysql.connector.errors.IntegrityError as e_subdistrict:
-                        print(f"❌ Failed subdistrict_id for {table_name} row {business_id}, retrying with regency_id only...")
+                    except mysql.connector.errors.IntegrityError as e_sls:
+                        print(f"❌ Failed sls_id for {validated_table} row {business_id}, retrying with village_id and above...")
                         try:
                             cursor.execute(f"""
-                                UPDATE {table_name}
+                                UPDATE {validated_table}
                                 SET regency_id = %s,
-                                    subdistrict_id = NULL,
-                                    village_id = NULL,
+                                    subdistrict_id = %s,
+                                    village_id = %s,
                                     sls_id = NULL,
-                                    match_level = 'regency',
+                                    match_level = 'village',
                                     matched_at = NOW()
                                 WHERE id = %s
-                            """, (regency_id, business_id))
+                            """, (regency_id, subdistrict_id, village_id, business_id))
                             updated_count += 1
-                        except mysql.connector.errors.IntegrityError as e_regency:
-                            print(f"❌ Failed regency_id for {table_name} row {business_id}, fallback → only matched_at")
+                        except mysql.connector.errors.IntegrityError as e_village:
+                            print(f"❌ Failed village_id for {validated_table} row {business_id}, retrying with subdistrict_id and above...")
                             try:
                                 cursor.execute(f"""
-                                    UPDATE {table_name}
-                                    SET match_level = 'noarea',
+                                    UPDATE {validated_table}
+                                    SET regency_id = %s,
+                                        subdistrict_id = %s,
+                                        village_id = NULL,
+                                        sls_id = NULL,
+                                        match_level = 'subdistrict',
                                         matched_at = NOW()
                                     WHERE id = %s
-                                """, (business_id,))
+                                """, (regency_id, subdistrict_id, business_id))
                                 updated_count += 1
-                            except mysql.connector.errors.IntegrityError as e_noarea:
-                                print(f"❌ Failed noarea for {table_name} row {business_id}")
+                            except mysql.connector.errors.IntegrityError as e_subdistrict:
+                                print(f"❌ Failed subdistrict_id for {validated_table} row {business_id}, retrying with regency_id only...")
+                                try:
+                                    cursor.execute(f"""
+                                        UPDATE {validated_table}
+                                        SET regency_id = %s,
+                                            subdistrict_id = NULL,
+                                            village_id = NULL,
+                                            sls_id = NULL,
+                                            match_level = 'regency',
+                                            matched_at = NOW()
+                                        WHERE id = %s
+                                    """, (regency_id, business_id))
+                                    updated_count += 1
+                                except mysql.connector.errors.IntegrityError as e_regency:
+                                    print(f"❌ Failed regency_id for {validated_table} row {business_id}, fallback → only matched_at")
+                                    try:
+                                        cursor.execute(f"""
+                                            UPDATE {validated_table}
+                                            SET match_level = 'noarea',
+                                                matched_at = NOW()
+                                            WHERE id = %s
+                                        """, (business_id,))
+                                        updated_count += 1
+                                    except mysql.connector.errors.IntegrityError as e_noarea:
+                                        print(f"❌ Failed noarea for {validated_table} row {business_id}")
 
-        return updated_count
+                return updated_count
     
 def mark_failed_rows(cursor, table_name: str, row_ids: list[int]):
     """Mark rows as failed in the specified table."""
     if not row_ids:
         return 0
+    
+    # Validate table name to prevent SQL injection
+    validated_table = validate_table_name(table_name)
+    
     sql = f"""
-        UPDATE {table_name}
+        UPDATE {validated_table}
         SET match_level = 'failed',
             matched_at = NOW()
         WHERE id = %s

@@ -38,11 +38,20 @@ BUSINESS_TYPE_MAPPING = {
     'market_business': 'App\\Models\\MarketBusiness'
 }
 
+# Valid table names (whitelist for SQL injection protection)
+VALID_TABLES = ['supplement_business', 'market_business']
+
+# Valid columns (whitelist for SQL injection protection)
+VALID_COLUMNS = [
+    'id', 'name', 'description', 'address', 'owner', 'sector', 
+    'regency_id', 'subdistrict_id', 'village_id', 'sls_id', 'market_id'
+]
+
 # Columns that can have null values without being flagged as anomalies
 NULLABLE_COLUMNS = ['address', 'owner']
 
 # Columns to analyze
-COLUMNS_TO_ANALYZE = ['name', 'description', 'owner', 'sector']
+COLUMNS_TO_ANALYZE = ['name', 'description', 'owner', 'sector', 'address']
 
 # Detection thresholds
 MIN_REPETITION_COUNT = 3
@@ -353,6 +362,45 @@ class AnomalyDetector:
         return (is_anomaly, reason) if return_reason else is_anomaly
 
 # =====================================================================
+# SECURITY VALIDATION FUNCTIONS
+# =====================================================================
+
+def validate_table_name(table_name):
+    """Validate table name against whitelist to prevent SQL injection"""
+    if table_name not in VALID_TABLES:
+        raise ValueError(f"Invalid table name: {table_name}. Allowed tables: {VALID_TABLES}")
+    return table_name
+
+def validate_column_names(columns):
+    """Validate column names against whitelist to prevent SQL injection"""
+    if isinstance(columns, str):
+        columns = [columns]
+    
+    for column in columns:
+        if column not in VALID_COLUMNS:
+            raise ValueError(f"Invalid column name: {column}. Allowed columns: {VALID_COLUMNS}")
+    
+    return columns
+
+def build_safe_select_query(table_name, columns, where_conditions=None):
+    """Build a safe SELECT query with validated table and column names"""
+    # Validate inputs
+    validated_table = validate_table_name(table_name)
+    validated_columns = validate_column_names(columns)
+    
+    # Build column list
+    column_list = ', '.join(validated_columns)
+    
+    # Build base query
+    query = f"SELECT {column_list} FROM {validated_table}"
+    
+    # Add WHERE conditions if provided
+    if where_conditions:
+        query += f" WHERE {where_conditions}"
+    
+    return query
+
+# =====================================================================
 # DATABASE OPERATIONS
 # =====================================================================
 
@@ -376,16 +424,24 @@ class DatabaseManager:
         if self.connection:
             self.connection.close()
     
-    def execute_query_to_dataframe(self, query):
+    def execute_query_to_dataframe(self, query, params=None):
         """Execute SQL query and return pandas DataFrame"""
         if not self.connection:
             raise Exception("No database connection")
         
         cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query)
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
         results = cursor.fetchall()
         cursor.close()
         return pd.DataFrame(results)
+    
+    def execute_safe_select(self, table_name, columns, where_conditions=None, params=None):
+        """Execute a safe SELECT query with validation"""
+        query = build_safe_select_query(table_name, columns, where_conditions)
+        return self.execute_query_to_dataframe(query, params)
     
     def save_anomaly(self, business_id, business_type, anomaly_type_id, old_value):
         """Save anomaly record to database"""
@@ -492,10 +548,28 @@ class AnomalyAnalyzer:
         
         return anomalies_saved
     
-    def analyze_table(self, table_name, query):
-        """Analyze all configured columns in a table"""
+    def analyze_table(self, table_name, columns=None):
+        """Analyze all configured columns in a table using safe queries"""
         print(f"Loading {table_name} table...")
-        df = self.db_manager.execute_query_to_dataframe(query)
+        
+        # Define default columns for each table
+        if columns is None:
+            if table_name == 'supplement_business':
+                columns = ['id', 'name', 'description', 'address', 'owner', 'sector', 
+                          'regency_id', 'subdistrict_id', 'village_id', 'sls_id']
+            elif table_name == 'market_business':
+                columns = ['id', 'name', 'description', 'address', 'sector', 'market_id',
+                          'regency_id', 'subdistrict_id', 'village_id', 'sls_id']
+            else:
+                raise ValueError(f"Unknown table: {table_name}")
+        
+        # Use safe query execution
+        df = self.db_manager.execute_safe_select(
+            table_name=table_name,
+            columns=columns,
+            where_conditions="deleted_at IS NULL"
+        )
+        
         print(f"Loaded {len(df)} records from {table_name}")
         
         total_anomalies = 0
@@ -508,7 +582,7 @@ class AnomalyAnalyzer:
         return total_anomalies
     
     def run_analysis(self):
-        """Run complete anomaly analysis"""
+        """Run complete anomaly analysis using safe queries"""
         if not self.db_manager.connect():
             print("Failed to connect to database. Please check your connection settings.")
             return
@@ -517,21 +591,13 @@ class AnomalyAnalyzer:
         
         try:
             # Analyze supplement_business table
-            supplement_query = """
-            SELECT id, name, description, address, owner, sector, regency_id, subdistrict_id, village_id, sls_id 
-            FROM supplement_business 
-            WHERE deleted_at IS NULL
-            """
-            total_anomalies_saved += self.analyze_table('supplement_business', supplement_query)
+            print("Analyzing supplement_business table...")
+            total_anomalies_saved += self.analyze_table('supplement_business')
             
             # Analyze market_business table
             print()
-            market_query = """
-            SELECT id, name, description, address, sector, market_id, regency_id, subdistrict_id, village_id, sls_id 
-            FROM market_business 
-            WHERE deleted_at IS NULL
-            """
-            total_anomalies_saved += self.analyze_table('market_business', market_query)
+            print("Analyzing market_business table...")
+            total_anomalies_saved += self.analyze_table('market_business')
             
             print(f"\nAnalysis complete!")
             print(f"Total anomalies saved to database: {total_anomalies_saved}")
