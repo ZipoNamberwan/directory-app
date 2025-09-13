@@ -70,14 +70,14 @@
             </div>
             <div class="card-body pt-1">
                 <div>
-                    <div class="row mb-3">
+                    {{-- <div class="row mb-3">
                         <div class="col-md-3">
                             <a href="/users/create" class="btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
                                 <span class="btn-inner--icon"><i class="fas fa-plus"></i></span>
                                 <span class="ml-3 btn-inner--text">Tambah</span>
                             </a>
                         </div>
-                    </div>
+                    </div> --}}
                     <div class="row mb-3">
                         @hasrole('adminprov')
                             <div class="col-md-3">

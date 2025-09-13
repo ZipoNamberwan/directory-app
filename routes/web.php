@@ -123,7 +123,7 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/report/{date}/{type}/{level}/{id}', [ReportController::class, 'getReport']);
 		Route::get('/users/data', [UserController::class, 'getUserData']);
-		Route::resource('users', UserController::class);
+		Route::resource('users', UserController::class)->except(['create']);
 
 		Route::get('/pasar-assignment', [MarketAssignmentController::class, 'showMarketAssignmentForm'])->name('market-assignment');
 		Route::get('/pasar-assignment/pivot', [MarketAssignmentController::class, 'getUserMarketPivot']);
