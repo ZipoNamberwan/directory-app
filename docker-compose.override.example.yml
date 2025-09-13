@@ -1,3 +1,4 @@
+# Linux Dev Docker Setup
 services:
   app:
     volumes:
@@ -28,3 +29,17 @@ services:
     #     chmod 664 /var/www/storage/logs/laravel.log
     #     echo 'Starting supervisord...'
     #     exec supervisord -c /etc/supervisor/supervisord.conf
+
+# Windows Dev Docker Setup (uncomment to use)
+# services:
+#   app:
+#     # Mount Laravel source code for live reload
+#     volumes:
+#       - .:/var/www
+#       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+#       - ./backup:/var/www/backup
+#       - storagedata:/var/www/storage/app
+#     environment:
+#       APP_ENV: local
+#       APP_DEBUG: "true"
+#       APP_LOG_LEVEL: debug
