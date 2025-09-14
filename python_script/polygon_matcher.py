@@ -8,6 +8,8 @@ from shapely.geometry import Point
 from shapely import speedups
 from tqdm import tqdm
 import math
+from datetime import datetime
+import pytz
 
 # Enable Shapely speedups if available
 if hasattr(speedups, "available") and speedups.available:
@@ -26,6 +28,13 @@ DEBUG_SLS_LIMIT = 10000
 BATCH_SIZE_DB = 100000
 CHUNK_SIZE_JOIN = 50000
 POINTS_CRS = "EPSG:4326"
+
+# Jakarta timezone
+JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
+
+def get_jakarta_now():
+    """Get current datetime in Jakarta timezone"""
+    return datetime.now(JAKARTA_TZ)
 
 # Absolute paths
 SLS_DIR = os.path.join(BASE_DIR, "python_script/geojson/sls_by_subdistrict")
@@ -188,6 +197,9 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
     # Validate table name to prevent SQL injection
     validated_table = validate_table_name(table_name)
     
+    # Get Jakarta current time once for this batch
+    jakarta_now = get_jakarta_now()
+    
     update_query = f"""
         UPDATE {validated_table}
         SET regency_id = %s,
@@ -195,12 +207,14 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
             village_id = %s,
             sls_id = %s,
             match_level = %s,
-            matched_at = NOW()
+            matched_at = %s
         WHERE id = %s
     """
     
     try:
-        cursor.executemany(update_query, rows)
+        # Add jakarta_now to each row tuple
+        rows_with_time = [(reg, sub, vil, sls, match, jakarta_now, id_) for reg, sub, vil, sls, match, id_ in rows]
+        cursor.executemany(update_query, rows_with_time)
         return cursor.rowcount
     except mysql.connector.errors.IntegrityError:
                 print(f"❌ Batch IntegrityError in {validated_table} → retrying one by one...")
@@ -210,7 +224,7 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
                     regency_id, subdistrict_id, village_id, sls_id, match_level, business_id = row
                     try:
                         # try full update first
-                        cursor.execute(update_query, row)
+                        cursor.execute(update_query, (regency_id, subdistrict_id, village_id, sls_id, match_level, jakarta_now, business_id))
                         updated_count += 1
                     except mysql.connector.errors.IntegrityError as e_sls:
                         print(f"❌ Failed sls_id for {validated_table} row {business_id}, retrying with village_id and above...")
@@ -222,9 +236,9 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
                                     village_id = %s,
                                     sls_id = NULL,
                                     match_level = 'village',
-                                    matched_at = NOW()
+                                    matched_at = %s
                                 WHERE id = %s
-                            """, (regency_id, subdistrict_id, village_id, business_id))
+                            """, (regency_id, subdistrict_id, village_id, jakarta_now, business_id))
                             updated_count += 1
                         except mysql.connector.errors.IntegrityError as e_village:
                             print(f"❌ Failed village_id for {validated_table} row {business_id}, retrying with subdistrict_id and above...")
@@ -236,9 +250,9 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
                                         village_id = NULL,
                                         sls_id = NULL,
                                         match_level = 'subdistrict',
-                                        matched_at = NOW()
+                                        matched_at = %s
                                     WHERE id = %s
-                                """, (regency_id, subdistrict_id, business_id))
+                                """, (regency_id, subdistrict_id, jakarta_now, business_id))
                                 updated_count += 1
                             except mysql.connector.errors.IntegrityError as e_subdistrict:
                                 print(f"❌ Failed subdistrict_id for {validated_table} row {business_id}, retrying with regency_id only...")
@@ -250,9 +264,9 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
                                             village_id = NULL,
                                             sls_id = NULL,
                                             match_level = 'regency',
-                                            matched_at = NOW()
+                                            matched_at = %s
                                         WHERE id = %s
-                                    """, (regency_id, business_id))
+                                    """, (regency_id, jakarta_now, business_id))
                                     updated_count += 1
                                 except mysql.connector.errors.IntegrityError as e_regency:
                                     print(f"❌ Failed regency_id for {validated_table} row {business_id}, fallback → only matched_at")
@@ -260,9 +274,9 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
                                         cursor.execute(f"""
                                             UPDATE {validated_table}
                                             SET match_level = 'noarea',
-                                                matched_at = NOW()
+                                                matched_at = %s
                                             WHERE id = %s
-                                        """, (business_id,))
+                                        """, (jakarta_now, business_id))
                                         updated_count += 1
                                     except mysql.connector.errors.IntegrityError as e_noarea:
                                         print(f"❌ Failed noarea for {validated_table} row {business_id}")
@@ -277,14 +291,17 @@ def mark_failed_rows(cursor, table_name: str, row_ids: list[int]):
     # Validate table name to prevent SQL injection
     validated_table = validate_table_name(table_name)
     
+    # Get Jakarta current time
+    jakarta_now = get_jakarta_now()
+    
     sql = f"""
         UPDATE {validated_table}
         SET match_level = 'failed',
-            matched_at = NOW()
+            matched_at = %s
         WHERE id = %s
     """
     for rid in row_ids:
-        cursor.execute(sql, (rid,))
+        cursor.execute(sql, (jakarta_now, rid))
     return len(row_ids)
 
 # =========================

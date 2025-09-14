@@ -7,6 +7,7 @@ import json
 import ast
 from dotenv import load_dotenv
 from datetime import datetime
+import pytz
 
 # Load environment variables from .env file in parent directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -14,6 +15,13 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 # =====================================================================
 # CONFIGURATION AND CONSTANTS
 # =====================================================================
+
+# Jakarta timezone
+JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
+
+def get_jakarta_now():
+    """Get current datetime in Jakarta timezone"""
+    return datetime.now(JAKARTA_TZ)
 
 # Database configuration
 DB_CONFIG = {
@@ -488,7 +496,7 @@ class DatabaseManager:
         
         try:
             cursor = self.connection.cursor()
-            now = datetime.now()
+            now = get_jakarta_now()
             
             insert_query = """
             INSERT INTO anomaly_repairs (id, business_id, business_type, anomaly_type_id, old_value, created_at, updated_at)
@@ -525,7 +533,7 @@ class DatabaseManager:
             validated_table = validate_table_name(table_name)
             
             cursor = self.connection.cursor()
-            now = datetime.now()
+            now = get_jakarta_now()
             
             # Build placeholders for the IN clause
             placeholders = ', '.join(['%s'] * len(record_ids))
