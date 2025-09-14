@@ -10,8 +10,8 @@
             right: 0;
             height: 12px;
             z-index: 1000;
-            background: linear-gradient(to right, #dc2626 50%, #ffffff 50%);
-            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+            background: linear-gradient(to right, #eab308 50%, #ffffff 50%);
+            box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);
         }
 
         .flag-decoration::after {
@@ -21,7 +21,7 @@
             left: 0;
             right: 0;
             height: 12px;
-            background: linear-gradient(to right, #dc2626 50%, #ffffff 50%);
+            background: linear-gradient(to right, #eab308 50%, #ffffff 50%);
         }
 
         /* Independence Day Badge inside right panel */
@@ -29,7 +29,7 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            background: linear-gradient(135deg, #eab308 0%, #fbbf24 100%);
             color: white;
             padding: 10px 16px;
             border-radius: 20px;
@@ -70,7 +70,7 @@
         .float-decoration:nth-child(1) {
             top: 20%;
             left: 10%;
-            color: #dc2626;
+            color: #eab308;
             font-size: 24px;
             animation-delay: 0s;
         }
@@ -78,7 +78,7 @@
         .float-decoration:nth-child(2) {
             top: 30%;
             right: 15%;
-            color: #dc2626;
+            color: #eab308;
             font-size: 20px;
             animation-delay: -2s;
         }
@@ -86,7 +86,7 @@
         .float-decoration:nth-child(3) {
             bottom: 30%;
             left: 8%;
-            color: #dc2626;
+            color: #eab308;
             font-size: 22px;
             animation-delay: -4s;
         }
@@ -171,13 +171,13 @@
 
         /* Enhanced independence greeting */
         .independence-greeting {
-            background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(220, 38, 38, 0.1) 100%);
-            border: 2px solid rgba(220, 38, 38, 0.2);
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.1) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(234, 179, 8, 0.1) 100%);
+            border: 2px solid rgba(234, 179, 8, 0.2);
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 24px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
+            box-shadow: 0 4px 12px rgba(234, 179, 8, 0.1);
             position: relative;
             overflow: hidden;
         }
@@ -189,7 +189,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.1), transparent);
+            background: linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.1), transparent);
             animation: shimmer 3s ease-in-out infinite;
         }
 
@@ -208,7 +208,7 @@
         }
 
         .independence-greeting h6 {
-            color: #dc2626;
+            color: #eab308;
             margin: 0 0 8px 0;
             font-size: 16px;
             font-weight: 700;
@@ -217,7 +217,7 @@
         }
 
         .independence-greeting p {
-            color: #7f1d1d;
+            color: #ca8a04;
             margin: 0;
             font-size: 13px;
             font-weight: 500;
@@ -227,24 +227,24 @@
 
         /* Independence Day Logo styling */
         .independence-logo {
-            width: 50px;
-            height: 50px;
+            width: 70px;
+            height: 70px;
             object-fit: contain;
             margin: 0 auto 12px auto;
             display: block;
-            filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.3));
+            filter: drop-shadow(0 2px 4px rgba(234, 179, 8, 0.3));
             position: relative;
             z-index: 2;
         }
 
         /* Enhanced form styling */
         .form-control:focus {
-            border-color: #dc2626;
-            box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.25);
+            border-color: #eab308;
+            box-shadow: 0 0 0 0.2rem rgba(234, 179, 8, 0.25);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
             border: none;
             color: white;
             font-weight: 600;
@@ -252,33 +252,33 @@
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(220, 38, 38, 0.3);
+            box-shadow: 0 6px 12px rgba(234, 179, 8, 0.3);
         }
 
         /* Enhanced cards */
         .card-plain {
-            border: 1px solid rgba(220, 38, 38, 0.1);
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
+            border: 1px solid rgba(234, 179, 8, 0.1);
+            box-shadow: 0 4px 12px rgba(234, 179, 8, 0.08);
             transition: all 0.3s ease;
         }
 
         .card-plain:hover {
-            box-shadow: 0 8px 24px rgba(220, 38, 38, 0.15);
+            box-shadow: 0 8px 24px rgba(234, 179, 8, 0.15);
             transform: translateY(-2px);
         }
 
         /* Enhanced divider */
         .enhanced-divider {
-            background: linear-gradient(to right, transparent, #dc2626, #ffffff, #dc2626, transparent);
+            background: linear-gradient(to right, transparent, #eab308, #ffffff, #eab308, transparent);
             height: 2px;
             border: none;
         }
 
-        /* Indonesian red background for Ken Dedes panel with image visibility */
+        /* Indonesian yellow and gold background for Ken Dedes panel with image visibility */
         .bg-gradient-primary {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%) !important;
+            background: linear-gradient(135deg, #eab308 0%, #ca8a04 50%, #a16207 100%) !important;
         }
 
         /* Independence celebration elements */
@@ -326,8 +326,9 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            width: 60px;
-            height: 60px;
+            width: 180px;
+            height: auto;
+            max-height: 72px;
             object-fit: contain;
             filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
             z-index: 10;
@@ -364,14 +365,15 @@
             }
 
             .independence-logo {
-                width: 40px;
-                height: 40px;
+                width: 50px;
+                height: 50px;
                 margin-bottom: 8px;
             }
 
             .right-panel-hut-logo {
-                width: 45px;
-                height: 45px;
+                width: 120px;
+                height: auto;
+                max-height: 48px;
                 top: 15px;
                 left: 15px;
             }
@@ -396,9 +398,9 @@
 
                             <!-- Enhanced Independence Day Greeting with HUT Logo -->
                             <div class="independence-greeting">
-                                <img src="/img/hut.png" alt="HUT RI ke-80" class="independence-logo">
-                                <h6>Dirgahayu Hari Kemerdekaan Indonesia!</h6>
-                                <p><strong>17 Agustus 2025 - HUT Republik Indonesia ke-80</strong></p>
+                                <img src="/img/hsn_short.png" alt="HUT RI ke-80" class="independence-logo">
+                                <h6>Hari Statistik Nasional</h6>
+                                <p><strong>26 September 2025</strong></p>
                                 {{-- <p style="margin-top: 4px; font-style: italic;">"Merdeka atau Mati!"</p> --}}
                             </div>
 
@@ -417,11 +419,11 @@
                             <div class="position-relative my-4">
                                 <hr class="enhanced-divider">
                                 <span class="position-absolute top-50 start-50 translate-middle px-3 bg-white"
-                                    style="color: #dc2626; font-weight: 600;">Atau</span>
+                                    style="color: #eab308; font-weight: 600;">Atau</span>
                             </div>
                             <div class="card card-plain">
                                 <div class="card-header pb-0 text-center">
-                                    <h6 class="font-weight-bolder" style="color: #dc2626;">Log In</h6>
+                                    <h6 class="font-weight-bolder" style="color: #eab308;">Log In</h6>
                                     <p class="text-sm mb-0">Gunakan email dan password untuk log in</p>
                                 </div>
                                 <div class="card-body">
@@ -462,30 +464,30 @@
                         <div
                             class="col-6 d-lg-flex d-none h-100 my-auto pe-0 position-absolute top-0 end-0 text-center justify-content-center flex-column">
                             <div class="position-relative h-100 m-3 px-7 border-radius-lg d-flex flex-column justify-content-center overflow-hidden"
-                                style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.5), rgba(153, 27, 27, 0.5), rgba(127, 29, 29, 0.5)), url('{{ asset('img/kendedes kenarok.jpg') }}');background-size: cover;">
+                                style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.5), rgba(202, 138, 4, 0.5), rgba(161, 98, 7, 0.5)), url('{{ asset('img/kendedes kenarok.jpg') }}');background-size: cover;">
 
                                 <!-- HUT Logo in right panel -->
-                                <img src="/img/hut.png" alt="HUT RI ke-80" class="right-panel-hut-logo">
+                                <img src="/img/hsn_long.png" alt="HUT RI ke-80" class="right-panel-hut-logo">
 
                                 <!-- Independence Day Badge inside right panel -->
                                 <div class="independence-badge">
-                                    HUT RI ke-80 - Merdeka!
+                                    HSN - 26 September 2025
                                 </div>
 
                                 <div class="position-relative">
                                     <div class="mb-3">
                                         <h5 class="text-white"
                                             style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">
-                                            HUT Republik Indonesia ke-80
+                                            Hari Statistik Nasional 
                                         </h5>
                                         <p class="text-white"
                                             style="font-size: 14px; opacity: 0.9; margin: 0; font-weight: 500;">
-                                            17 Agustus 2025
+                                            26 September 2025
                                         </p>
                                         <div class="mt-1">
                                             <p class="text-white"
                                                 style="font-size: 15px; opacity: 0.95; font-weight: 500; font-style: italic;">
-                                                "Bersatu Berdaulat, Rakyat Sejahtera, Indonesia Maju"
+                                                "Statistik Berdampak Untuk Indonesia Maju"
                                             </p>
                                         </div>
                                     </div>

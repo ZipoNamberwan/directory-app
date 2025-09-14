@@ -50,10 +50,10 @@ class SupplementController extends Controller
             'users' => $users,
             'color' => 'success',
             'projectTypes' => $projectTypes,
-            // 'canEdit' => $user->hasPermissionTo('edit_business') || $user->hasRole('adminprov'),
-            // 'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
-            'canEdit' => false,
-            'canDelete' => false,
+            'canEdit' => $user->hasPermissionTo('edit_business') || $user->hasRole('adminprov'),
+            'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
+            // 'canEdit' => false,
+            // 'canDelete' => false,
             'organizationId' => $user->organization_id,
         ]);
     }
@@ -424,7 +424,7 @@ class SupplementController extends Controller
     {
         $business = SupplementBusiness::find($id);
         if ($business) {
-            $business->delete();
+            $business->deleteWithSource('web');
             return redirect('/suplemen')->with('success-upload', 'Usaha Telah Dihapus');
         } else {
             return redirect('/suplemen')->with('failed-upload', 'Usaha gagal dihapus, menyimpan log');
@@ -454,7 +454,7 @@ class SupplementController extends Controller
             }
 
             // Delete the business
-            $business->delete();
+            $business->deleteWithSource('web');
 
             return response()->json([
                 'success' => true,

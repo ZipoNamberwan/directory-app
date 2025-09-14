@@ -4,6 +4,7 @@ import string
 import mysql.connector
 import os
 import json
+import ast
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -44,7 +45,7 @@ VALID_TABLES = ['supplement_business', 'market_business']
 # Valid columns (whitelist for SQL injection protection)
 VALID_COLUMNS = [
     'id', 'name', 'description', 'address', 'owner', 'sector', 
-    'regency_id', 'subdistrict_id', 'village_id', 'sls_id', 'market_id'
+    'regency_id', 'subdistrict_id', 'village_id', 'sls_id', 'market_id', 'checked_at'
 ]
 
 # Columns that can have null values without being flagged as anomalies
@@ -58,6 +59,9 @@ MIN_REPETITION_COUNT = 3
 CHARACTER_FREQUENCY_THRESHOLD = 0.6
 ANOMALY_THRESHOLD_STRICT = 1
 ANOMALY_THRESHOLD_NORMAL = 2
+
+# Batch processing configuration
+BATCH_SIZE = 100000  # Process 100k records at a time
 
 # Ignore words CSV file path (should be in same directory as this script)
 IGNORE_WORDS_CSV_PATH = os.path.join(os.path.dirname(__file__), 'ignore_words.csv')
@@ -98,7 +102,7 @@ class IgnoreWordsManager:
                 try:
                     # Try JSON format first: ['name', 'description']
                     if types_str.startswith('[') and types_str.endswith(']'):
-                        types_list = eval(types_str)  # Using eval for list parsing
+                        types_list = ast.literal_eval(types_str)  # Safe evaluation for list parsing
                     else:
                         # Handle comma-separated format: name, description
                         types_list = [t.strip() for t in types_str.split(',') if t.strip()]
@@ -392,11 +396,9 @@ def build_safe_select_query(table_name, columns, where_conditions=None):
     column_list = ', '.join(validated_columns)
     
     # Build base query
-    query = f"SELECT {column_list} FROM {validated_table}"
-    
-    # Add WHERE conditions if provided
+    query = f"SELECT {column_list} FROM {validated_table} WHERE checked_at IS NULL"
     if where_conditions:
-        query += f" WHERE {where_conditions}"
+        query += f" AND ({where_conditions})"
     
     return query
 
@@ -443,6 +445,42 @@ class DatabaseManager:
         query = build_safe_select_query(table_name, columns, where_conditions)
         return self.execute_query_to_dataframe(query, params)
     
+    def get_total_records_to_process(self, table_name, where_conditions=None):
+        """Get total count of records that need to be processed"""
+        # Validate table name for security
+        validated_table = validate_table_name(table_name)
+        
+        query = f"SELECT COUNT(*) as total FROM {validated_table} WHERE checked_at IS NULL"
+        if where_conditions:
+            query += f" AND ({where_conditions})"
+        
+        result = self.execute_query_to_dataframe(query)
+        return result['total'].iloc[0] if len(result) > 0 else 0
+    
+    def execute_safe_select_batch(self, table_name, columns, where_conditions=None, limit=None):
+        """Execute a safe SELECT query to get the first N unprocessed records"""
+        # Validate inputs
+        validated_table = validate_table_name(table_name)
+        validated_columns = validate_column_names(columns)
+        
+        # Build column list
+        column_list = ', '.join(validated_columns)
+        
+        # Build base query - always get the first unprocessed records
+        query = f"SELECT {column_list} FROM {validated_table} WHERE checked_at IS NULL"
+        
+        if where_conditions:
+            query += f" AND ({where_conditions})"
+        
+        # Add ORDER BY for consistent results
+        query += " ORDER BY id"
+        
+        # Add LIMIT
+        if limit:
+            query += f" LIMIT {limit}"
+        
+        return self.execute_query_to_dataframe(query)
+    
     def save_anomaly(self, business_id, business_type, anomaly_type_id, old_value):
         """Save anomaly record to database"""
         if not self.connection:
@@ -473,6 +511,45 @@ class DatabaseManager:
             print(f"Error saving anomaly: {e}")
             self.connection.rollback()
             return False
+    
+    def update_checked_records(self, table_name, record_ids):
+        """Update checked_at timestamp for processed records"""
+        if not self.connection:
+            raise Exception("No database connection")
+        
+        if not record_ids:
+            return 0
+        
+        try:
+            # Validate table name for security
+            validated_table = validate_table_name(table_name)
+            
+            cursor = self.connection.cursor()
+            now = datetime.now()
+            
+            # Build placeholders for the IN clause
+            placeholders = ', '.join(['%s'] * len(record_ids))
+            
+            update_query = f"""
+            UPDATE {validated_table} 
+            SET checked_at = %s 
+            WHERE id IN ({placeholders})
+            """
+            
+            # Prepare parameters: timestamp + list of IDs
+            params = [now] + list(record_ids)
+            
+            cursor.execute(update_query, params)
+            updated_count = cursor.rowcount
+            
+            self.connection.commit()
+            cursor.close()
+            
+            return updated_count
+        except Exception as e:
+            print(f"Error updating checked_at for {table_name}: {e}")
+            self.connection.rollback()
+            return 0
 
 # =====================================================================
 # BUSINESS LOGIC
@@ -541,7 +618,7 @@ class AnomalyAnalyzer:
                 
                 if success:
                     anomalies_saved += 1
-                    print(f"  Saved anomaly: {business_id} - {text_value} ({reason})")
+                    # print(f"  Saved anomaly: {business_id} - {text_value} ({reason})")
         
         print(f"  Total {column_name} records: {len(analysis_df)}")
         print(f"  Anomalies saved: {anomalies_saved}")
@@ -549,35 +626,95 @@ class AnomalyAnalyzer:
         return anomalies_saved
     
     def analyze_table(self, table_name, columns=None):
-        """Analyze all configured columns in a table using safe queries"""
-        print(f"Loading {table_name} table...")
+        """Analyze all configured columns in a table using batch processing"""
+        print(f"\nProcessing {table_name} table in batches...")
         
         # Define default columns for each table
         if columns is None:
             if table_name == 'supplement_business':
                 columns = ['id', 'name', 'description', 'address', 'owner', 'sector', 
-                          'regency_id', 'subdistrict_id', 'village_id', 'sls_id']
+                          'regency_id', 'subdistrict_id', 'village_id', 'sls_id', 'checked_at']
             elif table_name == 'market_business':
                 columns = ['id', 'name', 'description', 'address', 'sector', 'market_id',
-                          'regency_id', 'subdistrict_id', 'village_id', 'sls_id']
+                          'regency_id', 'subdistrict_id', 'village_id', 'sls_id', 'checked_at']
             else:
                 raise ValueError(f"Unknown table: {table_name}")
         
-        # Use safe query execution
-        df = self.db_manager.execute_safe_select(
+        # Get total records to process
+        total_records = self.db_manager.get_total_records_to_process(
             table_name=table_name,
-            columns=columns,
             where_conditions="deleted_at IS NULL"
         )
         
-        print(f"Loaded {len(df)} records from {table_name}")
+        if total_records == 0:
+            print(f"No records to process in {table_name}")
+            return 0
+        
+        print(f"Total records to process: {total_records:,}")
+        print(f"Batch size: {BATCH_SIZE:,}")
+        total_batches = (total_records + BATCH_SIZE - 1) // BATCH_SIZE
+        print(f"Estimated batches: {total_batches}")
         
         total_anomalies = 0
-        available_columns = [col for col in COLUMNS_TO_ANALYZE if col in df.columns]
+        processed_records = 0
+        max_batches = total_batches + 1  # Safety buffer to prevent infinite loops
         
-        for column in available_columns:
-            anomalies_count = self.analyze_column(df, column, table_name)
-            total_anomalies += anomalies_count
+        # Process in batches - always get first unprocessed records
+        batch_num = 0
+        while batch_num < max_batches:
+            batch_num += 1
+            print(f"\n--- Batch {batch_num}/{max_batches} ---")
+            
+            # Always get the first unprocessed records
+            df_batch = self.db_manager.execute_safe_select_batch(
+                table_name=table_name,
+                columns=columns,
+                where_conditions="deleted_at IS NULL",
+                limit=BATCH_SIZE
+            )
+            
+            batch_size = len(df_batch)
+            if batch_size == 0:
+                print(f"No more unprocessed records found - processing complete!")
+                break
+            
+            print(f"Loaded {batch_size:,} records in this batch")
+            
+            # Collect record IDs for this batch
+            batch_record_ids = df_batch['id'].tolist()
+            
+            # Analyze each column for this batch
+            batch_anomalies = 0
+            available_columns = [col for col in COLUMNS_TO_ANALYZE if col in df_batch.columns]
+            
+            for column in available_columns:
+                anomalies_count = self.analyze_column(df_batch, column, table_name)
+                batch_anomalies += anomalies_count
+            
+            # Update checked_at for this batch
+            updated_count = self.db_manager.update_checked_records(table_name, batch_record_ids)
+            print(f"Updated checked_at for {updated_count:,} records in this batch")
+            
+            # Update counters
+            total_anomalies += batch_anomalies
+            processed_records += batch_size
+            
+            print(f"Batch {batch_num} summary: {batch_anomalies:,} anomalies found")
+            print(f"Progress: {processed_records:,} records processed so far")
+            
+            # If we processed less than BATCH_SIZE, we're likely at the end
+            if batch_size < BATCH_SIZE:
+                print(f"Last batch detected (size: {batch_size:,} < {BATCH_SIZE:,})")
+                break
+        
+        # Safety check - warn if we hit the max batch limit
+        if batch_num >= max_batches:
+            print(f"⚠️  WARNING: Reached maximum batch limit ({max_batches}). This might indicate an infinite loop issue.")
+            print(f"   Consider investigating if records are not being marked as processed correctly.")
+        
+        print(f"\n{table_name} completed:")
+        print(f"  Total records processed: {processed_records:,}")
+        print(f"  Total anomalies found: {total_anomalies:,}")
         
         return total_anomalies
     

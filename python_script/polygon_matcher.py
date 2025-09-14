@@ -147,7 +147,7 @@ def get_total_rows_to_process(cursor, table_name: str) -> int:
     """
     Returns the total number of rows in the specified table that are either:
     - not matched yet (matched_at IS NULL), OR
-    - updated yesterday (DATE(updated_at) = CURDATE() - INTERVAL 1 DAY)
+    - Have been modified since the last match updated_at > matched_at
     """
     # Validate table name to prevent SQL injection
     validated_table = validate_table_name(table_name)
@@ -156,7 +156,7 @@ def get_total_rows_to_process(cursor, table_name: str) -> int:
         SELECT COUNT(*) AS total
         FROM {validated_table}
         WHERE matched_at IS NULL
-           OR DATE(updated_at) = CURDATE() - INTERVAL 1 DAY
+           OR updated_at > matched_at
     """
     cursor.execute(query)
     result = cursor.fetchone()
@@ -171,7 +171,7 @@ def fetch_batch(cursor, table_name: str, limit: int):
         SELECT id, latitude, longitude
         FROM {validated_table}
         WHERE matched_at IS NULL
-        OR DATE(updated_at) = CURDATE() - INTERVAL 1 DAY
+        OR updated_at > matched_at
         ORDER BY id
         LIMIT %s
     """

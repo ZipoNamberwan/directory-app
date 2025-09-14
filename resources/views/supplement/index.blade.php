@@ -289,6 +289,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- Warning Message -->
+                    <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <div class="small">
+                            <strong>Perhatian:</strong> Data yang sudah diubah melalui web, tidak bisa diubah kembali oleh petugas melalui KDM
+                        </div>
+                    </div>
 
                 </div>
                 <div class="modal-footer">
@@ -1371,7 +1378,18 @@
         function openEditDialog(rowData) {
             // Generate and populate form
             const formHtml = generateEditForm(rowData);
-            document.querySelector('#editModal .modal-body').innerHTML = formHtml;
+            
+            // Find the warning message and preserve it, then add form after it
+            const modalBody = document.querySelector('#editModal .modal-body');
+            const warningAlert = modalBody.querySelector('.alert-warning');
+            
+            if (warningAlert) {
+                // If warning exists, keep it and replace only content after it
+                modalBody.innerHTML = warningAlert.outerHTML + formHtml;
+            } else {
+                // If no warning (shouldn't happen), replace entire content
+                modalBody.innerHTML = formHtml;
+            }
 
             // Initialize Select2 for selects
             $('#buildingStatus').select2({

@@ -117,15 +117,39 @@
             border-color: #2196f3 !important;
         }
 
-        /* Custom button colors to match badge colors */
-        .btn-outline-success {
-            color: #4caf50 !important;
-            border-color: #4caf50 !important;
+        /* Custom Select2 styling for status dropdown */
+        .select2-results__option .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
         }
-
-        .btn-outline-info {
-            color: #2196f3 !important;
-            border-color: #2196f3 !important;
+        
+        .select2-selection .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        
+        .status-indicator.notconfirmed {
+            background-color: #ff9800;
+        }
+        
+        .status-indicator.fixed {
+            background-color: #4caf50;
+        }
+        
+        .status-indicator.dismissed {
+            background-color: #2196f3;
+        }
+        
+        .status-indicator.deleted {
+            background-color: #f44336;
         }
     </style>
 @endsection
@@ -156,7 +180,12 @@
         <div class="card mt-2">
             <div class="card-header pb-0">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="text-capitalize">Daftar Anomali</h5>
+                    <div class="d-flex align-items-center">
+                        <h5 class="text-capitalize mb-0">Daftar Anomali</h5>
+                        <button type="button" class="btn btn-link text-info p-0 m-0 mx-2" data-bs-toggle="modal" data-bs-target="#anomalyTypesModal" title="Lihat jenis anomali" style="text-decoration: none;">
+                            <i class="fas fa-question-circle fs-5"></i>
+                        </button>
+                    </div>
                     <div class="d-flex">
                         <form action="/anomali/download" class="me-2" method="POST">
                             @csrf
@@ -219,7 +248,8 @@
                             <option value="0" disabled selected> -- Pilih Status Anomali -- </option>
                             <option value="notconfirmed">Belum Dikonfirmasi</option>
                             <option value="fixed">Sudah Diperbaiki</option>
-                            <option value="dismissed">Sesuai Kondisi Lapangan</option>
+                            <option value="dismissed">Diabaikan</option>
+                            <option value="deleted">Dihapus</option>
                         </select>
                     </div>
                 </div>
@@ -381,7 +411,12 @@
                         <!-- Anomalies Section -->
                         <div class="card">
                             <div class="card-header pb-0">
-                                <h6 class="mb-0">Daftar Anomali</h6>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Daftar Anomali</h6>
+                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#anomalyTypesModal" title="Lihat jenis anomali">
+                                        <i class="fas fa-question-circle"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <form id="anomalyForm">
@@ -474,6 +509,48 @@
         </div>
     </div>
 
+    <!-- Anomaly Types Information Modal -->
+    <div class="modal fade" id="anomalyTypesModal" tabindex="-1" role="dialog" aria-labelledby="anomalyTypesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="anomalyTypesModalLabel">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        Jenis-jenis Anomali
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 15%;">Kode</th>
+                                    <th>Nama Anomali</th>
+                                    <th style="width: 40%;">Deskripsi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($anomalyTypes as $anomalyType)
+                                    <tr>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">{{ $anomalyType->code }}</span>
+                                        </td>
+                                        <td class="fw-semibold small">{{ $anomalyType->name }}</td>
+                                        <td class="text-muted small">{{ $anomalyType->description ?? 'Tidak ada deskripsi' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('js')
@@ -527,10 +604,50 @@
             selector,
             placeholder
         }) => {
-            $(selector).select2({
-                placeholder,
-                allowClear: true
-            });
+            if (selector === '#anomalyStatus') {
+                // Enhanced Select2 for anomaly status with colored indicators
+                $(selector).select2({
+                    placeholder,
+                    allowClear: true,
+                    templateResult: function(state) {
+                        if (!state.id) return state.text;
+                        
+                        let statusClass = '';
+                        switch(state.id) {
+                            case 'notconfirmed': statusClass = 'notconfirmed'; break;
+                            case 'fixed': statusClass = 'fixed'; break;
+                            case 'dismissed': statusClass = 'dismissed'; break;
+                            case 'deleted': statusClass = 'deleted'; break;
+                        }
+                        
+                        if (statusClass) {
+                            return $(`<span><span class="status-indicator ${statusClass}"></span>${state.text}</span>`);
+                        }
+                        return state.text;
+                    },
+                    templateSelection: function(state) {
+                        if (!state.id) return state.text;
+                        
+                        let statusClass = '';
+                        switch(state.id) {
+                            case 'notconfirmed': statusClass = 'notconfirmed'; break;
+                            case 'fixed': statusClass = 'fixed'; break;
+                            case 'dismissed': statusClass = 'dismissed'; break;
+                            case 'deleted': statusClass = 'deleted'; break;
+                        }
+                        
+                        if (statusClass) {
+                            return $(`<span><span class="status-indicator ${statusClass}"></span>${state.text}</span>`);
+                        }
+                        return state.text;
+                    }
+                });
+            } else {
+                $(selector).select2({
+                    placeholder,
+                    allowClear: true
+                });
+            }
         });
 
         const eventHandlers = {

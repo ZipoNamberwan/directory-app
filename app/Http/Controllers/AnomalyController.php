@@ -782,7 +782,7 @@ class AnomalyController extends Controller
                 ]);
 
             // Then delete the business record
-            $business->delete();
+            $business->deleteWithSource('anomaly');
 
             // Get fresh business data with relations after deletion to include deleted_at
             $deletedBusinessInfo = $this->findBusiness($id, true, true);

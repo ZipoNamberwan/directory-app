@@ -1,4 +1,5 @@
 * * * * * cd /var/www && /usr/local/bin/php artisan schedule:run > /dev/stdout 2>&1
 0 */3 * * * /var/www/docker/scripts/backup.sh >> /var/www/backup/cron.log 2>&1
 0 20 * * * /venv/bin/python /var/www/python_script/polygon_matcher.py
+0 21 * * * /venv/bin/python /var/www/python_script/anomaly_detector_clean.py
 # 44 9 * * * /venv/bin/python /var/www/python_script/test_cron.py >> /var/www/backup/cron.log 2>&1

@@ -448,7 +448,7 @@ class MarketController extends Controller
     {
         $business = MarketBusiness::find($id);
         if ($business) {
-            $business->delete();
+            $business->deleteWithSource('web');
             return redirect('/pasar')->with('success-upload', 'Usaha Telah Dihapus');
         } else {
             return redirect('/pasar')->with('failed-upload', 'Usaha gagal dihapus, menyimpan log');

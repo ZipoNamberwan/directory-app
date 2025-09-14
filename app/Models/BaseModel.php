@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class BaseModel extends Model
 {
+    protected $deletionSource = null;
+
     protected static function booted()
     {
         static::updating(function ($model) {
@@ -49,7 +51,7 @@ class BaseModel extends Model
                 'old_value'   => null,
                 'new_value'   => now(),
                 'edited_by'   => auth()->id(),
-                'medium'      => 'deletion',
+                'medium'      => $model->deletionSource ?? 'mobile',
                 'edited_at'   => now(),
             ]);
         });
@@ -68,5 +70,11 @@ class BaseModel extends Model
                 'edited_at'   => now(),
             ]);
         });
+    }
+
+    public function deleteWithSource(string $source)
+    {
+        $this->deletionSource = $source;
+        return $this->delete();
     }
 }

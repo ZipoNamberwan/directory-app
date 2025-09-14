@@ -30,7 +30,7 @@ services:
     #     echo 'Starting supervisord...'
     #     exec supervisord -c /etc/supervisor/supervisord.conf
 
-# Windows Dev Docker Setup (uncomment to use)
+# # Windows Dev Docker Setup (uncomment to use)
 # services:
 #   app:
 #     # Mount Laravel source code for live reload
