@@ -2,12 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Helpers\DatabaseSelector;
 use Illuminate\Console\Command;
 use App\Jobs\ReportJob;
-use DateTime;
+use App\Models\MarketBusiness;
+use App\Models\SupplementBusiness;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use DateTime;
 
 class GenerateReportCommand extends Command
 {
@@ -32,59 +34,56 @@ class GenerateReportCommand extends Command
     {
         $datetime = new DateTime();
         // $datetime->modify('+7 hours');
-        $today = $datetime->format('Y-m-d');
+        $today    = $datetime->format('Y-m-d');
 
-        foreach (['village', 'subdistrict', 'regency', 'province'] as $level) {
+        foreach (['sls', 'village', 'subdistrict', 'regency', 'province'] as $level) {
 
-            $levelTable = ($level === 'regency') ? 'regencies' : ($level !== 'province' ? $level . 's' : null);
+            DB::table('report_' . $level)
+                ->whereDate('created_at', $today)
+                ->delete();
 
-            DB::table('report_' . $level)->where('date', $today)->delete();
-
+            $timestamp  = now();
             $insertData = [];
 
-            foreach (['sls', 'non_sls'] as $type) {
+            // define models and their business_type
+            $sources = [
+                ['model' => SupplementBusiness::query(), 'type' => 'supplement'],
+                ['model' => MarketBusiness::query(),     'type' => 'market'],
+            ];
 
-                foreach (DatabaseSelector::getListConnections() as $connection) {
-                    $typeBusinessTable = $type . '_business';
+            foreach ($sources as $source) {
+                $query = $source['model'];
+                $type  = $source['type'];
 
-                    if ($level !== 'province') {
-                        $query = DB::connection($connection)->table($levelTable)->leftJoin($typeBusinessTable, $levelTable . '.id', '=', $typeBusinessTable . '.' . $level . '_id');
-                    } else {
-                        $query = DB::connection($connection)->table($typeBusinessTable);
-                    }
+                if ($level === 'province') {
+                    // province = no groupBy
+                    $counts = $query->select(DB::raw('COUNT(*) as total'))->get();
 
-                    $query->whereIn($typeBusinessTable . '.regency_id', DatabaseSelector::getRegenciesForConnection($connection));
-
-                    $query->select([
-                        DB::raw($level !== 'province' ? "$levelTable.id AS id" : "NULL AS id"),
-                        DB::raw('COUNT(CASE WHEN status_id = 1 THEN 1 END) AS not_update'),
-                        DB::raw('COUNT(CASE WHEN status_id = 2 THEN 1 END) AS exist'),
-                        DB::raw('COUNT(CASE WHEN status_id = 3 THEN 1 END) AS not_exist'),
-                        DB::raw('COUNT(CASE WHEN status_id = 4 THEN 1 END) AS not_scope'),
-                        DB::raw('COUNT(CASE WHEN status_id = 90 THEN 1 END) AS new')
-                    ]);
-                    if ($level !== 'province') {
-                        $query->groupBy($levelTable . ".id");
-                    }
-
-                    $reports = $query->get();
-
-                    foreach ($reports as $report) {
-                        $dt =  [
-                            'id' => (string) Str::uuid(),
-                            'not_update' => $report->not_update,
-                            'exist' => $report->exist,
-                            'not_exist' => $report->not_exist,
-                            'not_scope' => $report->not_scope,
-                            'new' => $report->new,
-                            'date' => $today,
-                            'type' => $type
+                    foreach ($counts as $row) {
+                        $insertData[] = [
+                            'id'            => Str::uuid(),
+                            'business_type' => $type,
+                            'total'         => $row->total,
+                            'created_at'    => $timestamp,
+                            'updated_at'    => $timestamp,
                         ];
-                        if ($level !== 'province') {
-                            $dt[$level . '_id'] =  $report->id;
-                        }
+                    }
+                } else {
+                    // group by chosen level
+                    $column = $level . '_id';
+                    $counts = $query->select($column, DB::raw('COUNT(*) as total'))
+                        ->groupBy($column)
+                        ->get();
 
-                        $insertData[] = $dt;
+                    foreach ($counts as $row) {
+                        $insertData[] = [
+                            'id'            => Str::uuid(),
+                            $column         => $row->{$column},   // dynamic property
+                            'business_type' => $type,
+                            'total'         => $row->total,
+                            'created_at'    => $timestamp,
+                            'updated_at'    => $timestamp,
+                        ];
                     }
                 }
             }

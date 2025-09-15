@@ -10,7 +10,7 @@ class ReportVillage extends Model
 {
     use HasFactory, HasUuids;
     protected $guarded = [];
-    public $timestamps = false;
+    public $timestamps = true;
     protected $table = 'report_village';
 
     public function village()
