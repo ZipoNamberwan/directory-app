@@ -100,9 +100,15 @@
             <div class="col-md-12 col-sm-12 mb-3">
                 <div class="card">
                     <div class="card-header">
-                        <h6 class="text-capitalize">
-                            Report Jumlah Usaha Total Berdasarkan Wilayah
-                        </h6>
+                        <h5 class="text-capitalize">
+                            Report Jumlah Usaha Berdasarkan Wilayah
+                            <span class="badge bg-gradient-success text-white ms-2 px-2 py-1"
+                                style="font-size: 0.65rem; vertical-align: middle;">BARU</span>
+                        </h5>
+                        <p class="text-sm mb-1">Report ini menunjukkan jumlah tagging menurut wilayah, bisa difilter
+                            berdasarkan kabupaten, kecamatan, desa dan sls. Menu download report juga sudah tersedia dengann
+                            menekan tombol download di bawah ini.</p>
+                        <p class="text-sm mb-1">Report ini hanya diupdate sehari sekali, mengikuti jadwal matching penentuan wilayah sls.</p>
                         <p class="text-sm mb-3"><strong>Report tidak realtime</strong>, report akan diupdate pada jam
                             <strong>06.00 pagi</strong>
                         </p>
@@ -146,11 +152,6 @@
                                         <select id="village" name="village" class="form-control" data-toggle="select"
                                             name="village"></select>
                                     </div>
-                                    {{-- <div id="sls_div" class="col-md-3">
-                                        <label class="form-control-label">SLS</label>
-                                        <select id="sls" name="sls" class="form-control"
-                                            data-toggle="select"></select>
-                                    </div> --}}
                                 </div>
                             </div>
                             <div class="col-12">
@@ -164,8 +165,10 @@
                 <div class="card">
                     <div class="card-header">
                         <h6 class="text-capitalize">
-                            Report Jumlah Usaha Total (Sentra Ekonomi + Suplemen) Berdasarkan Kabupaten/Kota
+                            Report Jumlah Usaha Berdasarkan Satker
                         </h6>
+                        <p class="text-sm mb-1">Report ini menunjukkan jumlah tagging menurut satker atau yang berarti
+                            tagging yang dilakukan oleh petugas suatu satker, terlepas di manapun petugas tsb tagging.</p>
                         <p class="text-sm mb-1"><strong>Report tidak realtime</strong>, report akan diupdate pada jam
                             <strong>06.00, 12.00, 18.00,
                                 22.30</strong>
@@ -470,21 +473,33 @@
         function renderTable(tableType, tableInstance) {
             if (tableType == 'regency' || tableType == 'subdistrict' || tableType == 'village') {
                 // Define fallback hierarchy with selectors and area types
-                const areaHierarchy = [
-                    { type: 'village', selector: '#village' },
-                    { type: 'subdistrict', selector: '#subdistrict' },
-                    { type: 'regency', selector: '#regency' },
-                    { type: 'province', selector: null, defaultId: '1' }
+                const areaHierarchy = [{
+                        type: 'village',
+                        selector: '#village'
+                    },
+                    {
+                        type: 'subdistrict',
+                        selector: '#subdistrict'
+                    },
+                    {
+                        type: 'regency',
+                        selector: '#regency'
+                    },
+                    {
+                        type: 'province',
+                        selector: null,
+                        defaultId: '1'
+                    }
                 ];
-                
+
                 // Find starting index based on tableType
                 const startIndex = areaHierarchy.findIndex(area => area.type === tableType);
-                
+
                 // Get area type and ID with fallback logic
                 let areaType, areaId;
                 for (let i = startIndex; i < areaHierarchy.length; i++) {
                     const area = areaHierarchy[i];
-                    
+
                     if (area.selector) {
                         const value = $(area.selector).val();
                         if (value && value !== '0') {
@@ -499,7 +514,7 @@
                         break;
                     }
                 }
-                
+
                 let ajaxUrl = `/pasar-dashboard/area?areaType=${areaType}&areaId=${areaId}&date={{ $date }}`;
                 tableInstance.setData(ajaxUrl);
             } else {
@@ -534,8 +549,13 @@
                 responsive: 0,
                 formatter: function(cell) {
                     let row = cell.getRow().getData();
+                    let isTotal = row.is_total_row;
+                    let nameDisplay = isTotal ?
+                        `<strong style="color: #2196F3; font-size: 1.1em;">${row.name}</strong>` :
+                        `[${row.id}] ${row.name}`;
+
                     return ` <div class="d-flex gap-3 align-items-center">
-                                <h6 class="text-sm mb-1">[${row.id}] ${row.name}</h6>
+                                <h6 class="text-sm mb-1 ${isTotal ? 'font-weight-bold' : ''}" style="${isTotal ? 'font-size: 1.1em;' : ''}">${nameDisplay}</h6>
                             </div>`
                 },
             }, {
@@ -543,14 +563,35 @@
                 field: "market_total",
                 responsive: 3,
                 formatter: function(cell) {
-                    return `<div class="text-wrap font-weight-bold">${$("<div>").text(cell.getValue()).html()}</div>`;
+                    let row = cell.getRow().getData();
+                    let isTotal = row.is_total_row;
+                    let style = isTotal ? 'font-weight: bold; color: #2196F3; font-size: 1.1em;' :
+                        'font-weight-bold';
+                    return `<div class="text-wrap" style="${style}">${$("<div>").text(cell.getValue()).html()}</div>`;
                 },
             }, {
                 title: "Suplemen",
                 field: "supplement_total",
                 responsive: 2,
                 formatter: function(cell) {
-                    return `<div class="text-wrap font-weight-bold">${$("<div>").text(cell.getValue()).html()}</div>`;
+                    let row = cell.getRow().getData();
+                    let isTotal = row.is_total_row;
+                    let style = isTotal ? 'font-weight: bold; color: #2196F3; font-size: 1.1em;' :
+                        'font-weight-bold';
+                    return `<div class="text-wrap" style="${style}">${$("<div>").text(cell.getValue()).html()}</div>`;
+                },
+            }, {
+                title: "Total",
+                field: "total",
+                responsive: 2,
+                formatter: function(cell) {
+                    let row = cell.getRow().getData();
+                    let isTotal = row.is_total_row;
+                    let total = isTotal ? row.total : (Number(row.market_total) + Number(row
+                        .supplement_total));
+                    let style = isTotal ? 'font-weight: bold; color: #2196F3; font-size: 1.1em;' :
+                        'font-weight-bold';
+                    return `<div class="text-wrap" style="${style}">${total}</div>`;
                 },
             }, ]
         });

@@ -495,6 +495,25 @@ class DashboardController extends Controller
         }
 
         $rows = $query->get();
+        
+        // Calculate totals
+        $totalMarket = $rows->sum('market_total');
+        $totalSupplement = $rows->sum('supplement_total');
+        $grandTotal = $totalMarket + $totalSupplement;
+        
+        // Create a total row
+        $totalRow = (object) [
+            'id' => 'TOTAL',
+            'name' => 'TOTAL',
+            'short_code' => null,
+            'market_total' => $totalMarket,
+            'supplement_total' => $totalSupplement,
+            'total' => $grandTotal,
+            'is_total_row' => true
+        ];
+        
+        // Add total row to the collection
+        $rows->push($totalRow);
 
         return response()->json([
             'data'          => $rows,
@@ -549,7 +568,7 @@ class DashboardController extends Controller
             ]);
 
             try {
-                ReportExportJob::dispatch($uuid, $date, $request->report, $request->marketType);
+                ReportExportJob::dispatch($uuid, $date, $request->report, $request->marketType, $request->areaType);
             } catch (Exception $e) {
                 $status->update([
                     'status' => 'failed',

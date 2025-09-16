@@ -54,7 +54,7 @@
                                 data-toggle="select">
                                 <option value="0" disabled selected> -- Pilih Jenis Report -- </option>
                                 <option value="area" {{ old('report') == 'area' ? 'selected' : '' }}>
-                                    Report Jumlah Usaha Berdasarkan Wilayah
+                                    Report Jumlah Usaha Berdasarkan Wilayah [BARU]
                                 </option>
                                 <option value="regency" {{ old('report') == 'regency' ? 'selected' : '' }}>
                                     Report Jumlah Usaha Sentra Ekonomi Berdasarkan Kabupaten/Kota
@@ -109,10 +109,10 @@
                                 <option value="regency" {{ old('areaType') == 'regency' ? 'selected' : '' }}>
                                     Kecamatan
                                 </option>
-                                <option value="village" {{ old('areaType') == 'village' ? 'selected' : '' }}>
+                                <option value="subdistrict" {{ old('areaType') == 'subdistrict' ? 'selected' : '' }}>
                                     Desa
                                 </option>
-                                <option value="sls" {{ old('areaType') == 'sls' ? 'selected' : '' }}>
+                                <option value="village" {{ old('areaType') == 'village' ? 'selected' : '' }}>
                                     SLS
                                 </option>
                             </select>
@@ -292,6 +292,8 @@
                                     return 'Report Sentra Ekonomi by Kabupaten/Kota'
                                 } else if (data == 'dashboard-supplement') {
                                     return 'Report Suplemen by Kabupaten/Kota'
+                                } else if (data == 'dashboard-area') {
+                                    return 'Report Wilayah by Kabupaten/Kota'
                                 } else {
                                     return '-'
                                 }

@@ -293,7 +293,8 @@
                     <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <div class="small">
-                            <strong>Perhatian:</strong> Data yang sudah diubah melalui web, tidak bisa diubah kembali oleh petugas melalui KDM
+                            <strong>Perhatian:</strong> Data yang sudah diubah melalui web, tidak bisa diubah kembali oleh
+                            petugas melalui KDM
                         </div>
                     </div>
 
@@ -840,14 +841,13 @@
         let organizationId = @json($organizationId);
         let canEditPermission = @json($canEdit);
         let canDeletePermission = @json($canDelete);
+        let isAdminProv = @json(auth()->user()->hasRole('adminprov'));
 
-        function canEdit(permission, businessOrganizationId) {
-            return permission && (organizationId == businessOrganizationId);
-        }
+        const canEdit = (permission, businessOrganizationId) =>
+            permission && (isAdminProv || organizationId === businessOrganizationId);
 
-        function canDelete(permission, businessOrganizationId) {
-            return permission && (organizationId == businessOrganizationId);
-        }
+        const canDelete = (permission, businessOrganizationId) =>
+            permission && (isAdminProv || organizationId === businessOrganizationId);
 
         // Define column configurations for different modes
         const getColumnConfig = (mode) => {
@@ -1023,8 +1023,10 @@
                         container.className = "d-flex gap-1 justify-content-center";
 
                         if (e && rowData.not_confirmed_anomalies > 0) {
-                            // TODO
-                            return 'Menu Edit dan Hapus akan tersedia setelah Anomali diperbaiki'
+                            return `<span class="badge bg-danger" title="Usaha ini memiliki ${rowData.not_confirmed_anomalies} anomali yang belum dikonfirmasi. Silakan cek detail usaha untuk meninjaunya.">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                ${rowData.not_confirmed_anomalies} Anomali
+                            </span>`;
                         } else {
                             // Edit button - visible if canEdit is true
                             if (e) {
@@ -1378,11 +1380,11 @@
         function openEditDialog(rowData) {
             // Generate and populate form
             const formHtml = generateEditForm(rowData);
-            
+
             // Find the warning message and preserve it, then add form after it
             const modalBody = document.querySelector('#editModal .modal-body');
             const warningAlert = modalBody.querySelector('.alert-warning');
-            
+
             if (warningAlert) {
                 // If warning exists, keep it and replace only content after it
                 modalBody.innerHTML = warningAlert.outerHTML + formHtml;

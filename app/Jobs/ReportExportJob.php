@@ -4,14 +4,18 @@ namespace App\Jobs;
 
 use App\Models\AssignmentStatus;
 use App\Models\Market;
+use App\Models\Regency;
 use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
-use App\Models\ReportMarketBusinessUser;
 use App\Models\ReportSupplementBusinessRegency;
 use App\Models\ReportTotalBusinessUser;
+use App\Models\Sls;
+use App\Models\Subdistrict;
+use App\Models\Village;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use League\Csv\Writer;
 
@@ -28,7 +32,7 @@ class ReportExportJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct($uuid, $date, $type, $marketType, $areaType = null)
+    public function __construct($uuid, $date, $type, $marketType, $areaType)
     {
         $this->uuid = $uuid;
         $this->date = $date;
@@ -290,10 +294,108 @@ class ReportExportJob implements ShouldQueue
 
                 fclose($stream);
             } else if ($this->type == 'area') {
+                $stream = fopen(Storage::path('/dashboard_report/' . $this->uuid . ".csv"), 'w+');
+                $csv = Writer::createFromStream($stream);
+                $csv->setDelimiter(',');
+                $csv->setEnclosure('"');
+
+                $csv->insertOne([
+                    'Kode Wilayah',
+                    'Nama Wilayah',
+                    'Sentra Ekonomi',
+                    'Suplemen',
+                    'Total'
+                ]);
+
+                $records = [];
+
                 if ($this->areaType == 'province') {
+                    $records = Regency::leftJoin('report_regency as r', function ($join) {
+                        $join->on('regencies.id', '=', 'r.regency_id')
+                            ->whereDate('r.created_at', $this->date);
+                    })
+                        ->select('regencies.*', DB::raw("COALESCE(SUM(CASE WHEN r.business_type = 'market' THEN r.total END), 0) AS market_total, COALESCE(SUM(CASE WHEN r.business_type = 'supplement' THEN r.total END), 0) AS supplement_total"))
+                        ->groupBy('regencies.id')
+                        ->get();
                 } else if ($this->areaType == 'regency') {
+                    if ($user->hasRole('adminprov')) {
+                        $records = Subdistrict::query()
+                            ->leftJoin('report_subdistrict as r', function ($join) {
+                                $join->on('subdistricts.id', '=', 'r.subdistrict_id')
+                                    ->whereDate('r.created_at', $this->date);
+                            })
+                            ->select('subdistricts.*', DB::raw(" COALESCE(SUM(CASE WHEN r.business_type = 'market' THEN r.total END), 0) AS market_total, COALESCE(SUM(CASE WHEN r.business_type = 'supplement' THEN r.total END), 0) AS supplement_total"))
+                            ->groupBy('subdistricts.id')
+                            ->orderBy('subdistricts.id')
+                            ->get();
+                    } else if ($user->hasRole('adminkab')) {
+                        $records = Subdistrict::query()
+                            ->where('subdistricts.id', 'like', $user->organization_id . '%')
+                            ->leftJoin('report_subdistrict as r', function ($join) {
+                                $join->on('subdistricts.id', '=', 'r.subdistrict_id')
+                                    ->whereDate('r.created_at', $this->date);
+                            })
+                            ->select('subdistricts.*', DB::raw(" COALESCE(SUM(CASE WHEN r.business_type = 'market' THEN r.total END), 0) AS market_total, COALESCE(SUM(CASE WHEN r.business_type = 'supplement' THEN r.total END), 0) AS supplement_total"))
+                            ->groupBy('subdistricts.id')
+                            ->orderBy('subdistricts.id')
+                            ->get();
+                    }
                 } else if ($this->areaType == 'subdistrict') {
+                    if ($user->hasRole('adminprov')) {
+                        $records = Village::query()
+                            ->leftJoin('report_village as r', function ($join) {
+                                $join->on('villages.id', '=', 'r.village_id')
+                                    ->whereDate('r.created_at', $this->date);
+                            })
+                            ->select('villages.*', DB::raw(" COALESCE(SUM(CASE WHEN r.business_type = 'market' THEN r.total END), 0) AS market_total, COALESCE(SUM(CASE WHEN r.business_type = 'supplement' THEN r.total END), 0) AS supplement_total"))
+                            ->groupBy('villages.id')
+                            ->orderBy('villages.id')
+                            ->get();
+                    } else if ($user->hasRole('adminkab')) {
+                        $records = Village::query()
+                            ->where('villages.id', 'like', $user->organization_id . '%')   // show only SLS under the org
+                            ->leftJoin('report_village as r', function ($join) {
+                                $join->on('villages.id', '=', 'r.village_id')
+                                    ->whereDate('r.created_at', $this->date);
+                            })
+                            ->select('villages.*', DB::raw(" COALESCE(SUM(CASE WHEN r.business_type = 'market' THEN r.total END), 0) AS market_total, COALESCE(SUM(CASE WHEN r.business_type = 'supplement' THEN r.total END), 0) AS supplement_total"))
+                            ->groupBy('villages.id')
+                            ->orderBy('villages.id')
+                            ->get();
+                    }
                 } else if ($this->areaType == 'village') {
+                    if ($user->hasRole('adminprov')) {
+                        $records = Sls::query()
+                            ->leftJoin('report_sls as r', function ($join) {
+                                $join->on('sls.id', '=', 'r.sls_id')
+                                    ->whereDate('r.created_at', $this->date);
+                            })
+                            ->select('sls.*', DB::raw(" COALESCE(SUM(CASE WHEN r.business_type = 'market' THEN r.total END), 0) AS market_total, COALESCE(SUM(CASE WHEN r.business_type = 'supplement' THEN r.total END), 0) AS supplement_total"))
+                            ->groupBy('sls.id')
+                            ->orderBy('sls.id')
+                            ->get();
+                    } else if ($user->hasRole('adminkab')) {
+                        $records = Sls::query()
+                            ->where('sls.id', 'like', $user->organization_id . '%')   // show only SLS under the org
+                            ->leftJoin('report_sls as r', function ($join) {
+                                $join->on('sls.id', '=', 'r.sls_id')
+                                    ->whereDate('r.created_at', $this->date);
+                            })
+                            ->select('sls.*', DB::raw(" COALESCE(SUM(CASE WHEN r.business_type = 'market' THEN r.total END), 0) AS market_total, COALESCE(SUM(CASE WHEN r.business_type = 'supplement' THEN r.total END), 0) AS supplement_total"))
+                            ->groupBy('sls.id')
+                            ->orderBy('sls.id')
+                            ->get();
+                    }
+                }
+
+                foreach ($records as $record) {
+                    $csv->insertOne([
+                        $record['id'],
+                        $record['name'],
+                        $record['market_total'],
+                        $record['supplement_total'],
+                        $record['market_total'] + $record['supplement_total'],
+                    ]);
                 }
             }
 
