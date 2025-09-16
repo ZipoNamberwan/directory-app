@@ -108,7 +108,8 @@
                         <p class="text-sm mb-1">Report ini menunjukkan jumlah tagging menurut wilayah, bisa difilter
                             berdasarkan kabupaten, kecamatan, desa dan sls. Menu download report juga sudah tersedia dengann
                             menekan tombol download di bawah ini.</p>
-                        <p class="text-sm mb-1">Report ini hanya diupdate sehari sekali, mengikuti jadwal matching penentuan wilayah sls.</p>
+                        <p class="text-sm mb-1">Report ini hanya diupdate sehari sekali, mengikuti jadwal matching penentuan
+                            wilayah sls.</p>
                         <p class="text-sm mb-3"><strong>Report tidak realtime</strong>, report akan diupdate pada jam
                             <strong>06.00 pagi</strong>
                         </p>
@@ -536,7 +537,6 @@
             height: "800px",
             layout: "fitColumns",
             ajaxURL: "pasar-dashboard/area?areaType=province&areaId=1&date={{ $date }}",
-            // progressiveLoad: "scroll",
             paginationSize: 20,
             placeholder: "Tidak ada usaha yang ditemukan",
             textDirection: "auto",
@@ -544,56 +544,73 @@
                 return response.data;
             },
             columns: [{
-                title: "Nama Wilayah",
-                field: "name",
-                responsive: 0,
-                formatter: function(cell) {
-                    let row = cell.getRow().getData();
-                    let isTotal = row.is_total_row;
-                    let nameDisplay = isTotal ?
-                        `<strong style="color: #2196F3; font-size: 1.1em;">${row.name}</strong>` :
-                        `[${row.id}] ${row.name}`;
+                    title: "Nama Wilayah",
+                    field: "name",
+                    responsive: 0,
+                    formatter: function(cell) {
+                        let row = cell.getRow().getData();
+                        let isTotal = row.is_total_row;
+                        let nameDisplay = isTotal ?
+                            `<strong style="color:#2196F3;font-size:1.1em;">${row.name}</strong>` :
+                            `[${row.id}] ${row.name}`;
 
-                    return ` <div class="d-flex gap-3 align-items-center">
-                                <h6 class="text-sm mb-1 ${isTotal ? 'font-weight-bold' : ''}" style="${isTotal ? 'font-size: 1.1em;' : ''}">${nameDisplay}</h6>
-                            </div>`
+                        return `<div class="d-flex gap-3 align-items-center">
+                            <h6 class="text-sm mb-1 ${isTotal ? "font-weight-bold" : ""}" 
+                                style="${isTotal ? "font-size:1.1em;" : ""}">
+                                ${nameDisplay}
+                            </h6>
+                        </div>`;
+                    },
                 },
-            }, {
-                title: "Sentra Ekonomi",
-                field: "market_total",
-                responsive: 3,
-                formatter: function(cell) {
-                    let row = cell.getRow().getData();
-                    let isTotal = row.is_total_row;
-                    let style = isTotal ? 'font-weight: bold; color: #2196F3; font-size: 1.1em;' :
-                        'font-weight-bold';
-                    return `<div class="text-wrap" style="${style}">${$("<div>").text(cell.getValue()).html()}</div>`;
+                {
+                    title: "Sentra Ekonomi",
+                    field: "market_total",
+                    hozAlign: "center",
+                    headerHozAlign: "center",
+                    responsive: 3,
+                    formatter: function(cell) {
+                        let row = cell.getRow().getData();
+                        let isTotal = row.is_total_row;
+                        let style = isTotal ?
+                            "font-weight:bold;color:#2196F3;font-size:1.1em;" :
+                            "font-weight-bold";
+                        return `<div style="${style}">${$("<div>").text(cell.getValue()).html()}</div>`;
+                    },
                 },
-            }, {
-                title: "Suplemen",
-                field: "supplement_total",
-                responsive: 2,
-                formatter: function(cell) {
-                    let row = cell.getRow().getData();
-                    let isTotal = row.is_total_row;
-                    let style = isTotal ? 'font-weight: bold; color: #2196F3; font-size: 1.1em;' :
-                        'font-weight-bold';
-                    return `<div class="text-wrap" style="${style}">${$("<div>").text(cell.getValue()).html()}</div>`;
+                {
+                    title: "Suplemen",
+                    field: "supplement_total",
+                    hozAlign: "center",
+                    headerHozAlign: "center",
+                    responsive: 2,
+                    formatter: function(cell) {
+                        let row = cell.getRow().getData();
+                        let isTotal = row.is_total_row;
+                        let style = isTotal ?
+                            "font-weight:bold;color:#2196F3;font-size:1.1em;" :
+                            "font-weight-bold";
+                        return `<div style="${style}">${$("<div>").text(cell.getValue()).html()}</div>`;
+                    },
                 },
-            }, {
-                title: "Total",
-                field: "total",
-                responsive: 2,
-                formatter: function(cell) {
-                    let row = cell.getRow().getData();
-                    let isTotal = row.is_total_row;
-                    let total = isTotal ? row.total : (Number(row.market_total) + Number(row
-                        .supplement_total));
-                    let style = isTotal ? 'font-weight: bold; color: #2196F3; font-size: 1.1em;' :
-                        'font-weight-bold';
-                    return `<div class="text-wrap" style="${style}">${total}</div>`;
+                {
+                    title: "Total",
+                    field: "total",
+                    hozAlign: "center",
+                    headerHozAlign: "center",
+                    responsive: 2,
+                    formatter: function(cell) {
+                        let row = cell.getRow().getData();
+                        let isTotal = row.is_total_row;
+                        let total = isTotal ?
+                            row.total :
+                            Number(row.market_total) + Number(row.supplement_total);
+                        let style = isTotal ?
+                            "font-weight:bold;color:#2196F3;font-size:1.1em;" :
+                            "font-weight-bold";
+                        return `<div style="${style}">${total}</div>`;
+                    },
                 },
-            }, ]
+            ],
         });
     </script>
 
