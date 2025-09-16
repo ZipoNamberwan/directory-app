@@ -412,6 +412,10 @@ class DashboardController extends Controller
         return response()->json($chartData);
     }
 
+    public function getAreaReportData($areaType, $date) {
+        
+    }
+
     public function showDownloadReportPage()
     {
         $marketTypes = MarketType::all();
