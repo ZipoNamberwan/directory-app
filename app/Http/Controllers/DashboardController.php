@@ -10,10 +10,13 @@ use App\Models\Regency;
 use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
 use App\Models\ReportMarketBusinessUser;
+use App\Models\ReportRegency;
 use App\Models\ReportSupplementBusinessRegency;
 use App\Models\ReportTotalBusinessUser;
+use App\Models\Sls;
 use App\Models\Subdistrict;
 use App\Models\User;
+use App\Models\Village;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -412,8 +415,92 @@ class DashboardController extends Controller
         return response()->json($chartData);
     }
 
-    public function getAreaReportData($areaType, $date) {
-        
+    private function buildReportAreaQuery($model, $reportTable, $foreignKey, $parentKey, $areaId, $date)
+    {
+        $tableName = (new $model)->getTable();
+
+        return $model::query()
+            ->when($parentKey && !is_null($areaId), function ($query) use ($parentKey, $areaId) {
+                $query->where($parentKey, $areaId);
+            })
+            ->leftJoin("$reportTable as r", function ($join) use ($date, $tableName, $foreignKey) {
+                $join->on("$tableName.id", '=', "r.$foreignKey")
+                    ->whereDate('r.created_at', $date);
+            })
+            ->select(
+                DB::raw("$tableName.*"),
+                DB::raw("
+            COALESCE(SUM(CASE WHEN r.business_type = 'market' THEN r.total END), 0)     AS market_total,
+            COALESCE(SUM(CASE WHEN r.business_type = 'supplement' THEN r.total END), 0) AS supplement_total
+        ")
+            )
+            ->groupBy("$tableName.id")
+            ->orderBy("$tableName.id");
+    }
+
+    public function getAreaReportData(Request $request)
+    {
+        $areaType = $request->input('areaType');
+        $areaId = $request->input('areaId');
+        $date = $request->input('date');
+
+        switch ($areaType) {
+            case 'province':
+                // Show all regencies (no parent filter)
+                $query = $this->buildReportAreaQuery(
+                    Regency::class, 
+                    'report_regency', 
+                    'regency_id',    // foreign key in report table
+                    null,            // no parent key filter
+                    null,            // no parent id filter
+                    $date
+                );
+                break;
+
+            case 'regency':
+                // Show subdistricts filtered by regency_id
+                $query = $this->buildReportAreaQuery(
+                    Subdistrict::class, 
+                    'report_subdistrict', 
+                    'subdistrict_id',     // foreign key in report table
+                    'regency_id',         // parent key in subdistricts table
+                    $areaId,              // regency id to filter by
+                    $date
+                );
+                break;
+
+            case 'subdistrict':
+                // Show villages filtered by subdistrict_id
+                $query = $this->buildReportAreaQuery(
+                    Village::class, 
+                    'report_village', 
+                    'village_id',         // foreign key in report table
+                    'subdistrict_id',     // parent key in villages table
+                    $areaId,              // subdistrict id to filter by
+                    $date
+                );
+                break;
+
+            default: // village
+                // Show SLS filtered by village_id
+                $query = $this->buildReportAreaQuery(
+                    Sls::class, 
+                    'report_sls', 
+                    'sls_id',            // foreign key in report table
+                    'village_id',        // parent key in sls table
+                    $areaId,             // village id to filter by
+                    $date
+                );
+                break;
+        }
+
+        $rows = $query->get();
+
+        return response()->json([
+            'data'          => $rows,
+            'size'          => $rows->count(),
+            'total_records' => $rows->count(),
+        ]);
     }
 
     public function showDownloadReportPage()

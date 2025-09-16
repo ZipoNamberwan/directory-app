@@ -364,14 +364,14 @@
             },
             '#regency': () => {
                 loadSubdistrict(null, null);
-                renderTable('areaRegency', areaTable);
+                renderTable('regency', areaTable);
             },
             '#subdistrict': () => {
                 loadVillage(null, null);
-                renderTable('areaSubdistrict', villageTable);
+                renderTable('subdistrict', areaTable);
             },
             '#village': () => {
-                renderTable('areaVillage', slsTable);
+                renderTable('village', areaTable);
             },
         };
 
@@ -468,16 +468,39 @@
         }
 
         function renderTable(tableType, tableInstance) {
-            if (tableType == 'areaRegency' || tableType == 'areaSubdistrict' || tableType == 'areaVillage') {
-                let areaType = '';
-                if (tableType == 'areaRegency') {
-                    areaType = 'regency';
-                } else if (tableType == 'areaSubdistrict') {
-                    areaType = 'subdistrict';
-                } else if (tableType == 'areaVillage') {
-                    areaType = 'village';
+            if (tableType == 'regency' || tableType == 'subdistrict' || tableType == 'village') {
+                // Define fallback hierarchy with selectors and area types
+                const areaHierarchy = [
+                    { type: 'village', selector: '#village' },
+                    { type: 'subdistrict', selector: '#subdistrict' },
+                    { type: 'regency', selector: '#regency' },
+                    { type: 'province', selector: null, defaultId: '1' }
+                ];
+                
+                // Find starting index based on tableType
+                const startIndex = areaHierarchy.findIndex(area => area.type === tableType);
+                
+                // Get area type and ID with fallback logic
+                let areaType, areaId;
+                for (let i = startIndex; i < areaHierarchy.length; i++) {
+                    const area = areaHierarchy[i];
+                    
+                    if (area.selector) {
+                        const value = $(area.selector).val();
+                        if (value && value !== '0') {
+                            areaType = area.type;
+                            areaId = value;
+                            break;
+                        }
+                    } else {
+                        // Default case (province)
+                        areaType = area.type;
+                        areaId = area.defaultId;
+                        break;
+                    }
                 }
-                let ajaxUrl = `/pasar-dashboard/${areaType}/data/{{ $date }}`;
+                
+                let ajaxUrl = `/pasar-dashboard/area?areaType=${areaType}&areaId=${areaId}&date={{ $date }}`;
                 tableInstance.setData(ajaxUrl);
             } else {
                 const urlPrefix = {
@@ -491,6 +514,46 @@
                 tableInstance.ajax.url(`/pasar-dashboard/${tableType}/data/{{ $date }}?` + filterUrl).load();
             }
         }
+    </script>
+
+    <script>
+        let areaTable = new Tabulator("#data-table", {
+            height: "800px",
+            layout: "fitColumns",
+            ajaxURL: "pasar-dashboard/area?areaType=province&areaId=1&date={{ $date }}",
+            // progressiveLoad: "scroll",
+            paginationSize: 20,
+            placeholder: "Tidak ada usaha yang ditemukan",
+            textDirection: "auto",
+            ajaxResponse: function(url, params, response) {
+                return response.data;
+            },
+            columns: [{
+                title: "Nama Wilayah",
+                field: "name",
+                responsive: 0,
+                formatter: function(cell) {
+                    let row = cell.getRow().getData();
+                    return ` <div class="d-flex gap-3 align-items-center">
+                                <h6 class="text-sm mb-1">[${row.id}] ${row.name}</h6>
+                            </div>`
+                },
+            }, {
+                title: "Sentra Ekonomi",
+                field: "market_total",
+                responsive: 3,
+                formatter: function(cell) {
+                    return `<div class="text-wrap font-weight-bold">${$("<div>").text(cell.getValue()).html()}</div>`;
+                },
+            }, {
+                title: "Suplemen",
+                field: "supplement_total",
+                responsive: 2,
+                formatter: function(cell) {
+                    return `<div class="text-wrap font-weight-bold">${$("<div>").text(cell.getValue()).html()}</div>`;
+                },
+            }, ]
+        });
     </script>
 
     <script>
@@ -844,50 +907,5 @@
                     });
             }
         }
-    </script>
-
-    <script>
-        let areaTable = new Tabulator("#data-table", {
-            height: "800px",
-            layout: "fitColumns",
-            ajaxURL: "pasar-dashboard/province/data/{{ $date }}",
-            progressiveLoad: "scroll",
-            paginationSize: 20,
-            placeholder: "Tidak ada usaha yang ditemukan",
-            textDirection: "auto",
-            ajaxResponse: function(url, params, response) {
-                document.getElementById("total-records").textContent = response.total_records;
-                return response;
-            },
-            columns: [{
-                title: "Nama Wilayah",
-                field: "name",
-                responsive: 0,
-                formatter: function(cell) {
-                    return `<div class="text-wrap font-weight-bold">${$("<div>").text(cell.getValue()).html()}</div>`;
-                },
-            }, {
-                title: "Sentra Ekonomi",
-                field: "market_count",
-                responsive: 3,
-                formatter: function(cell) {
-                    return `<div class="text-wrap font-weight-bold">${$("<div>").text(cell.getValue()).html()}</div>`;
-                },
-            }, {
-                title: "Suplemen",
-                field: "supplement_count",
-                responsive: 2,
-                formatter: function(cell) {
-                    return `<div class="text-wrap font-weight-bold">${$("<div>").text(cell.getValue()).html()}</div>`;
-                },
-            }, {
-                title: "Total",
-                field: "total",
-                responsive: 1,
-                formatter: function(cell) {
-                    return `<div class="text-wrap font-weight-bold">${$("<div>").text(cell.getValue()).html()}</div>`;
-                },
-            }]
-        });
     </script>
 @endpush

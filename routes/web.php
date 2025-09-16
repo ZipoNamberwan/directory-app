@@ -150,7 +150,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pasar-dashboard/market/data/{date}', [DashboardController::class, 'getMarketReportData']);
 		Route::get('/pasar-dashboard/user/data/{date}', [DashboardController::class, 'getUserReportData']);
 		Route::get('/pasar-dashboard/regency/data/{date}', [DashboardController::class, 'getRegencyReportData']);
-		Route::get('/pasar-dashboard/{areaType}/data/{date}', [DashboardController::class, 'getAreaReportData']);
+		Route::get('/pasar-dashboard/area', [DashboardController::class, 'getAreaReportData']);
 		Route::get('/pasar-dashboard/graph/data/{regency}', [DashboardController::class, 'getGraphReportData']);
 
 		Route::post('/pasar/savepolygon/{id}', [MarketManagementController::class, 'savePolygonMarket']);
