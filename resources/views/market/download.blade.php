@@ -53,6 +53,9 @@
                             <select style="width: 100%;" id="report" name="report" class="form-control"
                                 data-toggle="select">
                                 <option value="0" disabled selected> -- Pilih Jenis Report -- </option>
+                                <option value="area" {{ old('report') == 'area' ? 'selected' : '' }}>
+                                    Report Jumlah Usaha Berdasarkan Wilayah
+                                </option>
                                 <option value="regency" {{ old('report') == 'regency' ? 'selected' : '' }}>
                                     Report Jumlah Usaha Sentra Ekonomi Berdasarkan Kabupaten/Kota
                                 </option>
@@ -89,6 +92,31 @@
                                 @endforeach
                             </select>
                             @error('marketType')
+                                <div class="error-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="row mt-3 {{ old('report') !== 'area' ? 'd-none' : '' }}" id="areaTypeContainer">
+                        <div class="col-md-4">
+                            <label class="form-control-label">Pilih Level Wilayah <span class="text-danger">*</span></label>
+                            <select id="areaType" name="areaType" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Level Wilayah -- </option>
+                                <option value="province" {{ old('areaType') == 'province' ? 'selected' : '' }}>
+                                    Kabupaten/Kota
+                                </option>
+                                <option value="regency" {{ old('areaType') == 'regency' ? 'selected' : '' }}>
+                                    Kecamatan
+                                </option>
+                                <option value="village" {{ old('areaType') == 'village' ? 'selected' : '' }}>
+                                    Desa
+                                </option>
+                                <option value="sls" {{ old('areaType') == 'sls' ? 'selected' : '' }}>
+                                    SLS
+                                </option>
+                            </select>
+                            @error('areaType')
                                 <div class="error-feedback">
                                     {{ $message }}
                                 </div>
@@ -152,6 +180,10 @@
                     selector: '#marketType',
                     placeholder: 'Pilih Tipe Sentra Ekonomi',
                 },
+                {
+                    selector: '#areaType',
+                    placeholder: 'Pilih Level Wilayah',
+                },
             ].forEach(config => {
                 $(config.selector).select2({
                     placeholder: config.placeholder,
@@ -178,6 +210,15 @@
                 } else {
                     marketTypeContainer.addClass('d-none');
                     $('#marketType').val(null).trigger('change'); // Clear selection
+                }
+
+                const areaTypeContainer = $('#areaTypeContainer');
+
+                if (selectedReport === 'area') {
+                    areaTypeContainer.removeClass('d-none');
+                } else {
+                    areaTypeContainer.addClass('d-none');
+                    $('#areaType').val(null).trigger('change'); // Clear selection
                 }
             }
         </script>

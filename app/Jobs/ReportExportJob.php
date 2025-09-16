@@ -23,16 +23,18 @@ class ReportExportJob implements ShouldQueue
     public $date;
     public $type;
     public $marketType;
+    public $areaType;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($uuid, $date, $type, $marketType)
+    public function __construct($uuid, $date, $type, $marketType, $areaType = null)
     {
         $this->uuid = $uuid;
         $this->date = $date;
         $this->type = $type;
         $this->marketType = $marketType;
+        $this->areaType = $areaType;
 
         AssignmentStatus::find($this->uuid)->update(['status' => 'loading',]);
     }
@@ -287,6 +289,12 @@ class ReportExportJob implements ShouldQueue
                 }
 
                 fclose($stream);
+            } else if ($this->type == 'area') {
+                if ($this->areaType == 'province') {
+                } else if ($this->areaType == 'regency') {
+                } else if ($this->areaType == 'subdistrict') {
+                } else if ($this->areaType == 'village') {
+                }
             }
 
             AssignmentStatus::find($this->uuid)->update(['status' => 'success']);

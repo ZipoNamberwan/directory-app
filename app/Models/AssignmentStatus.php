@@ -29,7 +29,7 @@ class AssignmentStatus extends Model
         } else if ($value == '4') {
             return 'upload-market-assignment';
         } else if ($value == '5') {
-            return ['dashboard-regency', 'dashboard-user', 'dashboard-market', 'dashboard-supplement'];
+            return ['dashboard-regency', 'dashboard-user', 'dashboard-market', 'dashboard-supplement', 'dashboard-anomaly'];
         } else if ($value == '6') {
             return 'download-anomaly';
         } else {
@@ -52,7 +52,7 @@ class AssignmentStatus extends Model
             // 'upload-market-assignment';
             return ['name' => 'upload_market_assignment', 'extension' => '.xlsx'];
         } else if ($value == '5') {
-            // ['dashboard-regency', 'dashboard-user', 'dashboard-market', 'dashboard-supplement'];
+            // ['dashboard-regency', 'dashboard-user', 'dashboard-market', 'dashboard-supplement', 'dashboard-anomaly'];
             return ['name' => 'dashboard_report', 'extension' => '.csv'];
         } else if ($value == '6') {
             // 'download-anomaly';

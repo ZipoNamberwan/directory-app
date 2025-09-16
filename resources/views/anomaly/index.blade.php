@@ -413,9 +413,6 @@
                             <div class="card-header pb-0">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h6 class="mb-0">Daftar Anomali</h6>
-                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#anomalyTypesModal" title="Lihat jenis anomali">
-                                        <i class="fas fa-question-circle"></i>
-                                    </button>
                                 </div>
                             </div>
                             <div class="card-body">

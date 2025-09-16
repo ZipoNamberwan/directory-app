@@ -448,8 +448,8 @@ class DashboardController extends Controller
             case 'province':
                 // Show all regencies (no parent filter)
                 $query = $this->buildReportAreaQuery(
-                    Regency::class, 
-                    'report_regency', 
+                    Regency::class,
+                    'report_regency',
                     'regency_id',    // foreign key in report table
                     null,            // no parent key filter
                     null,            // no parent id filter
@@ -460,8 +460,8 @@ class DashboardController extends Controller
             case 'regency':
                 // Show subdistricts filtered by regency_id
                 $query = $this->buildReportAreaQuery(
-                    Subdistrict::class, 
-                    'report_subdistrict', 
+                    Subdistrict::class,
+                    'report_subdistrict',
                     'subdistrict_id',     // foreign key in report table
                     'regency_id',         // parent key in subdistricts table
                     $areaId,              // regency id to filter by
@@ -472,8 +472,8 @@ class DashboardController extends Controller
             case 'subdistrict':
                 // Show villages filtered by subdistrict_id
                 $query = $this->buildReportAreaQuery(
-                    Village::class, 
-                    'report_village', 
+                    Village::class,
+                    'report_village',
                     'village_id',         // foreign key in report table
                     'subdistrict_id',     // parent key in villages table
                     $areaId,              // subdistrict id to filter by
@@ -484,8 +484,8 @@ class DashboardController extends Controller
             default: // village
                 // Show SLS filtered by village_id
                 $query = $this->buildReportAreaQuery(
-                    Sls::class, 
-                    'report_sls', 
+                    Sls::class,
+                    'report_sls',
                     'sls_id',            // foreign key in report table
                     'village_id',        // parent key in sls table
                     $areaId,             // village id to filter by
@@ -515,11 +515,15 @@ class DashboardController extends Controller
         $marketTypeIds[] = 'all'; // Add 'all' to the allowed values
 
         $validateArray = [
-            'report' => 'required|in:regency,user,market,supplement',
+            'report' => 'required|in:regency,user,market,supplement,area',
             'marketType' => [
                 'required_if:report,regency',
                 'nullable',
                 Rule::in($marketTypeIds),
+            ],
+            'areaType' => [
+                'required_if:report,area',
+                Rule::in(['province', 'regency', 'subdistrict', 'village']),
             ],
         ];
 
