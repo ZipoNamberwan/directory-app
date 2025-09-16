@@ -100,6 +100,66 @@
                 <div class="card">
                     <div class="card-header">
                         <h6 class="text-capitalize">
+                            Report Jumlah Usaha Total Berdasarkan Wilayah
+                        </h6>
+                        <p class="text-sm mb-3"><strong>Report tidak realtime</strong>, report akan diupdate pada jam
+                            <strong>06.00 pagi</strong>
+                        </p>
+                        <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
+                            <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
+                            <span class="ml-3 btn-inner--text">Download Report Di Sini</span>
+                        </a>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-control-label">Kabupaten</label>
+                                        <select style="width: 100%;" id="regency" name="regency" class="form-control"
+                                            data-toggle="select">
+                                            <option value="0" disabled selected> -- Filter Kabupaten -- </option>
+                                            @foreach ($regencies as $regency)
+                                                <option value="{{ $regency->id }}"
+                                                    {{ old('regency') == $regency->id ? 'selected' : '' }}>
+                                                    [{{ $regency->short_code }}] {{ $regency->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-control-label">Kecamatan</label>
+                                        <select style="width: 100%;" id="subdistrict" name="subdistrict"
+                                            class="form-control" data-toggle="select">
+                                            <option value="0" disabled selected> -- Filter Kecamatan -- </option>
+                                            @foreach ($subdistricts as $subdistrict)
+                                                <option value="{{ $subdistrict->id }}"
+                                                    {{ old('subdistrict') == $subdistrict->id ? 'selected' : '' }}>
+                                                    [{{ $subdistrict->short_code }}] {{ $subdistrict->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-control-label">Desa</label>
+                                        <select id="village" name="village" class="form-control" data-toggle="select"
+                                            name="village"></select>
+                                    </div>
+                                    <div id="sls_div" class="col-md-3">
+                                        <label class="form-control-label">SLS</label>
+                                        <select id="sls" name="sls" class="form-control"
+                                            data-toggle="select"></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 col-sm-12 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="text-capitalize">
                             Report Jumlah Usaha Total (Sentra Ekonomi + Suplemen) Berdasarkan Kabupaten/Kota
                         </h6>
                         <p class="text-sm mb-1"><strong>Report tidak realtime</strong>, report akan diupdate pada jam
@@ -107,10 +167,6 @@
                                 22.30</strong>
                         </p>
                         <p class="text-sm">Kondisi tanggal: <strong>{{ $updateDate }} {{ $updateTime }}</strong></p>
-                        <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
-                            <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
-                            <span class="ml-3 btn-inner--text">Download Report Di Sini</span>
-                        </a>
                     </div>
                     <div class="card-body">
                         <div class="row mb-4">
@@ -186,172 +242,172 @@
             </div>
 
             <!-- <div class="col-md-12 col-sm-12 mb-3">
-                                                    <div class="card">
-                                                        <div class="card-header pb-0">
-                                                            <div class="d-flex justify-content-between align-items-start">
-                                                                <div>
-                                                                    <h6 class="text-capitalize">
-                                                                        Report Jumlah Usaha Berdasarkan Sentra Ekonomi
-                                                                    </h6>
-                                                                    <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
-                                                                </div>
-                                                                <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0"
-                                                                    role="button">
-                                                                    <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
-                                                                    <span class="ml-3 btn-inner--text">Download</span>
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                        <div class="card-body pt-0">
-                                                            <div class="row mt-4">
-                                                                <div class="col-md-4 {{-- border-secondary rounded border p-3 --}}">
-                                                                    <h5 class="card-title text-primary font-weight-bold mb-3">
-                                                                        <i class="fas fa-filter mr-2"></i>Filter Tipe Sentra Ekonomi
-                                                                        <span class="text-danger">*</span>
-                                                                    </h5>
-                                                                    <div class="d-flex align-items-center">
-                                                                        <select id="marketTypeRegency" class="form-control form-control-lg border-primary"
-                                                                            data-toggle="select">
-                                                                            <option value="all" selected> Semua </option>
-                                                                            @foreach ($marketTypes as $marketType)
+                                                                                <div class="card">
+                                                                                    <div class="card-header pb-0">
+                                                                                        <div class="d-flex justify-content-between align-items-start">
+                                                                                            <div>
+                                                                                                <h6 class="text-capitalize">
+                                                                                                    Report Jumlah Usaha Berdasarkan Sentra Ekonomi
+                                                                                                </h6>
+                                                                                                <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
+                                                                                            </div>
+                                                                                            <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0"
+                                                                                                role="button">
+                                                                                                <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
+                                                                                                <span class="ml-3 btn-inner--text">Download</span>
+                                                                                            </a>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="card-body pt-0">
+                                                                                        <div class="row mt-4">
+                                                                                            <div class="col-md-4 {{-- border-secondary rounded border p-3 --}}">
+                                                                                                <h5 class="card-title text-primary font-weight-bold mb-3">
+                                                                                                    <i class="fas fa-filter mr-2"></i>Filter Tipe Sentra Ekonomi
+                                                                                                    <span class="text-danger">*</span>
+                                                                                                </h5>
+                                                                                                <div class="d-flex align-items-center">
+                                                                                                    <select id="marketTypeRegency" class="form-control form-control-lg border-primary"
+                                                                                                        data-toggle="select">
+                                                                                                        <option value="all" selected> Semua </option>
+                                                                                                        @foreach ($marketTypes as $marketType)
     <option value="{{ $marketType->id }}"
-                                                                                    {{ old('marketType') == $marketType->id ? 'selected' : '' }}>
-                                                                                    {{ $marketType->name }}
-                                                                                </option>
+                                                                                                                {{ old('marketType') == $marketType->id ? 'selected' : '' }}>
+                                                                                                                {{ $marketType->name }}
+                                                                                                            </option>
     @endforeach
-                                                                        </select>
-                                                                        <div id="regencyLoadingIndicator" class="d-none text-center ml-2">
-                                                                            <div class="spinner-border text-primary" role="status">
-                                                                                <span class="sr-only">Loading...</span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <small class="text-muted mt-2 d-block">Pilih tipe sentra ekonomi untuk melihat hasil</small>
-                                                                </div>
-                                                            </div>
+                                                                                                    </select>
+                                                                                                    <div id="regencyLoadingIndicator" class="d-none text-center ml-2">
+                                                                                                        <div class="spinner-border text-primary" role="status">
+                                                                                                            <span class="sr-only">Loading...</span>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <small class="text-muted mt-2 d-block">Pilih tipe sentra ekonomi untuk melihat hasil</small>
+                                                                                            </div>
+                                                                                        </div>
 
-                                                            <table id="regencyTable" class="align-items-center text-sm">
-                                                                <thead>
-                                                                    <tr>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7">
-                                                                            Kabupaten
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                                                            Total Sentra Ekonomi
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                                                            Target
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                                                            Bukan Target
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                                                            Belum Dimulai
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                                                            Sedang Dikerjakan
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                                                            Sudah Selesai
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                                                            Jumlah Sentra Ekonomi dengan Muatan yang sudah Diupload Minimal 1
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                                                            Usaha yang Sudah Dimutakhirkan
-                                                                        </th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
+                                                                                        <table id="regencyTable" class="align-items-center text-sm">
+                                                                                            <thead>
+                                                                                                <tr>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                                                                                        Kabupaten
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                                                                                        Total Sentra Ekonomi
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                                                                                        Target
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                                                                                        Bukan Target
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                                                                                        Belum Dimulai
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                                                                                        Sedang Dikerjakan
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                                                                                        Sudah Selesai
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                                                                                        Jumlah Sentra Ekonomi dengan Muatan yang sudah Diupload Minimal 1
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                                                                                        Usaha yang Sudah Dimutakhirkan
+                                                                                                    </th>
+                                                                                                </tr>
+                                                                                            </thead>
+                                                                                            <tbody>
 
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                </div> -->
+                                                                                            </tbody>
+                                                                                        </table>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div> -->
 
             <!-- <div class="col-md-12 col-sm-12 mb-3">
-                                                    <div class="card">
-                                                        <div class="card-header">
-                                                            <div class="d-flex justify-content-between align-items-start">
-                                                                <div>
-                                                                    <h6 class="text-capitalize">
-                                                                        Report Jumlah Usaha Berdasarkan Sentra Ekonomi
-                                                                    </h6>
-                                                                    <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
-                                                                </div>
-                                                                <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0"
-                                                                    role="button">
-                                                                    <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
-                                                                    <span class="ml-3 btn-inner--text">Download</span>
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                        <div class="card-body pt-0">
-                                                            <div class="row">
-                                                                @hasrole('adminprov')
+                                                                                <div class="card">
+                                                                                    <div class="card-header">
+                                                                                        <div class="d-flex justify-content-between align-items-start">
+                                                                                            <div>
+                                                                                                <h6 class="text-capitalize">
+                                                                                                    Report Jumlah Usaha Berdasarkan Sentra Ekonomi
+                                                                                                </h6>
+                                                                                                <p class="text-sm">Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}</p>
+                                                                                            </div>
+                                                                                            <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0"
+                                                                                                role="button">
+                                                                                                <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
+                                                                                                <span class="ml-3 btn-inner--text">Download</span>
+                                                                                            </a>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="card-body pt-0">
+                                                                                        <div class="row">
+                                                                                            @hasrole('adminprov')
         <div class="col-md-3">
-                                                                                                            <label class="form-control-label">Satker <span class="text-danger">*</span></label>
-                                                                                                            <select id="organizationMarket" class="form-control" data-toggle="select">
-                                                                                                                <option value="0" disabled selected> -- Pilih Satker -- </option>
-                                                                                                                @foreach ($organizations as $organization)
+                                                                                                                                                                    <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                                                                                                                                                                    <select id="organizationMarket" class="form-control" data-toggle="select">
+                                                                                                                                                                        <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                                                                                                                                                        @foreach ($organizations as $organization)
         <option value="{{ $organization->id }}"
-                                                                                                                        {{ old('organization') == $organization->id ? 'selected' : '' }}>
-                                                                                                                        [{{ $organization->short_code }}] {{ $organization->name }}
-                                                                                                                    </option>
+                                                                                                                                                                                {{ old('organization') == $organization->id ? 'selected' : '' }}>
+                                                                                                                                                                                [{{ $organization->short_code }}] {{ $organization->name }}
+                                                                                                                                                                            </option>
         @endforeach
-                                                                                                            </select>
-                                                                                                        </div>
+                                                                                                                                                                    </select>
+                                                                                                                                                                </div>
     @endhasrole
-                                                                <div class="col-md-3">
-                                                                    <label class="form-control-label">Filter Tipe <span class="text-danger">*</span></label>
-                                                                    <select id="marketTypeMarket" class="form-control" data-toggle="select">
-                                                                        <option value="0" disabled selected> -- Pilih Tipe -- </option>
-                                                                        @foreach ($marketTypes as $marketType)
+                                                                                            <div class="col-md-3">
+                                                                                                <label class="form-control-label">Filter Tipe <span class="text-danger">*</span></label>
+                                                                                                <select id="marketTypeMarket" class="form-control" data-toggle="select">
+                                                                                                    <option value="0" disabled selected> -- Pilih Tipe -- </option>
+                                                                                                    @foreach ($marketTypes as $marketType)
     <option value="{{ $marketType->id }}"
-                                                                                {{ old('marketType') == $marketType->id ? 'selected' : '' }}>
-                                                                                {{ $marketType->name }}
-                                                                            </option>
+                                                                                                            {{ old('marketType') == $marketType->id ? 'selected' : '' }}>
+                                                                                                            {{ $marketType->name }}
+                                                                                                        </option>
     @endforeach
-                                                                    </select>
-                                                                </div>
-                                                            </div>
-                                                            <table id="marketTable" class="align-items-center text-sm mt-2">
-                                                                <thead>
-                                                                    <tr>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7">
-                                                                            Nama Sentra Ekonomi
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7">
-                                                                            Tipe
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7">
-                                                                            Wilayah
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7">
-                                                                            Status Target
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7">
-                                                                            Status Penyelesaian
-                                                                        </th>
-                                                                        <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
-                                                                            Usaha yang Sudah Dimutakhirkan
-                                                                        </th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    <tr id="regencyLoadingRow">
-                                                                        <td colspan="9" class="text-center py-4">
-                                                                            <div class="spinner-border text-primary" role="status">
-                                                                                <span class="sr-only">Loading...</span>
-                                                                            </div>
-                                                                        </td>
-                                                                    </tr>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                </div> -->
+                                                                                                </select>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <table id="marketTable" class="align-items-center text-sm mt-2">
+                                                                                            <thead>
+                                                                                                <tr>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                                                                                        Nama Sentra Ekonomi
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                                                                                        Tipe
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                                                                                        Wilayah
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                                                                                        Status Target
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7">
+                                                                                                        Status Penyelesaian
+                                                                                                    </th>
+                                                                                                    <th class="text-uppercase text-sm font-weight-bolder opacity-7 text-center">
+                                                                                                        Usaha yang Sudah Dimutakhirkan
+                                                                                                    </th>
+                                                                                                </tr>
+                                                                                            </thead>
+                                                                                            <tbody>
+                                                                                                <tr id="regencyLoadingRow">
+                                                                                                    <td colspan="9" class="text-center py-4">
+                                                                                                        <div class="spinner-border text-primary" role="status">
+                                                                                                            <span class="sr-only">Loading...</span>
+                                                                                                        </div>
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            </tbody>
+                                                                                        </table>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div> -->
 
             <div class="col-md-12 col-sm-12 mb-3">
                 <div class="card">
@@ -450,6 +506,22 @@
                 selector: '#organizationGraph',
                 placeholder: 'Pilih Satker'
             },
+            {
+                selector: '#regency',
+                placeholder: 'Pilih Kabupaten'
+            },
+            {
+                selector: '#subdistrict',
+                placeholder: 'Pilih Kecamatan'
+            },
+            {
+                selector: '#village',
+                placeholder: 'Pilih Desa'
+            },
+            {
+                selector: '#sls',
+                placeholder: 'Pilih SLS'
+            },
         ];
 
         selectConfigs.forEach(({
@@ -479,7 +551,134 @@
             '#organizationGraph': () => {
                 renderChart();
             },
+            '#regency': () => {
+                loadSubdistrict(null, null);
+                // renderTable()
+            },
+            '#subdistrict': () => {
+                loadVillage(null, null);
+                // renderTable()
+            },
+            '#village': () => {
+                loadSls(null, null);
+                // renderTable()
+            },
+            '#sls': () => {
+                // renderTable()
+            },
         };
+
+        function loadSubdistrict(regencyid = null, selectedvillage = null) {
+
+            let regencySelector = `#regency`;
+            let subdistrictSelector = `#subdistrict`;
+            let villageSelector = `#village`;
+            let slsSelector = `#sls`;
+
+            let id = $(regencySelector).val();
+            if (regencyid != null) {
+                id = regencyid;
+            }
+
+            $(subdistrictSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+            $(villageSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+            $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/kec/' + id,
+                    success: function(response) {
+                        $(subdistrictSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Kecamatan -- </option>`);
+                        $(villageSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Desa -- </option>`);
+                        $(slsSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+
+                        response.forEach(element => {
+                            let selected = selectedvillage == String(element.id) ? 'selected' : '';
+                            $(subdistrictSelector).append(
+                                `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(subdistrictSelector).empty().append(`<option value="0" disabled> -- Pilih Kecamatan -- </option>`);
+                $(villageSelector).empty().append(`<option value="0" disabled> -- Pilih Desa -- </option>`);
+                $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
+
+        function loadVillage(subdistrictid = null, selectedvillage = null) {
+
+            let subdistrictSelector = `#subdistrict`;
+            let villageSelector = `#village`;
+            let slsSelector = `#sls`;
+
+            let id = $(subdistrictSelector).val();
+            if (subdistrictid != null) {
+                id = subdistrictid;
+            }
+
+            $(villageSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+            $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/desa/' + id,
+                    success: function(response) {
+                        $(villageSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Desa -- </option>`);
+                        $(slsSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                        response.forEach(element => {
+                            let selected = selectedvillage == String(element.id) ? 'selected' : '';
+                            $(villageSelector).append(
+                                `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(villageSelector).empty().append(`<option value="0" disabled> -- Pilih Desa -- </option>`);
+                $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
+
+        function loadSls(villageid = null, selectedsls = null) {
+
+            let villageSelector = `#village`;
+            let slsSelector = `#sls`;
+
+            let id = $(villageSelector).val();
+            if (villageid != null) {
+                id = villageid;
+            }
+
+            $(slsSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/sls/' + id,
+                    success: function(response) {
+                        $(slsSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih SLS -- </option>`);
+                        response.forEach(element => {
+                            let selected = selectedsls == String(element.id) ? 'selected' : '';
+                            $(slsSelector).append(
+                                `<option value="${element.id}" ${selected}>[${element.short_code}] ${element.name}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
 
         Object.entries(eventHandlers).forEach(([selector, handler]) => {
             $(selector).on('change', handler);

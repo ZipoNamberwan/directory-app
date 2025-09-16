@@ -6,11 +6,13 @@ use App\Jobs\ReportExportJob;
 use App\Models\AssignmentStatus;
 use App\Models\MarketType;
 use App\Models\Organization;
+use App\Models\Regency;
 use App\Models\ReportMarketBusinessMarket;
 use App\Models\ReportMarketBusinessRegency;
 use App\Models\ReportMarketBusinessUser;
 use App\Models\ReportSupplementBusinessRegency;
 use App\Models\ReportTotalBusinessUser;
+use App\Models\Subdistrict;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -26,6 +28,14 @@ class DashboardController extends Controller
     public function showDashboardPage()
     {
         $user = User::find(Auth::id());
+        $regencies = [];
+        $subdistricts = [];
+        if ($user->hasRole('adminprov')) {
+            $regencies = Regency::all();
+        } else if ($user->hasRole('adminkab')) {
+            $regencies = Regency::where('id', $user->regency_id)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
+        }
 
         $latestRow = ReportMarketBusinessRegency::orderByDesc('date')->first();
         $latestDate = $latestRow->date;
@@ -128,6 +138,8 @@ class DashboardController extends Controller
                 'organizations' => $organizations,
                 'date' => $latestDate,
                 'reportTotalByRegency' => $reportTotalByRegency,
+                'regencies' => $regencies,
+                'subdistricts' => $subdistricts,
             ]
         );
     }
