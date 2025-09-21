@@ -54,6 +54,15 @@ class BaseModel extends Model
                 'medium'      => $model->deletionSource ?? 'mobile',
                 'edited_at'   => now(),
             ]);
+
+            // --- Update anomaly repairs if business model
+            if ($model instanceof MarketBusiness || $model instanceof SupplementBusiness) {
+
+                AnomalyRepair::where('business_id', $model->getKey())
+                    ->where('business_type', get_class($model))
+                    // ->where('status', 'notconfirmed')
+                    ->update(['status' => 'deleted']);
+            }
         });
 
         // Log when model is restored from soft delete
@@ -69,6 +78,15 @@ class BaseModel extends Model
                 'medium'      => 'restoration',
                 'edited_at'   => now(),
             ]);
+
+            // --- Update anomaly repairs if business model
+            if ($model instanceof MarketBusiness || $model instanceof SupplementBusiness) {
+
+                AnomalyRepair::where('business_id', $model->getKey())
+                    ->where('business_type', get_class($model))
+                    // ->where('status', 'deleted')
+                    ->update(['status' => 'notconfirmed']);
+            }
         });
     }
 

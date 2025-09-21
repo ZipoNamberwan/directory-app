@@ -36,6 +36,9 @@ class SupplementController extends Controller
             $users = User::where('organization_id', $user->organization_id)->get();
             $regencies = Regency::where('id', $user->regency_id)->get();
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
+        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
+            $regencies = Regency::where('id', $user->regency_id)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
         }
 
         $projectTypes = [

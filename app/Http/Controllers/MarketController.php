@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class MarketController extends Controller
 {
@@ -48,6 +49,8 @@ class MarketController extends Controller
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $markets = $user->markets;
             $marketIds = $user->markets()->pluck('markets.id');
+            $regencies = Regency::where('id', $user->regency_id)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
 
             $users = User::whereHas('markets', function ($query) use ($marketIds) {
                 $query->whereIn('markets.id', $marketIds);
@@ -66,6 +69,10 @@ class MarketController extends Controller
                 'userId' => $user->id,
                 'users' => $users,
                 'marketTypes' => $marketTypes,
+                'canEdit' => $user->hasPermissionTo('edit_business') || $user->hasRole('adminprov'),
+                'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
+                // 'canEdit' => false,
+                // 'canDelete' => false,
             ]
         );
     }
@@ -269,6 +276,9 @@ class MarketController extends Controller
         // Apply pagination with offset and limit
         $data = $records
             ->with(['user', 'regency', 'subdistrict', 'village', 'sls', 'market', 'market.organization'])
+            ->withCount(['anomalies as not_confirmed_anomalies' => function ($query) {
+                $query->where('status', '=', 'notconfirmed');
+            }])
             ->orderBy($orderColumn, $orderDir)
             ->offset($offset)
             ->limit(min($perPage, 1000 - $offset)) // Don't exceed the 1000 cap
@@ -543,5 +553,102 @@ class MarketController extends Controller
         return Response::make($geojson, 200, [
             'Content-Type' => 'application/json',
         ]);
+    }
+
+    public function confirmDeleteBusiness($id)
+    {
+        try {
+            $business = MarketBusiness::find($id);
+
+            if (!$business) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data usaha tidak ditemukan atau sudah dihapus oleh user lain'
+                ], 404);
+            }
+
+            // Check if user has permission to delete business
+            $user = User::find(Auth::id());
+
+            if (!$user->hasPermissionTo('delete_business')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk menghapus data usaha'
+                ], 403);
+            }
+
+            // Delete the business
+            $business->deleteWithSource('web');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data usaha berhasil dihapus'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus data usaha'
+            ], 500);
+        }
+    }
+
+    public function updateMarket(Request $request, $id)
+    {
+        try {
+            // Validation rules
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'required|string|max:1000',
+                'status' => 'required|in:Tetap,Tidak Tetap',
+                'sector' => 'required|string|max:255',
+                'address' => 'nullable|string|max:500',
+                'note' => 'nullable|string|max:1000',
+            ]);
+
+            // Find the market business
+            $market = MarketBusiness::find($id);
+
+            if (!$market) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data usaha tidak ditemukan'
+                ], 404);
+            }
+
+            // Add is_locked = true to the validated data
+            $validated['is_locked'] = true;
+
+            // Update the market business
+            $market->update($validated);
+
+            // Load all required relationships for the response
+            $market->load([
+                'user',
+                'regency',
+                'subdistrict',
+                'village',
+                'sls',
+                'market',
+                'market.organization'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data usaha berhasil diperbarui',
+                'business' => $market
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            dd($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui data usaha'
+            ], 500);
+        }
     }
 }

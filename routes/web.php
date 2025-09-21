@@ -165,6 +165,9 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::patch('/suplemen/{id}', [SupplementController::class, 'updateSupplement']);
 		Route::delete('/suplemen/{id}/delete', [SupplementController::class, 'confirmDeleteBusiness']);
+
+		Route::patch('/pasar/{id}', [MarketController::class, 'updateMarket']);
+		Route::delete('/pasar/{id}/delete', [MarketController::class, 'confirmDeleteBusiness']);
 	});
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');
