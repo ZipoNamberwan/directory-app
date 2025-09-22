@@ -183,6 +183,18 @@
                     <span class="nav-link-text ms-1">Usaha Suplemen</span>
                 </a>
             </li>
+            @hasrole('adminprov|adminkab')
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'suplemen/restore') == true ? 'active' : '' }}"
+                        href="/suplemen/restore">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-trash-can-arrow-up text-sm opacity-10" style="color: #32d500"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Restore</span>
+                    </a>
+                </li>
+            @endhasrole
             @if (auth()->user()->hasRole('adminprov') || auth()->user()->is_allowed_swmaps)
                 <li class="nav-item">
                     <a class="nav-link {{ str_contains(request()->url(), 'suplemen/upload') == true ? 'active' : '' }}"
@@ -252,8 +264,8 @@
             @endhasrole
             @impersonating($guard = null)
                 <li class="nav-item px-3 mt-2">
-                    <a href="{{ route('impersonate.leave') }}"
-                        class="px-2 py-1 m-0 btn btn-icon btn-outline-primary w-100" role="button">
+                    <a href="{{ route('impersonate.leave') }}" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary w-100"
+                        role="button">
                         <span class="btn-inner--icon"><i class="fas fa-stop"></i></span>
                         <span class="btn-inner--text">Stop Personifikasi</span>
                     </a>
@@ -263,6 +275,6 @@
                             <strong>{{ Auth::user()->firstname }}</strong></span></p>
                 </li>
             @endImpersonating
-    </ul>
-</div>
+        </ul>
+    </div>
 </aside>
