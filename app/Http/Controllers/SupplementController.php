@@ -15,6 +15,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,13 +28,12 @@ class SupplementController extends Controller
         $organizations = [];
         $regencies = [];
         $subdistricts = [];
-        $users = [];
+        $users = User::where('organization_id', $user->organization_id)->get();
 
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
             $regencies = Regency::all();
         } else if ($user->hasRole('adminkab')) {
-            $users = User::where('organization_id', $user->organization_id)->get();
             $regencies = Regency::where('id', $user->regency_id)->get();
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
@@ -55,8 +55,6 @@ class SupplementController extends Controller
             'projectTypes' => $projectTypes,
             'canEdit' => $user->hasPermissionTo('edit_business') || $user->hasRole('adminprov'),
             'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
-            // 'canEdit' => false,
-            // 'canDelete' => false,
             'organizationId' => $user->organization_id,
         ]);
     }
@@ -542,5 +540,89 @@ class SupplementController extends Controller
             'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
             'organizationId' => $user->organization_id,
         ]);
+    }
+
+    public function restoreBusinesses(Request $request)
+    {
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'ids' => 'required|array|min:1|max:100',
+                'ids.*' => 'required|string|exists:supplement_business,id'
+            ]);
+
+            $user = User::find(Auth::id());
+            $ids = $validated['ids'];
+
+            // Get the deleted businesses based on user role
+            if ($user->hasRole('adminprov')) {
+                $businesses = SupplementBusiness::onlyTrashed()->whereIn('id', $ids);
+            } elseif ($user->hasRole('adminkab')) {
+                $businesses = SupplementBusiness::onlyTrashed()
+                    ->whereIn('id', $ids)
+                    ->where('organization_id', $user->organization_id);
+            } else {
+                $businesses = SupplementBusiness::onlyTrashed()
+                    ->whereIn('id', $ids)
+                    ->where('user_id', $user->id);
+            }
+
+            // Check if all businesses exist and user has permission
+            $foundBusinesses = $businesses->get();
+            
+            if ($foundBusinesses->count() !== count($ids)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Beberapa usaha tidak ditemukan atau Anda tidak memiliki izin untuk restore'
+                ], 404);
+            }
+
+            // Fast bulk restore
+            $restoredCount = $businesses->update(['deleted_at' => null]);
+
+            // Bulk insert audit records
+            if ($restoredCount > 0) {
+                $auditRecords = [];
+                $now = now();
+                $userId = auth()->id();
+                
+                foreach ($foundBusinesses as $business) {
+                    $auditRecords[] = [
+                        'model_type' => SupplementBusiness::class,
+                        'table_name' => 'supplement_business',
+                        'model_id' => $business->id,
+                        'column_name' => 'deleted_at',
+                        'old_value' => $business->deleted_at,
+                        'new_value' => null,
+                        'edited_by' => $userId,
+                        'medium' => 'restoration',
+                        'edited_at' => $now,
+                    ];
+                }
+                
+                // Bulk insert audit records in chunks to avoid query size limits
+                collect($auditRecords)->chunk(100)->each(function ($chunk) {
+                    DB::table('audits')->insert($chunk->toArray());
+                });
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "{$restoredCount} usaha berhasil direstore",
+                'restored_count' => $restoredCount
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat merestore usaha: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -83,7 +83,7 @@
 @endsection
 
 @section('content')
-    @include('layouts.navbars.auth.topnav', ['title' => 'Daftar Direktori Usaha Suplemen'])
+    @include('layouts.navbars.auth.topnav', ['title' => 'Restore'])
     <div class="container-fluid py-4">
 
         @if (session('success-upload'))
@@ -108,8 +108,29 @@
 
         <div class="card mt-2">
             <div class="card-header pb-0">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="text-capitalize">Daftar Usaha Suplemen</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-capitalize mb-0">Restore Usaha Suplemen</h5>
+                </div>
+                <div class="flex-grow-1">
+                    {{-- <h6 class="mb-1">Restore Usaha Suplemen</h6> --}}
+                    <p class="text-sm mb-2 opacity-8">
+                        Halaman ini menampilkan daftar usaha suplemen yang telah dihapus. Anda dapat memilih dan
+                        merestore kembali usaha yang diperlukan.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3 text-sm opacity-8">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <span>Pilih usaha dengan centang pada tabel</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-filter me-1"></i>
+                            <span>Gunakan filter untuk mempersempit pencarian</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <span>Maksimal 100 usaha per sekali restore</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -128,7 +149,7 @@
                             </select>
                         </div>
                     @endhasrole
-                    @hasrole('adminkab')
+                    @hasrole('adminkab|adminprov')
                         <div class="col-md-3">
                             <label class="form-control-label">Petugas</label>
                             <select id="user" class="form-control" data-toggle="select">
@@ -141,17 +162,6 @@
                             </select>
                         </div>
                     @endhasrole
-                    <div class="col-md-3">
-                        <label class="form-control-label">Petugas</label>
-                        <select id="user" class="form-control" data-toggle="select">
-                            <option value="0" disabled selected> -- Pilih Petugas -- </option>
-                            @foreach ($users as $user)
-                                <option value="{{ $user->id }}">
-                                    {{ $user->firstname }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
                     <div class="col-md-3">
                         <label class="form-control-label">Status Matching Wilayah</label>
                         <select id="statusMatching" class="form-control" data-toggle="select">
@@ -311,33 +321,42 @@
         const eventHandlers = {
             '#organization': () => {
                 renderTable()
+                clearSelectionState()
             },
             '#market': () => {
                 renderTable()
+                clearSelectionState()
             },
             '#user': () => {
                 renderTable()
+                clearSelectionState()
             },
             '#projectType': () => {
                 renderTable()
+                clearSelectionState()
             },
             '#statusMatching': () => {
                 renderTable()
+                clearSelectionState()
             },
             '#regency': () => {
                 loadSubdistrict(null, null);
                 renderTable()
+                clearSelectionState()
             },
             '#subdistrict': () => {
                 loadVillage(null, null);
                 renderTable()
+                clearSelectionState()
             },
             '#village': () => {
                 loadSls(null, null);
                 renderTable()
+                clearSelectionState()
             },
             '#sls': () => {
                 renderTable()
+                clearSelectionState()
             },
         };
 
@@ -937,7 +956,7 @@
             const restoreBtn = document.getElementById('restore-selected-btn');
             const selectedCount = document.getElementById('selected-count');
             const count = selectedRowIds.size;
-            
+
             restoreBtn.disabled = count === 0;
             selectedCount.textContent = count;
         };
@@ -972,11 +991,21 @@
         // Restore selected rows functionality
         const restoreSelectedRows = () => {
             const selectedIds = Array.from(selectedRowIds);
-            
+
             if (selectedIds.length === 0) {
                 Swal.fire({
                     title: 'Peringatan',
                     text: 'Pilih minimal satu usaha untuk direstore.',
+                    icon: 'warning'
+                });
+                return;
+            }
+
+            if (selectedIds.length > 100) {
+                Swal.fire({
+                    title: 'Peringatan',
+                    text: 'Maksimal 100 usaha dapat direstore dalam satu kali operasi. Anda telah memilih ' +
+                        selectedIds.length + ' usaha.',
                     icon: 'warning'
                 });
                 return;
@@ -1031,12 +1060,13 @@
                             });
                         },
                         error: function(xhr, status, error) {
-                            let errorMessage = 'Terjadi kesalahan saat merestore usaha. Silakan coba lagi.';
-                            
+                            let errorMessage =
+                                'Terjadi kesalahan saat merestore usaha. Silakan coba lagi.';
+
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMessage = xhr.responseJSON.message;
                             }
-                            
+
                             Swal.fire({
                                 title: 'Gagal!',
                                 text: errorMessage,
@@ -1076,14 +1106,14 @@
         // Initialize table with default mode
         const initializeTable = (mode = "fit") => {
             table = new Tabulator("#data-table", getTableConfig(mode));
-            
+
             // Add selection event listeners
             table.on("rowSelected", handleRowSelection);
             table.on("rowDeselected", handleRowDeselection);
-            
+
             // Save selection state before data loads
             table.on("dataProcessing", saveSelectionState);
-            
+
             // Initialize button state
             updateRestoreButton();
         };
@@ -1133,7 +1163,7 @@
             const initialMode = checkedRadio ? checkedRadio.value : "fit";
 
             initializeTable(initialMode);
-            
+
             // Add restore button event listener
             document.getElementById('restore-selected-btn').addEventListener('click', restoreSelectedRows);
         });
