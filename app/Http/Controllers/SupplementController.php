@@ -7,6 +7,7 @@ use App\Jobs\SupplementBusinessExportJob;
 use App\Jobs\SupplementUploadNotificationJob;
 use App\Models\AssignmentStatus;
 use App\Models\Organization;
+use App\Models\Project;
 use App\Models\Regency;
 use App\Models\Subdistrict;
 use App\Models\SupplementBusiness;
@@ -580,12 +581,27 @@ class SupplementController extends Controller
             // Fast bulk restore
             $restoredCount = $businesses->update(['deleted_at' => null]);
 
+            // Get unique project IDs from the restored businesses and restore them too
+            $projectIds = $foundBusinesses->whereNotNull('project_id')
+                ->pluck('project_id')
+                ->unique()
+                ->filter()
+                ->toArray();
+
+            if (!empty($projectIds)) {
+                // Restore associated projects that are soft deleted
+                Project::onlyTrashed()
+                    ->whereIn('id', $projectIds)
+                    ->update(['deleted_at' => null]);
+            }
+
             // Bulk insert audit records
             if ($restoredCount > 0) {
                 $auditRecords = [];
                 $now = now();
                 $userId = auth()->id();
                 
+                // Audit records for businesses
                 foreach ($foundBusinesses as $business) {
                     $auditRecords[] = [
                         'model_type' => SupplementBusiness::class,
