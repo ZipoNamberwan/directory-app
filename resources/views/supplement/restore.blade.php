@@ -142,12 +142,12 @@
                         </div>
                     @endhasrole
                     <div class="col-md-3">
-                        <label class="form-control-label">Tipe Projek</label>
-                        <select id="projectType" class="form-control" data-toggle="select">
-                            <option value="0" disabled selected> -- Pilih Tipe Projek -- </option>
-                            @foreach ($projectTypes as $projectType)
-                                <option value="{{ $projectType['value'] }}">
-                                    {{ $projectType['name'] }}
+                        <label class="form-control-label">Petugas</label>
+                        <select id="user" class="form-control" data-toggle="select">
+                            <option value="0" disabled selected> -- Pilih Petugas -- </option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}">
+                                    {{ $user->firstname }}
                                 </option>
                             @endforeach
                         </select>
@@ -237,7 +237,7 @@
                     <div class="col-md-4 text-end">
                         <button type="button" id="restore-selected-btn" class="btn btn-success btn-sm" disabled>
                             <i class="fas fa-trash-can-arrow-up me-2"></i>
-                            Restore Usaha Terpilih (<span id="selected-count">0</span>)
+                            Restore Terpilih (<span id="selected-count">0</span>)
                         </button>
                     </div>
                 </div>
@@ -666,6 +666,7 @@
     <script>
         // Global table variable
         let table;
+        let selectedRowIds = new Set(); // Track selected row IDs persistently
         let organizationId = @json($organizationId);
         let canDeletePermission = @json($canDelete);
         let isAdminProv = @json(auth()->user()->hasRole('adminprov'));
@@ -676,27 +677,6 @@
         // Define column configurations for different modes
         const getColumnConfig = (mode) => {
             const baseColumns = [{
-                    title: `<div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="select-all-businesses">
-                    </div>`,
-                    field: "checkbox",
-                    responsive: 0,
-                    width: 50,
-                    headerSort: false,
-                    hozAlign: "center",
-                    formatter: function(cell) {
-                        let row = cell.getRow().getData();
-                        const businessId = row.id;
-
-                        // Check if this business should be selected based on current state
-                        const isChecked = selectAllState || selectedBusinessIds.has(businessId);
-
-                        return `<div class="form-check">
-                            <input class="form-check-input business-checkbox" type="checkbox" value="${businessId}" ${isChecked ? 'checked' : ''}>
-                        </div>`;
-                    }
-                },
-                {
                     title: "Nama",
                     field: "name",
                     responsive: 0,
@@ -771,11 +751,11 @@
 
                         if (row.match_level === 'failed') {
                             return `<div class="text-wrap lh-sm">
-                <div class="text-warning fw-semibold small">
-                    <i class="fas fa-exclamation-triangle me-1"></i>
-                    Tidak ada polygon yang pas untuk titik ini, bisa cek koordinatnya dulu
-                </div>
-            </div>`;
+                                <div class="text-warning fw-semibold small">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Tidak ada polygon yang pas untuk titik ini, bisa cek koordinatnya dulu
+                                </div>
+                            </div>`;
                         }
 
                         let areaId = "";
@@ -808,9 +788,9 @@
                         if (!areaId && !areaName) return "-";
 
                         return `<div class="text-wrap lh-sm">
-            ${areaId ? `<div class="fw-semibold text-success">${toTitleCase(areaId)}</div>` : ""}
-            ${areaName !== "-" ? `<div class="small text-muted">${toTitleCase(areaName)}</div>` : ""}
-        </div>`;
+                                    ${areaId ? `<div class="fw-semibold text-success">${toTitleCase(areaId)}</div>` : ""}
+                                    ${areaName !== "-" ? `<div class="small text-muted">${toTitleCase(areaName)}</div>` : ""}
+                                </div>`;
                     }
                 },
                 {
@@ -868,8 +848,8 @@
                 };
 
                 // Set widths for responsive mode
-                baseColumns[0].width = 50;
-                baseColumns[0].minWidth = 50;
+                baseColumns[0].width = 150;
+                baseColumns[0].minWidth = 150;
                 baseColumns[1].widthGrow = 3;
                 baseColumns[1].minWidth = 150;
                 baseColumns[2].width = 250;
@@ -882,16 +862,12 @@
                 baseColumns[5].minWidth = 150;
                 baseColumns[6].width = 150;
                 baseColumns[6].minWidth = 120;
-                baseColumns[7].width = 150;
-                baseColumns[7].minWidth = 120;
-                baseColumns[8].width = 150;
-                baseColumns[8].minWidth = 120;
 
                 return [responsiveColumn, ...baseColumns];
             } else { // scroll horizontal
                 // Set widths for horizontal scroll mode
-                baseColumns[0].width = 50;
-                baseColumns[0].minWidth = 50;
+                baseColumns[0].width = 150;
+                baseColumns[0].minWidth = 150;
                 baseColumns[1].widthGrow = 3;
                 baseColumns[1].minWidth = 150;
                 baseColumns[2].width = 250;
@@ -904,10 +880,6 @@
                 baseColumns[5].minWidth = 150;
                 baseColumns[6].width = 150;
                 baseColumns[6].minWidth = 120;
-                baseColumns[7].width = 150;
-                baseColumns[7].minWidth = 120;
-                baseColumns[8].width = 150;
-                baseColumns[8].minWidth = 120;
 
                 return baseColumns;
             }
@@ -923,10 +895,29 @@
                 paginationSize: 20,
                 placeholder: "Tidak ada usaha yang ditemukan",
                 textDirection: "auto",
+                rowHeader: {
+                    headerSort: false,
+                    resizable: false,
+                    frozen: true,
+                    headerHozAlign: "center",
+                    hozAlign: "center",
+                    formatter: "rowSelection",
+                    titleFormatter: "rowSelection",
+                    minWidth: 60,
+                    width: 60,
+                    cellClick: function(e, cell) {
+                        cell.getRow().toggleSelect();
+                    }
+                },
                 ajaxResponse: function(url, params, response) {
                     // Update total records count
-                    totalRecords = response.total_records || 0;
+                    const totalRecords = response.total_records || 0;
                     document.getElementById("total-records").textContent = totalRecords;
+
+                    // Restore selection state after data load
+                    setTimeout(() => {
+                        restoreSelectionState();
+                    }, 50); // Small delay to ensure DOM is updated
 
                     return response;
                 },
@@ -941,264 +932,48 @@
             return baseConfig;
         };
 
-        // Initialize table with default mode
-        const initializeTable = (mode = "fit") => {
-            table = new Tabulator("#data-table", getTableConfig(mode));
-        };
-
-        // Recreate table with new mode
-        const recreateTable = (mode) => {
-            if (table) {
-                table.destroy();
-            }
-            initializeTable(mode);
-        };
-
-        // Reset all Select2 filters without triggering change events
-        const resetSelect2Filters = () => {
-            selectConfigs.forEach(({
-                selector
-            }) => {
-                // Reset value without triggering change event
-                $(selector).val(null);
-                // Update the Select2 display without triggering change
-                $(selector).trigger('change.select2');
-            });
-
-            document.getElementById('keyword').value = '';
-
-            // Reset selection state
-            selectAllState = false;
-            selectedBusinessIds.clear();
-            totalRecords = 0;
-            document.getElementById('select-all-businesses').checked = false;
-            updateRestoreButton();
-        };
-
-        // Event listener for mode changes
-        document.querySelectorAll('input[name="mode"]').forEach(radio => {
-            radio.addEventListener("change", function(e) {
-                let mode = e.target.value;
-
-                // Reset all Select2 filters
-                resetSelect2Filters();
-
-                // Recreate table with new mode configuration
-                recreateTable(mode);
-            });
-        });
-
-        // Initialize table on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 PAGE LOADED - Initial state:', {
-                selectAllState,
-                selectedBusinessIds: Array.from(selectedBusinessIds),
-                totalRecords
-            });
-            
-            // Get initial mode from checked radio button
-            const checkedRadio = document.querySelector('input[name="mode"]:checked');
-            const initialMode = checkedRadio ? checkedRadio.value : "fit";
-
-            console.log('🚀 Initializing table with mode:', initialMode);
-            initializeTable(initialMode);
-        });
-
-        // Replace the existing checkbox and restore functionality section with this improved version
-
-        // Checkbox and restore functionality
-        let selectAllState = false; // Track the select all state
-        let selectedBusinessIds = new Set(); // Track manually selected business IDs
-        let totalRecords = 0; // Track total number of records
-
+        // Update restore button state based on selection
         const updateRestoreButton = () => {
             const restoreBtn = document.getElementById('restore-selected-btn');
             const selectedCount = document.getElementById('selected-count');
-
-            const count = selectedBusinessIds.size;
-            console.log('🔄 updateRestoreButton:', {
-                count,
-                selectedBusinessIds: Array.from(selectedBusinessIds),
-                selectAllState,
-                restoreBtnDisabled: count === 0
-            });
+            const count = selectedRowIds.size;
             
-            selectedCount.textContent = count;
             restoreBtn.disabled = count === 0;
+            selectedCount.textContent = count;
         };
 
-        const updateSelectAllCheckboxState = () => {
-            const selectAllCheckbox = document.getElementById('select-all-businesses');
-            const businessCheckboxes = document.querySelectorAll('.business-checkbox');
-            const checkedBoxes = document.querySelectorAll('.business-checkbox:checked');
-
-            console.log('🔄 updateSelectAllCheckboxState:', {
-                totalCheckboxes: businessCheckboxes.length,
-                checkedCheckboxes: checkedBoxes.length,
-                selectAllState,
-                selectedBusinessIdsSize: selectedBusinessIds.size
-            });
-
-            if (businessCheckboxes.length === 0) {
-                selectAllCheckbox.checked = false;
-                selectAllCheckbox.indeterminate = false;
-                console.log('📝 No checkboxes found - select all unchecked');
-                return;
-            }
-
-            if (selectAllState) {
-                // If select all is active, checkbox should be checked
-                selectAllCheckbox.checked = true;
-                selectAllCheckbox.indeterminate = false;
-                console.log('📝 Select all state active - checkbox checked');
-            } else if (checkedBoxes.length === businessCheckboxes.length) {
-                // All visible boxes are checked individually
-                selectAllCheckbox.checked = true;
-                selectAllCheckbox.indeterminate = false;
-                console.log('📝 All visible boxes checked individually');
-            } else if (checkedBoxes.length > 0) {
-                // Some but not all are checked
-                selectAllCheckbox.checked = false;
-                selectAllCheckbox.indeterminate = true;
-                console.log('📝 Some boxes checked - indeterminate state');
-            } else {
-                // None are checked
-                selectAllCheckbox.checked = false;
-                selectAllCheckbox.indeterminate = false;
-                console.log('📝 No boxes checked - select all unchecked');
+        // Handle row selection to update button state
+        const handleRowSelection = (row) => {
+            const rowData = row.getData();
+            if (rowData.id) {
+                selectedRowIds.add(rowData.id);
+                updateRestoreButton();
             }
         };
 
-        // Handle "Select All" checkbox
-        const handleSelectAll = (e) => {
-            const isChecked = e.target.checked;
-            const businessCheckboxes = document.querySelectorAll('.business-checkbox');
+        // Handle row deselection to update button state
+        const handleRowDeselection = (row) => {
+            const rowData = row.getData();
+            if (rowData.id) {
+                selectedRowIds.delete(rowData.id);
+                updateRestoreButton();
+            }
+        };
+
+        // Clear selection state
+        const clearSelectionState = () => {
+            selectedRowIds.clear();
+            if (table) {
+                table.deselectRow();
+            }
+            updateRestoreButton();
+        };
+
+        // Restore selected rows functionality
+        const restoreSelectedRows = () => {
+            const selectedIds = Array.from(selectedRowIds);
             
-            console.log('🟦 SELECT ALL CLICKED:', {
-                isChecked,
-                previousSelectAllState: selectAllState,
-                visibleCheckboxes: businessCheckboxes.length,
-                selectedBusinessIdsBeforeAction: Array.from(selectedBusinessIds),
-                selectedBusinessIdsSizeBefore: selectedBusinessIds.size
-            });
-            
-            selectAllState = isChecked;
-
-            if (isChecked) {
-                // When select all is checked, check all visible checkboxes and add their IDs
-                let checkedCount = 0;
-                businessCheckboxes.forEach(checkbox => {
-                    if (!checkbox.checked) {
-                        checkbox.checked = true;
-                        checkedCount++;
-                    }
-                    const businessId = checkbox.value;
-                    selectedBusinessIds.add(businessId);
-                    console.log(`  ✅ Added business ID: ${businessId}`);
-                });
-                console.log(`🟦 SELECT ALL: Checked ${checkedCount} new checkboxes, total selected: ${selectedBusinessIds.size}`);
-            } else {
-                // When unchecked, only uncheck visible checkboxes and remove them from selectedBusinessIds
-                let uncheckedCount = 0;
-                businessCheckboxes.forEach(checkbox => {
-                    if (checkbox.checked) {
-                        checkbox.checked = false;
-                        uncheckedCount++;
-                    }
-                    const businessId = checkbox.value;
-                    selectedBusinessIds.delete(businessId);
-                    console.log(`  ❌ Removed business ID: ${businessId}`);
-                });
-                console.log(`🟦 SELECT ALL: Unchecked ${uncheckedCount} checkboxes, remaining selected: ${selectedBusinessIds.size}`);
-            }
-
-            console.log('🟦 SELECT ALL RESULT:', {
-                newSelectAllState: selectAllState,
-                selectedBusinessIdsAfterAction: Array.from(selectedBusinessIds),
-                selectedBusinessIdsSizeAfter: selectedBusinessIds.size
-            });
-
-            updateRestoreButton();
-        };
-
-        // Handle individual business checkbox
-        const handleBusinessCheckbox = (e) => {
-            const checkbox = e.target;
-            const businessId = checkbox.value;
-
-            console.log('🟨 INDIVIDUAL CHECKBOX CLICKED:', {
-                businessId,
-                isChecked: checkbox.checked,
-                previousSelectAllState: selectAllState,
-                selectedBusinessIdsBeforeAction: Array.from(selectedBusinessIds),
-                selectedBusinessIdsSizeBefore: selectedBusinessIds.size
-            });
-
-            if (checkbox.checked) {
-                selectedBusinessIds.add(businessId);
-                console.log(`  ✅ Added business ID ${businessId} to selection`);
-            } else {
-                selectedBusinessIds.delete(businessId);
-                console.log(`  ❌ Removed business ID ${businessId} from selection`);
-                // If any item is unchecked, "select all" should be false
-                selectAllState = false;
-                console.log('  🟨 Set selectAllState to false due to unchecking');
-            }
-
-            console.log('🟨 INDIVIDUAL CHECKBOX RESULT:', {
-                businessId,
-                newSelectAllState: selectAllState,
-                selectedBusinessIdsAfterAction: Array.from(selectedBusinessIds),
-                selectedBusinessIdsSizeAfter: selectedBusinessIds.size
-            });
-
-            updateSelectAllCheckboxState();
-            updateRestoreButton();
-        };
-
-        // Function to sync checkboxes when new rows are loaded
-        const syncCheckboxesWithState = () => {
-            const businessCheckboxes = document.querySelectorAll('.business-checkbox');
-
-            console.log('🔄 SYNC CHECKBOXES WITH STATE:', {
-                visibleCheckboxes: businessCheckboxes.length,
-                selectAllState,
-                selectedBusinessIdsSize: selectedBusinessIds.size,
-                selectedBusinessIds: Array.from(selectedBusinessIds)
-            });
-
-            let syncedCount = 0;
-            businessCheckboxes.forEach(checkbox => {
-                const businessId = checkbox.value;
-                const wasChecked = checkbox.checked;
-
-                // Only check boxes that were individually selected (not due to selectAllState)
-                // Don't automatically check new rows when selectAllState is true
-                if (selectedBusinessIds.has(businessId)) {
-                    checkbox.checked = true;
-                    if (!wasChecked) {
-                        syncedCount++;
-                        console.log(`  ✅ Synced checkbox for business ID: ${businessId}`);
-                    }
-                } else {
-                    checkbox.checked = false;
-                    if (wasChecked) {
-                        console.log(`  ❌ Unchecked business ID: ${businessId}`);
-                    }
-                }
-            });
-
-            console.log(`🔄 SYNC RESULT: ${syncedCount} checkboxes synced`);
-
-            updateSelectAllCheckboxState();
-            updateRestoreButton();
-        };
-
-        // Restore selected businesses
-        const restoreSelectedBusinesses = () => {
-            const allSelectedIds = Array.from(selectedBusinessIds);
-
-            if (allSelectedIds.length === 0) {
+            if (selectedIds.length === 0) {
                 Swal.fire({
                     title: 'Peringatan',
                     text: 'Pilih minimal satu usaha untuk direstore.',
@@ -1209,7 +984,7 @@
 
             Swal.fire({
                 title: 'Konfirmasi Restore',
-                text: `Apakah Anda yakin ingin merestore ${allSelectedIds.length} usaha yang dipilih?`,
+                text: `Apakah Anda yakin ingin merestore ${selectedIds.length} usaha yang dipilih?`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',
@@ -1239,36 +1014,32 @@
                         url: '/suplemen/restore',
                         type: 'POST',
                         data: {
-                            ids: allSelectedIds
+                            ids: selectedIds
                         },
                         success: function(response) {
                             Swal.fire({
                                 title: 'Berhasil!',
-                                text: `${allSelectedIds.length} usaha berhasil direstore.`,
+                                text: `${selectedIds.length} usaha berhasil direstore.`,
                                 icon: 'success',
                                 timer: 2000,
                                 showConfirmButton: false
                             }).then(() => {
-                                // Reset state
-                                selectAllState = false;
-                                selectedBusinessIds.clear();
-
-                                // Refresh table
+                                // Clear selection state
+                                clearSelectionState();
+                                // Refresh table data
                                 renderTable();
-
-                                // Reset checkboxes
-                                document.getElementById('select-all-businesses').checked =
-                                    false;
-                                document.getElementById('select-all-businesses')
-                                    .indeterminate = false;
-                                updateRestoreButton();
                             });
                         },
                         error: function(xhr, status, error) {
-                            console.error('Error:', error);
+                            let errorMessage = 'Terjadi kesalahan saat merestore usaha. Silakan coba lagi.';
+                            
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            }
+                            
                             Swal.fire({
                                 title: 'Gagal!',
-                                text: 'Terjadi kesalahan saat merestore usaha. Silakan coba lagi.',
+                                text: errorMessage,
                                 icon: 'error'
                             });
                         }
@@ -1277,45 +1048,94 @@
             });
         };
 
-        // Event delegation for dynamically created elements
-        document.addEventListener('change', function(e) {
-            console.log('🎯 EVENT DELEGATION - Change event captured:', {
-                targetId: e.target.id,
-                targetClasses: e.target.className,
-                targetValue: e.target.value,
-                targetChecked: e.target.checked
-            });
-            
-            if (e.target.id === 'select-all-businesses') {
-                console.log('🎯 EVENT: Select all checkbox detected');
-                handleSelectAll(e);
-            } else if (e.target.classList.contains('business-checkbox')) {
-                console.log('🎯 EVENT: Individual business checkbox detected');
-                handleBusinessCheckbox(e);
-            } else {
-                console.log('🎯 EVENT: Unhandled checkbox change');
-            }
-        });
-
-        // Restore button event listener
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('restore-selected-btn').addEventListener('click', restoreSelectedBusinesses);
-        });
-    </script>
-
-    <script>
-        // Make entire header clickable to toggle collapse
-        document.addEventListener('DOMContentLoaded', function() {
-            const header = document.getElementById('matchingInfoHeader');
-            const btn = document.getElementById('matchingInfoToggle');
-            if (header && btn) {
-                header.addEventListener('click', function(e) {
-                    // Avoid double-trigger if button itself clicked
-                    if (!btn.contains(e.target)) {
-                        btn.click();
+        // Selection state management functions
+        const saveSelectionState = () => {
+            if (table) {
+                const selectedRows = table.getSelectedRows();
+                selectedRows.forEach(row => {
+                    const rowData = row.getData();
+                    if (rowData.id) {
+                        selectedRowIds.add(rowData.id);
                     }
                 });
             }
+        };
+
+        const restoreSelectionState = () => {
+            if (table && selectedRowIds.size > 0) {
+                const allRows = table.getRows();
+                allRows.forEach(row => {
+                    const rowData = row.getData();
+                    if (rowData.id && selectedRowIds.has(rowData.id)) {
+                        row.select();
+                    }
+                });
+            }
+        };
+
+        // Initialize table with default mode
+        const initializeTable = (mode = "fit") => {
+            table = new Tabulator("#data-table", getTableConfig(mode));
+            
+            // Add selection event listeners
+            table.on("rowSelected", handleRowSelection);
+            table.on("rowDeselected", handleRowDeselection);
+            
+            // Save selection state before data loads
+            table.on("dataProcessing", saveSelectionState);
+            
+            // Initialize button state
+            updateRestoreButton();
+        };
+
+        // Recreate table with new mode
+        const recreateTable = (mode) => {
+            if (table) {
+                table.destroy();
+            }
+            initializeTable(mode);
+        };
+
+        // Reset all Select2 filters without triggering change events
+        const resetSelect2Filters = () => {
+            selectConfigs.forEach(({
+                selector
+            }) => {
+                // Reset value without triggering change event
+                $(selector).val(null);
+                // Update the Select2 display without triggering change
+                $(selector).trigger('change.select2');
+            });
+
+            document.getElementById('keyword').value = '';
+
+            // Clear selection state when filters are reset
+            clearSelectionState();
+        };
+
+        // Event listener for mode changes
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener("change", function(e) {
+                let mode = e.target.value;
+
+                // Reset all Select2 filters
+                resetSelect2Filters();
+
+                // Recreate table with new mode configuration
+                recreateTable(mode);
+            });
+        });
+
+        // Initialize table on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get initial mode from checked radio button
+            const checkedRadio = document.querySelector('input[name="mode"]:checked');
+            const initialMode = checkedRadio ? checkedRadio.value : "fit";
+
+            initializeTable(initialMode);
+            
+            // Add restore button event listener
+            document.getElementById('restore-selected-btn').addEventListener('click', restoreSelectedRows);
         });
     </script>
 @endpush

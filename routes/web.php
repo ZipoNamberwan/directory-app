@@ -156,6 +156,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::post('/pasar/savepolygon/{id}', [MarketManagementController::class, 'savePolygonMarket']);
 
 		Route::get('/suplemen/restore', [SupplementController::class, 'showRestorePage']);
+		Route::post('/suplemen/restore', [SupplementController::class, 'restoreBusinesses']);
 	});
 
 	Route::group(['middleware' => ['role:adminprov|adminkab|operator']], function () {

@@ -239,10 +239,16 @@ class SupplementController extends Controller
         if ($user->hasRole('adminprov')) {
             $records = SupplementBusiness::query();
         } elseif ($user->hasRole('adminkab')) {
-            $records = SupplementBusiness::where(function ($query) use ($user) {
-                $query->where('organization_id', $user->organization_id)
-                    ->orWhere('regency_id', $user->organization_id);
-            });
+            if ($request->boolean('is_deleted_only')) {
+                $records = SupplementBusiness::where(function ($query) use ($user) {
+                    $query->where('organization_id', $user->organization_id);
+                });
+            } else {
+                $records = SupplementBusiness::where(function ($query) use ($user) {
+                    $query->where('organization_id', $user->organization_id)
+                        ->orWhere('regency_id', $user->organization_id);
+                });
+            }
         } else {
             $records = SupplementBusiness::where('user_id', $user->id);
         }
@@ -254,10 +260,16 @@ class SupplementController extends Controller
 
         // filters
         if ($request->organization && $request->organization !== 'all') {
-            $records->where(function ($query) use ($request) {
-                $query->where('organization_id', $request->organization)
-                    ->orWhere('regency_id', $request->organization);
-            });
+            if ($request->boolean('is_deleted_only')) {
+                $records->where(function ($query) use ($request) {
+                    $query->where('organization_id', $request->organization);
+                });
+            } else {
+                $records->where(function ($query) use ($request) {
+                    $query->where('organization_id', $request->organization)
+                        ->orWhere('regency_id', $request->organization);
+                });
+            }
         }
         if ($request->user && $request->user !== 'all') {
             $records->where('user_id', $request->user);
@@ -303,7 +315,8 @@ class SupplementController extends Controller
         }
 
         // sorting
-        $orderColumn = $request->get('sort_by', 'created_at');
+        $defaultSortColumn = $request->boolean('is_deleted_only') ? 'deleted_at' : 'created_at';
+        $orderColumn = $request->get('sort_by', $defaultSortColumn);
         $orderDir = $request->get('sort_dir', 'desc');
 
         // ✅ get total BEFORE applying pagination
@@ -500,13 +513,12 @@ class SupplementController extends Controller
         $organizations = [];
         $regencies = [];
         $subdistricts = [];
-        $users = [];
+        $users = User::where('organization_id', $user->organization_id)->get();
 
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
             $regencies = Regency::all();
         } else if ($user->hasRole('adminkab')) {
-            $users = User::where('organization_id', $user->organization_id)->get();
             $regencies = Regency::where('id', $user->regency_id)->get();
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
