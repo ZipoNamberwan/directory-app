@@ -154,6 +154,8 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/pasar-dashboard/graph/data/{regency}', [DashboardController::class, 'getGraphReportData']);
 
 		Route::post('/pasar/savepolygon/{id}', [MarketManagementController::class, 'savePolygonMarket']);
+
+		Route::get('/suplemen/restore', [SupplementController::class, 'showRestorePage']);
 	});
 
 	Route::group(['middleware' => ['role:adminprov|adminkab|operator']], function () {

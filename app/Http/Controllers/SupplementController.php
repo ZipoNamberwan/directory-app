@@ -82,48 +82,6 @@ class SupplementController extends Controller
         ]);
     }
 
-    // public function showSupplementDownloadPage()
-    // {
-    //     $user = Auth::user();
-    //     $regencies = [];
-    //     $subdistricts = [];
-
-    //     if ($user->regency_id == null) {
-    //         $regencies = Regency::all();
-    //         $subdistricts = [];
-    //     } else {
-    //         $regencies = [];
-    //         $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
-    //     }
-
-
-    //     return view('supplement.download', [
-    //         'user' => $user,
-    //         'regencies' => $regencies,
-    //         'subdistricts' => $subdistricts,
-    //     ]);
-    // }
-
-    // public function downloadSupplementProject(Request $request)
-    // {
-    //     $request->validate([
-    //         'village' => 'required|exists:villages,id',
-    //     ]);
-    //     $files = Storage::files('project_swmaps_desa');
-
-    //     // Find the file that starts with the code
-    //     $matchedFile = collect($files)->first(function ($file) use ($request) {
-    //         return Str::startsWith(basename($file), $request->village);
-    //     });
-
-    //     if (!$matchedFile) {
-    //         abort(404, 'File not found');
-    //     }
-
-    //     // Return file as download
-    //     return Storage::download($matchedFile);
-    // }
-
     public function downloadSupplementProjectAndroid(Request $request)
     {
         return Storage::download('project_swmaps_desa/Project SW Maps 2025.swmz');
@@ -287,6 +245,11 @@ class SupplementController extends Controller
             });
         } else {
             $records = SupplementBusiness::where('user_id', $user->id);
+        }
+
+        // ✅ show deleted only
+        if ($request->boolean('is_deleted_only')) {
+            $records = $records->onlyTrashed(); // requires SoftDeletes
         }
 
         // filters
@@ -529,5 +492,43 @@ class SupplementController extends Controller
                 'message' => 'Terjadi kesalahan saat memperbarui data usaha'
             ], 500);
         }
+    }
+
+    public function showRestorePage()
+    {
+        $user = User::find(Auth::id());
+        $organizations = [];
+        $regencies = [];
+        $subdistricts = [];
+        $users = [];
+
+        if ($user->hasRole('adminprov')) {
+            $organizations = Organization::all();
+            $regencies = Regency::all();
+        } else if ($user->hasRole('adminkab')) {
+            $users = User::where('organization_id', $user->organization_id)->get();
+            $regencies = Regency::where('id', $user->regency_id)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
+        } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
+            $regencies = Regency::where('id', $user->regency_id)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
+        }
+
+        $projectTypes = [
+            ['name' => 'SWMAPS Supplement', 'value' => 'swmaps supplement'],
+            ['name' => 'Kendedes Mobile', 'value' => 'kendedes mobile'],
+        ];
+
+        return view('supplement.restore', [
+            'organizations' => $organizations,
+            'regencies' => $regencies,
+            'subdistricts' => $subdistricts,
+            'users' => $users,
+            'color' => 'success',
+            'projectTypes' => $projectTypes,
+            'canEdit' => $user->hasPermissionTo('edit_business') || $user->hasRole('adminprov'),
+            'canDelete' => $user->hasPermissionTo('delete_business') || $user->hasRole('adminprov'),
+            'organizationId' => $user->organization_id,
+        ]);
     }
 }
