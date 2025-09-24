@@ -20,6 +20,7 @@ use App\Http\Controllers\PclController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SupplementController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\MapsController;
 
 // Route::get('/info', function () {
 // 	return view('pages.info');
@@ -119,6 +120,12 @@ Route::group(['middleware' => 'auth'], function () {
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
+		Route::get('/maps', [MapsController::class, 'index']);
+		Route::get('/maps/duplicate', [MapsController::class, 'duplicate']);		
+		Route::get('/maps/duplicate-data', [MapsController::class, 'getData']);
+		Route::post('/maps/detail-data', [MapsController::class, 'getDuplicationData']);
+		Route::post('/maps/handle-duplicate', [MapsController::class, 'handleDuplicate']);
+
 		Route::get('/users/kab/{regency}', [UserController::class, 'getUserByRegency']);
 
 		Route::get('/report/{date}/{type}/{level}/{id}', [ReportController::class, 'getReport']);
