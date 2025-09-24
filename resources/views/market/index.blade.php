@@ -877,6 +877,7 @@
     <script>
         // Global table variable
         let table;
+        let organizationId = @json($organizationId);
         let canEditPermission = @json($canEdit);
         let canDeletePermission = @json($canDelete);
         let isAdminProv = @json(auth()->user()->hasRole('adminprov'));
