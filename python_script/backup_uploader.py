@@ -2,7 +2,7 @@
 """
 Database Backup Uploader to Google Drive
 
-This script uploads the latest database backup file to Google Drive
+This script uploads the latest database backup file to Google Drive using a service account
 and maintains only a specified number of backup files to save space.
 
 Requirements:
@@ -16,6 +16,8 @@ Install with: pip install google-api-python-client google-auth python-dotenv
 import os
 import glob
 import json
+import time
+import shutil
 from datetime import datetime
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
@@ -31,14 +33,25 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 # =====================================================================
 
 # Number of backup files to retain in Google Drive
-MAX_BACKUP_FILES = 2
+MAX_BACKUP_FILES = 3  # Keep three latest backups
 
 # Backup directory relative to script location
 BACKUP_DIR = os.path.join(os.path.dirname(__file__), '..', 'backup')
 
+# Temporary directory for safe copying (within backup folder)
+TEMP_DIR = os.path.join(BACKUP_DIR, 'temp')
+
+# File stability check - wait time to ensure file is not being written
+FILE_STABILITY_WAIT = 30  # seconds
+
+# Minimum time between uploads of same file (to avoid duplicate uploads)
+MIN_UPLOAD_INTERVAL = 21600  # 6 hours in seconds
+
 # Environment variables for Google Drive
 GOOGLE_DRIVE_FOLDER_ID = os.getenv('GOOGLE_DRIVE_BACKUP_FOLDER_ID')
-GOOGLE_SERVICE_ACCOUNT_KEY = os.getenv('GOOGLE_SERVICE_ACCOUNT_KEY')  # JSON string or file path
+
+# Service Account authentication file
+GOOGLE_SERVICE_ACCOUNT_KEY_FILE = os.path.join(os.path.dirname(__file__), '..', 'gdrivekey.json')
 
 # Google Drive API scope
 SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -52,26 +65,21 @@ class GoogleDriveBackupManager:
         self.setup_drive_service()
     
     def setup_drive_service(self):
-        """Initialize Google Drive API service"""
+        """Initialize Google Drive API service using service account"""
         try:
-            # Handle service account credentials
-            if not GOOGLE_SERVICE_ACCOUNT_KEY:
-                raise ValueError("GOOGLE_SERVICE_ACCOUNT_KEY not found in environment variables")
+            print("🔐 Using service account authentication")
             
-            # Check if it's a file path or JSON string
-            if os.path.isfile(GOOGLE_SERVICE_ACCOUNT_KEY):
-                # It's a file path
-                credentials = Credentials.from_service_account_file(
-                    GOOGLE_SERVICE_ACCOUNT_KEY, 
-                    scopes=SCOPES
-                )
-            else:
-                # It's a JSON string
-                service_account_info = json.loads(GOOGLE_SERVICE_ACCOUNT_KEY)
-                credentials = Credentials.from_service_account_info(
-                    service_account_info, 
-                    scopes=SCOPES
-                )
+            # Check if service account key file exists
+            if not os.path.exists(GOOGLE_SERVICE_ACCOUNT_KEY_FILE):
+                raise FileNotFoundError(f"Service account key file not found: {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
+            
+            print(f"📄 Loading service account credentials from: {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
+            
+            # Load credentials from file
+            credentials = Credentials.from_service_account_file(
+                GOOGLE_SERVICE_ACCOUNT_KEY_FILE, 
+                scopes=SCOPES
+            )
             
             # Build the service
             self.service = build('drive', 'v3', credentials=credentials)
@@ -79,10 +87,16 @@ class GoogleDriveBackupManager:
             
         except Exception as e:
             print(f"✗ Error setting up Google Drive service: {e}")
+            print("💡 Setup instructions:")
+            print("   1. Go to Google Cloud Console (https://console.cloud.google.com/)")
+            print("   2. Create/select project → Enable Google Drive API")
+            print("   3. Create service account credentials")
+            print(f"   4. Download service account key as {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
+            print("   5. Share your Google Drive folder with the service account email")
             raise
     
     def find_latest_backup_file(self):
-        """Find the latest backup file in the backup directory"""
+        """Find the latest backup file and ensure it's stable (not being written)"""
         try:
             # Pattern to match backup files: DB_MAIN_{date}.sql
             pattern = os.path.join(BACKUP_DIR, 'DB_MAIN_*.sql')
@@ -95,18 +109,124 @@ class GoogleDriveBackupManager:
             backup_files.sort(key=os.path.getmtime, reverse=True)
             latest_file = backup_files[0]
             
-            print(f"✓ Found latest backup file: {os.path.basename(latest_file)}")
+            # Check if file is stable (not being modified)
+            if not self.is_file_stable(latest_file):
+                print(f"⚠️  File {os.path.basename(latest_file)} appears to be in use, waiting...")
+                time.sleep(FILE_STABILITY_WAIT)
+                
+                # Check again after waiting
+                if not self.is_file_stable(latest_file):
+                    raise Exception(f"File {latest_file} is still being modified, aborting upload")
+            
+            print(f"✓ Found stable backup file: {os.path.basename(latest_file)}")
             return latest_file
             
         except Exception as e:
             print(f"✗ Error finding backup file: {e}")
             raise
     
-    def upload_backup_file(self, file_path):
-        """Upload backup file to Google Drive"""
+    def is_file_stable(self, file_path):
+        """Check if file is stable (not being written to)"""
         try:
-            file_name = os.path.basename(file_path)
-            file_size = os.path.getsize(file_path)
+            # Get initial file stats
+            initial_size = os.path.getsize(file_path)
+            initial_mtime = os.path.getmtime(file_path)
+            
+            # Wait a short time
+            time.sleep(2)
+            
+            # Check if file changed
+            current_size = os.path.getsize(file_path)
+            current_mtime = os.path.getmtime(file_path)
+            
+            # File is stable if size and modification time haven't changed
+            is_stable = (initial_size == current_size and initial_mtime == current_mtime)
+            
+            if not is_stable:
+                print(f"   File is being modified: size changed from {initial_size} to {current_size}")
+            
+            return is_stable
+            
+        except Exception as e:
+            print(f"   Error checking file stability: {e}")
+            return False
+    
+    def create_safe_copy(self, source_file):
+        """Create a safe copy of the backup file to avoid upload conflicts"""
+        try:
+            # Ensure temp directory exists
+            os.makedirs(TEMP_DIR, exist_ok=True)
+            
+            # Create temp file name with timestamp
+            filename = os.path.basename(source_file)
+            name, ext = os.path.splitext(filename)
+            timestamp = datetime.now().strftime("%H%M%S")
+            temp_filename = f"{name}_upload_{timestamp}{ext}"
+            temp_file = os.path.join(TEMP_DIR, temp_filename)
+            
+            print(f"📋 Creating safe copy: {temp_filename}")
+            
+            # Copy file
+            shutil.copy2(source_file, temp_file)
+            
+            # Verify copy
+            if os.path.getsize(source_file) != os.path.getsize(temp_file):
+                raise Exception("File copy size mismatch")
+            
+            print(f"✓ Safe copy created: {self.format_file_size(os.path.getsize(temp_file))}")
+            return temp_file
+            
+        except Exception as e:
+            print(f"✗ Error creating safe copy: {e}")
+            raise
+    
+    def cleanup_temp_file(self, temp_file):
+        """Clean up temporary file after upload"""
+        try:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+                print(f"🗑️  Cleaned up temp file: {os.path.basename(temp_file)}")
+        except Exception as e:
+            print(f"⚠️  Warning: Could not clean up temp file {temp_file}: {e}")
+    
+    def should_upload_file(self, file_path):
+        """Check if file should be uploaded based on last upload time"""
+        try:
+            filename = os.path.basename(file_path)
+            
+            # Check if we've uploaded this file recently
+            files = self.get_backup_files_in_drive()
+            
+            for drive_file in files:
+                if drive_file['name'] == filename:
+                    # Parse creation time
+                    created_time = datetime.fromisoformat(drive_file['createdTime'].replace('Z', '+00:00'))
+                    current_time = datetime.now(created_time.tzinfo)
+                    time_diff = (current_time - created_time).total_seconds()
+                    
+                    if time_diff < MIN_UPLOAD_INTERVAL:
+                        print(f"⏱️  File {filename} was uploaded {time_diff/3600:.1f} hours ago, skipping")
+                        return False
+            
+            return True
+            
+        except Exception as e:
+            print(f"⚠️  Warning: Could not check upload history: {e}")
+            return True  # Upload anyway if we can't determine
+    
+    def upload_backup_file(self, file_path):
+        """Upload backup file to Google Drive using safe copy approach"""
+        temp_file = None
+        try:
+            # Check if we should upload this file
+            if not self.should_upload_file(file_path):
+                return None
+            
+            # Create safe copy
+            temp_file = self.create_safe_copy(file_path)
+            
+            file_name = os.path.basename(file_path)  # Use original filename
+            file_size = os.path.getsize(temp_file)
             
             print(f"📤 Uploading {file_name} ({self.format_file_size(file_size)})...")
             
@@ -118,16 +238,17 @@ class GoogleDriveBackupManager:
             
             # Media upload
             media = MediaFileUpload(
-                file_path,
+                temp_file,
                 mimetype='application/sql',
                 resumable=True
             )
             
-            # Execute upload
+            # Execute upload (with shared drive support)
             file = self.service.files().create(
                 body=file_metadata,
                 media_body=media,
-                fields='id,name,size,createdTime'
+                fields='id,name,size,createdTime',
+                supportsAllDrives=True
             ).execute()
             
             print(f"✓ Upload successful!")
@@ -141,21 +262,34 @@ class GoogleDriveBackupManager:
         except Exception as e:
             print(f"✗ Error uploading file: {e}")
             raise
-    
-    def get_backup_files_in_drive(self):
+        finally:
+            # Always cleanup temp file
+            if temp_file:
+                self.cleanup_temp_file(temp_file)
+                
+    def get_backup_files_in_drive(self, name_filter=None):
         """Get list of backup files in Google Drive folder"""
         try:
             # Query to find backup files in the folder
-            query = f"'{self.folder_id}' in parents and name contains 'DB_MAIN_' and name contains '.sql' and trashed=false"
+            if self.folder_id:
+                query = f"'{self.folder_id}' in parents and name contains 'DB_MAIN_' and name contains '.sql' and trashed=false"
+            else:
+                query = "name contains 'DB_MAIN_' and name contains '.sql' and trashed=false"
+            
+            if name_filter:
+                query += f" and name = '{name_filter}'"
             
             results = self.service.files().list(
                 q=query,
                 fields="files(id,name,size,createdTime)",
-                orderBy="createdTime desc"
+                orderBy="createdTime desc",
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True
             ).execute()
             
             files = results.get('files', [])
-            print(f"📁 Found {len(files)} backup files in Google Drive")
+            if not name_filter:
+                print(f"📁 Found {len(files)} backup files in Google Drive")
             
             return files
             
@@ -179,7 +313,10 @@ class GoogleDriveBackupManager:
             
             for file in files_to_delete:
                 try:
-                    self.service.files().delete(fileId=file['id']).execute()
+                    self.service.files().delete(
+                        fileId=file['id'],
+                        supportsAllDrives=True
+                    ).execute()
                     print(f"  ✓ Deleted: {file['name']} ({self.format_file_size(int(file.get('size', 0)))})")
                 except Exception as e:
                     print(f"  ✗ Failed to delete {file['name']}: {e}")
@@ -206,15 +343,23 @@ class GoogleDriveBackupManager:
         """Execute the complete backup upload and cleanup process"""
         try:
             print("🚀 Starting database backup upload process...")
+            print(f"   Authentication: Service Account")
             print(f"   Max backup files to retain: {MAX_BACKUP_FILES}")
-            print(f"   Target folder ID: {self.folder_id}")
+            print(f"   File stability wait time: {FILE_STABILITY_WAIT} seconds")
+            print(f"   Minimum upload interval: {MIN_UPLOAD_INTERVAL/3600:.1f} hours")
+            print(f"   Target folder ID: {self.folder_id or 'Root folder'}")
             print("-" * 60)
             
             # Step 1: Find latest backup file
             latest_backup = self.find_latest_backup_file()
             
-            # Step 2: Upload to Google Drive
+            # Step 2: Upload to Google Drive (may skip if recently uploaded)
             file_id = self.upload_backup_file(latest_backup)
+            
+            if file_id:
+                print("✓ New backup uploaded successfully")
+            else:
+                print("ℹ️  No upload needed (file recently uploaded)")
             
             # Step 3: Cleanup old backups
             self.cleanup_old_backups()
@@ -227,12 +372,67 @@ class GoogleDriveBackupManager:
             print(f"❌ Backup process failed: {e}")
             raise
 
+def check_setup():
+    """Check and validate setup requirements"""
+    print("🔍 Checking setup...")
+    
+    # Check GOOGLE_DRIVE_FOLDER_ID (optional)
+    if not GOOGLE_DRIVE_FOLDER_ID:
+        print("ℹ️  GOOGLE_DRIVE_BACKUP_FOLDER_ID not set - will upload to root folder")
+    else:
+        print(f"✓ GOOGLE_DRIVE_BACKUP_FOLDER_ID: {GOOGLE_DRIVE_FOLDER_ID}")
+    
+    return check_service_account_setup()
+
+def check_service_account_setup():
+    """Check service account setup"""
+    # Check if service account key file exists
+    if not os.path.exists(GOOGLE_SERVICE_ACCOUNT_KEY_FILE):
+        print(f"❌ Service account key file not found: {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
+        print("💡 Setup instructions:")
+        print("   1. Go to Google Cloud Console (https://console.cloud.google.com/)")
+        print("   2. Create/select project → Enable Google Drive API")
+        print("   3. Create service account credentials")
+        print(f"   4. Download service account key as {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
+        print("   5. Share your Google Drive folder with the service account email")
+        return False
+    else:
+        file_size = os.path.getsize(GOOGLE_SERVICE_ACCOUNT_KEY_FILE)
+        print(f"✓ Service account key file found: {GOOGLE_SERVICE_ACCOUNT_KEY_FILE} ({file_size} bytes)")
+        
+        # Basic validation
+        try:
+            with open(GOOGLE_SERVICE_ACCOUNT_KEY_FILE, 'r') as f:
+                service_account_data = json.load(f)
+            
+            required_fields = ['type', 'project_id', 'private_key', 'client_email']
+            missing_fields = [field for field in required_fields if field not in service_account_data]
+            
+            if missing_fields:
+                print(f"❌ Service account JSON missing required fields: {missing_fields}")
+                return False
+            
+            print("✓ Service account key file appears to be valid")
+            print(f"   Service account email: {service_account_data.get('client_email')}")
+            
+        except json.JSONDecodeError as e:
+            print(f"❌ Service account key file contains invalid JSON: {e}")
+            return False
+        except Exception as e:
+            print(f"❌ Error reading service account key file: {e}")
+            return False
+    
+    return True
+
 def main():
     """Main function"""
     try:
-        # Validate environment variables
-        if not GOOGLE_DRIVE_FOLDER_ID:
-            raise ValueError("GOOGLE_DRIVE_BACKUP_FOLDER_ID not found in environment variables")
+        # Check setup first
+        if not check_setup():
+            print("❌ Setup validation failed")
+            return 1
+        
+        print("-" * 60)
         
         # Initialize and run backup manager
         backup_manager = GoogleDriveBackupManager()
