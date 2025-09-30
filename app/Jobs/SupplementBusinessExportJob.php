@@ -89,12 +89,12 @@ class SupplementBusinessExportJob implements ShouldQueue
                     foreach ($businesses as $row) {
                         $csv->insertOne([
                             $row->id,
-                            $row->name,
-                            $row->status,
-                            $row->address,
-                            $row->description,
-                            $row->sector,
-                            $row->note,
+                            $this->cleanCsvValue($row->name),
+                            $this->cleanCsvValue($row->status),
+                            $this->cleanCsvValue($row->address),
+                            $this->cleanCsvValue($row->description),
+                            $this->cleanCsvValue($row->sector),
+                            $this->cleanCsvValue($row->note),
                             $row->latitude,
                             $row->longitude,
                             $row->user->firstname,
@@ -116,5 +116,14 @@ class SupplementBusinessExportJob implements ShouldQueue
         } catch (Exception $e) {
             AssignmentStatus::find($this->uuid)->update(['status' => 'failed', 'message' => $e->getMessage()]);
         }
+    }
+
+    private function cleanCsvValue($value) {
+        if ($value === null) {
+            return '';
+        }
+        // normalize line breaks and tabs
+        $value = str_replace(["\r\n", "\r", "\n", "\t"], ' ', $value);
+        return trim($value);
     }
 }
