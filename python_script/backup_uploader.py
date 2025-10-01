@@ -2,15 +2,16 @@
 """
 Database Backup Uploader to Google Drive
 
-This script uploads the latest database backup file to Google Drive using a service account
+This script uploads the latest database backup file to Google Drive using OAuth2 authentication
 and maintains only a specified number of backup files to save space.
 
 Requirements:
     - google-api-python-client
     - google-auth
+    - google-auth-oauthlib
     - python-dotenv
 
-Install with: pip install google-api-python-client google-auth python-dotenv
+Install with: pip install google-api-python-client google-auth google-auth-oauthlib python-dotenv
 """
 
 import os
@@ -18,12 +19,14 @@ import glob
 import json
 import time
 import shutil
+import sys
 from datetime import datetime
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.auth.transport.requests import Request
-from google.oauth2.service_account import Credentials
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Load environment variables
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -50,8 +53,9 @@ MIN_UPLOAD_INTERVAL = 21600  # 6 hours in seconds
 # Environment variables for Google Drive
 GOOGLE_DRIVE_FOLDER_ID = os.getenv('GOOGLE_DRIVE_BACKUP_FOLDER_ID')
 
-# Service Account authentication file
-GOOGLE_SERVICE_ACCOUNT_KEY_FILE = os.path.join(os.path.dirname(__file__), '..', 'gdrivekey.json')
+# OAuth2 authentication files
+GOOGLE_CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), '..', 'gdrivecredentials.json')
+GOOGLE_TOKEN_FILE = os.path.join(os.path.dirname(__file__), '..', 'token.json')
 
 # Google Drive API scope
 SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -65,24 +69,55 @@ class GoogleDriveBackupManager:
         self.setup_drive_service()
     
     def setup_drive_service(self):
-        """Initialize Google Drive API service using service account"""
+        """Initialize Google Drive API service using OAuth2 authentication"""
         try:
-            print("🔐 Using service account authentication")
+            print("🔐 Using OAuth2 authentication")
             
-            # Check if service account key file exists
-            if not os.path.exists(GOOGLE_SERVICE_ACCOUNT_KEY_FILE):
-                raise FileNotFoundError(f"Service account key file not found: {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
+            creds = None
             
-            print(f"📄 Loading service account credentials from: {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
+            # Load existing token if available
+            if os.path.exists(GOOGLE_TOKEN_FILE):
+                print(f"📄 Loading existing token from: {GOOGLE_TOKEN_FILE}")
+                creds = Credentials.from_authorized_user_file(GOOGLE_TOKEN_FILE, SCOPES)
             
-            # Load credentials from file
-            credentials = Credentials.from_service_account_file(
-                GOOGLE_SERVICE_ACCOUNT_KEY_FILE, 
-                scopes=SCOPES
-            )
+            # If there are no (valid) credentials available, let the user log in
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    print("🔄 Refreshing expired token...")
+                    try:
+                        creds.refresh(Request())
+                        print("✓ Token refreshed successfully")
+                    except Exception as e:
+                        print(f"⚠️  Token refresh failed: {e}")
+                        print("🔑 Need to re-authenticate...")
+                        creds = None
+                
+                if not creds:
+                    # Check if credentials file exists
+                    if not os.path.exists(GOOGLE_CREDENTIALS_FILE):
+                        raise FileNotFoundError(f"OAuth2 credentials file not found: {GOOGLE_CREDENTIALS_FILE}")
+                    
+                    print(f"� Starting OAuth2 authentication flow...")
+                    print(f"📄 Using credentials from: {GOOGLE_CREDENTIALS_FILE}")
+                    
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        GOOGLE_CREDENTIALS_FILE, SCOPES
+                    )
+                    
+                    # Run local server for OAuth flow
+                    creds = flow.run_local_server(port=0)
+                    print("✓ Authentication successful!")
+                
+                # Save the credentials for the next run
+                print(f"💾 Saving token to: {GOOGLE_TOKEN_FILE}")
+                with open(GOOGLE_TOKEN_FILE, 'w') as token:
+                    token.write(creds.to_json())
+                print("✓ Token saved successfully")
+            else:
+                print("✓ Using existing valid token")
             
             # Build the service
-            self.service = build('drive', 'v3', credentials=credentials)
+            self.service = build('drive', 'v3', credentials=creds)
             print("✓ Google Drive API service initialized successfully")
             
         except Exception as e:
@@ -90,9 +125,9 @@ class GoogleDriveBackupManager:
             print("💡 Setup instructions:")
             print("   1. Go to Google Cloud Console (https://console.cloud.google.com/)")
             print("   2. Create/select project → Enable Google Drive API")
-            print("   3. Create service account credentials")
-            print(f"   4. Download service account key as {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
-            print("   5. Share your Google Drive folder with the service account email")
+            print("   3. Create OAuth2 credentials (Desktop application)")
+            print(f"   4. Download credentials as {GOOGLE_CREDENTIALS_FILE}")
+            print("   5. Run this script to complete authentication")
             raise
     
     def find_latest_backup_file(self):
@@ -243,7 +278,7 @@ class GoogleDriveBackupManager:
                 resumable=True
             )
             
-            # Execute upload (with shared drive support)
+            # Execute upload
             file = self.service.files().create(
                 body=file_metadata,
                 media_body=media,
@@ -266,7 +301,7 @@ class GoogleDriveBackupManager:
             # Always cleanup temp file
             if temp_file:
                 self.cleanup_temp_file(temp_file)
-                
+
     def get_backup_files_in_drive(self, name_filter=None):
         """Get list of backup files in Google Drive folder"""
         try:
@@ -343,7 +378,7 @@ class GoogleDriveBackupManager:
         """Execute the complete backup upload and cleanup process"""
         try:
             print("🚀 Starting database backup upload process...")
-            print(f"   Authentication: Service Account")
+            print(f"   Authentication: OAuth2")
             print(f"   Max backup files to retain: {MAX_BACKUP_FILES}")
             print(f"   File stability wait time: {FILE_STABILITY_WAIT} seconds")
             print(f"   Minimum upload interval: {MIN_UPLOAD_INTERVAL/3600:.1f} hours")
@@ -382,54 +417,103 @@ def check_setup():
     else:
         print(f"✓ GOOGLE_DRIVE_BACKUP_FOLDER_ID: {GOOGLE_DRIVE_FOLDER_ID}")
     
-    return check_service_account_setup()
+    return check_oauth2_setup()
 
-def check_service_account_setup():
-    """Check service account setup"""
-    # Check if service account key file exists
-    if not os.path.exists(GOOGLE_SERVICE_ACCOUNT_KEY_FILE):
-        print(f"❌ Service account key file not found: {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
+def check_oauth2_setup():
+    """Check OAuth2 setup"""
+    # Check if credentials file exists
+    if not os.path.exists(GOOGLE_CREDENTIALS_FILE):
+        print(f"❌ OAuth2 credentials file not found: {GOOGLE_CREDENTIALS_FILE}")
         print("💡 Setup instructions:")
         print("   1. Go to Google Cloud Console (https://console.cloud.google.com/)")
         print("   2. Create/select project → Enable Google Drive API")
-        print("   3. Create service account credentials")
-        print(f"   4. Download service account key as {GOOGLE_SERVICE_ACCOUNT_KEY_FILE}")
-        print("   5. Share your Google Drive folder with the service account email")
+        print("   3. Create OAuth2 credentials (Desktop application)")
+        print(f"   4. Download credentials as {GOOGLE_CREDENTIALS_FILE}")
+        print("   5. Run this script to complete authentication")
         return False
     else:
-        file_size = os.path.getsize(GOOGLE_SERVICE_ACCOUNT_KEY_FILE)
-        print(f"✓ Service account key file found: {GOOGLE_SERVICE_ACCOUNT_KEY_FILE} ({file_size} bytes)")
+        file_size = os.path.getsize(GOOGLE_CREDENTIALS_FILE)
+        print(f"✓ OAuth2 credentials file found: {GOOGLE_CREDENTIALS_FILE} ({file_size} bytes)")
         
         # Basic validation
         try:
-            with open(GOOGLE_SERVICE_ACCOUNT_KEY_FILE, 'r') as f:
-                service_account_data = json.load(f)
+            with open(GOOGLE_CREDENTIALS_FILE, 'r') as f:
+                credentials_data = json.load(f)
             
-            required_fields = ['type', 'project_id', 'private_key', 'client_email']
-            missing_fields = [field for field in required_fields if field not in service_account_data]
-            
-            if missing_fields:
-                print(f"❌ Service account JSON missing required fields: {missing_fields}")
+            # Check if it's the right type of credentials
+            if 'installed' not in credentials_data and 'web' not in credentials_data:
+                print(f"❌ Invalid OAuth2 credentials file format")
                 return False
             
-            print("✓ Service account key file appears to be valid")
-            print(f"   Service account email: {service_account_data.get('client_email')}")
+            client_data = credentials_data.get('installed') or credentials_data.get('web')
+            required_fields = ['client_id', 'client_secret']
+            missing_fields = [field for field in required_fields if field not in client_data]
+            
+            if missing_fields:
+                print(f"❌ OAuth2 credentials missing required fields: {missing_fields}")
+                return False
+            
+            print("✓ OAuth2 credentials file appears to be valid")
+            print(f"   Client ID: {client_data.get('client_id')}")
             
         except json.JSONDecodeError as e:
-            print(f"❌ Service account key file contains invalid JSON: {e}")
+            print(f"❌ OAuth2 credentials file contains invalid JSON: {e}")
             return False
         except Exception as e:
-            print(f"❌ Error reading service account key file: {e}")
+            print(f"❌ Error reading OAuth2 credentials file: {e}")
             return False
     
+    # Check token file
+    if os.path.exists(GOOGLE_TOKEN_FILE):
+        print(f"✓ Token file found: {GOOGLE_TOKEN_FILE}")
+        print("   (Will use existing authentication)")
+    else:
+        print(f"ℹ️  No token file found: {GOOGLE_TOKEN_FILE}")
+        print("   (Will need to authenticate via browser)")
+    
     return True
+
+def login_only():
+    """Perform OAuth2 login and save token without running backup"""
+    try:
+        print("🔑 OAuth2 Login Setup")
+        print("=" * 50)
+        
+        # Check credentials file
+        if not check_oauth2_setup():
+            print("❌ OAuth2 setup validation failed")
+            return 1
+        
+        print("-" * 50)
+        
+        # Initialize backup manager (this will trigger authentication)
+        print("🔐 Initializing authentication...")
+        backup_manager = GoogleDriveBackupManager()
+        
+        print("-" * 50)
+        print("✅ Login completed successfully!")
+        print(f"📄 Token saved to: {GOOGLE_TOKEN_FILE}")
+        print("💡 You can now run the backup script without browser authentication")
+        
+        return 0
+        
+    except Exception as e:
+        print("-" * 50)
+        print(f"❌ Login failed: {e}")
+        return 1
 
 def main():
     """Main function"""
     try:
+        # Check if this is a login-only run
+        if len(sys.argv) > 1 and sys.argv[1] == '--login':
+            return login_only()
+        
         # Check setup first
         if not check_setup():
             print("❌ Setup validation failed")
+            print("💡 Run with --login flag to set up authentication first:")
+            print(f"   python {os.path.basename(__file__)} --login")
             return 1
         
         print("-" * 60)
