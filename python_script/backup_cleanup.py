@@ -338,14 +338,9 @@ def main():
             print("❌ Error: --days must be a positive number")
             return 1
         
-        # Confirmation for live runs
+        # Warning for short retention periods (but no interactive confirmation)
         if not args.dry_run and args.days < 7:
-            print(f"⚠️  Warning: You're about to delete files older than {args.days} days")
-            print("   This is a relatively short retention period.")
-            response = input("   Continue? (y/N): ").lower().strip()
-            if response not in ['y', 'yes']:
-                print("❌ Operation cancelled by user")
-                return 1
+            print(f"⚠️  Warning: Deleting files older than {args.days} days (short retention period)")
         
         # Initialize and run cleaner
         cleaner = BackupCleaner(
