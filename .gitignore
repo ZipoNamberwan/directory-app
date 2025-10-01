@@ -54,5 +54,5 @@ frankenphp-worker.php
 /python_script/level/*.xlsx
 docker-compose.override.yml
 
-gdrivekey.json
 gdrivecredentials.json
+token.json
