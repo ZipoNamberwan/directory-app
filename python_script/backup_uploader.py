@@ -104,8 +104,8 @@ class GoogleDriveBackupManager:
                         GOOGLE_CREDENTIALS_FILE, SCOPES
                     )
                     
-                    # Run local server for OAuth flow
-                    creds = flow.run_local_server(port=0)
+                    # Run local server for OAuth flow with fixed port
+                    creds = flow.run_local_server(port=8080)
                     print("✓ Authentication successful!")
                 
                 # Save the credentials for the next run
