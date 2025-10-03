@@ -843,8 +843,8 @@
                     }
                 },
                 {
-                    title: "Dibuat Pada",
-                    field: "created_at",
+                    title: "Dihapus Pada",
+                    field: "deleted_at",
                     responsive: 6,
                     formatter: function(cell) {
                         return `<div class="small text-wrap lh-sm">${formatDate(cell.getValue())}</div>`;
