@@ -10,12 +10,21 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Lab404\Impersonate\Models\Impersonate;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, HasUuids, Impersonate;
+    use HasApiTokens, HasFactory, Notifiable;
+    use HasUuids;
+    use Impersonate;
 
+    use HasRoles {
+        HasRoles::hasRole as traitHasRole;
+        HasRoles::hasAnyRole as traitHasAnyRole;
+        HasRoles::getRoleNames as traitGetRoleNames;
+        HasRoles::hasPermissionTo as traitHasPermissionTo;
+    }
     /**
      * The attributes that are mass assignable.
      *
@@ -194,5 +203,134 @@ class User extends Authenticatable
             'id',                   // Local key on the User model (default is 'id')
             'id'                    // Local key on the Sls model (default is 'id')
         );
+    }
+
+
+    // --------------------------------------------------
+    // Acting Context
+    // --------------------------------------------------
+    public function actingContexts()
+    {
+        return $this->hasMany(UserActingContext::class);
+    }
+
+    public function activeActingContext()
+    {
+        return $this->hasOne(UserActingContext::class)->where('active', true);
+    }
+
+    public function getActingContextAttribute()
+    {
+        if ($this->relationLoaded('activeActingContext')) {
+            return $this->getRelation('activeActingContext');
+        }
+
+        return $this->activeActingContext()->first();
+    }
+
+    // Organization masking
+    public function getOrganizationIdAttribute($value)
+    {
+        return $this->actingContext?->acting_org_id ?? $value;
+    }
+
+    public function realOrganizationId()
+    {
+        return $this->getRawOriginal('organization_id');
+    }
+
+    public function getRealOrganization()
+    {
+        return Organization::find($this->realOrganizationId());
+    }
+
+    // --------------------------------------------------
+    // Role masking (Spatie aware)
+    // --------------------------------------------------
+    public function actingRole()
+    {
+        return $this->actingContext?->acting_role;
+    }
+
+    public function hasRole($roles, $guard = null): bool
+    {
+        $rolesArr = is_array($roles) ? $roles : explode('|', (string) $roles);
+
+        if ($this->actingRole() && in_array($this->actingRole(), $rolesArr, true)) {
+            return true;
+        }
+
+        return $this->traitHasRole($roles, $guard);
+    }
+
+    public function hasAnyRole(...$roles): bool
+    {
+        $flat = collect($roles)
+            ->flatMap(fn($r) => is_array($r) ? $r : explode('|', (string) $r))
+            ->map(fn($r) => trim($r))
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($this->actingRole() && in_array($this->actingRole(), $flat, true)) {
+            return true;
+        }
+
+        return $this->traitHasAnyRole(...$flat);
+    }
+
+    public function getRoleNames()
+    {
+        if ($this->actingRole()) {
+            return collect([$this->actingRole()]);
+        }
+
+        return $this->traitGetRoleNames();
+    }
+
+    public function getDirectRoleNames()
+    {
+        return $this->traitGetRoleNames();
+    }
+
+    public function hasPermissionTo($permission, $guardName = null): bool
+    {
+        // If acting role is active
+        if ($this->actingRole()) {
+            // Always allow these permissions
+            if (in_array($permission, ['edit_business', 'delete_business'], true)) {
+                return true;
+            }
+
+            // Otherwise, check if acting role grants it
+            $roleModel = Role::findByName(
+                $this->actingRole(),
+                $guardName ?? $this->getDefaultGuardName()
+            );
+
+            if ($roleModel && $roleModel->hasPermissionTo($permission)) {
+                return true;
+            }
+        }
+
+        // Fallback: check user's real roles/permissions
+        return $this->traitHasPermissionTo($permission, $guardName);
+    }
+
+    // --------------------------------------------------
+    // Authorization helper
+    // --------------------------------------------------
+    public function canActAs(int $orgId, string $role): bool
+    {
+        // Replace with your own logic / pivot table check
+        if ($this->getDirectRoleNames()->contains('adminprov')) {
+            return false;
+        }
+
+        if ($this->hasPermissionTo('act-as')) {
+            return true;
+        }
+
+        return false; // default deny
     }
 }

@@ -200,8 +200,8 @@
                 var filterUrl = ''
                 if (filter === 'is_allowed_swmaps') {
                     const checkbox = document.getElementById('is_allowed_swmaps');
-
-                    if (checkbox.checked) {
+                    
+                    if (checkbox && checkbox.checked) {
                         filterUrl = `&${filter}=1`;
                     } else {
                         filterUrl = `&${filter}=0`;

@@ -36,6 +36,26 @@
                             <hr class="dropdown-divider d-sm-none">
                         </li>
 
+                        @if(Auth::user()->actingContexts()->exists())
+                            <li>
+                                <form method="POST" action="{{ route('acting-context.toggle') }}" id="acting-context-form">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item">
+                                        @if(Auth::user()->actingContext)
+                                            <i class="fas fa-user-slash text-warning"></i>
+                                            <span>Matikan PJ</span>
+                                        @else
+                                            <i class="fas fa-user-shield text-success"></i>
+                                            <span>Aktifkan PJ ({{Auth::user()->actingContexts()->first()->acting_org_id}})</span>
+                                        @endif
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                        @endif
+
                         <li>
                             <form method="POST" action="{{ route('logout') }}" id="logout-form">
                                 @csrf
