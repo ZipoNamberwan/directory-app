@@ -244,6 +244,22 @@ class User extends Authenticatable
         return Organization::find($this->realOrganizationId());
     }
 
+    // Regency masking
+    public function getRegencyIdAttribute($value)
+    {
+        return $this->actingContext?->acting_reg_id ?? $value;
+    }
+
+    public function realRegencyId()
+    {
+        return $this->getRawOriginal('regency_id');
+    }
+
+    public function getRealRegency()
+    {
+        return Regency::find($this->realRegencyId());
+    }
+
     // --------------------------------------------------
     // Role masking (Spatie aware)
     // --------------------------------------------------
