@@ -1050,8 +1050,8 @@
                         let rowData = row.getData();
 
                         // Get permissions from backend
-                        const e = canEdit(canEditPermission, rowData.organization_id);
-                        const d = canDelete(canDeletePermission, rowData.organization_id);
+                        const e = canEdit(canEditPermission, rowData.market.organization_id);
+                        const d = canDelete(canDeletePermission, rowData.market.organization_id);
                         // Create container for buttons
                         let container = document.createElement("div");
                         container.className = "d-flex gap-1 justify-content-center";

@@ -262,6 +262,21 @@
                     </a>
                 </li>
             @endhasrole
+            @if(Auth::user()->actingContexts()->exists() && Auth::user()->actingContext)
+                <li class="nav-item px-3 mt-2">
+                    <form method="POST" action="{{ route('acting-context.toggle') }}" class="w-100">
+                        @csrf
+                        <button type="submit" class="px-2 py-1 m-0 btn btn-icon btn-outline-warning w-100" role="button">
+                            <span class="btn-inner--icon"><i class="fas fa-user-slash"></i></span>
+                            <span class="btn-inner--text">Matikan Role PJ</span>
+                        </button>
+                    </form>
+                </li>
+                <li class="nav-item px-3 mt-2">
+                    <p class="text-xs text-muted"><span>PJ sebagai:
+                            <strong>{{ Auth::user()->actingContext->acting_role . ' (' . Auth::user()->actingContext->acting_org_id . ')' }}</strong></span></p>
+                </li>
+            @endif
             @impersonating($guard = null)
                 <li class="nav-item px-3 mt-2">
                     <a href="{{ route('impersonate.leave') }}" class="px-2 py-1 m-0 btn btn-icon btn-outline-primary w-100"

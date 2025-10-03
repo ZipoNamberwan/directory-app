@@ -346,4 +346,34 @@ class UserController extends Controller
 
         return response()->json($users);
     }
+
+    public function toggleActingContext(Request $request)
+    {
+        $user = User::find(Auth::id());
+        
+        // Check if user has any acting contexts available
+        if (!$user->actingContexts()->exists()) {
+            return redirect('/')->with('error', 'No acting contexts available for this user.');
+        }
+
+        $activeContext = $user->activeActingContext;
+
+        if ($activeContext) {
+            // Disable acting context
+            $activeContext->update(['active' => false]);
+            return redirect('/')->with('success', 'Acting context disabled successfully.');
+        } else {
+            // Enable acting context (activate the first available context)
+            $firstContext = $user->actingContexts()->first();
+            if ($firstContext) {
+                // Disable all other contexts first
+                $user->actingContexts()->update(['active' => false]);
+                // Enable the first context
+                $firstContext->update(['active' => true]);
+                return redirect('/')->with('success', 'Acting context enabled successfully.');
+            }
+        }
+
+        return redirect('/')->with('error', 'Unable to toggle acting context.');
+    }
 }
