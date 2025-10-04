@@ -105,7 +105,7 @@ class VersionController extends Controller
             'general' => ['all'], // or specify organization IDs: [1, 2, 3]
 
             // App-specific settings (overrides general setting)
-            'kendedes' => ['3500'], // or specify organization IDs: [1, 2, 3]
+            'kendedes' => ['all'], // or specify organization IDs: [1, 2, 3]
             'leres_pak' => ['all'], // or specify organization IDs: [4, 5, 6]
         ];
 
