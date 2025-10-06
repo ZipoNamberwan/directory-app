@@ -116,6 +116,8 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::group(['middleware' => ['role:adminprov']], function () {
 		Route::get('/personifikasi', [AdminProvController::class, 'showPersonification']);
 		Route::get('/users/search', [UserController::class, 'searchUser']);
+
+		Route::resource('users', UserController::class)->only(['create', 'store']);
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
@@ -123,7 +125,7 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/report/{date}/{type}/{level}/{id}', [ReportController::class, 'getReport']);
 		Route::get('/users/data', [UserController::class, 'getUserData']);
-		Route::resource('users', UserController::class)->except(['create']);
+		Route::resource('users', UserController::class)->except(['create', 'store']);
 
 		Route::get('/pasar-assignment', [MarketAssignmentController::class, 'showMarketAssignmentForm'])->name('market-assignment');
 		Route::get('/pasar-assignment/pivot', [MarketAssignmentController::class, 'getUserMarketPivot']);
