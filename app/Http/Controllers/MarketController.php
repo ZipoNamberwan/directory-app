@@ -208,6 +208,10 @@ class MarketController extends Controller
             $records->where('user_id', $request->user);
         }
 
+        if ($request->sector && $request->sector !== 'all') {
+            $records->whereRaw('LEFT(sector, 1) = ?', [$request->sector]);
+        }
+
         if ($request->marketType && $request->marketType !== 'all') {
             $records->whereHas('market', function ($query) use ($request) {
                 $query->where('market_type_id', $request->marketType);

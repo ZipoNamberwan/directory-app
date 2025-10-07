@@ -131,6 +131,17 @@
                         </div>
                     @endhasrole
                     <div class="col-md-3">
+                        <label class="form-control-label">Petugas <span class="text-danger">*</span></label>
+                        <select id="user" class="form-control" data-toggle="select">
+                            <option value="0" disabled selected> -- Pilih Petugas -- </option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}" {{ old('user') == $user->id ? 'selected' : '' }}>
+                                    {{ $user->firstname }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-control-label">Tipe <span class="text-danger">*</span></label>
                         <select id="marketType" class="form-control" data-toggle="select">
                             <option value="0" disabled selected> -- Pilih Tipe -- </option>
@@ -153,19 +164,6 @@
                             @endforeach
                         </select>
                     </div>
-                    @hasrole('adminkab')
-                        <div class="col-md-3">
-                            <label class="form-control-label">Petugas <span class="text-danger">*</span></label>
-                            <select id="user" class="form-control" data-toggle="select">
-                                <option value="0" disabled selected> -- Pilih Petugas -- </option>
-                                @foreach ($users as $user)
-                                    <option value="{{ $user->id }}" {{ old('user') == $user->id ? 'selected' : '' }}>
-                                        {{ $user->firstname }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endhasrole
                     <div class="col-md-3">
                         <label class="form-control-label">Status Matching Wilayah</label>
                         <select id="statusMatching" class="form-control" data-toggle="select">
@@ -181,6 +179,14 @@
                         <input type="text" name="keyword" class="form-control" id="keyword"
                             placeholder="Cari By Keyword">
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-control-label">Sektor</label>
+                        <select id="sector" name="sector" class="form-control" data-toggle="select">
+                            <option value="0" disabled selected> -- Pilih Sektor -- </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
                     <div class="col-md-3">
                         <label class="form-control-label">Kabupaten</label>
                         <select style="width: 100%;" id="regency" name="regency" class="form-control"
@@ -345,6 +351,10 @@
                 placeholder: 'Pilih Status Matching'
             },
             {
+                selector: '#sector',
+                placeholder: 'Pilih Sektor'
+            },
+            {
                 selector: '#regency',
                 placeholder: 'Pilih Kabupaten'
             },
@@ -378,6 +388,7 @@
                 loadMarket(null, null)
                 renderTable()
                 updateDownloadHidden()
+                loadUsers(null, null);
             },
             '#market': () => {
                 renderTable()
@@ -391,6 +402,9 @@
                 renderTable()
             },
             '#statusMatching': () => {
+                renderTable()
+            },
+            '#sector': () => {
                 renderTable()
             },
             '#regency': () => {
@@ -522,6 +536,38 @@
             }
         }
 
+        function loadUsers(satkerId = null, selectedUser = null) {
+
+            let organizationSelector = `#organization`;
+            let userSelector = `#user`;
+
+            let id = $(organizationSelector).val();
+            if (satkerId != null) {
+                id = satkerId;
+            }
+
+            $(userSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/petugas/' + id,
+                    success: function(response) {
+                        $(userSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Petugas -- </option>`);
+                        response.forEach(element => {
+                            let selected = selectedUser == String(element.id) ? 'selected' : '';
+                            $(userSelector).append(
+                                `<option value="${element.id}" ${selected}>${element.firstname}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(userSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
+
         Object.entries(eventHandlers).forEach(([selector, handler]) => {
             $(selector).on('change', handler);
         });
@@ -634,7 +680,8 @@
 
         function renderTable() {
             filterUrl = ''
-            filterTypes = ['organization', 'market', 'user', 'marketType', 'statusMatching',
+            filterTypes = ['organization', 'market', 'user',
+                'marketType', 'statusMatching', 'sector',
                 'regency', 'subdistrict',
                 'village', 'sls', 'keyword'
             ]
@@ -1315,6 +1362,29 @@
                 name: 'U. Aktivitas Badan Internasional Dan Badan Ekstra Internasional Lainnya'
             }
         ];
+
+        // Populate sector dropdown
+        function populateSectorDropdown() {
+            const sectorSelect = document.getElementById('sector');
+
+            // Clear existing options except the first default option
+            const defaultOption = sectorSelect.querySelector('option[value="0"]');
+            sectorSelect.innerHTML = '';
+            sectorSelect.appendChild(defaultOption);
+
+            // Add sector options
+            sectors.forEach(sector => {
+                const option = document.createElement('option');
+                option.value = sector.code;
+                option.textContent = sector.name;
+                sectorSelect.appendChild(option);
+            });
+        }
+
+        // Call the function when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            populateSectorDropdown();
+        });
 
         function getSectorFromValue(sectorValue) {
             if (!sectorValue) return null;

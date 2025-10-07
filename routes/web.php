@@ -52,6 +52,7 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('/desa/{subdistrict_id}', [HomeController::class, 'getVillage']);
 	Route::get('/sls/{village_id}', [HomeController::class, 'getSls']);
 	Route::get('/sls-directory/{id_sls}', [HomeController::class, 'getSlsDirectory']);
+	Route::get('/petugas/{satker_id}', [HomeController::class, 'getUsersByOrganization']);
 
 	Route::post('/sls-directory', [HomeController::class, 'addSlsDirectory']);
 	Route::post('/non-sls-directory', [HomeController::class, 'addNonSlsDirectory']);

@@ -29,7 +29,7 @@ class SupplementController extends Controller
         $organizations = [];
         $regencies = [];
         $subdistricts = [];
-        $users = User::where('organization_id', $user->organization_id)->get();
+        $users = [];
 
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
@@ -37,6 +37,7 @@ class SupplementController extends Controller
         } else if ($user->hasRole('adminkab')) {
             $regencies = Regency::where('id', $user->regency_id)->get();
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
+            $users = User::where('organization_id', $user->organization_id)->get();
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $regencies = Regency::where('id', $user->regency_id)->get();
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
@@ -269,6 +270,9 @@ class SupplementController extends Controller
                         ->orWhere('regency_id', $request->organization);
                 });
             }
+        }
+        if ($request->sector && $request->sector !== 'all') {
+            $records->whereRaw('LEFT(sector, 1) = ?', [$request->sector]);
         }
         if ($request->user && $request->user !== 'all') {
             $records->where('user_id', $request->user);
@@ -570,7 +574,7 @@ class SupplementController extends Controller
 
             // Check if all businesses exist and user has permission
             $foundBusinesses = $businesses->get();
-            
+
             if ($foundBusinesses->count() !== count($ids)) {
                 return response()->json([
                     'success' => false,
@@ -600,7 +604,7 @@ class SupplementController extends Controller
                 $auditRecords = [];
                 $now = now();
                 $userId = auth()->id();
-                
+
                 // Audit records for businesses
                 foreach ($foundBusinesses as $business) {
                     $auditRecords[] = [
@@ -615,7 +619,7 @@ class SupplementController extends Controller
                         'edited_at' => $now,
                     ];
                 }
-                
+
                 // Bulk insert audit records in chunks to avoid query size limits
                 collect($auditRecords)->chunk(100)->each(function ($chunk) {
                     DB::table('audits')->insert($chunk->toArray());
@@ -627,7 +631,6 @@ class SupplementController extends Controller
                 'message' => "{$restoredCount} usaha berhasil direstore",
                 'restored_count' => $restoredCount
             ]);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,

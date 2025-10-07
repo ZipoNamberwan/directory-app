@@ -273,6 +273,12 @@ class HomeController extends Controller
 
         return response()->json($sls);
     }
+    public function getUsersByOrganization($satker_id)
+    {
+        $users = User::where('organization_id', $satker_id)->orderBy('firstname', 'asc')->get();
+
+        return response()->json($users);
+    }
     public function getSlsDirectory($id_sls)
     {
         $user = User::find(Auth::id());
