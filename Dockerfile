@@ -35,7 +35,8 @@ ENV PATH="/venv/bin:$PATH"
 RUN pip install mysql-connector-python \
     geojson shapely python-dotenv \
     geopandas rtree pandas numpy tqdm \
-    google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
+    google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib \
+    geopy
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
