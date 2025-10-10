@@ -9,6 +9,10 @@ It loads all businesses from supplement_business and market_business tables and 
 finds all other businesses within 50 meters that belong to different users, then compares them
 to detect potential duplicate businesses using customizable detection rules.
 
+Usage:
+- Set SLS_ID_FILTER = "123456" to filter businesses by specific SLS ID
+- Set SLS_ID_FILTER = None to process all businesses (default)
+
 Features:
 - R-tree spatial indexing for O(log n) spatial queries instead of O(n²)
 - Support for both supplement and market business tables
@@ -69,14 +73,17 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 # =====================================================================
 
 # Search radius in meters
-RADIUS_METERS = 50
+RADIUS_METERS = 70
+
+# SLS ID Filter - set to specific SLS ID to filter businesses, or None to process all
+SLS_ID_FILTER = None  # Example: "123456" to filter by specific SLS ID
 
 # Debug mode - set to True to limit businesses for testing
 DEBUG_MODE = False
 DEBUG_LIMIT = 2000000  # Number of businesses to process in debug mode
 
 # Duplicate detection settings
-SIMILARITY_THRESHOLD = 0.8  # Minimum similarity score (0.0 - 1.0) to consider as similar
+SIMILARITY_THRESHOLD = 0.6  # Minimum similarity score (0.0 - 1.0) to consider as similar
 NAME_SIMILARITY_WEIGHT = 1.0  # Weight for name similarity
 OWNER_SIMILARITY_WEIGHT = 1.0  # Weight for owner similarity
 
@@ -127,7 +134,6 @@ BUSINESS_TABLES = [
         'table_name': 'supplement_business',
         'business_type': 'supplement'
     },
-    # Note: Uncomment the market_business if it exists and has the same structure
     # {
     #     'table_name': 'market_business',
     #     'business_type': 'market'
@@ -147,8 +153,8 @@ class Business:
     latitude: float
     longitude: float
     user_id: str  # Changed from int to str for UUID support
-    regency_id: str  # Regency ID for the business
-    business_type: str
+    sls_id: str  # SLS ID for the business
+    business_type: str  # 'supplement' or 'market'
     address: str = ""
     
     def __post_init__(self):
@@ -200,6 +206,48 @@ def cos(x):
     """Simple cosine approximation"""
     import math
     return math.cos(x)
+
+# =====================================================================
+# BUSINESS DATA UTILITIES
+# =====================================================================
+
+def extract_owner_from_name(name: str) -> tuple[str, str]:
+    """
+    Extract owner from business name for market businesses.
+    
+    Rules:
+    - If name contains <owner> or (owner), extract owner and clean name
+    - If no brackets/parentheses, owner is empty
+    
+    Examples:
+    - "toko sembako <budi>" -> ("toko sembako", "budi")
+    - "warung makan (siti)" -> ("warung makan", "siti")
+    - "toko abc" -> ("toko abc", "")
+    
+    Returns:
+        tuple: (cleaned_name, extracted_owner)
+    """
+    if not name:
+        return "", ""
+    
+    import re
+    
+    # Look for owner in angle brackets <owner>
+    angle_match = re.search(r'<([^>]+)>', name)
+    if angle_match:
+        owner = angle_match.group(1).strip()
+        cleaned_name = re.sub(r'\s*<[^>]+>\s*', ' ', name).strip()
+        return cleaned_name, owner
+    
+    # Look for owner in parentheses (owner)
+    paren_match = re.search(r'\(([^)]+)\)', name)
+    if paren_match:
+        owner = paren_match.group(1).strip()
+        cleaned_name = re.sub(r'\s*\([^)]+\)\s*', ' ', name).strip()
+        return cleaned_name, owner
+    
+    # No owner found
+    return name.strip(), ""
 
 # =====================================================================
 # TEXT NORMALIZATION AND SIMILARITY UTILITIES
@@ -588,23 +636,48 @@ class DatabaseManager:
         # Add LIMIT clause if debug mode is enabled
         limit_clause = f"LIMIT {DEBUG_LIMIT}" if DEBUG_MODE else ""
         
-        query = f"""
-        SELECT 
-            id,
-            name,
-            owner,
-            address,
-            latitude,
-            longitude,
-            user_id,
-            regency_id
-        FROM {table_name}
-        WHERE latitude IS NOT NULL 
-            AND longitude IS NOT NULL
-            AND deleted_at IS NULL
-        ORDER BY created_at DESC
-        {limit_clause}
-        """
+        # Add SLS ID filter if specified
+        sls_filter = f"AND sls_id = '{SLS_ID_FILTER}'" if SLS_ID_FILTER else ""
+        
+        # Different query structure for market_business (no owner column)
+        if business_type == 'market':
+            query = f"""
+            SELECT 
+                id,
+                name,
+                address,
+                latitude,
+                longitude,
+                user_id,
+                sls_id
+            FROM {table_name}
+            WHERE latitude IS NOT NULL 
+                AND longitude IS NOT NULL
+                AND deleted_at IS NULL
+                {sls_filter}
+            ORDER BY created_at DESC
+            {limit_clause}
+            """
+        else:
+            # Standard query for supplement_business (has owner column)
+            query = f"""
+            SELECT 
+                id,
+                name,
+                owner,
+                address,
+                latitude,
+                longitude,
+                user_id,
+                sls_id
+            FROM {table_name}
+            WHERE latitude IS NOT NULL 
+                AND longitude IS NOT NULL
+                AND deleted_at IS NULL
+                {sls_filter}
+            ORDER BY created_at DESC
+            {limit_clause}
+            """
         
         debug_info = f" (DEBUG: limiting to {DEBUG_LIMIT} records)" if DEBUG_MODE else ""
         print(f"📊 Loading businesses from {table_name}{debug_info}...")
@@ -616,14 +689,25 @@ class DatabaseManager:
         
         businesses = []
         for row in results:
+            # Handle owner extraction based on business type
+            if business_type == 'market':
+                # Extract owner from name for market businesses
+                cleaned_name, extracted_owner = extract_owner_from_name(row['name'] or "")
+                name = cleaned_name
+                owner = extracted_owner
+            else:
+                # Use direct owner field for supplement businesses
+                name = row['name'] or ""
+                owner = row['owner'] or ""
+            
             business = Business(
                 id=str(row['id']),  # Ensure string type
-                name=row['name'] or "",
-                owner=row['owner'] or "",
+                name=name,
+                owner=owner,
                 latitude=float(row['latitude']),
                 longitude=float(row['longitude']),
                 user_id=str(row['user_id']),  # Ensure string type
-                regency_id=str(row['regency_id']) if row['regency_id'] else "",  # Ensure string type
+                sls_id=str(row['sls_id']) if row['sls_id'] else "",  # Ensure string type
                 business_type=business_type,
                 address=row['address'] or ""
             )
@@ -670,6 +754,8 @@ class NearbyBusinessFinder:
             print(f"Configuration:")
             print(f"  - Search radius: {self.radius_meters} meters")
             print(f"  - Tables: {[config['table_name'] for config in BUSINESS_TABLES]}")
+            if SLS_ID_FILTER:
+                print(f"  - SLS ID filter: {SLS_ID_FILTER}")
             print("-" * 60)
             
             # Connect to database
@@ -777,8 +863,10 @@ class NearbyBusinessFinder:
                             validation_data.append({
                                 'center_business_id': comparison.business_a.id,
                                 'nearby_business_id': comparison.business_b.id,
-                                'center_regency_id': comparison.business_a.regency_id,
-                                'nearby_regency_id': comparison.business_b.regency_id,
+                                'center_sls_id': comparison.business_a.sls_id,
+                                'nearby_sls_id': comparison.business_b.sls_id,
+                                'center_business_source': comparison.business_a.business_type,
+                                'nearby_business_source': comparison.business_b.business_type,
                                 'center_business_name': comparison.business_a.name,
                                 'nearby_business_name': comparison.business_b.name,
                                 'center_business_owner': comparison.business_a.owner,
@@ -812,7 +900,6 @@ class NearbyBusinessFinder:
             if VALIDATION_MODE and sample_businesses:
                 print(f"\n🔍 Validating results with {len(sample_businesses)} sample businesses...")
                 
-                total_validation_errors = 0
                 total_outside_radius = 0
                 total_same_user_violations = 0
                 
@@ -912,6 +999,10 @@ def main():
         print(f"🎯 Searching for businesses within {RADIUS_METERS}m radius")
         print(f"🔍 Detecting duplicates with {SIMILARITY_THRESHOLD} similarity threshold")
         print(f"⚡ Using R-tree spatial indexing for performance")
+        
+        if SLS_ID_FILTER:
+            print(f"🎯 Filtering by SLS ID: {SLS_ID_FILTER}")
+        
         if DEBUG_MODE:
             print(f"🐛 DEBUG MODE: Processing only {DEBUG_LIMIT:,} businesses for testing")
         
