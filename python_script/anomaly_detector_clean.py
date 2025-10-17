@@ -387,7 +387,7 @@ class AnomalyDetector:
         # Run detection algorithms
         checks = [
             ('repetitive_pattern', self.detect_repetitive_patterns(text)),
-            ('keyboard_pattern', self.detect_keyboard_patterns(text)),
+            # ('keyboard_pattern', self.detect_keyboard_patterns(text)),
             ('sequential_alphabetic_pattern', self.detect_sequential_alphabetic_patterns(text)),
             ('no_vowels', self.detect_no_vowels(text)),
             ('alternating_pattern', self.detect_alternating_patterns(text)),
