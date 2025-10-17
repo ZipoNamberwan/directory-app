@@ -274,6 +274,35 @@ class AnomalyDetector:
         
         return False
     
+    def detect_sequential_alphabetic_patterns(self, text, min_length=3):
+        """Detect sequential alphabetic patterns like 'abc', 'abcd', 'xyz', etc."""
+        text_clean = self._clean_text(text)
+        
+        if len(text_clean) < min_length:
+            return False
+        
+        # Check for ascending sequences (abc, def, xyz, etc.)
+        for i in range(len(text_clean) - min_length + 1):
+            is_sequential = True
+            for j in range(min_length - 1):
+                if ord(text_clean[i + j + 1]) != ord(text_clean[i + j]) + 1:
+                    is_sequential = False
+                    break
+            if is_sequential:
+                return True
+        
+        # Check for descending sequences (zyx, fed, cba, etc.)
+        for i in range(len(text_clean) - min_length + 1):
+            is_sequential = True
+            for j in range(min_length - 1):
+                if ord(text_clean[i + j + 1]) != ord(text_clean[i + j]) - 1:
+                    is_sequential = False
+                    break
+            if is_sequential:
+                return True
+        
+        return False
+
     def calculate_vowel_consonant_ratio(self, text):
         """Calculate vowel to consonant ratio"""
         text_clean = self._clean_text(text)
@@ -358,6 +387,8 @@ class AnomalyDetector:
         # Run detection algorithms
         checks = [
             ('repetitive_pattern', self.detect_repetitive_patterns(text)),
+            # ('keyboard_pattern', self.detect_keyboard_patterns(text)),
+            ('sequential_alphabetic_pattern', self.detect_sequential_alphabetic_patterns(text)),
             ('no_vowels', self.detect_no_vowels(text)),
             ('alternating_pattern', self.detect_alternating_patterns(text)),
             ('char_frequency_anomaly', self.detect_character_frequency_anomaly(text)),

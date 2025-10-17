@@ -246,6 +246,16 @@
                         <span class="nav-link-text ms-1">List Anomali</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ str_contains(request()->url(), 'duplikat') == true ? 'active' : '' }}"
+                        href="/duplikat">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-clone text-sm opacity-10" style="color: #ffc507"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Pemeriksaan Duplikasi</span>
+                    </a>
+                </li>
             @endhaspermission
             @hasrole('adminkab|adminprov')
                 <li class="nav-item mt-3">
