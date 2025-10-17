@@ -12,6 +12,9 @@ to detect potential duplicate businesses using customizable detection rules.
 Usage:
 - Set SLS_ID_FILTER = "123456" to filter businesses by specific SLS ID
 - Set SLS_ID_FILTER = None to process all businesses (default)
+- Set USE_COMMON_WORDS_FILTERING = True to filter common words during comparison (default)
+- Set USE_COMMON_WORDS_FILTERING = False to use full text comparison without filtering
+- Customize common words in 'common_words.csv' file to improve comparison accuracy
 
 Features:
 - R-tree spatial indexing for O(log n) spatial queries instead of O(n²)
@@ -19,10 +22,24 @@ Features:
 - Configurable radius (default: 50 meters)
 - Text similarity analysis for duplicate detection
 - String normalization for better comparison accuracy
+- **Common words filtering** - ignores common business words (jual, toko, warung, etc.) during comparison
 - Configurable similarity thresholds
 - **Configurable duplicate detection rules** - customize how different conditions are classified
 - Classification of duplicates (Strong, Weak, Not duplicate)
 - Predefined rule sets (Conservative, Aggressive, Name-focused)
+
+Duplicate Detection Algorithm:
+The script uses a refined algorithm for detecting business duplicates:
+1. If name and owner have similarity higher than threshold → strong_duplicate
+2. If name is high similarity but owner is low similarity → not_duplicate
+3. If name is low similarity but owner is high similarity → not_duplicate
+4. If name is high similarity but owner is empty → advanced step (common words filtering applied)
+5. If name is low similarity but owner is empty → not_duplicate
+
+Advanced Step (Rule 4):
+When names have high similarity but owner information is missing, the system applies common words
+filtering to remove generic business terms (toko, warung, jual, etc.) and re-evaluates similarity.
+This helps distinguish between truly similar businesses and those that only share common prefixes.
 
 Configurable Rules:
 You can customize how the following conditions are classified:
@@ -83,9 +100,10 @@ DEBUG_MODE = False
 DEBUG_LIMIT = 2000000  # Number of businesses to process in debug mode
 
 # Duplicate detection settings
-SIMILARITY_THRESHOLD = 0.6  # Minimum similarity score (0.0 - 1.0) to consider as similar
-NAME_SIMILARITY_WEIGHT = 1.0  # Weight for name similarity
-OWNER_SIMILARITY_WEIGHT = 1.0  # Weight for owner similarity
+SIMILARITY_THRESHOLD = 0.75  # Minimum similarity score (0.0 - 1.0) to consider as similar
+
+# Common words filtering configuration
+USE_COMMON_WORDS_FILTERING = True  # Set to False to disable common words filtering in text comparison
 
 # Duplicate detection rule configuration
 DUPLICATE_RULES = {
@@ -253,6 +271,121 @@ def extract_owner_from_name(name: str) -> tuple[str, str]:
 # TEXT NORMALIZATION AND SIMILARITY UTILITIES
 # =====================================================================
 
+class CommonWordsManager:
+    """Manages common words filtering from CSV file"""
+    
+    _common_words = None  # Class variable to cache loaded words
+    
+    @classmethod
+    def load_common_words(cls) -> set:
+        """Load common words from CSV file, with caching"""
+        if cls._common_words is not None:
+            return cls._common_words
+        
+        cls._common_words = set()
+        common_words_file = os.path.join(os.path.dirname(__file__), 'common_words.csv')
+        
+        try:
+            import csv
+            with open(common_words_file, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if row:  # Skip empty rows
+                        # Each row might contain multiple words, or just one word per row
+                        for word in row:
+                            if word.strip():  # Skip empty cells
+                                cls._common_words.add(word.strip().lower())
+            
+            print(f"✓ Loaded {len(cls._common_words)} common words from {common_words_file}")
+        except FileNotFoundError:
+            print(f"⚠️ Common words file not found: {common_words_file}")
+            print("   Creating default common words...")
+            # Create default common words file
+            default_words = ['jual', 'toko', 'warung', 'usaha', 'dagang', 'depot', 'kios', 'stan', 'lapak', 'counter']
+            cls._create_default_common_words_file(common_words_file, default_words)
+            cls._common_words = set(default_words)
+        except Exception as e:
+            print(f"⚠️ Error loading common words: {e}")
+            print("   Using default common words...")
+            cls._common_words = {'jual', 'toko', 'warung', 'usaha', 'dagang', 'depot', 'kios', 'stan', 'lapak', 'counter'}
+        
+        return cls._common_words
+    
+    @classmethod
+    def _create_default_common_words_file(cls, filepath: str, words: List[str]):
+        """Create default common words CSV file"""
+        try:
+            import csv
+            with open(filepath, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(['common_word'])  # Header
+                for word in words:
+                    writer.writerow([word])
+            print(f"✓ Created default common words file: {filepath}")
+        except Exception as e:
+            print(f"⚠️ Failed to create default common words file: {e}")
+    
+    @classmethod
+    def filter_common_words(cls, text: str) -> str:
+        """
+        Remove common words from text, but keep original if result would be empty
+        
+        Args:
+            text: Input text to filter
+            
+        Returns:
+            Filtered text, or original text if filtering would result in empty string
+        """
+        if not text:
+            return ""
+        
+        common_words = cls.load_common_words()
+        
+        # Split text into words
+        words = text.split()
+        
+        # Filter out common words
+        filtered_words = [word for word in words if word.lower() not in common_words]
+        
+        # If all words were common words, return original text (fallback)
+        if not filtered_words:
+            return text
+        
+        # Return filtered text
+        return ' '.join(filtered_words)
+    
+    @classmethod
+    def get_filtering_info(cls, text: str) -> Dict[str, Any]:
+        """
+        Get detailed information about how text would be filtered
+        Useful for debugging and understanding the filtering process
+        """
+        if not text:
+            return {
+                'original': "",
+                'filtered': "",
+                'common_words_found': [],
+                'remaining_words': [],
+                'used_fallback': False
+            }
+        
+        common_words_set = cls.load_common_words()
+        words = text.split()
+        
+        common_words_found = [word for word in words if word.lower() in common_words_set]
+        remaining_words = [word for word in words if word.lower() not in common_words_set]
+        
+        filtered_text = ' '.join(remaining_words) if remaining_words else text
+        used_fallback = len(remaining_words) == 0 and len(words) > 0
+        
+        return {
+            'original': text,
+            'filtered': filtered_text,
+            'common_words_found': common_words_found,
+            'remaining_words': remaining_words,
+            'used_fallback': used_fallback
+        }
+
 class TextUtils:
     """Text processing utilities for duplicate detection"""
     
@@ -282,6 +415,18 @@ class TextUtils:
     def calculate_similarity(text1: str, text2: str) -> float:
         """
         Calculate similarity between two text strings using SequenceMatcher
+        Optionally filters out common words before comparison based on USE_COMMON_WORDS_FILTERING setting
+        Returns a float between 0.0 (no similarity) and 1.0 (identical)
+        """
+        if USE_COMMON_WORDS_FILTERING:
+            return TextUtils.calculate_similarity_with_filtering(text1, text2)
+        else:
+            return TextUtils.calculate_similarity_without_filtering(text1, text2)
+    
+    @staticmethod
+    def calculate_similarity_without_filtering(text1: str, text2: str) -> float:
+        """
+        Calculate similarity between two text strings without common words filtering
         Returns a float between 0.0 (no similarity) and 1.0 (identical)
         """
         if not text1 and not text2:
@@ -300,78 +445,97 @@ class TextUtils:
         return similarity
     
     @staticmethod
+    def calculate_similarity_with_filtering(text1: str, text2: str) -> float:
+        """
+        Calculate similarity between two text strings with common words filtering
+        Returns a float between 0.0 (no similarity) and 1.0 (identical)
+        """
+        if not text1 and not text2:
+            return 1.0  # Both empty strings are considered identical
+        
+        if not text1 or not text2:
+            return 0.0  # One empty, one not empty
+        
+        # Normalize both texts
+        norm_text1 = TextUtils.normalize_text(text1)
+        norm_text2 = TextUtils.normalize_text(text2)
+        
+        # Filter out common words
+        filtered_text1 = CommonWordsManager.filter_common_words(norm_text1)
+        filtered_text2 = CommonWordsManager.filter_common_words(norm_text2)
+        
+        # Use difflib.SequenceMatcher for similarity calculation
+        similarity = difflib.SequenceMatcher(None, filtered_text1, filtered_text2).ratio()
+        
+        return similarity
+    
+    @staticmethod
     def is_empty_or_whitespace(text: str) -> bool:
         """Check if text is empty or contains only whitespace"""
         return not text or text.strip() == ""
 
 class DuplicateDetector:
-    """Main duplicate detection logic with configurable rules"""
+    """Main duplicate detection logic with new algorithm"""
     
-    def __init__(self, similarity_threshold: float = SIMILARITY_THRESHOLD, 
-                 rules_config: Dict[str, str] = None):
+    def __init__(self, similarity_threshold: float = SIMILARITY_THRESHOLD):
         self.similarity_threshold = similarity_threshold
-        self.rules_config = rules_config or DUPLICATE_RULES.copy()
     
     def compare_businesses(self, business_a: Business, business_b: Business, 
                           distance_meters: Optional[float] = None) -> DuplicateComparison:
         """
-        Compare two businesses and determine if they are duplicates using configurable rules
+        Compare two businesses and determine if they are duplicates using the new algorithm:
         
-        Configurable Rules:
-        1. both_high_similarity: Name similarity >= TH AND Owner similarity >= TH
-        2. name_high_owner_low: Name similarity >= TH but Owner similarity < TH (owner not empty)
-        3. name_low_owner_high: Name similarity < TH but Owner similarity >= TH (owner not empty)
-        4. name_high_one_owner_empty: Name similarity >= TH and one owner empty
-        5. both_owners_empty_name_high: Both owners empty, name similarity >= TH
-        6. default: All other cases
+        New Algorithm Rules:
+        1. If name and owner have similarity higher than threshold → strong_duplicate
+        2. If name is high similarity but owner is low similarity → not_duplicate
+        3. If name is low similarity but owner is high similarity → not_duplicate
+        4. If name is high similarity but owner is empty → advanced step (common words removal)
+        5. If name is low similarity but owner is empty → not_duplicate
         """
         
-        # Calculate similarities
-        name_similarity = TextUtils.calculate_similarity(business_a.name, business_b.name)
-        owner_similarity = TextUtils.calculate_similarity(business_a.owner, business_b.owner)
+        # Calculate initial similarities (without common words filtering for first pass)
+        name_similarity = TextUtils.calculate_similarity_without_filtering(business_a.name, business_b.name)
+        owner_similarity = TextUtils.calculate_similarity_without_filtering(business_a.owner, business_b.owner)
         
         # Check if owners are empty
         owner_a_empty = TextUtils.is_empty_or_whitespace(business_a.owner)
         owner_b_empty = TextUtils.is_empty_or_whitespace(business_b.owner)
-        both_owners_empty = owner_a_empty and owner_b_empty
         any_owner_empty = owner_a_empty or owner_b_empty
         
-        # Apply configurable comparison rules
-        duplicate_type = self.rules_config.get('default', 'not_duplicate')
+        # Apply new algorithm rules
+        duplicate_type = 'not_duplicate'
         confidence_score = 0.0
         
         if name_similarity >= self.similarity_threshold:
-            if both_owners_empty:
-                # Rule 5: Both owners empty, name similarity >= TH
-                duplicate_type = self.rules_config.get('both_owners_empty_name_high', 'strong_duplicate')
-                confidence_score = name_similarity
-            elif any_owner_empty:
-                # Rule 4: Name similarity >= TH and one owner empty
-                duplicate_type = self.rules_config.get('name_high_one_owner_empty', 'weak_duplicate')
-                confidence_score = name_similarity * 0.7  # Lower confidence when owner info is missing
+            if any_owner_empty:
+                # Rule 4: Name is high similarity but owner is empty → advanced step
+                # Use common words filtering for advanced comparison
+                advanced_name_similarity = TextUtils.calculate_similarity_with_filtering(business_a.name, business_b.name)
+                
+                if advanced_name_similarity >= self.similarity_threshold:
+                    duplicate_type = 'strong_duplicate'
+                    confidence_score = advanced_name_similarity
+                else:
+                    duplicate_type = 'not_duplicate'
+                    confidence_score = advanced_name_similarity * 0.5
             elif owner_similarity >= self.similarity_threshold:
-                # Rule 1: Name similarity >= TH AND Owner similarity >= TH
-                duplicate_type = self.rules_config.get('both_high_similarity', 'strong_duplicate')
+                # Rule 1: Name and owner both have high similarity → strong_duplicate
+                duplicate_type = 'strong_duplicate'
                 confidence_score = (name_similarity + owner_similarity) / 2
             else:
-                # Rule 2: Name similarity >= TH but Owner similarity < TH (owner not empty)
-                duplicate_type = self.rules_config.get('name_high_owner_low', 'not_duplicate')
-                confidence_score = max(name_similarity, owner_similarity) * 0.5
+                # Rule 2: Name is high similarity but owner is low similarity → not_duplicate
+                duplicate_type = 'not_duplicate'
+                confidence_score = max(name_similarity, owner_similarity) * 0.3
         else:
             if not any_owner_empty and owner_similarity >= self.similarity_threshold:
-                # Rule 3: Name similarity < TH but Owner similarity >= TH (owner not empty)
-                duplicate_type = self.rules_config.get('name_low_owner_high', 'not_duplicate')
-                confidence_score = max(name_similarity, owner_similarity) * 0.5
-            else:
-                # Default: All other cases
-                duplicate_type = self.rules_config.get('default', 'not_duplicate')
+                # Rule 3: Name is low similarity but owner is high similarity → not_duplicate
+                duplicate_type = 'not_duplicate'
                 confidence_score = max(name_similarity, owner_similarity) * 0.3
-        
-        # Adjust confidence score based on duplicate type
-        if duplicate_type == 'weak_duplicate' and confidence_score > 0.7:
-            confidence_score *= 0.8  # Reduce confidence for weak duplicates
-        elif duplicate_type == 'not_duplicate' and confidence_score > 0.5:
-            confidence_score *= 0.6  # Reduce confidence for non-duplicates
+            else:
+                # Rule 5: Name is low similarity but owner is empty → not_duplicate
+                # Default: All other cases → not_duplicate
+                duplicate_type = 'not_duplicate'
+                confidence_score = max(name_similarity, owner_similarity) * 0.2
         
         return DuplicateComparison(
             business_a=business_a,
@@ -737,12 +901,11 @@ class NearbyBusinessFinder:
     """Main engine for finding nearby businesses and detecting duplicates"""
     
     def __init__(self, radius_meters: float = RADIUS_METERS, 
-                 similarity_threshold: float = SIMILARITY_THRESHOLD,
-                 rules_config: Dict[str, str] = None):
+                 similarity_threshold: float = SIMILARITY_THRESHOLD):
         self.radius_meters = radius_meters
         self.db_manager = DatabaseManager(DB_CONFIG)
         self.spatial_index = SpatialIndex()
-        self.duplicate_detector = DuplicateDetector(similarity_threshold, rules_config)
+        self.duplicate_detector = DuplicateDetector(similarity_threshold)
     
     def run_search(self):
         """Execute the complete nearby business search"""
@@ -1000,20 +1163,35 @@ def main():
         print(f"🔍 Detecting duplicates with {SIMILARITY_THRESHOLD} similarity threshold")
         print(f"⚡ Using R-tree spatial indexing for performance")
         
+        # Display common words configuration
+        if USE_COMMON_WORDS_FILTERING:
+            # Load common words (this will display loading info)
+            common_words = CommonWordsManager.load_common_words()
+            print(f"📝 Common words filtering enabled ({len(common_words)} words loaded)")
+        else:
+            print(f"📝 Common words filtering disabled (using full text comparison)")
+        
         if SLS_ID_FILTER:
             print(f"🎯 Filtering by SLS ID: {SLS_ID_FILTER}")
         
         if DEBUG_MODE:
             print(f"🐛 DEBUG MODE: Processing only {DEBUG_LIMIT:,} businesses for testing")
         
-        # Display current rule configuration
-        print(f"\n📋 Duplicate Detection Rules:")
-        print(f"  - Both name & owner similar: {DUPLICATE_RULES['both_high_similarity']}")
-        print(f"  - Name similar, owner different: {DUPLICATE_RULES['name_high_owner_low']}")
-        print(f"  - Name different, owner similar: {DUPLICATE_RULES['name_low_owner_high']}")
-        print(f"  - Name similar, one owner empty: {DUPLICATE_RULES['name_high_one_owner_empty']}")
-        print(f"  - Both owners empty, name similar: {DUPLICATE_RULES['both_owners_empty_name_high']}")
-        print(f"  - Default (other cases): {DUPLICATE_RULES['default']}")
+        # Display current algorithm configuration
+        print(f"\n📋 Duplicate Detection Algorithm:")
+        print(f"  1. Name & owner both high similarity → strong_duplicate")
+        print(f"  2. Name high, owner low similarity → not_duplicate")
+        print(f"  3. Name low, owner high similarity → not_duplicate")
+        print(f"  4. Name high, owner empty → advanced step (common words filtering)")
+        print(f"  5. Name low, owner empty → not_duplicate")
+        print(f"  📝 Similarity threshold: {SIMILARITY_THRESHOLD}")
+        
+        # Display common words configuration
+        if USE_COMMON_WORDS_FILTERING:
+            common_words_count = len(CommonWordsManager.get_common_words()) if hasattr(CommonWordsManager, 'get_common_words') else 'unknown'
+            print(f"  📝 Common words filtering enabled ({common_words_count} words loaded)")
+        else:
+            print(f"  📝 Common words filtering disabled (using full text comparison)")
         
         # Display output file configuration
         if SAVE_RESULTS_TO_FILE:
@@ -1029,7 +1207,7 @@ def main():
         
         print("")
         
-        finder = NearbyBusinessFinder(RADIUS_METERS, SIMILARITY_THRESHOLD, DUPLICATE_RULES)
+        finder = NearbyBusinessFinder(RADIUS_METERS, SIMILARITY_THRESHOLD)
         finder.run_search()
         
         return 0
