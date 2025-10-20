@@ -127,11 +127,17 @@ DUPLICATE_RULES = {
 }
 
 # Validation mode - set to True to enable result validation
-VALIDATION_MODE = True
-SAVE_RESULTS_TO_FILE = True  # Save detailed results for manual inspection
+VALIDATION_MODE = False
 SAMPLE_CHECK_COUNT = 100  # Number of random businesses to validate manually
 
-# Output file configuration
+# Batch processing configuration
+BATCH_UPDATE_SIZE = 10000  # Number of businesses to update in each batch for duplicate_scan_at
+
+# Output mode configuration - choose where to save results
+SAVE_RESULTS_TO_DATABASE = True  # Set to True to save results to duplicate_candidates table
+SAVE_RESULTS_TO_FILE = False  # Set to True to save detailed results to CSV file for manual inspection
+
+# Output file configuration (only used when SAVE_RESULTS_TO_FILE = True)
 OUTPUT_FILENAME = "business_duplicate_detection_results.csv"  # Constant filename (overwrites previous results)
 USE_TIMESTAMP_IN_FILENAME = False  # Set to True to append timestamp to filename
 INCLUDE_NOT_DUPLICATES_IN_OUTPUT = False  # Set to True to include "not_duplicate" results in CSV output
@@ -795,13 +801,22 @@ class DatabaseManager:
             self.connection.close()
             print("✓ Database connection closed")
     
-    def get_businesses_from_table(self, table_name: str, business_type: str) -> List[Business]:
-        """Fetch businesses from a specific table"""
+    def get_businesses_from_table(self, table_name: str, business_type: str, only_unprocessed: bool = False) -> List[Business]:
+        """
+        Fetch businesses from a specific table
+        Args:
+            table_name: Name of the business table
+            business_type: Type of business ('supplement' or 'market')
+            only_unprocessed: If True, only return businesses with duplicate_scan_at IS NULL
+        """
         # Add LIMIT clause if debug mode is enabled
         limit_clause = f"LIMIT {DEBUG_LIMIT}" if DEBUG_MODE else ""
         
         # Add SLS ID filter if specified
         sls_filter = f"AND sls_id = '{SLS_ID_FILTER}'" if SLS_ID_FILTER else ""
+        
+        # Add unprocessed filter if specified
+        unprocessed_filter = "AND duplicate_scan_at IS NULL" if only_unprocessed else ""
         
         # Different query structure for market_business (no owner column)
         if business_type == 'market':
@@ -818,6 +833,7 @@ class DatabaseManager:
             WHERE latitude IS NOT NULL 
                 AND longitude IS NOT NULL
                 AND deleted_at IS NULL
+                {unprocessed_filter}
                 {sls_filter}
             ORDER BY created_at DESC
             {limit_clause}
@@ -838,6 +854,7 @@ class DatabaseManager:
             WHERE latitude IS NOT NULL 
                 AND longitude IS NOT NULL
                 AND deleted_at IS NULL
+                {unprocessed_filter}
                 {sls_filter}
             ORDER BY created_at DESC
             {limit_clause}
@@ -880,18 +897,282 @@ class DatabaseManager:
         print(f"✓ Loaded {len(businesses)} businesses from {table_name}")
         return businesses
     
+    def save_duplicate_candidate(self, comparison: 'DuplicateComparison') -> bool:
+        """
+        Save a single duplicate candidate to the database
+        Returns True if successful, False otherwise
+        """
+        try:
+            import uuid
+            
+            # Generate UUID for the record
+            record_id = str(uuid.uuid4())
+            
+            # Map business_type to the correct table suffix for morph relationship
+            center_type_mapping = {
+                'supplement': 'App\\Models\\SupplementBusiness',
+                'market': 'App\\Models\\MarketBusiness'
+            }
+            nearby_type_mapping = {
+                'supplement': 'App\\Models\\SupplementBusiness', 
+                'market': 'App\\Models\\MarketBusiness'
+            }
+            
+            center_business_type = center_type_mapping.get(comparison.business_a.business_type, 'App\\Models\\SupplementBusiness')
+            nearby_business_type = nearby_type_mapping.get(comparison.business_b.business_type, 'App\\Models\\SupplementBusiness')
+            
+            query = """
+            INSERT INTO duplicate_candidates (
+                id, center_business_id, center_business_type, nearby_business_id, nearby_business_type,
+                center_business_name, nearby_business_name, center_business_owner, nearby_business_owner,
+                name_similarity, owner_similarity, confidence_score, distance_meters, duplicate_status,
+                center_business_latitude, center_business_longitude, 
+                nearby_business_latitude, nearby_business_longitude,
+                status, created_at, updated_at
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            )
+            """
+            
+            cursor = self.connection.cursor()
+            cursor.execute(query, (
+                record_id,
+                comparison.business_a.id,
+                center_business_type,
+                comparison.business_b.id,
+                nearby_business_type,
+                comparison.business_a.name or "",
+                comparison.business_b.name or "",
+                comparison.business_a.owner or "",
+                comparison.business_b.owner or "",
+                comparison.name_similarity,
+                comparison.owner_similarity,
+                comparison.confidence_score,
+                comparison.distance_meters or 0.0,
+                comparison.duplicate_type,
+                comparison.business_a.latitude,
+                comparison.business_a.longitude,
+                comparison.business_b.latitude,
+                comparison.business_b.longitude,
+                'notconfirmed',  # Default status
+                datetime.now(),  # created_at
+                datetime.now()   # updated_at
+            ))
+            
+            self.connection.commit()  # Commit the transaction
+            cursor.close()
+            return True
+            
+        except Exception as e:
+            print(f"⚠️ Error saving duplicate candidate: {e}")
+            return False
+    
+    def save_duplicate_candidates_batch(self, comparisons: List['DuplicateComparison']) -> Tuple[int, int]:
+        """
+        Save multiple duplicate candidates to the database in batch
+        Returns tuple of (successful_saves, failed_saves)
+        """
+        if not comparisons:
+            return 0, 0
+            
+        successful_saves = 0
+        failed_saves = 0
+        
+        try:
+            import uuid
+            
+            # Prepare batch data
+            batch_data = []
+            
+            # Map business_type to the correct model class for morph relationship
+            type_mapping = {
+                'supplement': 'App\\Models\\SupplementBusiness',
+                'market': 'App\\Models\\MarketBusiness'
+            }
+            
+            for comparison in comparisons:
+                record_id = str(uuid.uuid4())
+                center_business_type = type_mapping.get(comparison.business_a.business_type, 'App\\Models\\SupplementBusiness')
+                nearby_business_type = type_mapping.get(comparison.business_b.business_type, 'App\\Models\\SupplementBusiness')
+                
+                batch_data.append((
+                    record_id,
+                    comparison.business_a.id,
+                    center_business_type,
+                    comparison.business_b.id,
+                    nearby_business_type,
+                    comparison.business_a.name or "",
+                    comparison.business_b.name or "",
+                    comparison.business_a.owner or "",
+                    comparison.business_b.owner or "",
+                    comparison.name_similarity,
+                    comparison.owner_similarity,
+                    comparison.confidence_score,
+                    comparison.distance_meters or 0.0,
+                    comparison.duplicate_type,
+                    comparison.business_a.latitude,
+                    comparison.business_a.longitude,
+                    comparison.business_b.latitude,
+                    comparison.business_b.longitude,
+                    'notconfirmed',  # Default status
+                    datetime.now(),  # created_at
+                    datetime.now()   # updated_at
+                ))
+            
+            # Execute batch insert
+            query = """
+            INSERT INTO duplicate_candidates (
+                id, center_business_id, center_business_type, nearby_business_id, nearby_business_type,
+                center_business_name, nearby_business_name, center_business_owner, nearby_business_owner,
+                name_similarity, owner_similarity, confidence_score, distance_meters, duplicate_status,
+                center_business_latitude, center_business_longitude, 
+                nearby_business_latitude, nearby_business_longitude,
+                status, created_at, updated_at
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            )
+            """
+            
+            cursor = self.connection.cursor()
+            cursor.executemany(query, batch_data)
+            self.connection.commit()
+            cursor.close()
+            
+            successful_saves = len(batch_data)
+            print(f"✓ Successfully saved {successful_saves} duplicate candidates to database")
+            
+        except Exception as e:
+            print(f"⚠️ Error in batch save: {e}")
+            # Try to save individually to get partial success
+            print("🔄 Attempting individual saves...")
+            for comparison in comparisons:
+                if self.save_duplicate_candidate(comparison):
+                    successful_saves += 1
+                else:
+                    failed_saves += 1
+        
+        return successful_saves, failed_saves
+    
     def get_all_businesses(self, table_configs: List[Dict[str, str]]) -> List[Business]:
-        """Load businesses from all configured tables"""
+        """Load ALL businesses from all configured tables (for spatial indexing)"""
         all_businesses = []
         
         for config in table_configs:
             businesses = self.get_businesses_from_table(
                 config['table_name'], 
-                config['business_type']
+                config['business_type'],
+                only_unprocessed=False  # Load all businesses for spatial index
             )
             all_businesses.extend(businesses)
         
         return all_businesses
+    
+    def get_unprocessed_businesses(self, table_configs: List[Dict[str, str]]) -> List[Business]:
+        """Load only businesses that haven't been processed yet (duplicate_scan_at IS NULL)"""
+        unprocessed_businesses = []
+        
+        for config in table_configs:
+            businesses = self.get_businesses_from_table(
+                config['table_name'], 
+                config['business_type'],
+                only_unprocessed=True  # Only load unprocessed businesses
+            )
+            unprocessed_businesses.extend(businesses)
+        
+        return unprocessed_businesses
+    
+    def batch_update_duplicate_scan_at(self, business_updates: List[Tuple[str, str]]) -> Tuple[int, int]:
+        """
+        Batch update duplicate_scan_at for multiple businesses in smaller chunks
+        Args:
+            business_updates: List of tuples (business_id, business_type)
+        Returns:
+            Tuple of (successful_updates, failed_updates)
+        """
+        if not business_updates:
+            return 0, 0
+        
+        total_successful_updates = 0
+        total_failed_updates = 0
+        current_timestamp = datetime.now()
+        
+        # Group updates by business type (table)
+        supplement_updates = []
+        market_updates = []
+        
+        for business_id, business_type in business_updates:
+            if business_type == 'supplement':
+                supplement_updates.append((current_timestamp, business_id))
+            else:
+                market_updates.append((current_timestamp, business_id))
+        
+        print(f"📝 Processing {len(business_updates)} businesses in batches of {BATCH_UPDATE_SIZE}")
+        
+        try:
+            cursor = self.connection.cursor()
+            
+            # Process supplement_business updates in batches
+            if supplement_updates:
+                print(f"🔄 Updating {len(supplement_updates)} supplement businesses...")
+                batches_processed = 0
+                
+                for i in range(0, len(supplement_updates), BATCH_UPDATE_SIZE):
+                    batch = supplement_updates[i:i + BATCH_UPDATE_SIZE]
+                    batches_processed += 1
+                    
+                    try:
+                        query = "UPDATE supplement_business SET duplicate_scan_at = %s WHERE id = %s"
+                        cursor.executemany(query, batch)
+                        self.connection.commit()  # Commit each batch
+                        
+                        batch_size = len(batch)
+                        total_successful_updates += batch_size
+                        
+                        print(f"  ✓ Batch {batches_processed}: Updated {batch_size} supplement businesses "
+                              f"({total_successful_updates}/{len(supplement_updates)} total)")
+                        
+                    except Exception as e:
+                        print(f"  ⚠️ Error in supplement batch {batches_processed}: {e}")
+                        total_failed_updates += len(batch)
+            
+            # Process market_business updates in batches
+            if market_updates:
+                print(f"🔄 Updating {len(market_updates)} market businesses...")
+                batches_processed = 0
+                
+                for i in range(0, len(market_updates), BATCH_UPDATE_SIZE):
+                    batch = market_updates[i:i + BATCH_UPDATE_SIZE]
+                    batches_processed += 1
+                    
+                    try:
+                        query = "UPDATE market_business SET duplicate_scan_at = %s WHERE id = %s"
+                        cursor.executemany(query, batch)
+                        self.connection.commit()  # Commit each batch
+                        
+                        batch_size = len(batch)
+                        batch_successful = total_successful_updates + batch_size - len(supplement_updates)
+                        total_successful_updates += batch_size
+                        
+                        print(f"  ✓ Batch {batches_processed}: Updated {batch_size} market businesses "
+                              f"({batch_successful}/{len(market_updates)} total)")
+                        
+                    except Exception as e:
+                        print(f"  ⚠️ Error in market batch {batches_processed}: {e}")
+                        total_failed_updates += len(batch)
+            
+            cursor.close()
+            
+            print(f"✅ Batch update completed:")
+            print(f"  - Successfully updated: {total_successful_updates} businesses")
+            if total_failed_updates > 0:
+                print(f"  - Failed updates: {total_failed_updates} businesses")
+            
+        except Exception as e:
+            print(f"❌ Fatal error in batch update duplicate_scan_at: {e}")
+            total_failed_updates = len(business_updates)
+            total_successful_updates = 0
+        
+        return total_successful_updates, total_failed_updates
 
 # =====================================================================
 # MAIN FINDER ENGINE
@@ -924,18 +1205,28 @@ class NearbyBusinessFinder:
             # Connect to database
             self.db_manager.connect()
             
-            # Load all businesses
-            print("📊 Loading businesses from database...")
+            # Load ALL businesses for spatial indexing (including already processed ones)
+            print("📊 Loading all businesses for spatial indexing...")
             all_businesses = self.db_manager.get_all_businesses(BUSINESS_TABLES)
             
             if not all_businesses:
                 print("⚠️ No businesses found. Exiting.")
                 return
             
-            print(f"✓ Total businesses loaded: {len(all_businesses)}")
+            print(f"✓ Total businesses loaded for spatial index: {len(all_businesses)}")
             
-            # Build spatial index
-            print("🏗️ Building spatial index...")
+            # Load only unprocessed businesses for duplicate checking
+            print("📊 Loading unprocessed businesses for duplicate checking...")
+            unprocessed_businesses = self.db_manager.get_unprocessed_businesses(BUSINESS_TABLES)
+            
+            if not unprocessed_businesses:
+                print("✅ No unprocessed businesses found. All businesses have been scanned!")
+                return
+            
+            print(f"✓ Unprocessed businesses to check: {len(unprocessed_businesses)}")
+            
+            # Build spatial index with ALL businesses
+            print("🏗️ Building spatial index with all businesses...")
             for business in all_businesses:
                 self.spatial_index.insert_business(business)
             print("✓ Spatial index built successfully")
@@ -952,14 +1243,15 @@ class NearbyBusinessFinder:
             skipped_comparisons = 0  # Track how many duplicate comparisons were avoided
             validation_data = []
             sample_businesses = []
+            business_updates = []  # Collect business IDs and types for batch update
             
             import random
             random.seed(42)  # For reproducible results
             
-            for i, business in enumerate(all_businesses):
+            for i, business in enumerate(unprocessed_businesses):
                 if i % 1000 == 0:
                     elapsed = time.time() - search_start_time
-                    print(f"  Progress: {i:,}/{len(all_businesses):,} businesses processed ({elapsed:.1f}s)")
+                    print(f"  Progress: {i:,}/{len(unprocessed_businesses):,} businesses processed ({elapsed:.1f}s)")
                 
                 # Find nearby businesses
                 nearby_businesses = self.spatial_index.find_nearby_businesses(
@@ -1016,7 +1308,7 @@ class NearbyBusinessFinder:
                     if VALIDATION_MODE and len(sample_businesses) < SAMPLE_CHECK_COUNT:
                         sample_businesses.append((business, nearby_businesses))
                     
-                    # Save detailed results if enabled
+                    # Save detailed results to CSV if enabled
                     if SAVE_RESULTS_TO_FILE:
                         for comparison in duplicate_comparisons:
                             # Skip not_duplicate results if configured to exclude them
@@ -1047,6 +1339,16 @@ class NearbyBusinessFinder:
                                 'nearby_lng': comparison.business_b.longitude
                             })
                     
+                    # Save detailed results to database if enabled
+                    if SAVE_RESULTS_TO_DATABASE:
+                        for comparison in duplicate_comparisons:
+                            # Skip not_duplicate results if configured to exclude them (similar to CSV logic)
+                            if not INCLUDE_NOT_DUPLICATES_IN_OUTPUT and comparison.duplicate_type == 'not_duplicate':
+                                continue
+                            
+                            # Save individual duplicate candidate to database
+                            self.db_manager.save_duplicate_candidate(comparison)
+                    
                     # Print results with duplicate information
                     strong_dupes = sum(1 for c in duplicate_comparisons if c.duplicate_type == 'strong_duplicate')
                     weak_dupes = sum(1 for c in duplicate_comparisons if c.duplicate_type == 'weak_duplicate')
@@ -1056,8 +1358,18 @@ class NearbyBusinessFinder:
                               f"🔴 {strong_dupes} strong duplicates, 🟡 {weak_dupes} weak duplicates")
                     else:
                         print(f"📍 {business.name} → {len(nearby_businesses)} nearby, ✅ no duplicates")
+                
+                # Collect business info for batch update of duplicate_scan_at
+                business_updates.append((business.id, business.business_type))
             
             search_end_time = time.time()
+            
+            # Batch update duplicate_scan_at timestamps for all processed businesses
+            if business_updates:
+                print(f"\n📝 Batch updating duplicate_scan_at for {len(business_updates)} businesses...")
+                successful_updates, failed_updates = self.db_manager.batch_update_duplicate_scan_at(business_updates)
+                if failed_updates > 0:
+                    print(f"⚠️  {failed_updates} businesses failed to update")
             
             # Perform validation if enabled
             if VALIDATION_MODE and sample_businesses:
@@ -1104,21 +1416,42 @@ class NearbyBusinessFinder:
                 
                 save_results_to_csv(validation_data, filename)
                 
-                # Display what was saved
+                # Display what was saved to CSV
                 if INCLUDE_NOT_DUPLICATES_IN_OUTPUT:
-                    print(f"💾 Saved {len(validation_data):,} total comparison results (including not duplicates)")
+                    print(f"💾 Saved {len(validation_data):,} total comparison results to CSV (including not duplicates)")
                 else:
-                    print(f"💾 Saved {len(validation_data):,} duplicate results only (excluded not duplicates)")
+                    print(f"💾 Saved {len(validation_data):,} duplicate results to CSV only (excluded not duplicates)")
+            
+            # Display database save results if database saving was enabled
+            if SAVE_RESULTS_TO_DATABASE:
+                print(f"💾 Duplicate candidates saved to database during processing")
+                
+                # Show what type of results were saved
+                if INCLUDE_NOT_DUPLICATES_IN_OUTPUT:
+                    print(f"🗄️  Database includes all comparison results (duplicates + not duplicates)")
+                else:
+                    print(f"🗄️  Database includes only duplicate results (strong + weak duplicates)")
+            
+            # Display output mode summary
+            if SAVE_RESULTS_TO_FILE and SAVE_RESULTS_TO_DATABASE:
+                print(f"📤 Results saved to both CSV file and database")
+            elif SAVE_RESULTS_TO_FILE:
+                print(f"📤 Results saved to CSV file only")
+            elif SAVE_RESULTS_TO_DATABASE:
+                print(f"📤 Results saved to database only")
+            else:
+                print(f"📤 No results saved (both SAVE_RESULTS_TO_FILE and SAVE_RESULTS_TO_DATABASE are disabled)")
             
             total_end_time = time.time()
             
             print(f"\n" + "=" * 60)
             print("✅ Duplicate Detection Search completed successfully!")
             print(f"📊 Summary:")
-            print(f"  - Total businesses analyzed: {len(all_businesses):,}")
+            print(f"  - Total businesses in spatial index: {len(all_businesses):,}")
+            print(f"  - Unprocessed businesses analyzed: {len(unprocessed_businesses):,}")
             print(f"  - Businesses with nearby matches: {businesses_with_matches:,}")
             print(f"  - Total nearby business pairs found: {total_matches:,}")
-            print(f"  - Average matches per business: {total_matches / len(all_businesses):.2f}")
+            print(f"  - Average matches per business: {total_matches / len(unprocessed_businesses):.2f}" if len(unprocessed_businesses) > 0 else "  - Average matches per business: 0")
             
             print(f"\n🔍 Duplicate Detection Results:")
             print(f"  - Strong duplicate pairs found: {total_duplicates['strong']:,}")
@@ -1127,7 +1460,7 @@ class NearbyBusinessFinder:
             print(f"  - Total comparison pairs: {total_matches:,}")
             print(f"  - Skipped redundant comparisons: {skipped_comparisons:,}")
             print(f"  - Unique businesses with duplicates: {len(unique_businesses_with_duplicates):,}")
-            print(f"  - Business duplicate rate: {len(unique_businesses_with_duplicates) / len(all_businesses) * 100:.1f}% ({len(unique_businesses_with_duplicates)} of {len(all_businesses)} businesses)")
+            print(f"  - Business duplicate rate: {len(unique_businesses_with_duplicates) / len(unprocessed_businesses) * 100:.1f}% ({len(unique_businesses_with_duplicates)} of {len(unprocessed_businesses)} unprocessed businesses)" if len(unprocessed_businesses) > 0 else "  - Business duplicate rate: 0%")
             if total_matches > 0:
                 print(f"  - Pair duplicate rate: {(total_duplicates['strong'] + total_duplicates['weak']) / total_matches * 100:.1f}% (pairs that are duplicates)")
             
@@ -1143,7 +1476,7 @@ class NearbyBusinessFinder:
             print(f"\n⏱️  Performance:")
             print(f"  - Total execution time: {total_end_time - start_time:.1f} seconds")
             print(f"  - Search phase time: {search_end_time - search_start_time:.1f} seconds")
-            print(f"  - Businesses processed per second: {len(all_businesses) / (search_end_time - search_start_time):.0f}")
+            print(f"  - Businesses processed per second: {len(unprocessed_businesses) / (search_end_time - search_start_time):.0f}" if (search_end_time - search_start_time) > 0 and len(unprocessed_businesses) > 0 else "  - Businesses processed per second: 0")
             
         except Exception as e:
             print(f"\n❌ Error during search: {e}")
@@ -1193,17 +1526,33 @@ def main():
         else:
             print(f"  📝 Common words filtering disabled (using full text comparison)")
         
-        # Display output file configuration
+        # Display output configuration
+        print(f"\n📁 Output Configuration:")
+        if SAVE_RESULTS_TO_DATABASE and SAVE_RESULTS_TO_FILE:
+            print(f"  💾 Save to database: ✅ (duplicate_candidates table)")
+            print(f"  📄 Save to CSV file: ✅ ({OUTPUT_FILENAME})")
+        elif SAVE_RESULTS_TO_DATABASE:
+            print(f"  � Save to database: ✅ (duplicate_candidates table)")
+            print(f"  📄 Save to CSV file: ❌")
+        elif SAVE_RESULTS_TO_FILE:
+            print(f"  💾 Save to database: ❌")
+            print(f"  📄 Save to CSV file: ✅ ({OUTPUT_FILENAME})")
+        else:
+            print(f"  💾 Save to database: ❌")
+            print(f"  📄 Save to CSV file: ❌")
+            print(f"  ⚠️  No output configured - results will not be saved!")
+        
         if SAVE_RESULTS_TO_FILE:
             if USE_TIMESTAMP_IN_FILENAME:
-                print(f"\n📁 Output: Results will be saved with timestamp in filename")
+                print(f"  📝 CSV filename: With timestamp")
             else:
-                print(f"\n📁 Output: Results will be saved to '{OUTPUT_FILENAME}' (overwrites previous results)")
+                print(f"  📝 CSV filename: Fixed (overwrites previous)")
             
+        if SAVE_RESULTS_TO_DATABASE or SAVE_RESULTS_TO_FILE:
             if INCLUDE_NOT_DUPLICATES_IN_OUTPUT:
-                print(f"📄 Content: Including all results (duplicates + not duplicates)")
+                print(f"  � Content: All results (duplicates + not duplicates)")
             else:
-                print(f"📄 Content: Including only duplicates (strong + weak duplicates only)")
+                print(f"  � Content: Only duplicates (strong + weak duplicates)")
         
         print("")
         
