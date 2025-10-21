@@ -126,16 +126,15 @@ DUPLICATE_RULES = {
     'default': 'not_duplicate'  # Options: 'strong_duplicate', 'weak_duplicate', 'not_duplicate'
 }
 
-# Validation mode - set to True to enable result validation
-VALIDATION_MODE = False
-SAMPLE_CHECK_COUNT = 100  # Number of random businesses to validate manually
+# Distance calculation configuration
+CALCULATE_PRECISE_DISTANCE = True  # Set to True to calculate and store precise distances (slower but more accurate)
 
 # Batch processing configuration
 BATCH_UPDATE_SIZE = 10000  # Number of businesses to update in each batch for duplicate_scan_at
 
 # Output mode configuration - choose where to save results
 SAVE_RESULTS_TO_DATABASE = True  # Set to True to save results to duplicate_candidates table
-SAVE_RESULTS_TO_FILE = False  # Set to True to save detailed results to CSV file for manual inspection
+SAVE_RESULTS_TO_FILE = True  # Set to True to save detailed results to CSV file for manual inspection
 
 # Output file configuration (only used when SAVE_RESULTS_TO_FILE = True)
 OUTPUT_FILENAME = "business_duplicate_detection_results.csv"  # Constant filename (overwrites previous results)
@@ -1097,68 +1096,76 @@ class DatabaseManager:
         current_timestamp = datetime.now()
         
         # Group updates by business type (table)
-        supplement_updates = []
-        market_updates = []
+        supplement_ids = []
+        market_ids = []
         
         for business_id, business_type in business_updates:
             if business_type == 'supplement':
-                supplement_updates.append((current_timestamp, business_id))
+                supplement_ids.append(business_id)
             else:
-                market_updates.append((current_timestamp, business_id))
+                market_ids.append(business_id)
         
         print(f"📝 Processing {len(business_updates)} businesses in batches of {BATCH_UPDATE_SIZE}")
         
         try:
             cursor = self.connection.cursor()
             
-            # Process supplement_business updates in batches
-            if supplement_updates:
-                print(f"🔄 Updating {len(supplement_updates)} supplement businesses...")
+            # Process supplement_business updates in batches using WHERE id IN (...)
+            if supplement_ids:
+                print(f"🔄 Updating {len(supplement_ids)} supplement businesses...")
                 batches_processed = 0
                 
-                for i in range(0, len(supplement_updates), BATCH_UPDATE_SIZE):
-                    batch = supplement_updates[i:i + BATCH_UPDATE_SIZE]
+                for i in range(0, len(supplement_ids), BATCH_UPDATE_SIZE):
+                    batch_ids = supplement_ids[i:i + BATCH_UPDATE_SIZE]
                     batches_processed += 1
                     
                     try:
-                        query = "UPDATE supplement_business SET duplicate_scan_at = %s WHERE id = %s"
-                        cursor.executemany(query, batch)
+                        # Create placeholders for the IN clause
+                        placeholders = ','.join(['%s'] * len(batch_ids))
+                        query = f"UPDATE supplement_business SET duplicate_scan_at = %s WHERE id IN ({placeholders})"
+                        
+                        # Execute with timestamp first, then all the IDs
+                        cursor.execute(query, [current_timestamp] + batch_ids)
                         self.connection.commit()  # Commit each batch
                         
-                        batch_size = len(batch)
+                        batch_size = len(batch_ids)
                         total_successful_updates += batch_size
                         
                         print(f"  ✓ Batch {batches_processed}: Updated {batch_size} supplement businesses "
-                              f"({total_successful_updates}/{len(supplement_updates)} total)")
+                              f"({total_successful_updates}/{len(supplement_ids)} total)")
                         
                     except Exception as e:
                         print(f"  ⚠️ Error in supplement batch {batches_processed}: {e}")
-                        total_failed_updates += len(batch)
+                        total_failed_updates += len(batch_ids)
             
-            # Process market_business updates in batches
-            if market_updates:
-                print(f"🔄 Updating {len(market_updates)} market businesses...")
+            # Process market_business updates in batches using WHERE id IN (...)
+            if market_ids:
+                print(f"🔄 Updating {len(market_ids)} market businesses...")
                 batches_processed = 0
                 
-                for i in range(0, len(market_updates), BATCH_UPDATE_SIZE):
-                    batch = market_updates[i:i + BATCH_UPDATE_SIZE]
+                for i in range(0, len(market_ids), BATCH_UPDATE_SIZE):
+                    batch_ids = market_ids[i:i + BATCH_UPDATE_SIZE]
                     batches_processed += 1
                     
                     try:
-                        query = "UPDATE market_business SET duplicate_scan_at = %s WHERE id = %s"
-                        cursor.executemany(query, batch)
+                        # Create placeholders for the IN clause
+                        placeholders = ','.join(['%s'] * len(batch_ids))
+                        query = f"UPDATE market_business SET duplicate_scan_at = %s WHERE id IN ({placeholders})"
+                        
+                        # Execute with timestamp first, then all the IDs
+                        cursor.execute(query, [current_timestamp] + batch_ids)
                         self.connection.commit()  # Commit each batch
                         
-                        batch_size = len(batch)
-                        batch_successful = total_successful_updates + batch_size - len(supplement_updates)
+                        batch_size = len(batch_ids)
+                        batch_successful = total_successful_updates + batch_size - len(supplement_ids)
                         total_successful_updates += batch_size
                         
                         print(f"  ✓ Batch {batches_processed}: Updated {batch_size} market businesses "
-                              f"({batch_successful}/{len(market_updates)} total)")
+                              f"({batch_successful}/{len(market_ids)} total)")
                         
                     except Exception as e:
                         print(f"  ⚠️ Error in market batch {batches_processed}: {e}")
-                        total_failed_updates += len(batch)
+                        total_failed_updates += len(batch_ids)
             
             cursor.close()
             
@@ -1242,7 +1249,6 @@ class NearbyBusinessFinder:
             compared_pairs = set()  # Track already compared business pairs to avoid duplicates
             skipped_comparisons = 0  # Track how many duplicate comparisons were avoided
             validation_data = []
-            sample_businesses = []
             business_updates = []  # Collect business IDs and types for batch update
             
             import random
@@ -1278,11 +1284,11 @@ class NearbyBusinessFinder:
                         # Mark this pair as compared
                         compared_pairs.add(pair_id)
                         
-                        # Calculate precise distance for comparison
+                        # Calculate precise distance for comparison if enabled
                         distance = calculate_precise_distance(
                             business.latitude, business.longitude,
                             nearby_business.latitude, nearby_business.longitude
-                        ) if VALIDATION_MODE else None
+                        ) if CALCULATE_PRECISE_DISTANCE else None
                         
                         # Detect duplicates
                         comparison = self.duplicate_detector.compare_businesses(
@@ -1303,10 +1309,6 @@ class NearbyBusinessFinder:
                             unique_businesses_with_duplicates.add(nearby_business.id)
                         else:
                             total_duplicates['not_duplicate'] += 1
-                    
-                    # Collect sample for validation
-                    if VALIDATION_MODE and len(sample_businesses) < SAMPLE_CHECK_COUNT:
-                        sample_businesses.append((business, nearby_businesses))
                     
                     # Save detailed results to CSV if enabled
                     if SAVE_RESULTS_TO_FILE:
@@ -1370,41 +1372,6 @@ class NearbyBusinessFinder:
                 successful_updates, failed_updates = self.db_manager.batch_update_duplicate_scan_at(business_updates)
                 if failed_updates > 0:
                     print(f"⚠️  {failed_updates} businesses failed to update")
-            
-            # Perform validation if enabled
-            if VALIDATION_MODE and sample_businesses:
-                print(f"\n🔍 Validating results with {len(sample_businesses)} sample businesses...")
-                
-                total_outside_radius = 0
-                total_same_user_violations = 0
-                
-                for business, nearby_businesses in sample_businesses:
-                    validation_result = validate_nearby_businesses(business, nearby_businesses, self.radius_meters)
-                    
-                    print(f"\n📊 Validation for {business.name}:")
-                    print(f"  - Found {validation_result['total_found']} nearby businesses")
-                    print(f"  - Within radius: {validation_result['within_radius']}")
-                    print(f"  - Outside radius: {validation_result['outside_radius']}")
-                    print(f"  - Same user violations: {validation_result['same_user_violations']}")
-                    
-                    if validation_result['distances']:
-                        print(f"  - Distance range: {min(validation_result['distances']):.1f}m - {max(validation_result['distances']):.1f}m")
-                    
-                    total_outside_radius += validation_result['outside_radius']
-                    total_same_user_violations += validation_result['same_user_violations']
-                    
-                    if validation_result['violations']:
-                        print(f"  ⚠️  Violations found:")
-                        for violation in validation_result['violations'][:3]:  # Show first 3
-                            if violation['type'] == 'outside_radius':
-                                print(f"    - {violation['business_name']} is {violation['distance']:.1f}m away (outside {self.radius_meters}m)")
-                            elif violation['type'] == 'same_user':
-                                print(f"    - {violation['business_name']} has same user_id")
-                
-                print(f"\n📋 Validation Summary:")
-                print(f"  - Total businesses outside radius: {total_outside_radius}")
-                print(f"  - Total same user violations: {total_same_user_violations}")
-                print(f"  - Validation accuracy: {((len(sample_businesses) * 100) - total_outside_radius - total_same_user_violations) / (len(sample_businesses) * 100) * 100:.1f}%")
             
             # Save results to file if enabled
             if SAVE_RESULTS_TO_FILE and validation_data:
@@ -1525,6 +1492,12 @@ def main():
             print(f"  📝 Common words filtering enabled ({common_words_count} words loaded)")
         else:
             print(f"  📝 Common words filtering disabled (using full text comparison)")
+        
+        # Display distance calculation configuration
+        if CALCULATE_PRECISE_DISTANCE:
+            print(f"  📏 Precise distance calculation: ✅ (slower but more accurate)")
+        else:
+            print(f"  📏 Precise distance calculation: ❌ (faster, using spatial approximation)")
         
         # Display output configuration
         print(f"\n📁 Output Configuration:")
