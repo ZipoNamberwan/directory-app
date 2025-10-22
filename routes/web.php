@@ -164,6 +164,7 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/duplikat', [DuplicateController::class, 'showDuplicatePage']);
 		Route::get('/duplikat/data', [DuplicateController::class, 'getDuplicateCandidateData']);
+		Route::get('/duplikat/pair/{candidateId}', [DuplicateController::class, 'getPairCandidateBusinessDetail']);
 	});
 
 	Route::group(['middleware' => ['role:adminprov|adminkab|operator']], function () {

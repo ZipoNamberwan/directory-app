@@ -26,7 +26,6 @@ class DuplicateController extends Controller
         } else if ($user->hasRole('adminkab')) {
             $regencies = Regency::where('id', $user->regency_id)->get();
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
-            $users = User::where('organization_id', $user->organization_id)->get();
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $regencies = Regency::where('id', $user->regency_id)->get();
             $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
@@ -160,6 +159,22 @@ class DuplicateController extends Controller
             "total_records" => $totalRecords,
             "last_page" => (int) ceil($total / $perPage),
             "data" => $data->toArray(),
+        ]);
+    }
+
+    public function getPairCandidateBusinessDetail($candidateId) {
+        $candidate = DuplicateCandidate::with([
+            'centerBusiness' => function($query) {
+                $query->withTrashed()->with(['user', 'organization']);
+            },
+            'nearbyBusiness' => function($query) {
+                $query->withTrashed()->with(['user', 'organization']);
+            }
+        ])->find($candidateId);
+        
+        return response()->json([
+            "center_business" => $candidate->centerBusiness,
+            "nearby_business" => $candidate->nearbyBusiness,
         ]);
     }
 }
