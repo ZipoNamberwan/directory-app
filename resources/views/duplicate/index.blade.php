@@ -1035,7 +1035,14 @@
             setTimeout(() => {
                 // Initialize map if not already created
                 if (!businessMap) {
-                    businessMap = L.map('business-map');
+                    businessMap = L.map('business-map', {
+                        zoomControl: false,      // Disable zoom controls
+                        scrollWheelZoom: false,  // Disable scroll wheel zoom
+                        doubleClickZoom: false,  // Disable double click zoom
+                        touchZoom: false,        // Disable touch zoom
+                        keyboard: false,         // Disable keyboard zoom
+                        dragging: true          // Keep dragging enabled
+                    });
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(businessMap);
