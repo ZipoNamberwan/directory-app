@@ -21,4 +21,9 @@ class DuplicateCandidate extends Model
     {
         return $this->morphTo();
     }
+
+    public function lastConfirmedBy()
+    {
+        return $this->belongsTo(User::class, 'last_confirmed_by');
+    }
 }

@@ -50,7 +50,13 @@ return new class extends Migration
             $table->decimal('nearby_business_latitude', 12, 10);
             $table->decimal('nearby_business_longitude', 13, 10);
 
-            $table->enum('status', ['notconfirmed', 'delete1', 'delete2', 'keepall'])->default('notconfirmed');
+            $table->enum('status', ['notconfirmed', 'keep1', 'keep2', 'keepall'])->default('notconfirmed');
+
+            $table->uuid('last_confirmed_by')->nullable();
+            $table->foreign('last_confirmed_by')
+                ->references('id')
+                ->on('users')
+                ->onDelete('set null');
 
             $table->timestamps();
         });

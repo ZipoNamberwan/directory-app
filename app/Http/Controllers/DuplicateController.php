@@ -103,8 +103,8 @@ class DuplicateController extends Controller
         }
 
         if ($request->status && $request->status !== 'all') {
-            if ($request->status === 'deleteone') {
-                $records->where('status', 'delete1')->orWhere('status', 'delete2');
+            if ($request->status === 'keepone') {
+                $records->where('status', 'keep1')->orWhere('status', 'keep2');
             } else {
                 $records->where('status', $request->status);
             }
@@ -150,6 +150,7 @@ class DuplicateController extends Controller
 
         // Apply pagination with offset and limit
         $data = $records
+            ->with(['lastConfirmedBy'])
             ->orderBy($orderColumn, $orderDir)
             ->offset($offset)
             ->limit(min($perPage, 1000 - $offset)) // Don't exceed the 1000 cap
@@ -162,19 +163,112 @@ class DuplicateController extends Controller
         ]);
     }
 
-    public function getPairCandidateBusinessDetail($candidateId) {
+    public function getPairCandidateBusinessDetail($candidateId)
+    {
         $candidate = DuplicateCandidate::with([
-            'centerBusiness' => function($query) {
+            'centerBusiness' => function ($query) {
                 $query->withTrashed()->with(['user', 'organization']);
             },
-            'nearbyBusiness' => function($query) {
+            'nearbyBusiness' => function ($query) {
                 $query->withTrashed()->with(['user', 'organization']);
-            }
+            },
+            'lastConfirmedBy'
         ])->find($candidateId);
-        
+
         return response()->json([
             "center_business" => $candidate->centerBusiness,
             "nearby_business" => $candidate->nearbyBusiness,
+        ]);
+    }
+
+    public function updateDuplicateCandidateStatus(Request $request, $candidateId)
+    {
+        $request->validate([
+            'status' => 'required|in:keepall,keep1,keep2',
+        ]);
+
+        $candidate = DuplicateCandidate::with([
+            'centerBusiness' => function ($query) {
+                $query->withTrashed();
+            },
+            'nearbyBusiness' => function ($query) {
+                $query->withTrashed();
+            },
+            'lastConfirmedBy'
+        ])->find($candidateId);
+
+        if (!$candidate) {
+            return response()->json(['message' => 'Candidate not found'], 404);
+        }
+
+        $candidate->status = $request->status;
+        $candidate->last_confirmed_by = Auth::id();
+        $candidate->save();
+
+        if ($request->status === 'keep2') {
+            // Delete center business
+            $centerBusiness = $candidate->centerBusiness;
+            if ($centerBusiness && !$centerBusiness->trashed()) {
+                $centerBusiness->is_locked = true;
+                $centerBusiness->save();
+                $centerBusiness->deleteWithSource('duplicate');
+            }
+
+            // Ensure nearby business is not deleted (restore if it was deleted)
+            $nearbyBusiness = $candidate->nearbyBusiness;
+            if ($nearbyBusiness && $nearbyBusiness->trashed()) {
+                $nearbyBusiness->deleted_at = null;
+                $nearbyBusiness->is_locked = true;
+                $nearbyBusiness->save();
+            }
+        } else if ($request->status === 'keep1') {
+            // Delete nearby business
+            $nearbyBusiness = $candidate->nearbyBusiness;
+            if ($nearbyBusiness && !$nearbyBusiness->trashed()) {
+                $nearbyBusiness->is_locked = true;
+                $nearbyBusiness->save();
+                $nearbyBusiness->deleteWithSource('duplicate');
+            }
+
+            // Ensure center business is not deleted (restore if it was deleted)
+            $centerBusiness = $candidate->centerBusiness;
+            if ($centerBusiness && $centerBusiness->trashed()) {
+                $centerBusiness->deleted_at = null;
+                $centerBusiness->is_locked = true;
+                $centerBusiness->save();
+            }
+        } else if ($request->status === 'keepall') {
+            // Restore both businesses if they were deleted
+            $centerBusiness = $candidate->centerBusiness;
+            if ($centerBusiness && $centerBusiness->trashed()) {
+                $centerBusiness->deleted_at = null;
+                $centerBusiness->is_locked = true;
+                $centerBusiness->save();
+            }
+
+            $nearbyBusiness = $candidate->nearbyBusiness;
+            if ($nearbyBusiness && $nearbyBusiness->trashed()) {
+                $nearbyBusiness->deleted_at = null;
+                $nearbyBusiness->is_locked = true;
+                $nearbyBusiness->save();
+            }
+        }
+
+        // Refresh the candidate data with updated relationships
+        $candidate->refresh();
+        $candidate->load([
+            'centerBusiness' => function ($query) {
+                $query->withTrashed()->with(['user', 'organization']);
+            },
+            'nearbyBusiness' => function ($query) {
+                $query->withTrashed()->with(['user', 'organization']);
+            },
+            'lastConfirmedBy'
+        ]);
+
+        return response()->json([
+            'message' => 'Status updated successfully',
+            'candidate' => $candidate,
         ]);
     }
 }

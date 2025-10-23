@@ -6,15 +6,37 @@
     <link href="/vendor/tabulator/tabulator_bootstrap3.min.css" rel="stylesheet" />
     <link href="/vendor/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="/vendor/datatables/responsive.bootstrap5.min.css" rel="stylesheet" />
-    
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossorigin=""/>
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <style>
+        /* Color Scheme Configuration - Easy to modify */
+        :root {
+            /* Not Confirmed - Warm Amber (more professional than orange) */
+            --color-notconfirmed: #f59e0b;
+            --color-notconfirmed-light: rgba(245, 158, 11, 0.1);
+            --color-notconfirmed-shadow: rgba(245, 158, 11, 0.35);
+
+            /* Keep 1 - Ocean Blue (calmer, more trustworthy) */
+            --color-keep1: #0ea5e9;
+            --color-keep1-light: rgba(14, 165, 233, 0.1);
+            --color-keep1-shadow: rgba(14, 165, 233, 0.35);
+
+            /* Keep 2 - Fresh Green (vibrant but not harsh) */
+            --color-keep2: #10b981;
+            --color-keep2-light: rgba(16, 185, 129, 0.1);
+            --color-keep2-shadow: rgba(16, 185, 129, 0.35);
+
+            /* Keep All - Deep Indigo (sophisticated and distinctive) */
+            --color-keepall: #6366f1;
+            --color-keepall-light: rgba(99, 102, 241, 0.1);
+            --color-keepall-shadow: rgba(99, 102, 241, 0.35);
+        }
+
         /* Fix z-index issue - Modal should be above sidenav */
         .modal {
             z-index: 1055 !important;
@@ -27,6 +49,76 @@
         /* Ensure sidenav stays behind modal */
         .sidenav {
             z-index: 1030 !important;
+        }
+
+        /* Enhanced radio button styles with color scheme */
+        .btn-check:checked+.btn-outline-notconfirmed {
+            background-color: var(--color-notconfirmed);
+            border-color: var(--color-notconfirmed);
+            color: white !important;
+            box-shadow: 0 4px 15px var(--color-notconfirmed-shadow);
+            transform: translateY(-2px);
+        }
+
+        .btn-check:checked+.btn-outline-notconfirmed * {
+            color: white !important;
+        }
+
+        .btn-check:checked+.btn-outline-keep1 {
+            background-color: var(--color-keep1);
+            border-color: var(--color-keep1);
+            color: white !important;
+            box-shadow: 0 4px 15px var(--color-keep1-shadow);
+            transform: translateY(-2px);
+        }
+
+        .btn-check:checked+.btn-outline-keep1 * {
+            color: white !important;
+        }
+
+        .btn-check:checked+.btn-outline-keep2 {
+            background-color: var(--color-keep2);
+            border-color: var(--color-keep2);
+            color: white !important;
+            box-shadow: 0 4px 15px var(--color-keep2-shadow);
+            transform: translateY(-2px);
+        }
+
+        .btn-check:checked+.btn-outline-keep2 * {
+            color: white !important;
+        }
+
+        .btn-check:checked+.btn-outline-keepall {
+            background-color: var(--color-keepall);
+            border-color: var(--color-keepall);
+            color: white !important;
+            box-shadow: 0 4px 15px var(--color-keepall-shadow);
+            transform: translateY(-2px);
+        }
+
+        .btn-check:checked+.btn-outline-keepall * {
+            color: white !important;
+        }
+
+        .btn-outline-notconfirmed:hover,
+        .btn-outline-keep1:hover,
+        .btn-outline-keep2:hover,
+        .btn-outline-keepall:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-check:focus+label {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        /* Radio indicator styles */
+        .btn-check:checked+label .radio-indicator::after {
+            content: '✓';
+        }
+
+        .radio-indicator {
+            transition: all 0.2s ease;
         }
     </style>
 @endsection
@@ -85,8 +177,8 @@
                                 <option value="0" disabled selected> -- Pilih Status -- </option>
                                 <option value="all">Semua</option>
                                 <option value="notconfirmed">Belum Dikonfirmasi</option>
-                                <option value="deleteone">Salah satu usaha dihapus</option>
-                                <option value="keepall">Tidak ada usaha yang dihapus</option>
+                                <option value="keepone">Salah Satu Usaha Di Keep</option>
+                                <option value="keepall">Kedua Usaha Di Keep</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -171,14 +263,16 @@
     </div>
 
     <!-- Duplicate Detail Modal -->
-    <div class="modal fade" id="duplicateModal" tabindex="-1" aria-labelledby="duplicateModalLabel" aria-hidden="true">
+    <div class="modal fade" id="duplicateModal" tabindex="-1" aria-labelledby="duplicateModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header text-dark">
                     <h5 class="modal-title" id="duplicateModalLabel">
                         <i class="fas fa-balance-scale me-2"></i>Confirm Duplicate Businesses
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                        style="filter: invert(1);"></button>
                 </div>
                 <div class="modal-body p-0">
                     <!-- Loading State -->
@@ -194,9 +288,10 @@
                         <!-- Map Section - Top -->
                         <div class="position-relative">
                             <div id="business-map" style="height: 400px; width: 100%;"></div>
-                            
+
                             <!-- Similarity Info Overlay - Bottom Center -->
-                            <div class="position-absolute" style="bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000;">
+                            <div class="position-absolute"
+                                style="bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000;">
                                 <div class="card border-secondary shadow-sm" style="min-width: 400px;">
                                     <div class="card-body py-2 bg-white text-dark">
                                         <div id="similarity-content">
@@ -212,9 +307,10 @@
                             <div class="row">
                                 <!-- Business A -->
                                 <div class="col-md-6">
-                                    <div class="card border-info shadow-sm h-100">
-                                        <div class="card-header bg-info text-dark py-2">
-                                            <h6 class="mb-0"><i class="fas fa-building"></i> Usaha A</h6>
+                                    <div class="card shadow-sm h-100" style="border-color: var(--color-keep1);">
+                                        <div class="card-header py-2"
+                                            style="background-color: var(--color-keep1); color: white;">
+                                            <h6 class="mb-0" style="color: white;"><i class="fas fa-building" style="color: white;"></i> Usaha A</h6>
                                         </div>
                                         <div class="card-body py-2">
                                             <div id="center-business-content">
@@ -226,9 +322,10 @@
 
                                 <!-- Business B -->
                                 <div class="col-md-6">
-                                    <div class="card border-success shadow-sm h-100">
-                                        <div class="card-header bg-success text-white py-2">
-                                            <h6 class="mb-0"><i class="fas fa-building"></i> Usaha B</h6>
+                                    <div class="card shadow-sm h-100" style="border-color: var(--color-keep2);">
+                                        <div class="card-header py-2"
+                                            style="background-color: var(--color-keep2); color: white;">
+                                            <h6 class="mb-0" style="color: white;"><i class="fas fa-building" style="color: white;"></i> Usaha B</h6>
                                         </div>
                                         <div class="card-body py-2">
                                             <div id="nearby-business-content">
@@ -241,19 +338,78 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-danger me-2" id="delete-business-a">
-                        <i class="fas fa-trash-alt me-1"></i>Hapus Usaha A
-                    </button>
-                    <button type="button" class="btn btn-danger me-2" id="delete-business-b">
-                        <i class="fas fa-trash-alt me-1"></i>Hapus Usaha B
-                    </button>
-                    <button type="button" class="btn btn-success me-2" id="keep-both">
-                        <i class="fas fa-check-circle me-1"></i>Keep Both
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
+                <div class="modal-footer flex-column">
+                    <!-- Current Status Display -->
+                    <div class="w-100 mb-3">
+                        <div class="d-flex flex-column align-items-center justify-content-center p-3 text-center"
+                            style="background-color: #f8f9fa; border-radius: 8px;">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-info-circle text-muted me-2"></i>
+                                <span class="text-muted fw-semibold me-2">Status Saat Ini:</span>
+                                <span id="current-status-display" class="text-dark fw-bold">Loading...</span>
+                            </div>
+                            <div id="confirmed-by-display" class="text-muted" style="display: none;">
+                                <!-- Confirmed by information will be shown here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Selection -->
+                    <div class="w-100 mb-4">
+                        <div class="row g-3 justify-content-center">
+                            <div class="col-12 col-md-auto">
+                                <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-a"
+                                    value="keep_center">
+                                <label class="btn btn-outline-keep1 d-flex align-items-center justify-content-center"
+                                    for="action-keep-a"
+                                    style="min-width: 180px; padding: 14px 20px; border-width: 2px; border-radius: 10px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep1); color: var(--color-keep1);">
+                                    <span class="radio-indicator me-2"
+                                        style="width: 20px; height: 20px; border: 2px solid currentColor; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
+                                    </span>
+                                    <i class="fas fa-check-circle me-2" style="font-size: 16px;"></i>
+                                    <span>Keep Usaha A</span>
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-auto">
+                                <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-b"
+                                    value="keep_nearby">
+                                <label class="btn btn-outline-keep2 d-flex align-items-center justify-content-center"
+                                    for="action-keep-b"
+                                    style="min-width: 180px; padding: 14px 20px; border-width: 2px; border-radius: 10px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep2); color: var(--color-keep2);">
+                                    <span class="radio-indicator me-2"
+                                        style="width: 20px; height: 20px; border: 2px solid currentColor; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
+                                    </span>
+                                    <i class="fas fa-check-circle me-2" style="font-size: 16px;"></i>
+                                    <span>Keep Usaha B</span>
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-auto">
+                                <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-both"
+                                    value="keep_both">
+                                <label class="btn btn-outline-keepall d-flex align-items-center justify-content-center"
+                                    for="action-keep-both"
+                                    style="min-width: 180px; padding: 14px 20px; border-width: 2px; border-radius: 10px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keepall); color: var(--color-keepall);">
+                                    <span class="radio-indicator me-2"
+                                        style="width: 20px; height: 20px; border: 2px solid currentColor; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
+                                    </span>
+                                    <i class="fas fa-check-circle me-2" style="font-size: 16px;"></i>
+                                    <span>Keep Keduanya</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="w-100 text-center">
+                        <button type="button" class="btn btn-primary me-2 px-4 py-2" id="confirm-action" disabled
+                            style="border-radius: 8px; font-weight: 600; box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);">
+                            <i class="fas fa-check me-2"></i>Confirm
+                        </button>
+                        <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal"
+                            style="border-radius: 8px; font-weight: 600;">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -268,13 +424,44 @@
     <script src="/vendor/sweetalert2/sweetalert2.js"></script>
 
     <script src="/vendor/tabulator/tabulator.min.js"></script>
-    
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""></script>
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script>
+        // Color Scheme Configuration - Easy to modify
+        const COLOR_SCHEME = {
+            notconfirmed: {
+                primary: '#fd7e14', // Orange
+                light: 'rgba(253, 126, 20, 0.1)',
+                shadow: 'rgba(253, 126, 20, 0.4)',
+                class: 'warning', // Bootstrap class
+                textClass: 'text-warning'
+            },
+            keep1: {
+                primary: '#0d6efd', // Blue  
+                light: 'rgba(13, 110, 253, 0.1)',
+                shadow: 'rgba(13, 110, 253, 0.4)',
+                class: 'primary', // Bootstrap class
+                textClass: 'text-primary'
+            },
+            keep2: {
+                primary: '#198754', // Green
+                light: 'rgba(25, 135, 84, 0.1)',
+                shadow: 'rgba(25, 135, 84, 0.4)',
+                class: 'success', // Bootstrap class
+                textClass: 'text-success'
+            },
+            keepall: {
+                primary: '#6f42c1', // Purple
+                light: 'rgba(111, 66, 193, 0.1)',
+                shadow: 'rgba(111, 66, 193, 0.4)',
+                class: 'info', // Using info for purple (closest match)
+                textClass: 'text-info'
+            }
+        };
+
         const selectConfigs = [{
                 selector: '#organization',
                 placeholder: 'Pilih Satker'
@@ -517,7 +704,7 @@
                     title: "Usaha B",
                     field: "nearby_business_name",
                     responsive: 1,
-                        formatter: function(cell, formatterParams, onRendered) {
+                    formatter: function(cell, formatterParams, onRendered) {
                         const data = cell.getRow().getData();
                         const name = data.nearby_business_name || '';
                         const owner = data.nearby_business_owner || '';
@@ -590,6 +777,59 @@
                     }
                 },
                 {
+                    title: "Status Pemeriksaan",
+                    field: "status",
+                    responsive: 3,
+                    headerHozAlign: "center",
+                    hozAlign: "center",
+                    formatter: function(cell, formatterParams, onRendered) {
+                        const status = cell.getValue();
+                        let statusText = '';
+                        let badgeStyle = '';
+                        let bgColor = '';
+
+                        switch (status) {
+                            case 'notconfirmed':
+                                statusText = 'Belum Dikonfirmasi';
+                                bgColor = COLOR_SCHEME.notconfirmed.primary;
+                                break;
+                            case 'keep1':
+                                statusText = 'Usaha A Di Keep';
+                                bgColor = COLOR_SCHEME.keep1.primary;
+                                break;
+                            case 'keep2':
+                                statusText = 'Usaha B Di Keep';
+                                bgColor = COLOR_SCHEME.keep2.primary;
+                                break;
+                            case 'keepall':
+                                statusText = 'Kedua Usaha Di Keep';
+                                bgColor = COLOR_SCHEME.keepall.primary;
+                                break;
+                            default:
+                                statusText = status || '-';
+                                bgColor = '#6c757d'; // Secondary gray
+                        }
+
+                        badgeStyle = `background-color: ${bgColor}; color: white; font-size: 0.75rem;`;
+                        return `<span class="badge" style="${badgeStyle}">${statusText}</span>`;
+                    }
+                },
+                {
+                    title: "Dikonfirmasi Oleh",
+                    field: "last_confirmed_by",
+                    responsive: 3,
+                    headerHozAlign: "center",
+                    hozAlign: "center",
+                    formatter: function(cell, formatterParams, onRendered) {
+                        const user = cell.getValue();
+                        if (!user) return '-';
+
+                        const name = user.firstname || '-';
+                        const orgId = user.organization_id || '-';
+                        return `${name} (${orgId})`;
+                    }
+                },
+                {
                     title: "Aksi",
                     field: "id",
                     responsive: 7,
@@ -632,6 +872,8 @@
                 baseColumns[3].minWidth = 80;
                 baseColumns[4].width = 100;
                 baseColumns[4].minWidth = 80;
+                baseColumns[5].width = 100;
+                baseColumns[5].minWidth = 80;
 
                 return [responsiveColumn, ...baseColumns];
             } else { // scroll horizontal
@@ -644,6 +886,8 @@
                 baseColumns[3].minWidth = 80;
                 baseColumns[4].width = 100;
                 baseColumns[4].minWidth = 80;
+                baseColumns[5].width = 100;
+                baseColumns[5].minWidth = 80;
 
                 return baseColumns;
             }
@@ -727,18 +971,18 @@
         function showDuplicateDialog(id, rowData) {
             // Store current candidate ID for actions
             currentCandidateId = id;
-            
+
             // Update modal title with ID
             document.getElementById('duplicateModalLabel').textContent = `Detail Kandidat Duplikat`;
-            
+
             // Reset content to loading state
             document.getElementById('map-loading').style.display = 'block';
             document.getElementById('content-container').style.display = 'none';
-            
+
             // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('duplicateModal'));
             modal.show();
-            
+
             // Fetch business details from API
             fetchBusinessDetails(id, rowData);
         }
@@ -773,7 +1017,7 @@
         function displayBusinessDetails(data, rowData) {
             const centerBusiness = data.center_business;
             const nearbyBusiness = data.nearby_business;
-            
+
             // Get similarity data from rowData (from the table)
             const similarities = {
                 name_similarity: rowData.name_similarity || 0,
@@ -811,29 +1055,33 @@
                 const centerLatLng = [parseFloat(centerBusiness.latitude), parseFloat(centerBusiness.longitude)];
                 const nearbyLatLng = [parseFloat(nearbyBusiness.latitude), parseFloat(nearbyBusiness.longitude)];
 
-                // Create custom icons with exact Bootstrap colors
+                // Create custom icons with color scheme
                 const centerIcon = L.divIcon({
                     className: 'custom-marker',
-                    html: '<div style="background-color: #11cdef; border: 3px solid white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-building text-white" style="font-size: 12px;"></i></div>',
+                    html: `<div style="background-color: ${COLOR_SCHEME.keep1.primary}; border: 3px solid white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-building text-white" style="font-size: 12px;"></i></div>`,
                     iconSize: [30, 30],
                     iconAnchor: [15, 15]
                 });
 
                 const nearbyIcon = L.divIcon({
                     className: 'custom-marker',
-                    html: '<div style="background-color: #2dce89; border: 3px solid white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-building text-white" style="font-size: 12px;"></i></div>',
+                    html: `<div style="background-color: ${COLOR_SCHEME.keep2.primary}; border: 3px solid white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-building text-white" style="font-size: 12px;"></i></div>`,
                     iconSize: [30, 30],
                     iconAnchor: [15, 15]
                 });
 
                 // Add markers
-                const centerMarker = L.marker(centerLatLng, {icon: centerIcon}).addTo(businessMap);
-                const nearbyMarker = L.marker(nearbyLatLng, {icon: nearbyIcon}).addTo(businessMap);
+                const centerMarker = L.marker(centerLatLng, {
+                    icon: centerIcon
+                }).addTo(businessMap);
+                const nearbyMarker = L.marker(nearbyLatLng, {
+                    icon: nearbyIcon
+                }).addTo(businessMap);
 
                 // Add connecting line
                 const line = L.polyline([centerLatLng, nearbyLatLng], {
-                    color: similarities.duplicate_status === 'strong_duplicate' ? '#dc3545' : 
-                           similarities.duplicate_status === 'weak_duplicate' ? '#ffc107' : '#6c757d',
+                    color: similarities.duplicate_status === 'strong_duplicate' ? '#dc3545' : similarities
+                        .duplicate_status === 'weak_duplicate' ? '#ffc107' : '#6c757d',
                     weight: 3,
                     opacity: 0.7,
                     dashArray: similarities.duplicate_status === 'not_duplicate' ? '10, 10' : null
@@ -841,7 +1089,7 @@
 
                 // Fit map to show both markers with maximum zoom level
                 const group = new L.featureGroup([centerMarker, nearbyMarker]);
-                
+
                 // Set to maximum zoom to show closest detail
                 const bounds = group.getBounds().pad(0.1);
                 businessMap.fitBounds(bounds, {
@@ -853,22 +1101,59 @@
             populateBusinessCard('center', centerBusiness);
             populateBusinessCard('nearby', nearbyBusiness);
             populateSimilarityCard(similarities);
+
+            // Update current status display and set radio buttons
+            updateCurrentStatusDisplay(rowData.status || 'notconfirmed', rowData.last_confirmed_by);
+
+            // Reset radio buttons first
+            document.querySelectorAll('input[name="duplicate-action"]').forEach(radio => {
+                radio.checked = false;
+            });
+
+            // Auto-select radio button based on current status
+            const currentStatus = rowData.status || 'notconfirmed';
+            let radioToSelect = null;
+
+            switch (currentStatus) {
+                case 'keep1':
+                    radioToSelect = document.getElementById('action-keep-a');
+                    break;
+                case 'keep2':
+                    radioToSelect = document.getElementById('action-keep-b');
+                    break;
+                case 'keepall':
+                    radioToSelect = document.getElementById('action-keep-both');
+                    break;
+                default:
+                    // For 'notconfirmed' or other statuses, don't pre-select anything
+                    radioToSelect = null;
+            }
+
+            if (radioToSelect) {
+                radioToSelect.checked = true;
+                document.getElementById('confirm-action').disabled = false;
+            } else {
+                document.getElementById('confirm-action').disabled = true;
+            }
         }
 
         // Function to populate individual business card
         function populateBusinessCard(type, business) {
+            // Check if business is deleted
+            const isDeleted = business.deleted_at !== null;
+
             // Format user information
-            const userInfo = business.user ? 
-                `${business.user.firstname || '-'} (${business.user.organization_id || '-'})` : 
+            const userInfo = business.user ?
+                `${business.user.firstname || '-'} (${business.user.organization_id || '-'})` :
                 '-';
 
             // Format organization information    
-            const orgInfo = business.organization ? 
-                `${business.organization.name || '-'} (${business.organization.id || '-'})` : 
+            const orgInfo = business.organization ?
+                `${business.organization.name || '-'} (${business.organization.id || '-'})` :
                 '-';
-            
+
             // Format created_at date and time
-            const createdAt = business.created_at ? 
+            const createdAt = business.created_at ?
                 new Date(business.created_at).toLocaleString('id-ID', {
                     year: 'numeric',
                     month: 'short',
@@ -876,9 +1161,10 @@
                     hour: '2-digit',
                     minute: '2-digit'
                 }) : '-';
-            
+
+            const businessColor = type === 'center' ? COLOR_SCHEME.keep1.primary : COLOR_SCHEME.keep2.primary;
             const content = `
-                <h6 class="fw-bold text-${type === 'center' ? 'info' : 'success'} mb-2">${business.name || '-'}</h6>
+                <h6 class="fw-bold mb-1" style="color: ${businessColor};">${business.name || '-'}</h6>
                 <p class="mb-1 small"><strong>Pemilik:</strong> ${business.owner || '-'}</p>
                 <p class="mb-1 small"><strong>Alamat:</strong> ${business.address || '-'}</p>
                 <p class="mb-1 small"><strong>Status:</strong> ${business.status || '-'}</p>
@@ -887,8 +1173,31 @@
                 <p class="mb-1 small"><strong>Petugas:</strong> ${userInfo}</p>
                 <p class="mb-0 small"><strong>Dibuat:</strong> ${createdAt}</p>
             `;
-            
+
+            // Get the card elements
+            const cardElement = document.getElementById(`${type}-business-content`).closest('.card');
+            const headerElement = cardElement.querySelector('.card-header h6');
+
+            // Update content
             document.getElementById(`${type}-business-content`).innerHTML = content;
+
+            // Update header and styling based on deletion status
+            if (isDeleted) {
+                // Add DELETED label to header
+                const businessLabel = type === 'center' ? 'Usaha A' : 'Usaha B';
+                headerElement.innerHTML =
+                    `<i class="fas fa-building"></i> ${businessLabel} <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">DELETED</span>`;
+
+                // Apply fading effect to the entire card
+                cardElement.style.opacity = '0.5';
+                cardElement.style.filter = 'grayscale(20%)';
+            } else {
+                // Reset to normal state
+                const businessLabel = type === 'center' ? 'Usaha A' : 'Usaha B';
+                headerElement.innerHTML = `<i class="fas fa-building"></i> ${businessLabel}`;
+                cardElement.style.opacity = '1';
+                cardElement.style.filter = 'none';
+            }
         }
 
         // Function to populate similarity card
@@ -928,12 +1237,12 @@
                     </div>
                 </div>
             `;
-            
+
             document.getElementById('similarity-content').innerHTML = content;
         }
 
         // Handle modal show event to ensure proper map rendering
-        document.getElementById('duplicateModal').addEventListener('shown.bs.modal', function () {
+        document.getElementById('duplicateModal').addEventListener('shown.bs.modal', function() {
             // If map exists, invalidate size to ensure proper rendering
             if (businessMap) {
                 setTimeout(() => {
@@ -943,11 +1252,11 @@
         });
 
         // Clean up map when modal is closed
-        document.getElementById('duplicateModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('duplicateModal').addEventListener('hidden.bs.modal', function() {
             // Reset to loading state
             document.getElementById('map-loading').style.display = 'block';
             document.getElementById('content-container').style.display = 'none';
-            
+
             // Reset loading content
             document.getElementById('map-loading').innerHTML = `
                 <div class="spinner-border text-primary" role="status">
@@ -955,7 +1264,7 @@
                 </div>
                 <p class="mt-2 text-muted">Memuat peta dan detail usaha...</p>
             `;
-            
+
             // Destroy map instance to prevent memory leaks
             if (businessMap) {
                 businessMap.remove();
@@ -965,45 +1274,100 @@
 
         // Global variables for duplicate action
         let currentCandidateId = null;
+        let currentStatus = null;
 
-        // Action button event handlers
-        document.getElementById('delete-business-a').addEventListener('click', function() {
-            handleDuplicateAction('delete_center', 'Usaha A will be deleted. Are you sure?');
+        // Radio button change handler
+        document.querySelectorAll('input[name="duplicate-action"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const confirmButton = document.getElementById('confirm-action');
+                if (this.checked) {
+                    confirmButton.disabled = false;
+                } else {
+                    confirmButton.disabled = true;
+                }
+            });
         });
 
-        document.getElementById('delete-business-b').addEventListener('click', function() {
-            handleDuplicateAction('delete_nearby', 'Usaha B will be deleted. Are you sure?');
+        // Confirm action button handler
+        document.getElementById('confirm-action').addEventListener('click', function() {
+            const selectedAction = document.querySelector('input[name="duplicate-action"]:checked');
+            if (selectedAction) {
+                handleDuplicateAction(selectedAction.value);
+            }
         });
 
-        document.getElementById('keep-both').addEventListener('click', function() {
-            handleDuplicateAction('keep_both', 'Both businesses will be kept as separate entities. Are you sure?');
-        });
+        // Function to update current status display
+        function updateCurrentStatusDisplay(status, lastConfirmedBy = null) {
+            const statusDisplay = document.getElementById('current-status-display');
+            const confirmedByDisplay = document.getElementById('confirmed-by-display');
+            let statusText = '';
+            let textColor = '';
+
+            switch (status) {
+                case 'notconfirmed':
+                    statusText = 'Belum Dikonfirmasi';
+                    textColor = COLOR_SCHEME.notconfirmed.primary;
+                    break;
+                case 'keep1':
+                    statusText = 'Usaha A Di Keep';
+                    textColor = COLOR_SCHEME.keep1.primary;
+                    break;
+                case 'keep2':
+                    statusText = 'Usaha B Di Keep';
+                    textColor = COLOR_SCHEME.keep2.primary;
+                    break;
+                case 'keepall':
+                    statusText = 'Kedua Usaha Di Keep';
+                    textColor = COLOR_SCHEME.keepall.primary;
+                    break;
+                default:
+                    statusText = status || 'Tidak Diketahui';
+                    textColor = '#6c757d'; // Secondary gray
+            }
+
+            // Update status display (first line)
+            statusDisplay.innerHTML = `<span class="fw-bold" style="color: ${textColor};">${statusText}</span>`;
+
+            // Update confirmed by display (second line)
+            if (lastConfirmedBy && status !== 'notconfirmed') {
+                const userName = lastConfirmedBy.firstname || 'Unknown';
+                const orgId = lastConfirmedBy.organization_id || '-';
+                confirmedByDisplay.innerHTML = `<small>Dikonfirmasi oleh: ${userName} (${orgId})</small>`;
+                confirmedByDisplay.style.display = 'block';
+            } else {
+                confirmedByDisplay.style.display = 'none';
+            }
+
+            currentStatus = status;
+        }
 
         // Function to handle duplicate actions
-        function handleDuplicateAction(action, confirmMessage) {
+        function handleDuplicateAction(action) {
             // Determine title, message, icon and colors based on action type
             let title, htmlMessage, iconType, confirmButtonColor, confirmButtonText;
-            
-            if (action === 'delete_center') {
-                // Delete Usaha A - red theme with trash icon
-                title = 'Hapus Usaha A';
-                htmlMessage = '<span style="color: #11cdef; font-weight: bold;">Usaha A</span> akan dihapus. Apakah yakin?';
-                iconType = 'error';
-                confirmButtonColor = '#dc3545';
-                confirmButtonText = '<i class="fas fa-trash-alt me-1"></i>Yes, Delete!';
-            } else if (action === 'delete_nearby') {
-                // Delete Usaha B - red theme with trash icon
-                title = 'Hapus Usaha B';
-                htmlMessage = '<span style="color: #2dce89; font-weight: bold;">Usaha B</span> akan dihapus. Apakah yakin?';
-                iconType = 'error';
-                confirmButtonColor = '#dc3545';
-                confirmButtonText = '<i class="fas fa-trash-alt me-1"></i>Yes, Delete!';
-            } else if (action === 'keep_both') {
-                // Keep both action - green theme with check icon
-                title = 'Keep Keduanya';
-                htmlMessage = 'Kedua usaha akan tetap disimpan sebagai taging terpisah. Apakah yakin?';
+
+            if (action === 'keep_center') {
+                // Keep Usaha A - blue theme with check icon
+                title = 'Keep Usaha A';
+                htmlMessage =
+                    `<span style="color: ${COLOR_SCHEME.keep1.primary}; font-weight: bold;">Usaha A</span> akan di-keep dan <span style="color: ${COLOR_SCHEME.keep2.primary}; font-weight: bold;">Usaha B</span> akan dihapus. Apakah yakin?`;
                 iconType = 'success';
-                confirmButtonColor = '#2dce89';
+                confirmButtonColor = COLOR_SCHEME.keep1.primary;
+                confirmButtonText = '<i class="fas fa-check-circle me-1"></i>Yes, Keep A!';
+            } else if (action === 'keep_nearby') {
+                // Keep Usaha B - green theme with check icon
+                title = 'Keep Usaha B';
+                htmlMessage =
+                    `<span style="color: ${COLOR_SCHEME.keep2.primary}; font-weight: bold;">Usaha B</span> akan di-keep dan <span style="color: ${COLOR_SCHEME.keep1.primary}; font-weight: bold;">Usaha A</span> akan dihapus. Apakah yakin?`;
+                iconType = 'success';
+                confirmButtonColor = COLOR_SCHEME.keep2.primary;
+                confirmButtonText = '<i class="fas fa-check-circle me-1"></i>Yes, Keep B!';
+            } else if (action === 'keep_both') {
+                // Keep both action - purple theme with check icon
+                title = 'Keep Keduanya';
+                htmlMessage = 'Kedua usaha akan tetap disimpan sebagai entitas terpisah. Apakah yakin?';
+                iconType = 'success';
+                confirmButtonColor = COLOR_SCHEME.keepall.primary;
                 confirmButtonText = '<i class="fas fa-check-circle me-1"></i>Yes, Keep Both!';
             }
 
@@ -1035,53 +1399,79 @@
                 <p class="mt-2 text-muted">Memproses aksi...</p>
             `;
 
+            // Map action to status values
+            let status;
+            switch (action) {
+                case 'keep_center':
+                    status = 'keep1';
+                    break;
+                case 'keep_nearby':
+                    status = 'keep2';
+                    break;
+                case 'keep_both':
+                    status = 'keepall';
+                    break;
+                default:
+                    status = 'keepall';
+            }
+
             // Make API call to process the action
-            fetch(`/duplikat/action/${currentCandidateId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    action: action
+            fetch(`/duplikat/pair/${currentCandidateId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        status: status
+                    })
                 })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Close the modal
-                bootstrap.Modal.getInstance(document.getElementById('duplicateModal')).hide();
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Close the modal
+                    bootstrap.Modal.getInstance(document.getElementById('duplicateModal')).hide();
 
-                // Show success message
-                Swal.fire({
-                    title: 'Success!',
-                    text: data.message || 'Action completed successfully',
-                    icon: 'success',
-                    confirmButtonText: 'OK'
-                }).then(() => {
-                    // Refresh the table
-                    renderTable();
-                });
-            })
-            .catch(error => {
-                console.error('Error processing action:', error);
-                
-                // Hide loading and show content again
-                document.getElementById('map-loading').style.display = 'none';
-                document.getElementById('content-container').style.display = 'block';
+                    // Update the specific row with only the changed fields
+                    const row = table.getRow(currentCandidateId);
+                    if (row && data.candidate) {
+                        const candidate = data.candidate;
+                        const rowData = row.getData();
 
-                // Show error message
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to process the action. Please try again.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
+                        // Only update the fields that actually change
+                        rowData.status = candidate.status;
+                        rowData.last_confirmed_by = candidate.last_confirmed_by;
+
+                        row.update(rowData);
+                    }
+
+                    // Show success message
+                    Swal.fire({
+                        title: 'Success!',
+                        text: data.message || 'Action completed successfully',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+                })
+                .catch(error => {
+                    console.error('Error processing action:', error);
+
+                    // Hide loading and show content again
+                    document.getElementById('map-loading').style.display = 'none';
+                    document.getElementById('content-container').style.display = 'block';
+
+                    // Show error message
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to process the action. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
                 });
-            });
         }
     </script>
 @endpush
