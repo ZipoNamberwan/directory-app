@@ -12,6 +12,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ResetPassword;
 use App\Http\Controllers\ChangePassword;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DuplicateController;
 use App\Http\Controllers\MajapahitLoginController;
 use App\Http\Controllers\MarketAssignmentController;
 use App\Http\Controllers\MarketController;
@@ -160,6 +161,11 @@ Route::group(['middleware' => 'auth'], function () {
 
 		Route::get('/suplemen/restore', [SupplementController::class, 'showRestorePage']);
 		Route::post('/suplemen/restore', [SupplementController::class, 'restoreBusinesses']);
+
+		// Route::get('/duplikat', [DuplicateController::class, 'showDuplicatePage']);
+		// Route::get('/duplikat/data', [DuplicateController::class, 'getDuplicateCandidateData']);
+		// Route::get('/duplikat/pair/{candidateId}', [DuplicateController::class, 'getPairCandidateBusinessDetail']);
+		// Route::post('/duplikat/pair/{candidateId}', [DuplicateController::class, 'updateDuplicateCandidateStatus']);
 	});
 
 	Route::group(['middleware' => ['role:adminprov|adminkab|operator']], function () {
