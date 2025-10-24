@@ -265,16 +265,16 @@
     <!-- Duplicate Detail Modal -->
     <div class="modal fade" id="duplicateModal" tabindex="-1" aria-labelledby="duplicateModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header text-dark">
+        <div class="modal-dialog modal-xl" style="height: 90vh; max-height: 90vh;">
+            <div class="modal-content" style="height: 100%; display: flex; flex-direction: column;">
+                <div class="modal-header text-dark" style="flex-shrink: 0;">
                     <h5 class="modal-title" id="duplicateModalLabel">
                         <i class="fas fa-balance-scale me-2"></i>Confirm Duplicate Businesses
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
                         style="filter: invert(1);"></button>
                 </div>
-                <div class="modal-body p-0">
+                <div class="modal-body p-0" style="flex: 1; overflow-y: auto; max-height: calc(90vh - 80px);">
                     <!-- Loading State -->
                     <div id="map-loading" class="text-center py-5">
                         <div class="spinner-border text-primary" role="status">
@@ -336,79 +336,77 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-                <div class="modal-footer flex-column">
-                    <!-- Current Status Display -->
-                    <div class="w-100 mb-3">
-                        <div class="d-flex flex-column align-items-center justify-content-center p-3 text-center"
-                            style="background-color: #f8f9fa; border-radius: 8px;">
-                            <div class="d-flex align-items-center mb-1">
-                                <i class="fas fa-info-circle text-muted me-2"></i>
-                                <span class="text-muted fw-semibold me-2">Status Saat Ini:</span>
-                                <span id="current-status-display" class="text-dark fw-bold">Loading...</span>
-                            </div>
-                            <div id="confirmed-by-display" class="text-muted" style="display: none;">
-                                <!-- Confirmed by information will be shown here -->
+                        </div>
+
+                        <!-- Current Status Display -->
+                        <div class="px-4 pb-2">
+                            <div class="d-flex flex-column align-items-center justify-content-center py-2 px-3 text-center"
+                                style="background-color: #f8f9fa; border-radius: 6px;">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-info-circle text-muted me-2"></i>
+                                    <span class="text-muted fw-semibold me-2">Status Saat Ini:</span>
+                                    <span id="current-status-display" class="text-dark fw-bold">Loading...</span>
+                                </div>
+                                <div id="confirmed-by-display" class="text-muted" style="display: none;">
+                                    <!-- Confirmed by information will be shown here -->
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Action Selection -->
-                    <div class="w-100 mb-4">
-                        <div class="row g-3 justify-content-center">
-                            <div class="col-12 col-md-auto">
-                                <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-a"
-                                    value="keep_center">
-                                <label class="btn btn-outline-keep1 d-flex align-items-center justify-content-center"
-                                    for="action-keep-a"
-                                    style="min-width: 180px; padding: 14px 20px; border-width: 2px; border-radius: 10px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep1); color: var(--color-keep1);">
-                                    <span class="radio-indicator me-2"
-                                        style="width: 20px; height: 20px; border: 2px solid currentColor; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
-                                    </span>
-                                    <i class="fas fa-check-circle me-2" style="font-size: 16px;"></i>
-                                    <span>Keep Usaha A</span>
-                                </label>
-                            </div>
-                            <div class="col-12 col-md-auto">
-                                <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-b"
-                                    value="keep_nearby">
-                                <label class="btn btn-outline-keep2 d-flex align-items-center justify-content-center"
-                                    for="action-keep-b"
-                                    style="min-width: 180px; padding: 14px 20px; border-width: 2px; border-radius: 10px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep2); color: var(--color-keep2);">
-                                    <span class="radio-indicator me-2"
-                                        style="width: 20px; height: 20px; border: 2px solid currentColor; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
-                                    </span>
-                                    <i class="fas fa-check-circle me-2" style="font-size: 16px;"></i>
-                                    <span>Keep Usaha B</span>
-                                </label>
-                            </div>
-                            <div class="col-12 col-md-auto">
-                                <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-both"
-                                    value="keep_both">
-                                <label class="btn btn-outline-keepall d-flex align-items-center justify-content-center"
-                                    for="action-keep-both"
-                                    style="min-width: 180px; padding: 14px 20px; border-width: 2px; border-radius: 10px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keepall); color: var(--color-keepall);">
-                                    <span class="radio-indicator me-2"
-                                        style="width: 20px; height: 20px; border: 2px solid currentColor; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
-                                    </span>
-                                    <i class="fas fa-check-circle me-2" style="font-size: 16px;"></i>
-                                    <span>Keep Keduanya</span>
-                                </label>
+                        <!-- Action Selection -->
+                        <div class="px-4 pb-2">
+                            <div class="row g-2 justify-content-center">
+                                <div class="col-12 col-md-auto">
+                                    <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-a"
+                                        value="keep_center">
+                                    <label class="btn btn-outline-keep1 d-flex align-items-center justify-content-center"
+                                        for="action-keep-a"
+                                        style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep1); color: var(--color-keep1);">
+                                        <span class="radio-indicator me-2"
+                                            style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                                        </span>
+                                        <i class="fas fa-check-circle me-2" style="font-size: 14px;"></i>
+                                        <span>Keep Usaha A</span>
+                                    </label>
+                                </div>
+                                <div class="col-12 col-md-auto">
+                                    <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-b"
+                                        value="keep_nearby">
+                                    <label class="btn btn-outline-keep2 d-flex align-items-center justify-content-center"
+                                        for="action-keep-b"
+                                        style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep2); color: var(--color-keep2);">
+                                        <span class="radio-indicator me-2"
+                                            style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                                        </span>
+                                        <i class="fas fa-check-circle me-2" style="font-size: 14px;"></i>
+                                        <span>Keep Usaha B</span>
+                                    </label>
+                                </div>
+                                <div class="col-12 col-md-auto">
+                                    <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-both"
+                                        value="keep_both">
+                                    <label class="btn btn-outline-keepall d-flex align-items-center justify-content-center"
+                                        for="action-keep-both"
+                                        style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keepall); color: var(--color-keepall);">
+                                        <span class="radio-indicator me-2"
+                                            style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                                        </span>
+                                        <i class="fas fa-check-circle me-2" style="font-size: 14px;"></i>
+                                        <span>Keep Keduanya</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Action Buttons -->
-                    <div class="w-100 text-center">
-                        <button type="button" class="btn btn-primary me-2 px-4 py-2" id="confirm-action" disabled
-                            style="border-radius: 8px; font-weight: 600; box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);">
-                            <i class="fas fa-check me-2"></i>Confirm
-                        </button>
-                        <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal"
-                            style="border-radius: 8px; font-weight: 600;">
-                            <i class="fas fa-times me-2"></i>Cancel
-                        </button>
+                        <!-- Action Buttons -->
+                        <div class="px-4 pb-3 text-center">
+                            <button type="button" class="btn btn-primary me-2 px-4 py-2 fw-semibold rounded" id="confirm-action" disabled>
+                                <i class="fas fa-check me-2"></i>Confirm
+                            </button>
+                            <button type="button" class="btn btn-secondary px-4 py-2 fw-semibold rounded" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -693,10 +691,10 @@
                             type.includes('MarketBusiness') ? 'Sentra Ekonomi' :
                             type.replace('App\\Models\\', '');
 
-                        return `<div>
-                                    <div class="fw-bold">${name}</div>
-                                    <div class="text-muted small">Pemilik: ${owner || '-'}</div>
-                                    <div class="text-muted small">${businessType}</div>
+                        return `<div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%;">
+                                    <div class="fw-bold" title="${name}" style="line-height: 1.3; word-break: break-word;">${name}</div>
+                                    <div class="text-muted small" title="Pemilik: ${owner || '-'}" style="line-height: 1.2; word-break: break-word;">Pemilik: ${owner || '-'}</div>
+                                    <div class="text-muted small" title="${businessType}" style="line-height: 1.2; word-break: break-word;">${businessType}</div>
                                 </div>`;
                     }
                 },
@@ -715,10 +713,10 @@
                             type.includes('MarketBusiness') ? 'Sentra Ekonomi' :
                             type.replace('App\\Models\\', '');
 
-                        return `<div>
-                                    <div class="fw-bold">${name}</div>
-                                    <div class="text-muted small">Pemilik: ${owner || '-'}</div>
-                                    <div class="text-muted small">${businessType}</div>
+                        return `<div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%;">
+                                    <div class="fw-bold" title="${name}" style="line-height: 1.3; word-break: break-word;">${name}</div>
+                                    <div class="text-muted small" title="Pemilik: ${owner || '-'}" style="line-height: 1.2; word-break: break-word;">Pemilik: ${owner || '-'}</div>
+                                    <div class="text-muted small" title="${businessType}" style="line-height: 1.2; word-break: break-word;">${businessType}</div>
                                 </div>`;
                     }
                 },
@@ -864,10 +862,10 @@
                 };
 
                 // Set widths for responsive mode
-                baseColumns[0].widthGrow = 2;
-                baseColumns[0].minWidth = 150;
-                baseColumns[1].widthGrow = 2;
-                baseColumns[1].minWidth = 150;
+                baseColumns[0].widthGrow = 3;
+                baseColumns[0].minWidth = 220;
+                baseColumns[1].widthGrow = 3;
+                baseColumns[1].minWidth = 220;
                 baseColumns[3].width = 100;
                 baseColumns[3].minWidth = 80;
                 baseColumns[4].width = 100;
@@ -1209,19 +1207,48 @@
 
         // Function to populate similarity card
         function populateSimilarityCard(similarities) {
+            // Calculate percentage scores
+            const nameScore = (similarities.name_similarity * 100).toFixed(0);
+            const ownerScore = (similarities.owner_similarity * 100).toFixed(0);
+            const overallScore = (similarities.confidence_score * 100).toFixed(0);
+
+            // Apply color grading logic for name similarity
+            let nameColor = 'success';
+            if (nameScore < 75) {
+                nameColor = 'danger';
+            } else if (nameScore < 90) {
+                nameColor = 'warning';
+            }
+
+            // Apply color grading logic for owner similarity
+            let ownerColor = 'success';
+            if (ownerScore < 75) {
+                ownerColor = 'danger';
+            } else if (ownerScore < 90) {
+                ownerColor = 'warning';
+            }
+
+            // Apply color grading logic for overall score
+            let overallColor = 'success';
+            if (overallScore < 75) {
+                overallColor = 'danger';
+            } else if (overallScore < 90) {
+                overallColor = 'warning';
+            }
+
             const content = `
                 <div class="d-flex justify-content-between align-items-center text-dark small">
                     <div class="text-center">
-                        <strong class="text-primary">${(similarities.name_similarity * 100).toFixed(0)}%</strong>
+                        <strong class="text-${nameColor}">${nameScore}%</strong>
                         <div class="text-muted" style="font-size: 0.7rem;">Name</div>
                     </div>
                     <div class="text-center">
-                        <strong class="text-success">${(similarities.owner_similarity * 100).toFixed(0)}%</strong>
+                        <strong class="text-${ownerColor}">${ownerScore}%</strong>
                         <div class="text-muted" style="font-size: 0.7rem;">Owner</div>
                     </div>
                     <div class="text-center">
-                        <strong class="text-warning">${(similarities.confidence_score * 100).toFixed(0)}%</strong>
-                        <div class="text-muted" style="font-size: 0.7rem;">Overall</div>
+                        <strong class="text-${overallColor}">${overallScore}%</strong>
+                        <div class="text-muted" style="font-size: 0.7rem;">Keseluruhan</div>
                     </div>
                     <div class="text-center">
                         <strong class="text-info">
@@ -1232,15 +1259,6 @@
                                 : '-'}
                         </strong>
                         <div class="text-muted" style="font-size: 0.7rem;">Distance</div>
-                    </div>
-                    <div class="text-center">
-                        <span class="badge ${similarities.duplicate_status === 'strong_duplicate' ? 'bg-danger' : 
-                                           similarities.duplicate_status === 'weak_duplicate' ? 'bg-warning text-dark' : 'bg-secondary'}" style="font-size: 0.7rem;">
-                            ${similarities.duplicate_status === 'strong_duplicate' ? 'Strong' :
-                              similarities.duplicate_status === 'weak_duplicate' ? 'Weak' : 
-                              'None'}
-                        </span>
-                        <div class="text-muted" style="font-size: 0.7rem;">Status</div>
                     </div>
                 </div>
             `;
@@ -1386,7 +1404,7 @@
                 confirmButtonColor: confirmButtonColor,
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: confirmButtonText,
-                cancelButtonText: '<i class="fas fa-times me-1"></i>Cancel'
+                cancelButtonText: '<i class="fas fa-times me-1"></i>Cancel',
             }).then((result) => {
                 if (result.isConfirmed) {
                     processDuplicateAction(action);

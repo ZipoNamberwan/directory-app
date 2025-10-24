@@ -171,8 +171,7 @@
                         <p class="text-sm mb-1">Report ini menunjukkan jumlah tagging menurut satker atau yang berarti
                             tagging yang dilakukan oleh petugas suatu satker, terlepas di manapun petugas tsb tagging.</p>
                         <p class="text-sm mb-1"><strong>Report tidak realtime</strong>, report akan diupdate pada jam
-                            <strong>06.00, 12.00, 18.00,
-                                22.30</strong>
+                            <strong>01.00 pagi</strong>
                         </p>
                         <p class="text-sm">Kondisi tanggal: <strong>{{ $updateDate }} {{ $updateTime }}</strong></p>
                     </div>
