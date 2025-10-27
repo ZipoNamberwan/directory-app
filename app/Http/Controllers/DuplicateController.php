@@ -166,17 +166,44 @@ class DuplicateController extends Controller
     {
         $candidate = DuplicateCandidate::with([
             'centerBusiness' => function ($query) {
-                $query->withTrashed()->with(['user', 'organization']);
+                $query->withTrashed()->with(['user']);
             },
             'nearbyBusiness' => function ($query) {
-                $query->withTrashed()->with(['user', 'organization']);
+                $query->withTrashed()->with(['user']);
             },
             'lastConfirmedBy'
         ])->find($candidateId);
 
+        // Load organization relationships based on business type
+        $centerBusiness = $candidate->centerBusiness;
+        if ($centerBusiness) {
+            if ($centerBusiness instanceof \App\Models\SupplementBusiness) {
+                $centerBusiness->load('organization');
+            } elseif ($centerBusiness instanceof \App\Models\MarketBusiness) {
+                $centerBusiness->load('market.organization');
+                // Normalize organization for market businesses
+                if (!$centerBusiness->organization && $centerBusiness->market) {
+                    $centerBusiness->organization = $centerBusiness->market->organization;
+                }
+            }
+        }
+
+        $nearbyBusiness = $candidate->nearbyBusiness;
+        if ($nearbyBusiness) {
+            if ($nearbyBusiness instanceof \App\Models\SupplementBusiness) {
+                $nearbyBusiness->load('organization');
+            } elseif ($nearbyBusiness instanceof \App\Models\MarketBusiness) {
+                $nearbyBusiness->load('market.organization');
+                // Normalize organization for market businesses
+                if (!$nearbyBusiness->organization && $nearbyBusiness->market) {
+                    $nearbyBusiness->organization = $nearbyBusiness->market->organization;
+                }
+            }
+        }
+
         return response()->json([
-            "center_business" => $candidate->centerBusiness,
-            "nearby_business" => $candidate->nearbyBusiness,
+            "center_business" => $centerBusiness,
+            "nearby_business" => $nearbyBusiness,
         ]);
     }
 
@@ -188,10 +215,10 @@ class DuplicateController extends Controller
 
         $candidate = DuplicateCandidate::with([
             'centerBusiness' => function ($query) {
-                $query->withTrashed();
+                $query->withTrashed()->with(['user']);
             },
             'nearbyBusiness' => function ($query) {
-                $query->withTrashed();
+                $query->withTrashed()->with(['user']);
             },
             'lastConfirmedBy'
         ])->find($candidateId);
@@ -257,13 +284,38 @@ class DuplicateController extends Controller
         $candidate->refresh();
         $candidate->load([
             'centerBusiness' => function ($query) {
-                $query->withTrashed()->with(['user', 'organization']);
+                $query->withTrashed()->with(['user']);
             },
             'nearbyBusiness' => function ($query) {
-                $query->withTrashed()->with(['user', 'organization']);
+                $query->withTrashed()->with(['user']);
             },
             'lastConfirmedBy'
         ]);
+
+        // Load organization relationships based on business type after refresh
+        if ($candidate->centerBusiness) {
+            if ($candidate->centerBusiness instanceof \App\Models\SupplementBusiness) {
+                $candidate->centerBusiness->load('organization');
+            } elseif ($candidate->centerBusiness instanceof \App\Models\MarketBusiness) {
+                $candidate->centerBusiness->load('market.organization');
+                // Normalize organization for market businesses
+                if (!$candidate->centerBusiness->organization && $candidate->centerBusiness->market) {
+                    $candidate->centerBusiness->organization = $candidate->centerBusiness->market->organization;
+                }
+            }
+        }
+
+        if ($candidate->nearbyBusiness) {
+            if ($candidate->nearbyBusiness instanceof \App\Models\SupplementBusiness) {
+                $candidate->nearbyBusiness->load('organization');
+            } elseif ($candidate->nearbyBusiness instanceof \App\Models\MarketBusiness) {
+                $candidate->nearbyBusiness->load('market.organization');
+                // Normalize organization for market businesses
+                if (!$candidate->nearbyBusiness->organization && $candidate->nearbyBusiness->market) {
+                    $candidate->nearbyBusiness->organization = $candidate->nearbyBusiness->market->organization;
+                }
+            }
+        }
 
         return response()->json([
             'message' => 'Status updated successfully',
