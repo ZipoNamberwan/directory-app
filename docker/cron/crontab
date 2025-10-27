@@ -1,9 +1,15 @@
+# Run Laravel scheduler every minute (handles all artisan schedules)
 * * * * * cd /var/www && /usr/local/bin/php artisan schedule:run > /dev/stdout 2>&1
-0 23,2,5,8,11,14,17 * * * /var/www/docker/scripts/backup.sh >> /var/www/backup/cron.log 2>&1
+
+# Python & Shell scripts (GMT times)
+0 18 * * * /venv/bin/python /var/www/python_script/polygon_matcher.py
+0 19 * * * /venv/bin/python /var/www/python_script/anomaly_detector_clean.py
 30 21 * * * /venv/bin/python /var/www/python_script/backup_uploader.py
 0 22 * * * /venv/bin/python /var/www/python_script/qnap_backup_uploader.py
 15 22 * * * /venv/bin/python /var/www/python_script/backup_cleanup.py
+
+# Backup script - run at 12:00 AM and 12:00 PM local time (GMT+7)
+0 17,5 * * * /var/www/docker/scripts/backup.sh >> /var/www/backup/cron.log 2>&1
+
+# Repetitive anomaly repair checker (every 3 hours)
 0 */3 * * * /venv/bin/python /var/www/python_script/anomaly_repair_checker.py
-0 20 * * * /venv/bin/python /var/www/python_script/polygon_matcher.py
-0 21 * * * /venv/bin/python /var/www/python_script/anomaly_detector_clean.py
-# 44 9 * * * /venv/bin/python /var/www/python_script/test_cron.py >> /var/www/backup/cron.log 2>&1

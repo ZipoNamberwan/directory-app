@@ -246,7 +246,7 @@
                         <span class="nav-link-text ms-1">List Anomali</span>
                     </a>
                 </li>
-                {{-- <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link {{ str_contains(request()->url(), 'duplikat') == true ? 'active' : '' }}"
                         href="/duplikat">
                         <div
@@ -255,7 +255,7 @@
                         </div>
                         <span class="nav-link-text ms-1">Pemeriksaan Duplikasi</span>
                     </a>
-                </li> --}}
+                </li>
             @endhaspermission
             @hasrole('adminkab|adminprov')
                 <li class="nav-item mt-3">

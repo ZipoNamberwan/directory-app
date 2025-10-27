@@ -120,6 +120,40 @@
         .radio-indicator {
             transition: all 0.2s ease;
         }
+
+        /* Warning tooltip styles */
+        .tooltip-inner {
+            max-width: 300px !important;
+            background-color: #dc3545 !important;
+            color: white !important;
+            border-radius: 6px !important;
+            padding: 8px 12px !important;
+            font-size: 0.875rem !important;
+            line-height: 1.4 !important;
+        }
+
+        .tooltip.bs-tooltip-top .tooltip-arrow::before {
+            border-top-color: #dc3545 !important;
+        }
+
+        .tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+            border-bottom-color: #dc3545 !important;
+        }
+
+        .tooltip.bs-tooltip-start .tooltip-arrow::before {
+            border-left-color: #dc3545 !important;
+        }
+
+        .tooltip.bs-tooltip-end .tooltip-arrow::before {
+            border-right-color: #dc3545 !important;
+        }
+
+        /* Warning icon hover effect */
+        .fa-exclamation-triangle:hover {
+            color: #dc3545 !important;
+            transform: scale(1.1);
+            transition: all 0.2s ease;
+        }
     </style>
 @endsection
 
@@ -1102,9 +1136,15 @@
                 });
             }, 100);
 
-            // Populate business detail cards
-            populateBusinessCard('center', centerBusiness);
-            populateBusinessCard('nearby', nearbyBusiness);
+            // Populate business detail cards with candidate data for comparison
+            populateBusinessCard('center', centerBusiness, {
+                candidate_name: rowData.center_business_name || '',
+                candidate_owner: rowData.center_business_owner || ''
+            });
+            populateBusinessCard('nearby', nearbyBusiness, {
+                candidate_name: rowData.nearby_business_name || '',
+                candidate_owner: rowData.nearby_business_owner || ''
+            });
             populateSimilarityCard(similarities);
 
             // Update current status display and set radio buttons
@@ -1143,7 +1183,7 @@
         }
 
         // Function to populate individual business card
-        function populateBusinessCard(type, business) {
+        function populateBusinessCard(type, business, candidateData = null) {
             // Check if business is deleted
             const isDeleted = business.deleted_at !== null;
 
@@ -1167,10 +1207,65 @@
                     minute: '2-digit'
                 }) : '-';
 
+            // Helper function to create warning icon with tooltip
+            const createWarningIcon = (currentValue, candidateValue, fieldName) => {
+                // Don't show warning if candidateData is not available
+                if (!candidateData) {
+                    return '';
+                }
+                
+                // Normalize values for comparison (treat null/undefined as empty string)
+                const normalizedCurrent = (currentValue || '').toString().trim();
+                const normalizedCandidate = (candidateValue || '').toString().trim();
+                
+                // Don't show warning if values are the same
+                if (normalizedCurrent === normalizedCandidate) {
+                    return '';
+                }
+                
+                const tooltipId = `tooltip-${type}-${fieldName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                
+                // Get field display name
+                const fieldDisplayName = fieldName === 'name' ? 'Nama Usaha' : 'Pemilik';
+                
+                // Create appropriate tooltip message based on the change type
+                let tooltipMessage;
+                if (normalizedCandidate === '' && normalizedCurrent !== '') {
+                    tooltipMessage = `${fieldDisplayName} telah berubah: <br><strong>'${normalizedCurrent}'</strong><br>(sebelumnya kosong)`;
+                } else if (normalizedCandidate !== '' && normalizedCurrent === '') {
+                    tooltipMessage = `${fieldDisplayName} telah dihapus: <br><strong>'${normalizedCandidate}'</strong><br>(sekarang kosong)`;
+                } else {
+                    tooltipMessage = `${fieldDisplayName} telah berubah dari: <br><strong>'${normalizedCandidate}'</strong><br>menjadi: <br><strong>'${normalizedCurrent}'</strong>`;
+                }
+                
+                return ` <i class="fas fa-exclamation-triangle text-warning ms-1" 
+                           style="font-size: 0.8rem; cursor: help;" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top" 
+                           data-bs-html="true"
+                           data-bs-title="${tooltipMessage}"
+                           id="${tooltipId}"></i>`;
+            };
+
+            // Get current values and candidate values for comparison
+            // Don't use fallback '-' here for comparison, use actual values
+            const currentName = business.name || '';
+            const currentOwner = business.owner || '';
+            const candidateName = candidateData?.candidate_name || '';
+            const candidateOwner = candidateData?.candidate_owner || '';
+
+            // Create warning icons for changed values
+            const nameWarning = createWarningIcon(currentName, candidateName, 'name');
+            const ownerWarning = createWarningIcon(currentOwner, candidateOwner, 'owner');
+
+            // For display purposes, show '-' when empty
+            const displayName = currentName || '-';
+            const displayOwner = currentOwner || '-';
+
             const businessColor = type === 'center' ? COLOR_SCHEME.keep1.primary : COLOR_SCHEME.keep2.primary;
             const content = `
-                <h6 class="fw-bold mb-1" style="color: ${businessColor};">${business.name || '-'}</h6>
-                <p class="mb-1 small"><strong>Pemilik:</strong> ${business.owner || '-'}</p>
+                <h6 class="fw-bold mb-1" style="color: ${businessColor};">${displayName}${nameWarning}</h6>
+                <p class="mb-1 small"><strong>Pemilik:</strong> ${displayOwner}${ownerWarning}</p>
                 <p class="mb-1 small"><strong>Alamat:</strong> ${business.address || '-'}</p>
                 <p class="mb-1 small"><strong>Status:</strong> ${business.status || '-'}</p>
                 <p class="mb-1 small"><strong>Sektor:</strong> ${business.sector ? business.sector.substring(0, 50) + '...' : '-'}</p>
@@ -1185,6 +1280,14 @@
 
             // Update content
             document.getElementById(`${type}-business-content`).innerHTML = content;
+
+            // Initialize tooltips for the newly added warning icons
+            setTimeout(() => {
+                const tooltipElements = cardElement.querySelectorAll('[data-bs-toggle="tooltip"]');
+                tooltipElements.forEach(element => {
+                    new bootstrap.Tooltip(element);
+                });
+            }, 100);
 
             // Update header and styling based on deletion status
             if (isDeleted) {
@@ -1278,6 +1381,15 @@
 
         // Clean up map when modal is closed
         document.getElementById('duplicateModal').addEventListener('hidden.bs.modal', function() {
+            // Clean up any existing tooltips to prevent memory leaks
+            const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltipElements.forEach(element => {
+                const tooltip = bootstrap.Tooltip.getInstance(element);
+                if (tooltip) {
+                    tooltip.dispose();
+                }
+            });
+
             // Reset to loading state
             document.getElementById('map-loading').style.display = 'block';
             document.getElementById('content-container').style.display = 'none';
@@ -1357,7 +1469,7 @@
             if (lastConfirmedBy && status !== 'notconfirmed') {
                 const userName = lastConfirmedBy.firstname || 'Unknown';
                 const orgId = lastConfirmedBy.organization_id || '-';
-                confirmedByDisplay.innerHTML = `<small>Dikonfirmasi oleh: ${userName} (${orgId})</small>`;
+                confirmedByDisplay.innerHTML = `<small>Dikonfirmasi terakhir oleh: <span class="fw-bold">${userName} (${orgId})</span></small>`;
                 confirmedByDisplay.style.display = 'block';
             } else {
                 confirmedByDisplay.style.display = 'none';

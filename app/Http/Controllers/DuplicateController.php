@@ -18,7 +18,6 @@ class DuplicateController extends Controller
         $organizations = [];
         $regencies = [];
         $subdistricts = [];
-        $users = [];
 
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();

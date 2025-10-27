@@ -24,9 +24,7 @@ Features:
 - String normalization for better comparison accuracy
 - **Common words filtering** - ignores common business words (jual, toko, warung, etc.) during comparison
 - Configurable similarity thresholds
-- **Configurable duplicate detection rules** - customize how different conditions are classified
 - Classification of duplicates (Strong, Weak, Not duplicate)
-- Predefined rule sets (Conservative, Aggressive, Name-focused)
 
 Duplicate Detection Algorithm:
 The script uses a refined algorithm for detecting business duplicates:
@@ -50,11 +48,7 @@ You can customize how the following conditions are classified:
 5. Both owners empty and name similarity >= threshold → Configurable result
 6. All other cases → Configurable result
 
-To customize rules, modify the DUPLICATE_RULES configuration or use predefined sets:
-- DUPLICATE_RULES (default): Balanced approach
-- CONSERVATIVE_RULES: More restrictive duplicate detection
-- AGGRESSIVE_RULES: More liberal duplicate detection  
-- NAME_FOCUSED_RULES: Prioritizes name similarity over owner similarity
+The current implementation uses a hardcoded balanced approach for duplicate detection.
 
 Requirements:
     - mysql-connector-python
@@ -130,7 +124,7 @@ DUPLICATE_RULES = {
 CALCULATE_PRECISE_DISTANCE = True  # Set to True to calculate and store precise distances (slower but more accurate)
 
 # Batch processing configuration
-BATCH_UPDATE_SIZE = 10000  # Number of businesses to update in each batch for duplicate_scan_at
+BATCH_UPDATE_SIZE = 100000  # Number of businesses to update in each batch for duplicate_scan_at
 
 # Output mode configuration - choose where to save results
 SAVE_RESULTS_TO_DATABASE = True  # Set to True to save results to duplicate_candidates table
@@ -157,10 +151,10 @@ BUSINESS_TABLES = [
         'table_name': 'supplement_business',
         'business_type': 'supplement'
     },
-    # {
-    #     'table_name': 'market_business',
-    #     'business_type': 'market'
-    # }
+    {
+        'table_name': 'market_business',
+        'business_type': 'market'
+    }
 ]
 
 # =====================================================================
@@ -179,12 +173,14 @@ class Business:
     sls_id: str  # SLS ID for the business
     business_type: str  # 'supplement' or 'market'
     address: str = ""
+    project_id: str = ""  # Project ID for supplement businesses
     
     def __post_init__(self):
         # Normalize text fields
         self.name = self.name or ""
         self.owner = self.owner or ""
         self.address = self.address or ""
+        self.project_id = self.project_id or ""
 
 @dataclass
 class DuplicateComparison:
@@ -358,38 +354,6 @@ class CommonWordsManager:
         
         # Return filtered text
         return ' '.join(filtered_words)
-    
-    @classmethod
-    def get_filtering_info(cls, text: str) -> Dict[str, Any]:
-        """
-        Get detailed information about how text would be filtered
-        Useful for debugging and understanding the filtering process
-        """
-        if not text:
-            return {
-                'original': "",
-                'filtered': "",
-                'common_words_found': [],
-                'remaining_words': [],
-                'used_fallback': False
-            }
-        
-        common_words_set = cls.load_common_words()
-        words = text.split()
-        
-        common_words_found = [word for word in words if word.lower() in common_words_set]
-        remaining_words = [word for word in words if word.lower() not in common_words_set]
-        
-        filtered_text = ' '.join(remaining_words) if remaining_words else text
-        used_fallback = len(remaining_words) == 0 and len(words) > 0
-        
-        return {
-            'original': text,
-            'filtered': filtered_text,
-            'common_words_found': common_words_found,
-            'remaining_words': remaining_words,
-            'used_fallback': used_fallback
-        }
 
 class TextUtils:
     """Text processing utilities for duplicate detection"""
@@ -553,66 +517,6 @@ class DuplicateDetector:
         )
 
 # =====================================================================
-# DUPLICATE RULE CONFIGURATIONS
-# =====================================================================
-
-def create_custom_rules(both_high_similarity='strong_duplicate',
-                       name_high_owner_low='not_duplicate',
-                       name_low_owner_high='not_duplicate',
-                       name_high_one_owner_empty='weak_duplicate',
-                       both_owners_empty_name_high='strong_duplicate',
-                       default='not_duplicate'):
-    """
-    Create a custom duplicate detection rules configuration
-    
-    Parameters:
-        both_high_similarity: Result when both name and owner similarity >= threshold
-        name_high_owner_low: Result when name similarity >= threshold but owner similarity < threshold (owner not empty)
-        name_low_owner_high: Result when name similarity < threshold but owner similarity >= threshold (owner not empty)
-        name_high_one_owner_empty: Result when name similarity >= threshold and one owner is empty
-        both_owners_empty_name_high: Result when both owners are empty and name similarity >= threshold
-        default: Result for all other cases
-    
-    Valid values: 'strong_duplicate', 'weak_duplicate', 'not_duplicate'
-    """
-    return {
-        'both_high_similarity': both_high_similarity,
-        'name_high_owner_low': name_high_owner_low,
-        'name_low_owner_high': name_low_owner_high,
-        'name_high_one_owner_empty': name_high_one_owner_empty,
-        'both_owners_empty_name_high': both_owners_empty_name_high,
-        'default': default
-    }
-
-# Predefined rule configurations for common scenarios
-CONSERVATIVE_RULES = create_custom_rules(
-    both_high_similarity='strong_duplicate',
-    name_high_owner_low='not_duplicate',
-    name_low_owner_high='not_duplicate',
-    name_high_one_owner_empty='weak_duplicate',
-    both_owners_empty_name_high='weak_duplicate',  # More conservative
-    default='not_duplicate'
-)
-
-AGGRESSIVE_RULES = create_custom_rules(
-    both_high_similarity='strong_duplicate',
-    name_high_owner_low='weak_duplicate',  # More aggressive
-    name_low_owner_high='weak_duplicate',  # More aggressive
-    name_high_one_owner_empty='strong_duplicate',  # More aggressive
-    both_owners_empty_name_high='strong_duplicate',
-    default='not_duplicate'
-)
-
-NAME_FOCUSED_RULES = create_custom_rules(
-    both_high_similarity='strong_duplicate',
-    name_high_owner_low='strong_duplicate',  # Focus on name similarity
-    name_low_owner_high='not_duplicate',
-    name_high_one_owner_empty='strong_duplicate',  # Focus on name similarity
-    both_owners_empty_name_high='strong_duplicate',
-    default='not_duplicate'
-)
-
-# =====================================================================
 # VALIDATION UTILITIES
 # =====================================================================
 
@@ -636,51 +540,6 @@ def calculate_precise_distance(lat1: float, lng1: float, lat2: float, lng2: floa
     r = 6371000
     
     return c * r
-
-def validate_nearby_businesses(center_business: Business, nearby_businesses: List[Business], radius_meters: float) -> Dict[str, Any]:
-    """
-    Validate nearby businesses using precise distance calculation
-    Returns validation results
-    """
-    validation_results = {
-        'total_found': len(nearby_businesses),
-        'within_radius': 0,
-        'outside_radius': 0,
-        'same_user_violations': 0,
-        'distances': [],
-        'violations': []
-    }
-    
-    for nearby_business in nearby_businesses:
-        # Check for same user violation
-        if nearby_business.user_id == center_business.user_id:
-            validation_results['same_user_violations'] += 1
-            validation_results['violations'].append({
-                'type': 'same_user',
-                'business_id': nearby_business.id,
-                'business_name': nearby_business.name
-            })
-        
-        # Calculate precise distance
-        precise_distance = calculate_precise_distance(
-            center_business.latitude, center_business.longitude,
-            nearby_business.latitude, nearby_business.longitude
-        )
-        
-        validation_results['distances'].append(precise_distance)
-        
-        if precise_distance <= radius_meters:
-            validation_results['within_radius'] += 1
-        else:
-            validation_results['outside_radius'] += 1
-            validation_results['violations'].append({
-                'type': 'outside_radius',
-                'business_id': nearby_business.id,
-                'business_name': nearby_business.name,
-                'distance': precise_distance
-            })
-    
-    return validation_results
 
 def save_results_to_csv(results: List[Dict[str, Any]], filename: str):
     """Save results to CSV file for manual inspection"""
@@ -766,7 +625,18 @@ class SpatialIndex:
                 
             # Skip if same user
             if candidate_business.user_id == center_business.user_id:
-                continue
+                # Additional check for supplement businesses: if same user and same project_id, skip
+                if (candidate_business.business_type == 'supplement' and 
+                    center_business.business_type == 'supplement' and
+                    candidate_business.project_id and 
+                    center_business.project_id and
+                    candidate_business.project_id == center_business.project_id):
+                    continue
+                # If users are same but different project_ids (or one/both project_ids are empty), continue processing
+                elif candidate_business.business_type == 'supplement' and center_business.business_type == 'supplement':
+                    pass  # Continue processing - same user but different projects
+                else:
+                    continue  # For non-supplement businesses, skip if same user
             
             # Add to nearby businesses (assuming R-tree bounding box is accurate enough)
             nearby_businesses.append(candidate_business)
@@ -838,7 +708,7 @@ class DatabaseManager:
             {limit_clause}
             """
         else:
-            # Standard query for supplement_business (has owner column)
+            # Standard query for supplement_business (has owner and project_id columns)
             query = f"""
             SELECT 
                 id,
@@ -848,7 +718,8 @@ class DatabaseManager:
                 latitude,
                 longitude,
                 user_id,
-                sls_id
+                sls_id,
+                project_id
             FROM {table_name}
             WHERE latitude IS NOT NULL 
                 AND longitude IS NOT NULL
@@ -889,7 +760,8 @@ class DatabaseManager:
                 user_id=str(row['user_id']),  # Ensure string type
                 sls_id=str(row['sls_id']) if row['sls_id'] else "",  # Ensure string type
                 business_type=business_type,
-                address=row['address'] or ""
+                address=row['address'] or "",
+                project_id=str(row['project_id']) if business_type == 'supplement' and row.get('project_id') else ""
             )
             businesses.append(business)
         
@@ -965,92 +837,6 @@ class DatabaseManager:
         except Exception as e:
             print(f"⚠️ Error saving duplicate candidate: {e}")
             return False
-    
-    def save_duplicate_candidates_batch(self, comparisons: List['DuplicateComparison']) -> Tuple[int, int]:
-        """
-        Save multiple duplicate candidates to the database in batch
-        Returns tuple of (successful_saves, failed_saves)
-        """
-        if not comparisons:
-            return 0, 0
-            
-        successful_saves = 0
-        failed_saves = 0
-        
-        try:
-            import uuid
-            
-            # Prepare batch data
-            batch_data = []
-            
-            # Map business_type to the correct model class for morph relationship
-            type_mapping = {
-                'supplement': 'App\\Models\\SupplementBusiness',
-                'market': 'App\\Models\\MarketBusiness'
-            }
-            
-            for comparison in comparisons:
-                record_id = str(uuid.uuid4())
-                center_business_type = type_mapping.get(comparison.business_a.business_type, 'App\\Models\\SupplementBusiness')
-                nearby_business_type = type_mapping.get(comparison.business_b.business_type, 'App\\Models\\SupplementBusiness')
-                
-                batch_data.append((
-                    record_id,
-                    comparison.business_a.id,
-                    center_business_type,
-                    comparison.business_b.id,
-                    nearby_business_type,
-                    comparison.business_a.name or "",
-                    comparison.business_b.name or "",
-                    comparison.business_a.owner or "",
-                    comparison.business_b.owner or "",
-                    comparison.name_similarity,
-                    comparison.owner_similarity,
-                    comparison.confidence_score,
-                    comparison.distance_meters or 0.0,
-                    comparison.duplicate_type,
-                    comparison.business_a.latitude,
-                    comparison.business_a.longitude,
-                    comparison.business_b.latitude,
-                    comparison.business_b.longitude,
-                    'notconfirmed',  # Default status
-                    datetime.now(),  # created_at
-                    datetime.now()   # updated_at
-                ))
-            
-            # Execute batch insert
-            query = """
-            INSERT INTO duplicate_candidates (
-                id, center_business_id, center_business_type, nearby_business_id, nearby_business_type,
-                center_business_name, nearby_business_name, center_business_owner, nearby_business_owner,
-                name_similarity, owner_similarity, confidence_score, distance_meters, duplicate_status,
-                center_business_latitude, center_business_longitude, 
-                nearby_business_latitude, nearby_business_longitude,
-                status, created_at, updated_at
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            )
-            """
-            
-            cursor = self.connection.cursor()
-            cursor.executemany(query, batch_data)
-            self.connection.commit()
-            cursor.close()
-            
-            successful_saves = len(batch_data)
-            print(f"✓ Successfully saved {successful_saves} duplicate candidates to database")
-            
-        except Exception as e:
-            print(f"⚠️ Error in batch save: {e}")
-            # Try to save individually to get partial success
-            print("🔄 Attempting individual saves...")
-            for comparison in comparisons:
-                if self.save_duplicate_candidate(comparison):
-                    successful_saves += 1
-                else:
-                    failed_saves += 1
-        
-        return successful_saves, failed_saves
     
     def get_all_businesses(self, table_configs: List[Dict[str, str]]) -> List[Business]:
         """Load ALL businesses from all configured tables (for spatial indexing)"""

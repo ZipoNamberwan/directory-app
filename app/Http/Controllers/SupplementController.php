@@ -406,6 +406,8 @@ class SupplementController extends Controller
     {
         $business = SupplementBusiness::find($id);
         if ($business) {
+            $business->is_locked = true;
+            $business->save();
             $business->deleteWithSource('web');
             return redirect('/suplemen')->with('success-upload', 'Usaha Telah Dihapus');
         } else {
@@ -436,6 +438,8 @@ class SupplementController extends Controller
             }
 
             // Delete the business
+            $business->is_locked = true;
+            $business->save();
             $business->deleteWithSource('web');
 
             return response()->json([
