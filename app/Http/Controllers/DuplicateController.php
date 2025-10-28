@@ -109,6 +109,34 @@ class DuplicateController extends Controller
             }
         }
 
+        if ($request->pairType && $request->pairType !== 'all') {
+            if ($request->pairType === 'supplementall') {
+                $records->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('center_business_type', 'App\Models\SupplementBusiness')
+                            ->where('nearby_business_type', 'App\Models\SupplementBusiness');
+                    });
+                });
+            } else if ($request->pairType === 'marketall') {
+                $records->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('center_business_type', 'App\Models\MarketBusiness')
+                            ->where('nearby_business_type', 'App\Models\MarketBusiness');
+                    });
+                });
+            } else if ($request->pairType === 'supplementmarket') {
+                $records->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('center_business_type', 'App\Models\SupplementBusiness')
+                            ->where('nearby_business_type', 'App\Models\MarketBusiness');
+                    })->orWhere(function ($q) {
+                        $q->where('center_business_type', 'App\Models\MarketBusiness')
+                            ->where('nearby_business_type', 'App\Models\SupplementBusiness');
+                    });
+                });
+            }
+        }
+
         // search
         if ($request->keyword) {
             $search = strtolower($request->keyword);
@@ -210,7 +238,7 @@ class DuplicateController extends Controller
     public function updateDuplicateCandidateStatus(Request $request, $candidateId)
     {
         $request->validate([
-            'status' => 'required|in:keepall,keep1,keep2',
+            'status' => 'required|in:keepall,keep1,keep2,deleteall',
         ]);
 
         $candidate = DuplicateCandidate::with([
@@ -277,6 +305,21 @@ class DuplicateController extends Controller
                 $nearbyBusiness->deleted_at = null;
                 $nearbyBusiness->is_locked = true;
                 $nearbyBusiness->save();
+            }
+        } else if ($request->status === 'deleteall') {
+            // Delete both businesses
+            $centerBusiness = $candidate->centerBusiness;
+            if ($centerBusiness && !$centerBusiness->trashed()) {
+                $centerBusiness->is_locked = true;
+                $centerBusiness->save();
+                $centerBusiness->deleteWithSource('duplicate');
+            }
+
+            $nearbyBusiness = $candidate->nearbyBusiness;
+            if ($nearbyBusiness && !$nearbyBusiness->trashed()) {
+                $nearbyBusiness->is_locked = true;
+                $nearbyBusiness->save();
+                $nearbyBusiness->deleteWithSource('duplicate');
             }
         }
 

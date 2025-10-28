@@ -321,6 +321,7 @@
         const eventHandlers = {
             '#organization': () => {
                 renderTable()
+                loadUsers(null, null);
                 clearSelectionState()
             },
             '#market': () => {
@@ -469,6 +470,38 @@
                 });
             } else {
                 $(slsSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
+            }
+        }
+
+        function loadUsers(satkerId = null, selectedUser = null) {
+
+            let organizationSelector = `#organization`;
+            let userSelector = `#user`;
+
+            let id = $(organizationSelector).val();
+            if (satkerId != null) {
+                id = satkerId;
+            }
+
+            $(userSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
+
+            if (id != null) {
+                $.ajax({
+                    type: 'GET',
+                    url: '/petugas/' + id,
+                    success: function(response) {
+                        $(userSelector).empty().append(
+                            `<option value="0" disabled selected> -- Pilih Petugas -- </option>`);
+                        response.forEach(element => {
+                            let selected = selectedUser == String(element.id) ? 'selected' : '';
+                            $(userSelector).append(
+                                `<option value="${element.id}" ${selected}>${element.firstname}</option>`
+                            );
+                        });
+                    }
+                });
+            } else {
+                $(userSelector).empty().append(`<option value="0" disabled> -- Pilih SLS -- </option>`);
             }
         }
 

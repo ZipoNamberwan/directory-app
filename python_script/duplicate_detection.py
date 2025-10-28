@@ -70,6 +70,7 @@ import difflib
 from typing import List, Dict, Tuple, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
+import pytz
 
 import mysql.connector
 from dotenv import load_dotenv
@@ -78,6 +79,13 @@ from shapely.geometry import Point
 
 # Load environment variables
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+
+# Timezone configuration
+JAKARTA_TIMEZONE = pytz.timezone('Asia/Jakarta')
+
+def get_jakarta_now():
+    """Get current timestamp in Jakarta timezone"""
+    return datetime.now(JAKARTA_TIMEZONE)
 
 # =====================================================================
 # CONFIGURATION
@@ -124,11 +132,14 @@ DUPLICATE_RULES = {
 CALCULATE_PRECISE_DISTANCE = True  # Set to True to calculate and store precise distances (slower but more accurate)
 
 # Batch processing configuration
-BATCH_UPDATE_SIZE = 100000  # Number of businesses to update in each batch for duplicate_scan_at
+BATCH_UPDATE_SIZE = 1000  # Number of businesses to update in each batch for duplicate_scan_at
+
+# Processing mode configuration
+UPDATE_DUPLICATE_SCAN_IMMEDIATELY = True  # Set to True to update businesses in batches during processing, False for single batch update at the end
 
 # Output mode configuration - choose where to save results
 SAVE_RESULTS_TO_DATABASE = True  # Set to True to save results to duplicate_candidates table
-SAVE_RESULTS_TO_FILE = True  # Set to True to save detailed results to CSV file for manual inspection
+SAVE_RESULTS_TO_FILE = False  # Set to True to save detailed results to CSV file for manual inspection
 
 # Output file configuration (only used when SAVE_RESULTS_TO_FILE = True)
 OUTPUT_FILENAME = "business_duplicate_detection_results.csv"  # Constant filename (overwrites previous results)
@@ -826,8 +837,8 @@ class DatabaseManager:
                 comparison.business_b.latitude,
                 comparison.business_b.longitude,
                 'notconfirmed',  # Default status
-                datetime.now(),  # created_at
-                datetime.now()   # updated_at
+                get_jakarta_now(),  # created_at
+                get_jakarta_now()   # updated_at
             ))
             
             self.connection.commit()  # Commit the transaction
@@ -866,6 +877,34 @@ class DatabaseManager:
         
         return unprocessed_businesses
     
+    def update_single_duplicate_scan_at(self, business_id: str, business_type: str) -> bool:
+        """
+        Update duplicate_scan_at for a single business immediately
+        Args:
+            business_id: ID of the business to update
+            business_type: Type of business ('supplement' or 'market')
+        Returns:
+            bool: True if successful, False if failed
+        """
+        try:
+            cursor = self.connection.cursor()
+            current_timestamp = get_jakarta_now()
+            
+            if business_type == 'supplement':
+                table_name = 'supplement_business'
+            else:
+                table_name = 'market_business'
+            
+            query = f"UPDATE {table_name} SET duplicate_scan_at = %s WHERE id = %s"
+            cursor.execute(query, (current_timestamp, business_id))
+            self.connection.commit()
+            cursor.close()
+            return True
+            
+        except Exception as e:
+            print(f"⚠️ Failed to update duplicate_scan_at for {business_type} business {business_id}: {e}")
+            return False
+    
     def batch_update_duplicate_scan_at(self, business_updates: List[Tuple[str, str]]) -> Tuple[int, int]:
         """
         Batch update duplicate_scan_at for multiple businesses in smaller chunks
@@ -879,7 +918,7 @@ class DatabaseManager:
         
         total_successful_updates = 0
         total_failed_updates = 0
-        current_timestamp = datetime.now()
+        current_timestamp = get_jakarta_now()
         
         # Group updates by business type (table)
         supplement_ids = []
@@ -1035,7 +1074,9 @@ class NearbyBusinessFinder:
             compared_pairs = set()  # Track already compared business pairs to avoid duplicates
             skipped_comparisons = 0  # Track how many duplicate comparisons were avoided
             validation_data = []
-            business_updates = []  # Collect business IDs and types for batch update
+            businesses_marked_processed = 0  # Track how many businesses successfully marked as processed
+            businesses_failed_to_mark = 0  # Track how many businesses failed to mark as processed
+            business_updates = []  # Collect business IDs and types for batch update (used for both immediate batching and end-of-process batching)
             
             import random
             random.seed(42)  # For reproducible results
@@ -1137,32 +1178,62 @@ class NearbyBusinessFinder:
                             # Save individual duplicate candidate to database
                             self.db_manager.save_duplicate_candidate(comparison)
                     
-                    # Print results with duplicate information
+                    # Print results with duplicate information (only when duplicates found)
                     strong_dupes = sum(1 for c in duplicate_comparisons if c.duplicate_type == 'strong_duplicate')
                     weak_dupes = sum(1 for c in duplicate_comparisons if c.duplicate_type == 'weak_duplicate')
                     
                     if strong_dupes > 0 or weak_dupes > 0:
-                        print(f"📍 {business.name} → {len(nearby_businesses)} nearby, "
-                              f"🔴 {strong_dupes} strong duplicates, 🟡 {weak_dupes} weak duplicates")
-                    else:
-                        print(f"📍 {business.name} → {len(nearby_businesses)} nearby, ✅ no duplicates")
+                        progress_pct = ((i + 1) / len(unprocessed_businesses)) * 100
+                        print(f"📍 [{progress_pct:.1f}%] {business.name} → 🔴 {strong_dupes} strong, 🟡 {weak_dupes} weak duplicates")
                 
-                # Collect business info for batch update of duplicate_scan_at
-                business_updates.append((business.id, business.business_type))
+                # Update duplicate_scan_at based on configuration
+                if UPDATE_DUPLICATE_SCAN_IMMEDIATELY:
+                    # Collect business info for immediate batch update
+                    business_updates.append((business.id, business.business_type))
+                    
+                    # Process batch when it reaches BATCH_UPDATE_SIZE
+                    if len(business_updates) >= BATCH_UPDATE_SIZE:
+                        successful_updates, failed_updates = self.db_manager.batch_update_duplicate_scan_at(business_updates)
+                        businesses_marked_processed += successful_updates
+                        businesses_failed_to_mark += failed_updates
+                        if failed_updates > 0:
+                            print(f"⚠️ {failed_updates} businesses failed to update in batch")
+                        # Clear the batch
+                        business_updates = []
+                else:
+                    # Collect business info for batch update at the end
+                    business_updates.append((business.id, business.business_type))
             
             search_end_time = time.time()
             
-            # Batch update duplicate_scan_at timestamps for all processed businesses
-            if business_updates:
-                print(f"\n📝 Batch updating duplicate_scan_at for {len(business_updates)} businesses...")
-                successful_updates, failed_updates = self.db_manager.batch_update_duplicate_scan_at(business_updates)
-                if failed_updates > 0:
-                    print(f"⚠️  {failed_updates} businesses failed to update")
+            # Handle final batch update
+            if business_updates:  # If there are remaining businesses to update
+                if UPDATE_DUPLICATE_SCAN_IMMEDIATELY:
+                    # Process final partial batch for immediate mode
+                    print(f"\n📝 Processing final batch of {len(business_updates)} businesses...")
+                    successful_updates, failed_updates = self.db_manager.batch_update_duplicate_scan_at(business_updates)
+                    businesses_marked_processed += successful_updates
+                    businesses_failed_to_mark += failed_updates
+                    if failed_updates > 0:
+                        print(f"⚠️ {failed_updates} businesses failed to update in final batch")
+                else:
+                    # Process all businesses for batch mode
+                    print(f"\n📝 Batch updating duplicate_scan_at for {len(business_updates)} businesses...")
+                    successful_updates, failed_updates = self.db_manager.batch_update_duplicate_scan_at(business_updates)
+                    businesses_marked_processed = successful_updates
+                    businesses_failed_to_mark = failed_updates
+                    if failed_updates > 0:
+                        print(f"⚠️  {failed_updates} businesses failed to update")
+            
+            print(f"\n✅ Processing complete:")
+            print(f"  - Businesses successfully marked as processed: {businesses_marked_processed:,}")
+            if businesses_failed_to_mark > 0:
+                print(f"  - Businesses that failed to mark as processed: {businesses_failed_to_mark:,}")
             
             # Save results to file if enabled
             if SAVE_RESULTS_TO_FILE and validation_data:
                 if USE_TIMESTAMP_IN_FILENAME:
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    timestamp = get_jakarta_now().strftime("%Y%m%d_%H%M%S")
                     filename = f"business_duplicate_detection_results_{timestamp}.csv"
                 else:
                     filename = OUTPUT_FILENAME
@@ -1284,6 +1355,12 @@ def main():
             print(f"  📏 Precise distance calculation: ✅ (slower but more accurate)")
         else:
             print(f"  📏 Precise distance calculation: ❌ (faster, using spatial approximation)")
+        
+        # Display processing mode configuration
+        if UPDATE_DUPLICATE_SCAN_IMMEDIATELY:
+            print(f"  🔄 Processing mode: ✅ Immediate batching (businesses marked as processed in batches of {BATCH_UPDATE_SIZE})")
+        else:
+            print(f"  🔄 Processing mode: 📦 End-of-process batching (all businesses marked as processed at the end)")
         
         # Display output configuration
         print(f"\n📁 Output Configuration:")
