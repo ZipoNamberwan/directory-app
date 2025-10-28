@@ -18,7 +18,6 @@ class DuplicateController extends Controller
         $organizations = [];
         $regencies = [];
         $subdistricts = [];
-        $users = [];
 
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
@@ -110,6 +109,34 @@ class DuplicateController extends Controller
             }
         }
 
+        if ($request->pairType && $request->pairType !== 'all') {
+            if ($request->pairType === 'supplementall') {
+                $records->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('center_business_type', 'App\Models\SupplementBusiness')
+                            ->where('nearby_business_type', 'App\Models\SupplementBusiness');
+                    });
+                });
+            } else if ($request->pairType === 'marketall') {
+                $records->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('center_business_type', 'App\Models\MarketBusiness')
+                            ->where('nearby_business_type', 'App\Models\MarketBusiness');
+                    });
+                });
+            } else if ($request->pairType === 'supplementmarket') {
+                $records->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('center_business_type', 'App\Models\SupplementBusiness')
+                            ->where('nearby_business_type', 'App\Models\MarketBusiness');
+                    })->orWhere(function ($q) {
+                        $q->where('center_business_type', 'App\Models\MarketBusiness')
+                            ->where('nearby_business_type', 'App\Models\SupplementBusiness');
+                    });
+                });
+            }
+        }
+
         // search
         if ($request->keyword) {
             $search = strtolower($request->keyword);
@@ -167,32 +194,59 @@ class DuplicateController extends Controller
     {
         $candidate = DuplicateCandidate::with([
             'centerBusiness' => function ($query) {
-                $query->withTrashed()->with(['user', 'organization']);
+                $query->withTrashed()->with(['user']);
             },
             'nearbyBusiness' => function ($query) {
-                $query->withTrashed()->with(['user', 'organization']);
+                $query->withTrashed()->with(['user']);
             },
             'lastConfirmedBy'
         ])->find($candidateId);
 
+        // Load organization relationships based on business type
+        $centerBusiness = $candidate->centerBusiness;
+        if ($centerBusiness) {
+            if ($centerBusiness instanceof \App\Models\SupplementBusiness) {
+                $centerBusiness->load('organization');
+            } elseif ($centerBusiness instanceof \App\Models\MarketBusiness) {
+                $centerBusiness->load('market.organization');
+                // Normalize organization for market businesses
+                if (!$centerBusiness->organization && $centerBusiness->market) {
+                    $centerBusiness->organization = $centerBusiness->market->organization;
+                }
+            }
+        }
+
+        $nearbyBusiness = $candidate->nearbyBusiness;
+        if ($nearbyBusiness) {
+            if ($nearbyBusiness instanceof \App\Models\SupplementBusiness) {
+                $nearbyBusiness->load('organization');
+            } elseif ($nearbyBusiness instanceof \App\Models\MarketBusiness) {
+                $nearbyBusiness->load('market.organization');
+                // Normalize organization for market businesses
+                if (!$nearbyBusiness->organization && $nearbyBusiness->market) {
+                    $nearbyBusiness->organization = $nearbyBusiness->market->organization;
+                }
+            }
+        }
+
         return response()->json([
-            "center_business" => $candidate->centerBusiness,
-            "nearby_business" => $candidate->nearbyBusiness,
+            "center_business" => $centerBusiness,
+            "nearby_business" => $nearbyBusiness,
         ]);
     }
 
     public function updateDuplicateCandidateStatus(Request $request, $candidateId)
     {
         $request->validate([
-            'status' => 'required|in:keepall,keep1,keep2',
+            'status' => 'required|in:keepall,keep1,keep2,deleteall',
         ]);
 
         $candidate = DuplicateCandidate::with([
             'centerBusiness' => function ($query) {
-                $query->withTrashed();
+                $query->withTrashed()->with(['user']);
             },
             'nearbyBusiness' => function ($query) {
-                $query->withTrashed();
+                $query->withTrashed()->with(['user']);
             },
             'lastConfirmedBy'
         ])->find($candidateId);
@@ -252,19 +306,59 @@ class DuplicateController extends Controller
                 $nearbyBusiness->is_locked = true;
                 $nearbyBusiness->save();
             }
+        } else if ($request->status === 'deleteall') {
+            // Delete both businesses
+            $centerBusiness = $candidate->centerBusiness;
+            if ($centerBusiness && !$centerBusiness->trashed()) {
+                $centerBusiness->is_locked = true;
+                $centerBusiness->save();
+                $centerBusiness->deleteWithSource('duplicate');
+            }
+
+            $nearbyBusiness = $candidate->nearbyBusiness;
+            if ($nearbyBusiness && !$nearbyBusiness->trashed()) {
+                $nearbyBusiness->is_locked = true;
+                $nearbyBusiness->save();
+                $nearbyBusiness->deleteWithSource('duplicate');
+            }
         }
 
         // Refresh the candidate data with updated relationships
         $candidate->refresh();
         $candidate->load([
             'centerBusiness' => function ($query) {
-                $query->withTrashed()->with(['user', 'organization']);
+                $query->withTrashed()->with(['user']);
             },
             'nearbyBusiness' => function ($query) {
-                $query->withTrashed()->with(['user', 'organization']);
+                $query->withTrashed()->with(['user']);
             },
             'lastConfirmedBy'
         ]);
+
+        // Load organization relationships based on business type after refresh
+        if ($candidate->centerBusiness) {
+            if ($candidate->centerBusiness instanceof \App\Models\SupplementBusiness) {
+                $candidate->centerBusiness->load('organization');
+            } elseif ($candidate->centerBusiness instanceof \App\Models\MarketBusiness) {
+                $candidate->centerBusiness->load('market.organization');
+                // Normalize organization for market businesses
+                if (!$candidate->centerBusiness->organization && $candidate->centerBusiness->market) {
+                    $candidate->centerBusiness->organization = $candidate->centerBusiness->market->organization;
+                }
+            }
+        }
+
+        if ($candidate->nearbyBusiness) {
+            if ($candidate->nearbyBusiness instanceof \App\Models\SupplementBusiness) {
+                $candidate->nearbyBusiness->load('organization');
+            } elseif ($candidate->nearbyBusiness instanceof \App\Models\MarketBusiness) {
+                $candidate->nearbyBusiness->load('market.organization');
+                // Normalize organization for market businesses
+                if (!$candidate->nearbyBusiness->organization && $candidate->nearbyBusiness->market) {
+                    $candidate->nearbyBusiness->organization = $candidate->nearbyBusiness->market->organization;
+                }
+            }
+        }
 
         return response()->json([
             'message' => 'Status updated successfully',

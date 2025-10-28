@@ -35,6 +35,16 @@
             --color-keepall: #6366f1;
             --color-keepall-light: rgba(99, 102, 241, 0.1);
             --color-keepall-shadow: rgba(99, 102, 241, 0.35);
+
+            /* Delete Both - Danger Red */
+            --color-delete: #dc2626;
+            --color-delete-light: rgba(220, 38, 38, 0.1);
+            --color-delete-shadow: rgba(220, 38, 38, 0.35);
+
+            /* Secondary/Default - Gray */
+            --color-secondary: #6c757d;
+            --color-secondary-light: rgba(108, 117, 125, 0.1);
+            --color-secondary-shadow: rgba(108, 117, 125, 0.35);
         }
 
         /* Fix z-index issue - Modal should be above sidenav */
@@ -100,10 +110,23 @@
             color: white !important;
         }
 
+        .btn-check:checked+.btn-outline-delete {
+            background-color: var(--color-delete);
+            border-color: var(--color-delete);
+            color: white !important;
+            box-shadow: 0 4px 15px var(--color-delete-shadow);
+            transform: translateY(-2px);
+        }
+
+        .btn-check:checked+.btn-outline-delete * {
+            color: white !important;
+        }
+
         .btn-outline-notconfirmed:hover,
         .btn-outline-keep1:hover,
         .btn-outline-keep2:hover,
-        .btn-outline-keepall:hover {
+        .btn-outline-keepall:hover,
+        .btn-outline-delete:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
@@ -118,6 +141,40 @@
         }
 
         .radio-indicator {
+            transition: all 0.2s ease;
+        }
+
+        /* Warning tooltip styles */
+        .tooltip-inner {
+            max-width: 300px !important;
+            background-color: #dc3545 !important;
+            color: white !important;
+            border-radius: 6px !important;
+            padding: 8px 12px !important;
+            font-size: 0.875rem !important;
+            line-height: 1.4 !important;
+        }
+
+        .tooltip.bs-tooltip-top .tooltip-arrow::before {
+            border-top-color: #dc3545 !important;
+        }
+
+        .tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+            border-bottom-color: #dc3545 !important;
+        }
+
+        .tooltip.bs-tooltip-start .tooltip-arrow::before {
+            border-left-color: #dc3545 !important;
+        }
+
+        .tooltip.bs-tooltip-end .tooltip-arrow::before {
+            border-right-color: #dc3545 !important;
+        }
+
+        /* Warning icon hover effect */
+        .fa-exclamation-triangle:hover {
+            color: #dc3545 !important;
+            transform: scale(1.1);
             transition: all 0.2s ease;
         }
     </style>
@@ -179,6 +236,16 @@
                                 <option value="notconfirmed">Belum Dikonfirmasi</option>
                                 <option value="keepone">Salah Satu Usaha Di Keep</option>
                                 <option value="keepall">Kedua Usaha Di Keep</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-control-label">Jenis Pair</label>
+                            <select id="pairType" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Jenis Pair -- </option>
+                                <option value="all">Semua</option>
+                                <option value="supplementall">Semua Suplemen</option>
+                                <option value="supplementmarket">Suplemen-Sentra Ekonomi</option>
+                                <option value="marketall">Semua Sentra Ekonomi</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -395,6 +462,19 @@
                                         <span>Keep Keduanya</span>
                                     </label>
                                 </div>
+                                <div class="col-12 col-md-auto">
+                                    <input class="btn-check" type="radio" name="duplicate-action" id="action-delete-both"
+                                        value="delete_both">
+                                    <label class="btn btn-outline-delete d-flex align-items-center justify-content-center"
+                                        for="action-delete-both"
+                                        style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-delete); color: var(--color-delete);">
+                                        <span class="radio-indicator me-2"
+                                            style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                                        </span>
+                                        <i class="fas fa-trash-alt me-2" style="font-size: 14px;"></i>
+                                        <span>Delete Keduanya</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
@@ -457,6 +537,20 @@
                 shadow: 'rgba(111, 66, 193, 0.4)',
                 class: 'info', // Using info for purple (closest match)
                 textClass: 'text-info'
+            },
+            delete: {
+                primary: '#dc2626', // Red
+                light: 'rgba(220, 38, 38, 0.1)',
+                shadow: 'rgba(220, 38, 38, 0.4)',
+                class: 'danger', // Bootstrap class
+                textClass: 'text-danger'
+            },
+            secondary: {
+                primary: '#6c757d', // Gray
+                light: 'rgba(108, 117, 125, 0.1)',
+                shadow: 'rgba(108, 117, 125, 0.4)',
+                class: 'secondary', // Bootstrap class
+                textClass: 'text-secondary'
             }
         };
 
@@ -467,6 +561,10 @@
             {
                 selector: '#status',
                 placeholder: 'Pilih Status'
+            },
+            {
+                selector: '#pairType',
+                placeholder: 'Pilih Jenis Pair'
             },
             {
                 selector: '#regency',
@@ -501,6 +599,9 @@
                 renderTable()
             },
             '#status': () => {
+                renderTable()
+            },
+            '#pairType': () => {
                 renderTable()
             },
             '#regency': () => {
@@ -660,7 +761,7 @@
             filterUrl = ''
             filterTypes = ['organization', 'status',
                 'regency', 'subdistrict',
-                'village', 'sls', 'keyword'
+                'village', 'sls', 'keyword', 'pairType'
             ];
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
@@ -803,9 +904,13 @@
                                 statusText = 'Kedua Usaha Di Keep';
                                 bgColor = COLOR_SCHEME.keepall.primary;
                                 break;
+                            case 'deleteall':
+                                statusText = 'Kedua Usaha Dihapus';
+                                bgColor = COLOR_SCHEME.delete.primary;
+                                break;
                             default:
                                 statusText = status || '-';
-                                bgColor = '#6c757d'; // Secondary gray
+                                bgColor = COLOR_SCHEME.secondary.primary;
                         }
 
                         badgeStyle = `background-color: ${bgColor}; color: white; font-size: 0.75rem;`;
@@ -1102,9 +1207,15 @@
                 });
             }, 100);
 
-            // Populate business detail cards
-            populateBusinessCard('center', centerBusiness);
-            populateBusinessCard('nearby', nearbyBusiness);
+            // Populate business detail cards with candidate data for comparison
+            populateBusinessCard('center', centerBusiness, {
+                candidate_name: rowData.center_business_name || '',
+                candidate_owner: rowData.center_business_owner || ''
+            });
+            populateBusinessCard('nearby', nearbyBusiness, {
+                candidate_name: rowData.nearby_business_name || '',
+                candidate_owner: rowData.nearby_business_owner || ''
+            });
             populateSimilarityCard(similarities);
 
             // Update current status display and set radio buttons
@@ -1129,6 +1240,9 @@
                 case 'keepall':
                     radioToSelect = document.getElementById('action-keep-both');
                     break;
+                case 'deleteall':
+                    radioToSelect = document.getElementById('action-delete-both');
+                    break;
                 default:
                     // For 'notconfirmed' or other statuses, don't pre-select anything
                     radioToSelect = null;
@@ -1143,7 +1257,7 @@
         }
 
         // Function to populate individual business card
-        function populateBusinessCard(type, business) {
+        function populateBusinessCard(type, business, candidateData = null) {
             // Check if business is deleted
             const isDeleted = business.deleted_at !== null;
 
@@ -1167,10 +1281,65 @@
                     minute: '2-digit'
                 }) : '-';
 
+            // Helper function to create warning icon with tooltip
+            const createWarningIcon = (currentValue, candidateValue, fieldName) => {
+                // Don't show warning if candidateData is not available
+                if (!candidateData) {
+                    return '';
+                }
+                
+                // Normalize values for comparison (treat null/undefined as empty string)
+                const normalizedCurrent = (currentValue || '').toString().trim();
+                const normalizedCandidate = (candidateValue || '').toString().trim();
+                
+                // Don't show warning if values are the same
+                if (normalizedCurrent === normalizedCandidate) {
+                    return '';
+                }
+                
+                const tooltipId = `tooltip-${type}-${fieldName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                
+                // Get field display name
+                const fieldDisplayName = fieldName === 'name' ? 'Nama Usaha' : 'Pemilik';
+                
+                // Create appropriate tooltip message based on the change type
+                let tooltipMessage;
+                if (normalizedCandidate === '' && normalizedCurrent !== '') {
+                    tooltipMessage = `${fieldDisplayName} telah berubah: <br><strong>'${normalizedCurrent}'</strong><br>(sebelumnya kosong)`;
+                } else if (normalizedCandidate !== '' && normalizedCurrent === '') {
+                    tooltipMessage = `${fieldDisplayName} telah dihapus: <br><strong>'${normalizedCandidate}'</strong><br>(sekarang kosong)`;
+                } else {
+                    tooltipMessage = `${fieldDisplayName} telah berubah dari: <br><strong>'${normalizedCandidate}'</strong><br>menjadi: <br><strong>'${normalizedCurrent}'</strong>`;
+                }
+                
+                return ` <i class="fas fa-exclamation-triangle text-warning ms-1" 
+                           style="font-size: 0.8rem; cursor: help;" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top" 
+                           data-bs-html="true"
+                           data-bs-title="${tooltipMessage}"
+                           id="${tooltipId}"></i>`;
+            };
+
+            // Get current values and candidate values for comparison
+            // Don't use fallback '-' here for comparison, use actual values
+            const currentName = business.name || '';
+            const currentOwner = business.owner || '';
+            const candidateName = candidateData?.candidate_name || '';
+            const candidateOwner = candidateData?.candidate_owner || '';
+
+            // Create warning icons for changed values
+            const nameWarning = createWarningIcon(currentName, candidateName, 'name');
+            const ownerWarning = createWarningIcon(currentOwner, candidateOwner, 'owner');
+
+            // For display purposes, show '-' when empty
+            const displayName = currentName || '-';
+            const displayOwner = currentOwner || '-';
+
             const businessColor = type === 'center' ? COLOR_SCHEME.keep1.primary : COLOR_SCHEME.keep2.primary;
             const content = `
-                <h6 class="fw-bold mb-1" style="color: ${businessColor};">${business.name || '-'}</h6>
-                <p class="mb-1 small"><strong>Pemilik:</strong> ${business.owner || '-'}</p>
+                <h6 class="fw-bold mb-1" style="color: ${businessColor};">${displayName}${nameWarning}</h6>
+                <p class="mb-1 small"><strong>Pemilik:</strong> ${displayOwner}${ownerWarning}</p>
                 <p class="mb-1 small"><strong>Alamat:</strong> ${business.address || '-'}</p>
                 <p class="mb-1 small"><strong>Status:</strong> ${business.status || '-'}</p>
                 <p class="mb-1 small"><strong>Sektor:</strong> ${business.sector ? business.sector.substring(0, 50) + '...' : '-'}</p>
@@ -1185,6 +1354,14 @@
 
             // Update content
             document.getElementById(`${type}-business-content`).innerHTML = content;
+
+            // Initialize tooltips for the newly added warning icons
+            setTimeout(() => {
+                const tooltipElements = cardElement.querySelectorAll('[data-bs-toggle="tooltip"]');
+                tooltipElements.forEach(element => {
+                    new bootstrap.Tooltip(element);
+                });
+            }, 100);
 
             // Update header and styling based on deletion status
             if (isDeleted) {
@@ -1278,6 +1455,15 @@
 
         // Clean up map when modal is closed
         document.getElementById('duplicateModal').addEventListener('hidden.bs.modal', function() {
+            // Clean up any existing tooltips to prevent memory leaks
+            const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltipElements.forEach(element => {
+                const tooltip = bootstrap.Tooltip.getInstance(element);
+                if (tooltip) {
+                    tooltip.dispose();
+                }
+            });
+
             // Reset to loading state
             document.getElementById('map-loading').style.display = 'block';
             document.getElementById('content-container').style.display = 'none';
@@ -1345,9 +1531,13 @@
                     statusText = 'Kedua Usaha Di Keep';
                     textColor = COLOR_SCHEME.keepall.primary;
                     break;
+                case 'deleteall':
+                    statusText = 'Kedua Usaha Dihapus';
+                    textColor = COLOR_SCHEME.delete.primary;
+                    break;
                 default:
                     statusText = status || 'Tidak Diketahui';
-                    textColor = '#6c757d'; // Secondary gray
+                    textColor = COLOR_SCHEME.secondary.primary;
             }
 
             // Update status display (first line)
@@ -1357,7 +1547,7 @@
             if (lastConfirmedBy && status !== 'notconfirmed') {
                 const userName = lastConfirmedBy.firstname || 'Unknown';
                 const orgId = lastConfirmedBy.organization_id || '-';
-                confirmedByDisplay.innerHTML = `<small>Dikonfirmasi oleh: ${userName} (${orgId})</small>`;
+                confirmedByDisplay.innerHTML = `<small>Dikonfirmasi terakhir oleh: <span class="fw-bold">${userName} (${orgId})</span></small>`;
                 confirmedByDisplay.style.display = 'block';
             } else {
                 confirmedByDisplay.style.display = 'none';
@@ -1393,7 +1583,14 @@
                 htmlMessage = 'Kedua usaha akan tetap disimpan sebagai entitas terpisah. Apakah yakin?';
                 iconType = 'success';
                 confirmButtonColor = COLOR_SCHEME.keepall.primary;
-                confirmButtonText = '<i class="fas fa-check-circle me-1"></i>Yes, Keep Both!';
+                confirmButtonText = '<i class="fas fa-check-circle me-1"></i>Yes, Keep Keduanya!';
+            } else if (action === 'delete_both') {
+                // Delete both action - red theme with trash icon
+                title = 'Delete Keduanya';
+                htmlMessage = `<span style="color: ${COLOR_SCHEME.delete.primary}; font-weight: bold;">Kedua usaha akan dihapus permanen!</span> Tindakan ini tidak dapat dibatalkan. Apakah yakin?`;
+                iconType = 'warning';
+                confirmButtonColor = COLOR_SCHEME.delete.primary; // Red color
+                confirmButtonText = '<i class="fas fa-trash-alt me-1"></i>Yes, Delete Keduanya!';
             }
 
             Swal.fire({
@@ -1435,6 +1632,9 @@
                     break;
                 case 'keep_both':
                     status = 'keepall';
+                    break;
+                case 'delete_both':
+                    status = 'deleteall';
                     break;
                 default:
                     status = 'keepall';

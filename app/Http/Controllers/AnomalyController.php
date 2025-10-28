@@ -781,7 +781,10 @@ class AnomalyController extends Controller
                     'repaired_at' => now()
                 ]);
 
-            // Then delete the business record
+            // Then delete the business record and mark business is_locked = true
+            $business->is_locked = true;
+            $business->save();
+
             $business->deleteWithSource('anomaly');
 
             // Get fresh business data with relations after deletion to include deleted_at
