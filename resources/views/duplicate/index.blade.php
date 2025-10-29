@@ -1323,10 +1323,27 @@
 
             // Get current values and candidate values for comparison
             // Don't use fallback '-' here for comparison, use actual values
-            const currentName = business.name || '';
-            const currentOwner = business.owner || '';
+            let currentName = business.name || '';
+            let currentOwner = business.owner || '';
             const candidateName = candidateData?.candidate_name || '';
             const candidateOwner = candidateData?.candidate_owner || '';
+
+            // Special handling for market business - extract owner from business name
+            if (business.type && business.type.includes('MarketBusiness')) {
+                // Check if business name contains owner information in <> or () brackets
+                const angleMatch = currentName.match(/^(.*?)\s*<([^>]+)>\s*$/);
+                const parenMatch = currentName.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+                
+                if (angleMatch) {
+                    // Extract name and owner from angle brackets
+                    currentName = angleMatch[1].trim();
+                    currentOwner = angleMatch[2].trim() || currentOwner;
+                } else if (parenMatch) {
+                    // Extract name and owner from parentheses
+                    currentName = parenMatch[1].trim();
+                    currentOwner = parenMatch[2].trim() || currentOwner;
+                }
+            }
 
             // Create warning icons for changed values
             const nameWarning = createWarningIcon(currentName, candidateName, 'name');
@@ -1336,16 +1353,37 @@
             const displayName = currentName || '-';
             const displayOwner = currentOwner || '-';
 
+            // Format business description
+            const businessDescription = business.description || '-';
+
+            // Determine business type from the type key
+            let businessType = '';
+            if (business.type) {
+                if (business.type.includes('SupplementBusiness')) {
+                    businessType = 'Suplemen';
+                } else if (business.type.includes('MarketBusiness')) {
+                    businessType = 'Sentra Ekonomi';
+                } else {
+                    // Fallback: extract class name without namespace
+                    businessType = business.type.replace('App\\Models\\', '') || 'Tidak Diketahui';
+                }
+            } else {
+                // Fallback for cases where type is not available
+                businessType = 'Tidak Diketahui';
+            }
+
             const businessColor = type === 'center' ? COLOR_SCHEME.keep1.primary : COLOR_SCHEME.keep2.primary;
             const content = `
                 <h6 class="fw-bold mb-1" style="color: ${businessColor};">${displayName}${nameWarning}</h6>
                 <p class="mb-1 small"><strong>Pemilik:</strong> ${displayOwner}${ownerWarning}</p>
+                <p class="mb-1 small"><strong>Deskripsi:</strong> ${businessDescription}</p>
                 <p class="mb-1 small"><strong>Alamat:</strong> ${business.address || '-'}</p>
                 <p class="mb-1 small"><strong>Status:</strong> ${business.status || '-'}</p>
                 <p class="mb-1 small"><strong>Sektor:</strong> ${business.sector ? business.sector.substring(0, 50) + '...' : '-'}</p>
                 <p class="mb-1 small"><strong>Satker:</strong> ${orgInfo}</p>
                 <p class="mb-1 small"><strong>Petugas:</strong> ${userInfo}</p>
-                <p class="mb-0 small"><strong>Dibuat:</strong> ${createdAt}</p>
+                <p class="mb-0 small"><strong>Jenis Usaha:</strong> ${businessType}</p>
+                <p class="mb-1 small"><strong>Dibuat:</strong> ${createdAt}</p>
             `;
 
             // Get the card elements

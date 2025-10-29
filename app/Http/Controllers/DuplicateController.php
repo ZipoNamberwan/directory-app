@@ -229,6 +229,15 @@ class DuplicateController extends Controller
             }
         }
 
+        // Add business type information directly to the business objects
+        if ($centerBusiness) {
+            $centerBusiness->type = get_class($centerBusiness);
+        }
+
+        if ($nearbyBusiness) {
+            $nearbyBusiness->type = get_class($nearbyBusiness);
+        }
+
         return response()->json([
             "center_business" => $centerBusiness,
             "nearby_business" => $nearbyBusiness,
@@ -358,6 +367,15 @@ class DuplicateController extends Controller
                     $candidate->nearbyBusiness->organization = $candidate->nearbyBusiness->market->organization;
                 }
             }
+        }
+
+        // Add business type information directly to the business objects
+        if ($centerBusiness) {
+            $centerBusiness->type = get_class($centerBusiness);
+        }
+
+        if ($nearbyBusiness) {
+            $nearbyBusiness->type = get_class($nearbyBusiness);
         }
 
         return response()->json([

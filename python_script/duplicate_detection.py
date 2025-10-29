@@ -159,12 +159,12 @@ DB_CONFIG = {
 # Business tables configuration
 BUSINESS_TABLES = [
     {
-        'table_name': 'supplement_business',
-        'business_type': 'supplement'
-    },
-    {
         'table_name': 'market_business',
         'business_type': 'market'
+    },
+    {
+        'table_name': 'supplement_business',
+        'business_type': 'supplement'
     }
 ]
 
