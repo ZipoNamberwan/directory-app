@@ -1384,6 +1384,7 @@
                 <p class="mb-1 small"><strong>Petugas:</strong> ${userInfo}</p>
                 <p class="mb-1 small"><strong>Jenis Usaha:</strong> ${businessType}</p>
                 <p class="mb-1 small"><strong>Dibuat:</strong> ${createdAt}</p>
+                <div id="${type}-audit-info"></div>
             `;
 
             // Get the card elements
@@ -1411,12 +1412,67 @@
                 // Apply fading effect to the entire card
                 cardElement.style.opacity = '0.5';
                 cardElement.style.filter = 'grayscale(20%)';
+
+                // Fetch and display audit information for deleted business (including header update)
+                fetchAuditInfo(business.id, business.type, type, headerElement, businessLabel);
             } else {
                 // Reset to normal state
                 const businessLabel = type === 'center' ? 'Usaha A' : 'Usaha B';
                 headerElement.innerHTML = `<i class="fas fa-building"></i> ${businessLabel}`;
                 cardElement.style.opacity = '1';
                 cardElement.style.filter = 'none';
+            }
+        }
+
+        // Function to fetch audit information for deleted businesses
+        async function fetchAuditInfo(businessId, businessType, cardType, headerElement = null, businessLabel = null) {
+            try {
+                const response = await fetch(`/audit/${businessId}/${encodeURIComponent(businessType)}`);
+                if (response.ok) {
+                    const auditData = await response.json();
+                    
+                    // Find the most recent audit where column_name is 'deleted_at' and new_value is not null
+                    const deletionAudit = auditData.find(audit => 
+                        audit.column_name === 'deleted_at' && 
+                        audit.new_value !== null && 
+                        audit.new_value !== ''
+                    );
+                    
+                    if (deletionAudit) {
+                        // Update header with medium information if header element is provided
+                        if (headerElement && businessLabel) {
+                            // Map medium to display text
+                            let mediumDisplay = '';
+                            if (deletionAudit.medium) {
+                                switch (deletionAudit.medium.toLowerCase()) {
+                                    case 'mobile':
+                                        mediumDisplay = 'Kendedes Mobile';
+                                        break;
+                                    case 'duplicate':
+                                        mediumDisplay = 'Menu Duplikat';
+                                        break;
+                                    case 'anomaly':
+                                        mediumDisplay = 'Menu Anomali';
+                                        break;
+                                    case 'web':
+                                        mediumDisplay = 'Kendedes Web';
+                                        break;
+                                    default:
+                                        mediumDisplay = deletionAudit.medium;
+                                }
+                            }
+                            
+                            // Update header with medium info
+                            const mediumBadge = mediumDisplay ? 
+                                ` <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">melalui ${mediumDisplay}</span>` : '';
+                            
+                            headerElement.innerHTML =
+                                `<i class="fas fa-building"></i> ${businessLabel} <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">DELETED</span>${mediumBadge}`;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('Could not fetch audit information:', error);
             }
         }
 

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\AdminKabController;
 use App\Http\Controllers\AdminProvController;
 use App\Http\Controllers\AnomalyController;
+use App\Http\Controllers\AuditController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
@@ -61,6 +62,8 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::delete('/non-sls-directory/{id}', [HomeController::class, 'deleteNonSlsDirectory']);
 	Route::patch('/directory/edit/sls/{id}', [HomeController::class, 'updateSlsDirectory']);
 	Route::patch('/directory/edit/non-sls/{id}', [HomeController::class, 'updateNonSlsDirectory']);
+
+	// Route::get('/audit/{id}/{type}', [AuditController::class, 'getHistory']);
 
 	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');
@@ -162,10 +165,10 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::get('/suplemen/restore', [SupplementController::class, 'showRestorePage']);
 		Route::post('/suplemen/restore', [SupplementController::class, 'restoreBusinesses']);
 
-		Route::get('/duplikat', [DuplicateController::class, 'showDuplicatePage']);
-		Route::get('/duplikat/data', [DuplicateController::class, 'getDuplicateCandidateData']);
-		Route::get('/duplikat/pair/{candidateId}', [DuplicateController::class, 'getPairCandidateBusinessDetail']);
-		Route::post('/duplikat/pair/{candidateId}', [DuplicateController::class, 'updateDuplicateCandidateStatus']);
+		// Route::get('/duplikat', [DuplicateController::class, 'showDuplicatePage']);
+		// Route::get('/duplikat/data', [DuplicateController::class, 'getDuplicateCandidateData']);
+		// Route::get('/duplikat/pair/{candidateId}', [DuplicateController::class, 'getPairCandidateBusinessDetail']);
+		// Route::post('/duplikat/pair/{candidateId}', [DuplicateController::class, 'updateDuplicateCandidateStatus']);
 	});
 
 	Route::group(['middleware' => ['role:adminprov|adminkab|operator']], function () {

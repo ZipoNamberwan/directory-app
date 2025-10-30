@@ -9,7 +9,7 @@
 15 22 * * * /venv/bin/python /var/www/python_script/backup_cleanup.py
 
 # Backup script - run at 12:00 AM and 12:00 PM local time (GMT+7)
-0 17,5 * * * /var/www/docker/scripts/backup.sh >> /var/www/backup/cron.log 2>&1
+0 17 * * * /var/www/docker/scripts/backup.sh >> /var/www/backup/cron.log 2>&1
 
 # Repetitive anomaly repair checker (every 3 hours)
 0 */3 * * * /venv/bin/python /var/www/python_script/anomaly_repair_checker.py
