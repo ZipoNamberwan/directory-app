@@ -47,57 +47,65 @@ class DuplicateController extends Controller
         if ($user->hasRole('adminprov')) {
             // no additional filters
         } else if ($user->hasRole('adminkab')) {
-            $records->whereHas('centerBusiness', function ($query) use ($user) {
-                $query->where('organization_id', $user->organization_id);
-            })->orWhereHas('nearbyBusiness', function ($query) use ($user) {
-                $query->where('organization_id', $user->organization_id);
+            // Limit to candidate records that belong to the user's organization (direct columns)
+            $records->where(function ($q) use ($user) {
+                $q->where('center_business_organization_id', $user->organization_id)
+                  ->orWhere('nearby_business_organization_id', $user->organization_id);
             });
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
-            $records->whereHas('centerBusiness', function ($query) use ($user) {
-                $query->where('organization_id', $user->organization_id);
-            })->orWhereHas('nearbyBusiness', function ($query) use ($user) {
-                $query->where('organization_id', $user->organization_id);
+            // Limit to candidate records that belong to the user's organization (direct columns)
+            $records->where(function ($q) use ($user) {
+                $q->where('center_business_organization_id', $user->organization_id)
+                  ->orWhere('nearby_business_organization_id', $user->organization_id);
             });
         }
 
         // filters
         if ($request->organization) {
-            $records->whereHas('centerBusiness', function ($query) use ($request) {
-                $query->where('organization_id', $request->organization);
-            })->orWhereHas('nearbyBusiness', function ($query) use ($request) {
-                $query->where('organization_id', $request->organization);
+            // Use the denormalized organization ID columns on the duplicate_candidates table
+            $records->where(function ($q) use ($request) {
+                $q->where('center_business_organization_id', $request->organization)
+                  ->orWhere('nearby_business_organization_id', $request->organization);
             });
         }
 
         if ($request->regency && $request->regency != 'all') {
-            $records->whereHas('centerBusiness', function ($query) use ($request) {
-                $query->where('regency_id', $request->regency);
-            })->orWhereHas('nearbyBusiness', function ($query) use ($request) {
-                $query->where('regency_id', $request->regency);
+            $records->where(function ($query) use ($request) {
+                $query->whereHas('centerBusiness', function ($subQuery) use ($request) {
+                    $subQuery->where('regency_id', $request->regency);
+                })->orWhereHas('nearbyBusiness', function ($subQuery) use ($request) {
+                    $subQuery->where('regency_id', $request->regency);
+                });
             });
         }
 
         if ($request->subdistrict && $request->subdistrict != 'all') {
-            $records->whereHas('centerBusiness', function ($query) use ($request) {
-                $query->where('subdistrict_id', $request->subdistrict);
-            })->orWhereHas('nearbyBusiness', function ($query) use ($request) {
-                $query->where('subdistrict_id', $request->subdistrict);
+            $records->where(function ($query) use ($request) {
+                $query->whereHas('centerBusiness', function ($subQuery) use ($request) {
+                    $subQuery->where('subdistrict_id', $request->subdistrict);
+                })->orWhereHas('nearbyBusiness', function ($subQuery) use ($request) {
+                    $subQuery->where('subdistrict_id', $request->subdistrict);
+                });
             });
         }
 
         if ($request->village && $request->village != 'all') {
-            $records->whereHas('centerBusiness', function ($query) use ($request) {
-                $query->where('village_id', $request->village);
-            })->orWhereHas('nearbyBusiness', function ($query) use ($request) {
-                $query->where('village_id', $request->village);
+            $records->where(function ($query) use ($request) {
+                $query->whereHas('centerBusiness', function ($subQuery) use ($request) {
+                    $subQuery->where('village_id', $request->village);
+                })->orWhereHas('nearbyBusiness', function ($subQuery) use ($request) {
+                    $subQuery->where('village_id', $request->village);
+                });
             });
         }
 
         if ($request->sls && $request->sls != 'all') {
-            $records->whereHas('centerBusiness', function ($query) use ($request) {
-                $query->where('sls_id', $request->sls);
-            })->orWhereHas('nearbyBusiness', function ($query) use ($request) {
-                $query->where('sls_id', $request->sls);
+            $records->where(function ($query) use ($request) {
+                $query->whereHas('centerBusiness', function ($subQuery) use ($request) {
+                    $subQuery->where('sls_id', $request->sls);
+                })->orWhereHas('nearbyBusiness', function ($subQuery) use ($request) {
+                    $subQuery->where('sls_id', $request->sls);
+                });
             });
         }
 

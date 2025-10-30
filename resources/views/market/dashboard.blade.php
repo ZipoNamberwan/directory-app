@@ -111,7 +111,7 @@
                         <p class="text-sm mb-1">Report ini hanya diupdate sehari sekali, mengikuti jadwal matching penentuan
                             wilayah sls.</p>
                         <p class="text-sm mb-3"><strong>Report tidak realtime</strong>, report akan diupdate pada jam
-                            <strong>06.00 pagi</strong>
+                            <strong>03.30 pagi</strong>
                         </p>
                         <a href="/pasar-dashboard/download" class="btn btn-primary btn-lg ms-auto p-2 m-0" role="button">
                             <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
@@ -171,7 +171,7 @@
                         <p class="text-sm mb-1">Report ini menunjukkan jumlah tagging menurut satker atau yang berarti
                             tagging yang dilakukan oleh petugas suatu satker, terlepas di manapun petugas tsb tagging.</p>
                         <p class="text-sm mb-1"><strong>Report tidak realtime</strong>, report akan diupdate pada jam
-                            <strong>01.00 pagi</strong>
+                            <strong>03.30 pagi</strong>
                         </p>
                         <p class="text-sm">Kondisi tanggal: <strong>{{ $updateDate }} {{ $updateTime }}</strong></p>
                     </div>

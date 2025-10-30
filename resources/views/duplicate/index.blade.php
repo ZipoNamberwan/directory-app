@@ -1382,7 +1382,7 @@
                 <p class="mb-1 small"><strong>Sektor:</strong> ${business.sector ? business.sector.substring(0, 50) + '...' : '-'}</p>
                 <p class="mb-1 small"><strong>Satker:</strong> ${orgInfo}</p>
                 <p class="mb-1 small"><strong>Petugas:</strong> ${userInfo}</p>
-                <p class="mb-0 small"><strong>Jenis Usaha:</strong> ${businessType}</p>
+                <p class="mb-1 small"><strong>Jenis Usaha:</strong> ${businessType}</p>
                 <p class="mb-1 small"><strong>Dibuat:</strong> ${createdAt}</p>
             `;
 
@@ -1455,11 +1455,11 @@
                 <div class="d-flex justify-content-between align-items-center text-dark small">
                     <div class="text-center">
                         <strong class="text-${nameColor}">${nameScore}%</strong>
-                        <div class="text-muted" style="font-size: 0.7rem;">Name</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">Nama</div>
                     </div>
                     <div class="text-center">
                         <strong class="text-${ownerColor}">${ownerScore}%</strong>
-                        <div class="text-muted" style="font-size: 0.7rem;">Owner</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">Pemilik</div>
                     </div>
                     <div class="text-center">
                         <strong class="text-${overallColor}">${overallScore}%</strong>
@@ -1473,7 +1473,7 @@
                                     `${(similarities.distance_meters / 1000).toFixed(1)}km`) 
                                 : '-'}
                         </strong>
-                        <div class="text-muted" style="font-size: 0.7rem;">Distance</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">Jarak</div>
                     </div>
                 </div>
             `;

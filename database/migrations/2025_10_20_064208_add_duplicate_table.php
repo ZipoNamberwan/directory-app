@@ -38,6 +38,14 @@ return new class extends Migration
             $table->string('center_business_owner');
             $table->string('nearby_business_owner');
 
+            $table->string('center_business_organization_id');
+            $table->foreign('center_business_organization_id')->references('id')->on('organizations');
+            $table->index('center_business_organization_id');
+
+            $table->string('nearby_business_organization_id');
+            $table->foreign('nearby_business_organization_id')->references('id')->on('organizations');
+            $table->index('nearby_business_organization_id');
+
             $table->double('name_similarity');
             $table->double('owner_similarity');
             $table->double('confidence_score');

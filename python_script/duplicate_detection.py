@@ -101,6 +101,10 @@ SLS_ID_FILTER = None  # Example: "123456" to filter by specific SLS ID
 DEBUG_MODE = False
 DEBUG_LIMIT = 2000000  # Number of businesses to process in debug mode
 
+# Processing limit configuration
+LIMIT_PROCESSING = False  # Set to True to limit the number of businesses to process
+PROCESSING_LIMIT = 1500000  # Number of businesses to process when LIMIT_PROCESSING = True (set to None for no limit)
+
 # Duplicate detection settings
 SIMILARITY_THRESHOLD = 0.75  # Minimum similarity score (0.0 - 1.0) to consider as similar
 
@@ -185,6 +189,8 @@ class Business:
     business_type: str  # 'supplement' or 'market'
     address: str = ""
     project_id: str = ""  # Project ID for supplement businesses
+    organization_id: str = ""  # Organization ID for supplement businesses
+    market_id: str = ""  # Market ID for market businesses
     
     def __post_init__(self):
         # Normalize text fields
@@ -664,16 +670,54 @@ class DatabaseManager:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.connection = None
-    
+        self.market_organization_map = {}  # Cache for market_id -> organization_id mapping
+
     def connect(self):
         """Establish database connection"""
         try:
             print(f"🔗 Connecting to database: {self.config['database']}")
             self.connection = mysql.connector.connect(**self.config)
             print("✓ Database connected successfully")
+            # Load market organization mapping after connection
+            self._load_market_organization_mapping()
         except Exception as e:
             print(f"❌ Database connection failed: {e}")
             raise
+
+    def _load_market_organization_mapping(self):
+        """Load all markets and create market_id -> organization_id mapping for performance"""
+        try:
+            print("📊 Loading market organization mapping...")
+            cursor = self.connection.cursor()
+            cursor.execute("SELECT id, organization_id FROM markets")
+            results = cursor.fetchall()
+            
+            self.market_organization_map = {market_id: org_id for market_id, org_id in results}
+            cursor.close()
+            print(f"✓ Loaded {len(self.market_organization_map)} market organization mappings")
+        except Exception as e:
+            print(f"⚠️ Warning: Could not load market organization mapping: {e}")
+            self.market_organization_map = {}
+
+    def get_organization_id(self, business: 'Business') -> Optional[int]:
+        """Get organization_id for a business based on its type"""
+        if business.business_type == 'supplement':
+            # For supplement businesses, organization_id might be UUID or integer
+            if business.organization_id:
+                try:
+                    return int(business.organization_id)
+                except ValueError:
+                    # If it's a UUID string, we need to handle it differently
+                    # For now, return None as supplement should have integer organization_id
+                    print(f"⚠️ Warning: Supplement business has non-integer organization_id: {business.organization_id}")
+                    return None
+            return None
+        elif business.business_type == 'market':
+            # Get organization_id from market mapping using market_id (UUID string)
+            if business.market_id:
+                return self.market_organization_map.get(business.market_id)
+            return None
+        return None
     
     def disconnect(self):
         """Close database connection"""
@@ -708,7 +752,8 @@ class DatabaseManager:
                 latitude,
                 longitude,
                 user_id,
-                sls_id
+                sls_id,
+                market_id
             FROM {table_name}
             WHERE latitude IS NOT NULL 
                 AND longitude IS NOT NULL
@@ -730,7 +775,8 @@ class DatabaseManager:
                 longitude,
                 user_id,
                 sls_id,
-                project_id
+                project_id,
+                organization_id
             FROM {table_name}
             WHERE latitude IS NOT NULL 
                 AND longitude IS NOT NULL
@@ -772,7 +818,9 @@ class DatabaseManager:
                 sls_id=str(row['sls_id']) if row['sls_id'] else "",  # Ensure string type
                 business_type=business_type,
                 address=row['address'] or "",
-                project_id=str(row['project_id']) if business_type == 'supplement' and row.get('project_id') else ""
+                project_id=str(row['project_id']) if business_type == 'supplement' and row.get('project_id') else "",
+                organization_id=str(row['organization_id']) if business_type == 'supplement' and row.get('organization_id') else "",
+                market_id=str(row['market_id']) if business_type == 'market' and row.get('market_id') else ""
             )
             businesses.append(business)
         
@@ -803,16 +851,21 @@ class DatabaseManager:
             center_business_type = center_type_mapping.get(comparison.business_a.business_type, 'App\\Models\\SupplementBusiness')
             nearby_business_type = nearby_type_mapping.get(comparison.business_b.business_type, 'App\\Models\\SupplementBusiness')
             
+            # Get organization IDs for both businesses
+            center_organization_id = self.get_organization_id(comparison.business_a)
+            nearby_organization_id = self.get_organization_id(comparison.business_b)
+            
             query = """
             INSERT INTO duplicate_candidates (
                 id, center_business_id, center_business_type, nearby_business_id, nearby_business_type,
                 center_business_name, nearby_business_name, center_business_owner, nearby_business_owner,
+                center_business_organization_id, nearby_business_organization_id,
                 name_similarity, owner_similarity, confidence_score, distance_meters, duplicate_status,
                 center_business_latitude, center_business_longitude, 
                 nearby_business_latitude, nearby_business_longitude,
                 status, created_at, updated_at
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             )
             """
             
@@ -827,6 +880,8 @@ class DatabaseManager:
                 comparison.business_b.name or "",
                 comparison.business_a.owner or "",
                 comparison.business_b.owner or "",
+                center_organization_id,
+                nearby_organization_id,
                 comparison.name_similarity,
                 comparison.owner_similarity,
                 comparison.confidence_score,
@@ -905,6 +960,39 @@ class DatabaseManager:
             print(f"⚠️ Failed to update duplicate_scan_at for {business_type} business {business_id}: {e}")
             return False
     
+    def load_existing_duplicate_pairs(self) -> set:
+        """
+        Load existing duplicate candidate pairs from database to prevent duplicate entries
+        Returns:
+            set: Set of tuples representing already compared business pairs
+        """
+        try:
+            print("🔄 Loading existing duplicate candidate pairs...")
+            cursor = self.connection.cursor()
+            
+            # Get all existing duplicate candidate pairs
+            query = """
+            SELECT center_business_id, nearby_business_id 
+            FROM duplicate_candidates
+            """
+            cursor.execute(query)
+            results = cursor.fetchall()
+            cursor.close()
+            
+            # Create set of compared pairs (using sorted tuples to ensure consistency)
+            compared_pairs = set()
+            for center_id, nearby_id in results:
+                # Use sorted tuple to ensure (A,B) and (B,A) are treated as the same pair
+                pair_id = tuple(sorted([str(center_id), str(nearby_id)]))
+                compared_pairs.add(pair_id)
+            
+            print(f"✓ Loaded {len(compared_pairs)} existing duplicate candidate pairs")
+            return compared_pairs
+            
+        except Exception as e:
+            print(f"⚠️ Warning: Could not load existing duplicate pairs: {e}")
+            return set()
+
     def batch_update_duplicate_scan_at(self, business_updates: List[Tuple[str, str]]) -> Tuple[int, int]:
         """
         Batch update duplicate_scan_at for multiple businesses in smaller chunks
@@ -1057,6 +1145,14 @@ class NearbyBusinessFinder:
             
             print(f"✓ Unprocessed businesses to check: {len(unprocessed_businesses)}")
             
+            # Apply processing limit if enabled
+            original_count = len(unprocessed_businesses)
+            if LIMIT_PROCESSING and PROCESSING_LIMIT is not None and len(unprocessed_businesses) > PROCESSING_LIMIT:
+                unprocessed_businesses = unprocessed_businesses[:PROCESSING_LIMIT]
+                print(f"⚠️  Processing limit applied: {len(unprocessed_businesses):,} of {original_count:,} businesses will be processed")
+            elif LIMIT_PROCESSING:
+                print(f"✓ Processing limit enabled but not reached: processing all {len(unprocessed_businesses):,} businesses")
+            
             # Build spatial index with ALL businesses
             print("🏗️ Building spatial index with all businesses...")
             for business in all_businesses:
@@ -1071,8 +1167,12 @@ class NearbyBusinessFinder:
             businesses_with_matches = 0
             total_duplicates = {'strong': 0, 'weak': 0, 'not_duplicate': 0}
             unique_businesses_with_duplicates = set()  # Track unique businesses that have duplicates
-            compared_pairs = set()  # Track already compared business pairs to avoid duplicates
+            
+            # Load existing duplicate pairs to prevent duplicates across runs
+            compared_pairs = self.db_manager.load_existing_duplicate_pairs()
+            
             skipped_comparisons = 0  # Track how many duplicate comparisons were avoided
+            skipped_existing_pairs = 0  # Track how many pairs were skipped due to existing database records
             validation_data = []
             businesses_marked_processed = 0  # Track how many businesses successfully marked as processed
             businesses_failed_to_mark = 0  # Track how many businesses failed to mark as processed
@@ -1103,9 +1203,9 @@ class NearbyBusinessFinder:
                         # Use sorted tuple to ensure (A,B) and (B,A) are treated as the same pair
                         pair_id = tuple(sorted([business.id, nearby_business.id]))
                         
-                        # Skip if this pair has already been compared
+                        # Skip if this pair has already been compared (either in this run or previous runs)
                         if pair_id in compared_pairs:
-                            skipped_comparisons += 1
+                            skipped_existing_pairs += 1
                             continue
                         
                         # Mark this pair as compared
@@ -1283,16 +1383,20 @@ class NearbyBusinessFinder:
             print(f"  - Not duplicate pairs: {total_duplicates['not_duplicate']:,}")
             print(f"  - Total comparison pairs: {total_matches:,}")
             print(f"  - Skipped redundant comparisons: {skipped_comparisons:,}")
+            print(f"  - Skipped existing database pairs: {skipped_existing_pairs:,}")
             print(f"  - Unique businesses with duplicates: {len(unique_businesses_with_duplicates):,}")
             print(f"  - Business duplicate rate: {len(unique_businesses_with_duplicates) / len(unprocessed_businesses) * 100:.1f}% ({len(unique_businesses_with_duplicates)} of {len(unprocessed_businesses)} unprocessed businesses)" if len(unprocessed_businesses) > 0 else "  - Business duplicate rate: 0%")
             if total_matches > 0:
                 print(f"  - Pair duplicate rate: {(total_duplicates['strong'] + total_duplicates['weak']) / total_matches * 100:.1f}% (pairs that are duplicates)")
             
             print(f"\n⚡ Optimization:")
-            if skipped_comparisons > 0:
-                total_potential_comparisons = total_matches + skipped_comparisons
-                efficiency_gain = (skipped_comparisons / total_potential_comparisons) * 100
-                print(f"  - Efficiency gain: {efficiency_gain:.1f}% (avoided {skipped_comparisons:,} redundant comparisons)")
+            total_skipped = skipped_comparisons + skipped_existing_pairs
+            if total_skipped > 0:
+                total_potential_comparisons = total_matches + total_skipped
+                efficiency_gain = (total_skipped / total_potential_comparisons) * 100
+                print(f"  - Efficiency gain: {efficiency_gain:.1f}% (avoided {total_skipped:,} redundant/duplicate comparisons)")
+                print(f"  - Skipped within-run duplicates: {skipped_comparisons:,}")
+                print(f"  - Skipped cross-run duplicates: {skipped_existing_pairs:,}")
                 print(f"  - Total potential comparisons: {total_potential_comparisons:,}")
             else:
                 print(f"  - No redundant comparisons found (optimal case)")
@@ -1361,6 +1465,15 @@ def main():
             print(f"  🔄 Processing mode: ✅ Immediate batching (businesses marked as processed in batches of {BATCH_UPDATE_SIZE})")
         else:
             print(f"  🔄 Processing mode: 📦 End-of-process batching (all businesses marked as processed at the end)")
+        
+        # Display processing limit configuration
+        if LIMIT_PROCESSING:
+            if PROCESSING_LIMIT is not None:
+                print(f"  🔢 Processing limit: ✅ Limited to {PROCESSING_LIMIT:,} businesses")
+            else:
+                print(f"  🔢 Processing limit: ✅ Enabled but no limit set (will process all)")
+        else:
+            print(f"  🔢 Processing limit: ❌ Disabled (will process all unprocessed businesses)")
         
         # Display output configuration
         print(f"\n📁 Output Configuration:")
