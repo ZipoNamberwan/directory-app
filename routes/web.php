@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\AdminKabController;
 use App\Http\Controllers\AdminProvController;
 use App\Http\Controllers\AnomalyController;
+use App\Http\Controllers\AuditController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
@@ -61,6 +62,8 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::delete('/non-sls-directory/{id}', [HomeController::class, 'deleteNonSlsDirectory']);
 	Route::patch('/directory/edit/sls/{id}', [HomeController::class, 'updateSlsDirectory']);
 	Route::patch('/directory/edit/non-sls/{id}', [HomeController::class, 'updateNonSlsDirectory']);
+
+	// Route::get('/audit/{id}/{type}', [AuditController::class, 'getHistory']);
 
 	Route::group(['middleware' => ['role:pcl|adminkab|adminprov']], function () {
 		Route::get('/pemutakhiran-sls', [PclController::class, 'updatePage'])->name('updating-sls');

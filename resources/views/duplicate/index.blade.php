@@ -1323,10 +1323,27 @@
 
             // Get current values and candidate values for comparison
             // Don't use fallback '-' here for comparison, use actual values
-            const currentName = business.name || '';
-            const currentOwner = business.owner || '';
+            let currentName = business.name || '';
+            let currentOwner = business.owner || '';
             const candidateName = candidateData?.candidate_name || '';
             const candidateOwner = candidateData?.candidate_owner || '';
+
+            // Special handling for market business - extract owner from business name
+            if (business.type && business.type.includes('MarketBusiness')) {
+                // Check if business name contains owner information in <> or () brackets
+                const angleMatch = currentName.match(/^(.*?)\s*<([^>]+)>\s*$/);
+                const parenMatch = currentName.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+                
+                if (angleMatch) {
+                    // Extract name and owner from angle brackets
+                    currentName = angleMatch[1].trim();
+                    currentOwner = angleMatch[2].trim() || currentOwner;
+                } else if (parenMatch) {
+                    // Extract name and owner from parentheses
+                    currentName = parenMatch[1].trim();
+                    currentOwner = parenMatch[2].trim() || currentOwner;
+                }
+            }
 
             // Create warning icons for changed values
             const nameWarning = createWarningIcon(currentName, candidateName, 'name');
@@ -1336,16 +1353,38 @@
             const displayName = currentName || '-';
             const displayOwner = currentOwner || '-';
 
+            // Format business description
+            const businessDescription = business.description || '-';
+
+            // Determine business type from the type key
+            let businessType = '';
+            if (business.type) {
+                if (business.type.includes('SupplementBusiness')) {
+                    businessType = 'Suplemen';
+                } else if (business.type.includes('MarketBusiness')) {
+                    businessType = 'Sentra Ekonomi';
+                } else {
+                    // Fallback: extract class name without namespace
+                    businessType = business.type.replace('App\\Models\\', '') || 'Tidak Diketahui';
+                }
+            } else {
+                // Fallback for cases where type is not available
+                businessType = 'Tidak Diketahui';
+            }
+
             const businessColor = type === 'center' ? COLOR_SCHEME.keep1.primary : COLOR_SCHEME.keep2.primary;
             const content = `
                 <h6 class="fw-bold mb-1" style="color: ${businessColor};">${displayName}${nameWarning}</h6>
                 <p class="mb-1 small"><strong>Pemilik:</strong> ${displayOwner}${ownerWarning}</p>
+                <p class="mb-1 small"><strong>Deskripsi:</strong> ${businessDescription}</p>
                 <p class="mb-1 small"><strong>Alamat:</strong> ${business.address || '-'}</p>
                 <p class="mb-1 small"><strong>Status:</strong> ${business.status || '-'}</p>
                 <p class="mb-1 small"><strong>Sektor:</strong> ${business.sector ? business.sector.substring(0, 50) + '...' : '-'}</p>
                 <p class="mb-1 small"><strong>Satker:</strong> ${orgInfo}</p>
                 <p class="mb-1 small"><strong>Petugas:</strong> ${userInfo}</p>
-                <p class="mb-0 small"><strong>Dibuat:</strong> ${createdAt}</p>
+                <p class="mb-1 small"><strong>Jenis Usaha:</strong> ${businessType}</p>
+                <p class="mb-1 small"><strong>Dibuat:</strong> ${createdAt}</p>
+                <div id="${type}-audit-info"></div>
             `;
 
             // Get the card elements
@@ -1373,12 +1412,67 @@
                 // Apply fading effect to the entire card
                 cardElement.style.opacity = '0.5';
                 cardElement.style.filter = 'grayscale(20%)';
+
+                // Fetch and display audit information for deleted business (including header update)
+                fetchAuditInfo(business.id, business.type, type, headerElement, businessLabel);
             } else {
                 // Reset to normal state
                 const businessLabel = type === 'center' ? 'Usaha A' : 'Usaha B';
                 headerElement.innerHTML = `<i class="fas fa-building"></i> ${businessLabel}`;
                 cardElement.style.opacity = '1';
                 cardElement.style.filter = 'none';
+            }
+        }
+
+        // Function to fetch audit information for deleted businesses
+        async function fetchAuditInfo(businessId, businessType, cardType, headerElement = null, businessLabel = null) {
+            try {
+                const response = await fetch(`/audit/${businessId}/${encodeURIComponent(businessType)}`);
+                if (response.ok) {
+                    const auditData = await response.json();
+                    
+                    // Find the most recent audit where column_name is 'deleted_at' and new_value is not null
+                    const deletionAudit = auditData.find(audit => 
+                        audit.column_name === 'deleted_at' && 
+                        audit.new_value !== null && 
+                        audit.new_value !== ''
+                    );
+                    
+                    if (deletionAudit) {
+                        // Update header with medium information if header element is provided
+                        if (headerElement && businessLabel) {
+                            // Map medium to display text
+                            let mediumDisplay = '';
+                            if (deletionAudit.medium) {
+                                switch (deletionAudit.medium.toLowerCase()) {
+                                    case 'mobile':
+                                        mediumDisplay = 'Kendedes Mobile';
+                                        break;
+                                    case 'duplicate':
+                                        mediumDisplay = 'Menu Duplikat';
+                                        break;
+                                    case 'anomaly':
+                                        mediumDisplay = 'Menu Anomali';
+                                        break;
+                                    case 'web':
+                                        mediumDisplay = 'Kendedes Web';
+                                        break;
+                                    default:
+                                        mediumDisplay = deletionAudit.medium;
+                                }
+                            }
+                            
+                            // Update header with medium info
+                            const mediumBadge = mediumDisplay ? 
+                                ` <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">melalui ${mediumDisplay}</span>` : '';
+                            
+                            headerElement.innerHTML =
+                                `<i class="fas fa-building"></i> ${businessLabel} <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">DELETED</span>${mediumBadge}`;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('Could not fetch audit information:', error);
             }
         }
 
@@ -1417,11 +1511,11 @@
                 <div class="d-flex justify-content-between align-items-center text-dark small">
                     <div class="text-center">
                         <strong class="text-${nameColor}">${nameScore}%</strong>
-                        <div class="text-muted" style="font-size: 0.7rem;">Name</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">Nama</div>
                     </div>
                     <div class="text-center">
                         <strong class="text-${ownerColor}">${ownerScore}%</strong>
-                        <div class="text-muted" style="font-size: 0.7rem;">Owner</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">Pemilik</div>
                     </div>
                     <div class="text-center">
                         <strong class="text-${overallColor}">${overallScore}%</strong>
@@ -1435,7 +1529,7 @@
                                     `${(similarities.distance_meters / 1000).toFixed(1)}km`) 
                                 : '-'}
                         </strong>
-                        <div class="text-muted" style="font-size: 0.7rem;">Distance</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">Jarak</div>
                     </div>
                 </div>
             `;
