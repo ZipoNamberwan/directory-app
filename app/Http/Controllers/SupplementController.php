@@ -587,7 +587,7 @@ class SupplementController extends Controller
             }
 
             // Fast bulk restore
-            $restoredCount = $businesses->update(['deleted_at' => null]);
+            $restoredCount = $businesses->update(['deleted_at' => null, 'duplicate_scan_at' => null]);
 
             // Get unique project IDs from the restored businesses and restore them too
             $projectIds = $foundBusinesses->whereNotNull('project_id')

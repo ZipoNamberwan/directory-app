@@ -65,10 +65,9 @@ Install with: pip install mysql-connector-python python-dotenv geopy rtree shape
 """
 
 import os
-import sys
 import time
-import re
 import string
+import csv
 import difflib
 from typing import List, Dict, Tuple, Any, Optional
 from dataclasses import dataclass
@@ -450,6 +449,73 @@ class IgnoreNamesManager:
         # Check if normalized name is in the ignore list
         return normalized_name in ignore_names
 
+class ExclusionRulesManager:
+    """Manages exclusion rules for business name pairs that should never be marked as duplicates"""
+    
+    _exclusion_rules = None  # Class variable to cache loaded rules
+    
+    @classmethod
+    def load_exclusion_rules(cls) -> set:
+        """Load exclusion rules from CSV file, with caching"""
+        if cls._exclusion_rules is not None:
+            return cls._exclusion_rules
+        
+        cls._exclusion_rules = set()
+        exclusion_rules_file = os.path.join(os.path.dirname(__file__), 'exclusion_rules.csv')
+        
+        try:
+            with open(exclusion_rules_file, 'r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                
+                if reader.fieldnames is None or 'name1' not in reader.fieldnames:
+                    print(f"⚠️ Warning: exclusion_rules.csv has no proper headers (expected 'name1', 'name2')")
+                    return cls._exclusion_rules
+                
+                for row in reader:
+                    name1 = (row.get('name1') or '').strip().lower()
+                    name2 = (row.get('name2') or '').strip().lower()
+                    
+                    if name1 and name2:
+                        # Store pairs as sorted tuples to handle both directions (A,B) and (B,A)
+                        pair = tuple(sorted([name1, name2]))
+                        cls._exclusion_rules.add(pair)
+            
+            print(f"✓ Loaded {len(cls._exclusion_rules)} exclusion rule pairs")
+            
+        except FileNotFoundError:
+            print(f"ℹ️ exclusion_rules.csv not found. Skipping exclusion rules.")
+        except Exception as e:
+            print(f"⚠️ Error loading exclusion rules: {e}")
+        
+        return cls._exclusion_rules
+    
+    @classmethod
+    def is_excluded_pair(cls, name1: str, name2: str) -> bool:
+        """
+        Check if a business name pair matches an exclusion rule
+        
+        Args:
+            name1: First business name
+            name2: Second business name
+            
+        Returns:
+            bool: True if the pair matches an exclusion rule, False otherwise
+        """
+        if not name1 or not name2:
+            return False
+        
+        exclusion_rules = cls.load_exclusion_rules()
+        
+        # Normalize names for comparison
+        normalized_name1 = name1.strip().lower()
+        normalized_name2 = name2.strip().lower()
+        
+        # Create sorted pair to handle both directions
+        pair = tuple(sorted([normalized_name1, normalized_name2]))
+        
+        # Check if this pair is in the exclusion rules
+        return pair in exclusion_rules
+
 class TextUtils:
     """Text processing utilities for duplicate detection"""
     
@@ -563,6 +629,18 @@ class DuplicateDetector:
         # Check if either business should be ignored
         if IgnoreNamesManager.should_ignore_business(business_a.name) or \
            IgnoreNamesManager.should_ignore_business(business_b.name):
+            return DuplicateComparison(
+                business_a=business_a,
+                business_b=business_b,
+                name_similarity=0.0,
+                owner_similarity=0.0,
+                duplicate_type='not_duplicate',
+                confidence_score=0.0,
+                distance_meters=distance_meters
+            )
+        
+        # Check if this business pair is in the exclusion rules (e.g., kost putra vs kost putri)
+        if ExclusionRulesManager.is_excluded_pair(business_a.name, business_b.name):
             return DuplicateComparison(
                 business_a=business_a,
                 business_b=business_b,

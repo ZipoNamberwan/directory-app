@@ -74,15 +74,17 @@ DEBUG_LIMIT = 1000  # Limit number of candidates to process in debug mode
 
 # AI Prompt Configuration
 DEFAULT_SYSTEM_PROMPT = """Anda adalah seorang ahli analisis data yang berspesialisasi dalam mengidentifikasi duplikasi data usaha.
-Tugas Anda adalah mengevaluasi pasangan data usaha dan menentukan apakah mereka adalah duplikat berdasarkan nama dan pemilik usaha.
+Tugas Anda adalah mengevaluasi pasangan data usaha dan menentukan apakah mereka adalah duplikat berdasarkan NAMA USAHA SAJA.
 
+PENTING: Hanya fokus pada NAMA USAHA, ABAIKAN informasi pemilik usaha (owner) dalam analisis Anda.
+
+Kedua usaha berjarak ≤70 meter. Artinya jika nama dan konteks mirip sedikit saja, besar kemungkinan itu usaha yang sama.
 Untuk setiap pasangan, berikan nilai klasifikasi:
-- 1: BUKAN duplikat (usaha yang benar-benar berbeda)
-- 2: DUPLIKAT (usaha yang sama atau sangat mirip)
+- 1: BUKAN duplikat (nama usaha yang benar-benar berbeda)
+- 2: DUPLIKAT (nama usaha yang sama atau sangat mirip)
 
 Pertimbangkan faktor-faktor berikut:
 - Kemiripan nama (mempertimbangkan singkatan, kesalahan ketik, dan kata-kata umum usaha)
-- Kemiripan pemilik (orang yang sama mungkin memiliki beberapa usaha serupa)
 - Terkadang hanya disertakan nama perusahaannya saja misal Gojek, Tokopedia, dll.
 - Terkadang disertakan jenis usaha seperti "Toko", "Warung", "Klinik", dll.
 - Kamu harus memahami konteks dari nama usaha tersebut
@@ -220,6 +222,40 @@ class DatabaseManager:
             print(f"❌ Error loading candidates: {e}")
             raise
     
+    def get_exact_match_candidates(self, candidates: List[DuplicateCandidate]) -> Tuple[List[Dict], List[DuplicateCandidate]]:
+        """
+        Separate candidates with exact name matches from those needing AI analysis
+        
+        Args:
+            candidates: List of all DuplicateCandidate objects
+            
+        Returns:
+            Tuple of (exact_matches_recommendations, remaining_candidates)
+        """
+        exact_matches = []
+        remaining = []
+        
+        for candidate in candidates:
+            # Normalize names for comparison (case-insensitive)
+            center_name_normalized = (candidate.center_name or "").strip().lower()
+            nearby_name_normalized = (candidate.nearby_name or "").strip().lower()
+            
+            # Check if names are exactly identical
+            if center_name_normalized and nearby_name_normalized and center_name_normalized == nearby_name_normalized:
+                # Exact match - automatically mark as duplicate (value=2)
+                exact_matches.append({
+                    'duplicate_id': candidate.id,
+                    'value': 2  # Duplicate
+                })
+            else:
+                # Need AI analysis
+                remaining.append(candidate)
+        
+        if exact_matches:
+            print(f"  ⚡ Found {len(exact_matches)} candidates with exact name matches (auto-marked as duplicates)")
+        
+        return exact_matches, remaining
+    
     def update_ai_recommendation(self, candidate_id: str, ai_value: int) -> bool:
         """
         Update a single candidate's AI recommendation
@@ -326,20 +362,27 @@ class OpenAIManager:
     
     def create_user_prompt(self, candidates: List[DuplicateCandidate]) -> str:
         """
-        Create user prompt from batch of candidates
+        Create user prompt from batch of candidates (names only)
         
         Args:
             candidates: List of DuplicateCandidate objects
             
         Returns:
-            Formatted prompt string
+            Formatted prompt string with only business names
         """
-        candidates_data = [c.to_dict() for c in candidates]
+        # Create simplified data with only business names
+        candidates_data = []
+        for c in candidates:
+            candidates_data.append({
+                'duplicate_id': c.id,
+                'center_business_name': c.center_name,
+                'nearby_business_name': c.nearby_name
+            })
         
-        prompt = f"""Silakan evaluasi {len(candidates)} pasangan usaha berikut dan tentukan apakah mereka adalah duplikat.
+        prompt = f"""Silakan evaluasi {len(candidates)} pasangan usaha berikut dan tentukan apakah mereka adalah duplikat berdasarkan NAMA saja.
 Untuk setiap pasangan, berikan nilai klasifikasi: 1 (bukan duplikat) atau 2 (duplikat).
 
-Pasangan usaha yang akan dievaluasi:
+Pasangan usaha yang akan dievaluasi (HANYA NAMA):
 {json.dumps(candidates_data, indent=2, ensure_ascii=False)}
 
 Ingat untuk mengembalikan HANYA array JSON dengan struktur ini:
@@ -472,6 +515,7 @@ class AIRecommendationGenerator:
             'processed': 0,
             'successful': 0,
             'failed': 0,
+            'exact_matches': 0,
             'batches': 0,
             'api_calls': 0,
             'duration': 0
@@ -484,6 +528,7 @@ class AIRecommendationGenerator:
             print(f"  - OpenAI Model: {self.openai_manager.model}")
             print(f"  - Batch size: {self.batch_size}")
             print(f"  - Max retries: {MAX_RETRIES}")
+            print(f"  - Analysis mode: NAME ONLY (ignoring owner)")
             if DEBUG_MODE:
                 print(f"  - Debug mode: ON (limit: {DEBUG_LIMIT})")
             print("-" * 70)
@@ -502,14 +547,46 @@ class AIRecommendationGenerator:
             stats['total_candidates'] = len(candidates)
             print(f"✓ Found {len(candidates)} candidates to process")
             
-            # Process in batches
-            print(f"\n🔄 Processing candidates in batches of {self.batch_size}...")
+            # Separate exact matches from candidates needing AI analysis
+            print(f"\n🔍 Checking for exact name matches...")
+            exact_match_recommendations, remaining_candidates = self.db_manager.get_exact_match_candidates(candidates)
             
-            for i in range(0, len(candidates), self.batch_size):
-                batch_num = (i // self.batch_size) + 1
-                batch = candidates[i:i + self.batch_size]
+            # Process exact matches
+            if exact_match_recommendations:
+                print(f"  💾 Saving {len(exact_match_recommendations)} exact match recommendations to database...")
+                successful, failed = self.db_manager.batch_update_ai_recommendations(exact_match_recommendations)
+                stats['exact_matches'] = successful
+                stats['successful'] += successful
+                stats['failed'] += failed
+                print(f"  ✓ Exact matches saved: {successful} successful, {failed} failed")
+            
+            # Process remaining candidates with AI if any
+            if not remaining_candidates:
+                print("\n✅ All candidates were exact matches!")
+                end_time = time.time()
+                stats['duration'] = end_time - start_time
                 
-                print(f"\n📦 Batch {batch_num}/{(len(candidates) + self.batch_size - 1) // self.batch_size}")
+                print("\n" + "=" * 70)
+                print("✅ AI Recommendation Generation Complete")
+                print("=" * 70)
+                print(f"� Final Statistics:")
+                print(f"  - Total candidates: {stats['total_candidates']:,}")
+                print(f"  - Exact matches (auto-detected): {stats['exact_matches']:,}")
+                print(f"  - Successfully processed: {stats['successful']:,}")
+                print(f"  - Failed: {stats['failed']:,}")
+                print(f"  - Duration: {stats['duration']:.1f}s" if stats['duration'] > 0 else "  - Duration: 0s")
+                print(f"  - Success rate: {(stats['successful']/stats['total_candidates']*100):.1f}%" if stats['total_candidates'] > 0 else "  - Success rate: 0%")
+                
+                return stats
+            
+            print(f"\n�🔄 Processing remaining {len(remaining_candidates)} candidates with AI in batches of {self.batch_size}...")
+            
+            # Process remaining candidates in batches
+            for i in range(0, len(remaining_candidates), self.batch_size):
+                batch_num = (i // self.batch_size) + 1
+                batch = remaining_candidates[i:i + self.batch_size]
+                
+                print(f"\n📦 Batch {batch_num}/{(len(remaining_candidates) + self.batch_size - 1) // self.batch_size}")
                 print(f"  Processing {len(batch)} candidates (IDs: {i+1}-{i+len(batch)})")
                 
                 # Get AI recommendations
@@ -532,8 +609,8 @@ class AIRecommendationGenerator:
                     stats['failed'] += len(batch)
                 
                 # Progress update
-                progress_pct = ((i + len(batch)) / len(candidates)) * 100
-                print(f"  📊 Overall progress: {progress_pct:.1f}% ({i + len(batch)}/{len(candidates)})")
+                progress_pct = ((i + len(batch)) / len(remaining_candidates)) * 100
+                print(f"  📊 Batch progress: {progress_pct:.1f}% ({i + len(batch)}/{len(remaining_candidates)})")
             
             # Final statistics
             end_time = time.time()
@@ -544,6 +621,8 @@ class AIRecommendationGenerator:
             print("=" * 70)
             print(f"📊 Final Statistics:")
             print(f"  - Total candidates: {stats['total_candidates']:,}")
+            print(f"  - Exact matches (auto-detected): {stats['exact_matches']:,}")
+            print(f"  - Processed via AI: {stats['processed']:,}")
             print(f"  - Successfully processed: {stats['successful']:,}")
             print(f"  - Failed: {stats['failed']:,}")
             print(f"  - Batches processed: {stats['batches']}")
