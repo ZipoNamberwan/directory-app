@@ -15,6 +15,8 @@ Usage:
 - Set USE_COMMON_WORDS_FILTERING = True to filter common words during comparison (default)
 - Set USE_COMMON_WORDS_FILTERING = False to use full text comparison without filtering
 - Customize common words in 'common_words.csv' file to improve comparison accuracy
+- Set USE_IGNORE_NAMES = True to exclude specific business names from duplicate checking
+- Add business names to 'ignore_business_names.csv' file (one name per row) to exclude them
 
 Features:
 - R-tree spatial indexing for O(log n) spatial queries instead of O(n²)
@@ -23,6 +25,7 @@ Features:
 - Text similarity analysis for duplicate detection
 - String normalization for better comparison accuracy
 - **Common words filtering** - ignores common business words (jual, toko, warung, etc.) during comparison
+- **Ignore names list** - excludes specific business names from duplicate checking entirely
 - Configurable similarity thresholds
 - Classification of duplicates (Strong, Weak, Not duplicate)
 
@@ -62,10 +65,9 @@ Install with: pip install mysql-connector-python python-dotenv geopy rtree shape
 """
 
 import os
-import sys
 import time
-import re
 import string
+import csv
 import difflib
 from typing import List, Dict, Tuple, Any, Optional
 from dataclasses import dataclass
@@ -111,6 +113,10 @@ SIMILARITY_THRESHOLD = 0.75  # Minimum similarity score (0.0 - 1.0) to consider 
 # Common words filtering configuration
 USE_COMMON_WORDS_FILTERING = True  # Set to False to disable common words filtering in text comparison
 
+# Ignore names configuration
+USE_IGNORE_NAMES = True  # Set to True to exclude specific business names from duplicate checking
+IGNORE_NAMES_FILE = 'ignore_business_names.csv'  # CSV file containing business names to exclude from duplicate checking
+
 # Duplicate detection rule configuration
 DUPLICATE_RULES = {
     # Rule 1: Name similarity >= TH AND Owner similarity >= TH
@@ -138,8 +144,9 @@ CALCULATE_PRECISE_DISTANCE = True  # Set to True to calculate and store precise 
 # Batch processing configuration
 BATCH_UPDATE_SIZE = 1000  # Number of businesses to update in each batch for duplicate_scan_at
 
-# Processing mode configuration
-UPDATE_DUPLICATE_SCAN_IMMEDIATELY = True  # Set to True to update businesses in batches during processing, False for single batch update at the end
+# duplicate_scan_at update configuration
+UPDATE_DUPLICATE_SCAN_AT = True  # Set to False to disable updating duplicate_scan_at entirely (businesses will remain unprocessed)
+UPDATE_DUPLICATE_SCAN_IMMEDIATELY = True  # Only used when UPDATE_DUPLICATE_SCAN_AT = True. Set to True to update in batches during processing, False for single batch update at the end
 
 # Output mode configuration - choose where to save results
 SAVE_RESULTS_TO_DATABASE = True  # Set to True to save results to duplicate_candidates table
@@ -149,6 +156,10 @@ SAVE_RESULTS_TO_FILE = False  # Set to True to save detailed results to CSV file
 OUTPUT_FILENAME = "business_duplicate_detection_results.csv"  # Constant filename (overwrites previous results)
 USE_TIMESTAMP_IN_FILENAME = False  # Set to True to append timestamp to filename
 INCLUDE_NOT_DUPLICATES_IN_OUTPUT = False  # Set to True to include "not_duplicate" results in CSV output
+
+# AI Recommendation configuration
+RUN_AI_RECOMMENDATION_AFTER = False  # Set to True to automatically run AI recommendation generation after duplicate detection
+AI_RECOMMENDATION_BATCH_SIZE = 50  # Batch size for AI recommendation processing
 
 # Database connection settings
 DB_CONFIG = {
@@ -372,6 +383,139 @@ class CommonWordsManager:
         # Return filtered text
         return ' '.join(filtered_words)
 
+class IgnoreNamesManager:
+    """Manages ignore names list from CSV file"""
+    
+    _ignore_names = None  # Class variable to cache loaded names
+    
+    @classmethod
+    def load_ignore_names(cls) -> set:
+        """Load ignore names from CSV file, with caching"""
+        if cls._ignore_names is not None:
+            return cls._ignore_names
+        
+        cls._ignore_names = set()
+        ignore_names_file = os.path.join(os.path.dirname(__file__), IGNORE_NAMES_FILE)
+        
+        try:
+            import csv
+            with open(ignore_names_file, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                next(reader, None)  # Skip header row if exists
+                for row in reader:
+                    if row:  # Skip empty rows
+                        # Each row might contain multiple names, or just one name per row
+                        for name in row:
+                            if name.strip():  # Skip empty cells
+                                # Store normalized names for comparison
+                                normalized_name = TextUtils.normalize_text(name.strip())
+                                if normalized_name:
+                                    cls._ignore_names.add(normalized_name)
+            
+            print(f"✓ Loaded {len(cls._ignore_names)} ignore names from {ignore_names_file}")
+        except FileNotFoundError:
+            print(f"⚠️ Ignore names file not found: {ignore_names_file}")
+            print("   No business names will be excluded from duplicate checking")
+            cls._ignore_names = set()
+        except Exception as e:
+            print(f"⚠️ Error loading ignore names: {e}")
+            print("   No business names will be excluded from duplicate checking")
+            cls._ignore_names = set()
+        
+        return cls._ignore_names
+    
+    @classmethod
+    def should_ignore_business(cls, business_name: str) -> bool:
+        """
+        Check if a business name should be ignored from duplicate checking
+        
+        Args:
+            business_name: Business name to check
+            
+        Returns:
+            True if the business should be ignored, False otherwise
+        """
+        if not USE_IGNORE_NAMES:
+            return False
+        
+        if not business_name:
+            return False
+        
+        ignore_names = cls.load_ignore_names()
+        
+        # Normalize the business name for comparison
+        normalized_name = TextUtils.normalize_text(business_name)
+        
+        # Check if normalized name is in the ignore list
+        return normalized_name in ignore_names
+
+class ExclusionRulesManager:
+    """Manages exclusion rules for business name pairs that should never be marked as duplicates"""
+    
+    _exclusion_rules = None  # Class variable to cache loaded rules
+    
+    @classmethod
+    def load_exclusion_rules(cls) -> set:
+        """Load exclusion rules from CSV file, with caching"""
+        if cls._exclusion_rules is not None:
+            return cls._exclusion_rules
+        
+        cls._exclusion_rules = set()
+        exclusion_rules_file = os.path.join(os.path.dirname(__file__), 'exclusion_rules.csv')
+        
+        try:
+            with open(exclusion_rules_file, 'r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                
+                if reader.fieldnames is None or 'name1' not in reader.fieldnames:
+                    print(f"⚠️ Warning: exclusion_rules.csv has no proper headers (expected 'name1', 'name2')")
+                    return cls._exclusion_rules
+                
+                for row in reader:
+                    name1 = (row.get('name1') or '').strip().lower()
+                    name2 = (row.get('name2') or '').strip().lower()
+                    
+                    if name1 and name2:
+                        # Store pairs as sorted tuples to handle both directions (A,B) and (B,A)
+                        pair = tuple(sorted([name1, name2]))
+                        cls._exclusion_rules.add(pair)
+            
+            print(f"✓ Loaded {len(cls._exclusion_rules)} exclusion rule pairs")
+            
+        except FileNotFoundError:
+            print(f"ℹ️ exclusion_rules.csv not found. Skipping exclusion rules.")
+        except Exception as e:
+            print(f"⚠️ Error loading exclusion rules: {e}")
+        
+        return cls._exclusion_rules
+    
+    @classmethod
+    def is_excluded_pair(cls, name1: str, name2: str) -> bool:
+        """
+        Check if a business name pair matches an exclusion rule
+        
+        Args:
+            name1: First business name
+            name2: Second business name
+            
+        Returns:
+            bool: True if the pair matches an exclusion rule, False otherwise
+        """
+        if not name1 or not name2:
+            return False
+        
+        exclusion_rules = cls.load_exclusion_rules()
+        
+        # Normalize names for comparison
+        normalized_name1 = name1.strip().lower()
+        normalized_name2 = name2.strip().lower()
+        
+        # Create sorted pair to handle both directions
+        pair = tuple(sorted([normalized_name1, normalized_name2]))
+        
+        # Check if this pair is in the exclusion rules
+        return pair in exclusion_rules
+
 class TextUtils:
     """Text processing utilities for duplicate detection"""
     
@@ -469,15 +613,43 @@ class DuplicateDetector:
     def compare_businesses(self, business_a: Business, business_b: Business, 
                           distance_meters: Optional[float] = None) -> DuplicateComparison:
         """
-        Compare two businesses and determine if they are duplicates using the new algorithm:
+        Compare two businesses and determine if they are duplicates using configurable rules:
         
-        New Algorithm Rules:
-        1. If name and owner have similarity higher than threshold → strong_duplicate
-        2. If name is high similarity but owner is low similarity → not_duplicate
-        3. If name is low similarity but owner is high similarity → not_duplicate
-        4. If name is high similarity but owner is empty → advanced step (common words removal)
-        5. If name is low similarity but owner is empty → not_duplicate
+        Algorithm Rules (configurable via DUPLICATE_RULES):
+        1. If name and owner have similarity higher than threshold → Use 'both_high_similarity' rule
+        2. If name is high similarity but owner is low similarity → Use 'name_high_owner_low' rule
+        3. If name is low similarity but owner is high similarity → Use 'name_low_owner_high' rule
+        4. If name is high similarity and one owner is empty → Use 'name_high_one_owner_empty' rule
+        5. If name is high similarity and both owners are empty → Use 'both_owners_empty_name_high' rule
+        6. All other cases → Use 'default' rule
+        
+        Note: If either business name is in the ignore list, returns 'not_duplicate' immediately
         """
+        
+        # Check if either business should be ignored
+        if IgnoreNamesManager.should_ignore_business(business_a.name) or \
+           IgnoreNamesManager.should_ignore_business(business_b.name):
+            return DuplicateComparison(
+                business_a=business_a,
+                business_b=business_b,
+                name_similarity=0.0,
+                owner_similarity=0.0,
+                duplicate_type='not_duplicate',
+                confidence_score=0.0,
+                distance_meters=distance_meters
+            )
+        
+        # Check if this business pair is in the exclusion rules (e.g., kost putra vs kost putri)
+        if ExclusionRulesManager.is_excluded_pair(business_a.name, business_b.name):
+            return DuplicateComparison(
+                business_a=business_a,
+                business_b=business_b,
+                name_similarity=0.0,
+                owner_similarity=0.0,
+                duplicate_type='not_duplicate',
+                confidence_score=0.0,
+                distance_meters=distance_meters
+            )
         
         # Calculate initial similarities (without common words filtering for first pass)
         name_similarity = TextUtils.calculate_similarity_without_filtering(business_a.name, business_b.name)
@@ -486,42 +658,47 @@ class DuplicateDetector:
         # Check if owners are empty
         owner_a_empty = TextUtils.is_empty_or_whitespace(business_a.owner)
         owner_b_empty = TextUtils.is_empty_or_whitespace(business_b.owner)
-        any_owner_empty = owner_a_empty or owner_b_empty
+        both_owners_empty = owner_a_empty and owner_b_empty
+        one_owner_empty = (owner_a_empty or owner_b_empty) and not both_owners_empty
         
-        # Apply new algorithm rules
-        duplicate_type = 'not_duplicate'
+        # Apply configurable rules from DUPLICATE_RULES
+        duplicate_type = DUPLICATE_RULES['default']
         confidence_score = 0.0
         
         if name_similarity >= self.similarity_threshold:
-            if any_owner_empty:
+            if both_owners_empty or one_owner_empty:
                 # Rule 4: Name is high similarity but owner is empty → advanced step
                 # Use common words filtering for advanced comparison
                 advanced_name_similarity = TextUtils.calculate_similarity_with_filtering(business_a.name, business_b.name)
                 
                 if advanced_name_similarity >= self.similarity_threshold:
-                    duplicate_type = 'strong_duplicate'
+                    # Still high similarity after filtering common words
+                    if both_owners_empty:
+                        duplicate_type = DUPLICATE_RULES['both_owners_empty_name_high']
+                    else:
+                        duplicate_type = DUPLICATE_RULES['name_high_one_owner_empty']
                     confidence_score = advanced_name_similarity
                 else:
-                    duplicate_type = 'not_duplicate'
+                    # Similarity dropped below threshold after filtering
+                    duplicate_type = DUPLICATE_RULES['default']
                     confidence_score = advanced_name_similarity * 0.5
             elif owner_similarity >= self.similarity_threshold:
-                # Rule 1: Name and owner both have high similarity → strong_duplicate
-                duplicate_type = 'strong_duplicate'
+                # Rule 1: Name and owner both have high similarity
+                duplicate_type = DUPLICATE_RULES['both_high_similarity']
                 confidence_score = (name_similarity + owner_similarity) / 2
             else:
-                # Rule 2: Name is high similarity but owner is low similarity → not_duplicate
-                duplicate_type = 'not_duplicate'
-                confidence_score = max(name_similarity, owner_similarity) * 0.3
+                # Rule 2: Name is high similarity but owner is low similarity
+                duplicate_type = DUPLICATE_RULES['name_high_owner_low']
+                confidence_score = max(name_similarity, owner_similarity) * 0.5
         else:
-            if not any_owner_empty and owner_similarity >= self.similarity_threshold:
-                # Rule 3: Name is low similarity but owner is high similarity → not_duplicate
-                duplicate_type = 'not_duplicate'
-                confidence_score = max(name_similarity, owner_similarity) * 0.3
+            if not (owner_a_empty or owner_b_empty) and owner_similarity >= self.similarity_threshold:
+                # Rule 3: Name is low similarity but owner is high similarity (both owners not empty)
+                duplicate_type = DUPLICATE_RULES['name_low_owner_high']
+                confidence_score = max(name_similarity, owner_similarity) * 0.5
             else:
-                # Rule 5: Name is low similarity but owner is empty → not_duplicate
-                # Default: All other cases → not_duplicate
-                duplicate_type = 'not_duplicate'
-                confidence_score = max(name_similarity, owner_similarity) * 0.2
+                # Default: All other cases
+                duplicate_type = DUPLICATE_RULES['default']
+                confidence_score = max(name_similarity, owner_similarity) * 0.3
         
         return DuplicateComparison(
             business_a=business_a,
@@ -1287,27 +1464,29 @@ class NearbyBusinessFinder:
                         print(f"📍 [{progress_pct:.1f}%] {business.name} → 🔴 {strong_dupes} strong, 🟡 {weak_dupes} weak duplicates")
                 
                 # Update duplicate_scan_at based on configuration
-                if UPDATE_DUPLICATE_SCAN_IMMEDIATELY:
-                    # Collect business info for immediate batch update
-                    business_updates.append((business.id, business.business_type))
-                    
-                    # Process batch when it reaches BATCH_UPDATE_SIZE
-                    if len(business_updates) >= BATCH_UPDATE_SIZE:
-                        successful_updates, failed_updates = self.db_manager.batch_update_duplicate_scan_at(business_updates)
-                        businesses_marked_processed += successful_updates
-                        businesses_failed_to_mark += failed_updates
-                        if failed_updates > 0:
-                            print(f"⚠️ {failed_updates} businesses failed to update in batch")
-                        # Clear the batch
-                        business_updates = []
-                else:
-                    # Collect business info for batch update at the end
-                    business_updates.append((business.id, business.business_type))
+                if UPDATE_DUPLICATE_SCAN_AT:  # Only update if enabled
+                    if UPDATE_DUPLICATE_SCAN_IMMEDIATELY:
+                        # Collect business info for immediate batch update
+                        business_updates.append((business.id, business.business_type))
+                        
+                        # Process batch when it reaches BATCH_UPDATE_SIZE
+                        if len(business_updates) >= BATCH_UPDATE_SIZE:
+                            successful_updates, failed_updates = self.db_manager.batch_update_duplicate_scan_at(business_updates)
+                            businesses_marked_processed += successful_updates
+                            businesses_failed_to_mark += failed_updates
+                            if failed_updates > 0:
+                                print(f"⚠️ {failed_updates} businesses failed to update in batch")
+                            # Clear the batch
+                            business_updates = []
+                    else:
+                        # Collect business info for batch update at the end
+                        business_updates.append((business.id, business.business_type))
+                # If UPDATE_DUPLICATE_SCAN_AT is False, don't collect business updates at all
             
             search_end_time = time.time()
             
-            # Handle final batch update
-            if business_updates:  # If there are remaining businesses to update
+            # Handle final batch update (only if UPDATE_DUPLICATE_SCAN_AT is enabled)
+            if UPDATE_DUPLICATE_SCAN_AT and business_updates:  # If there are remaining businesses to update
                 if UPDATE_DUPLICATE_SCAN_IMMEDIATELY:
                     # Process final partial batch for immediate mode
                     print(f"\n📝 Processing final batch of {len(business_updates)} businesses...")
@@ -1325,10 +1504,15 @@ class NearbyBusinessFinder:
                     if failed_updates > 0:
                         print(f"⚠️  {failed_updates} businesses failed to update")
             
-            print(f"\n✅ Processing complete:")
-            print(f"  - Businesses successfully marked as processed: {businesses_marked_processed:,}")
-            if businesses_failed_to_mark > 0:
-                print(f"  - Businesses that failed to mark as processed: {businesses_failed_to_mark:,}")
+            # Display processing status
+            if UPDATE_DUPLICATE_SCAN_AT:
+                print(f"\n✅ Processing complete:")
+                print(f"  - Businesses successfully marked as processed: {businesses_marked_processed:,}")
+                if businesses_failed_to_mark > 0:
+                    print(f"  - Businesses that failed to mark as processed: {businesses_failed_to_mark:,}")
+            else:
+                print(f"\n✅ Processing complete:")
+                print(f"  - duplicate_scan_at updates disabled (businesses remain unprocessed)")
             
             # Save results to file if enabled
             if SAVE_RESULTS_TO_FILE and validation_data:
@@ -1432,6 +1616,17 @@ def main():
         else:
             print(f"📝 Common words filtering disabled (using full text comparison)")
         
+        # Display ignore names configuration
+        if USE_IGNORE_NAMES:
+            # Load ignore names (this will display loading info)
+            ignore_names = IgnoreNamesManager.load_ignore_names()
+            if len(ignore_names) > 0:
+                print(f"🚫 Ignore names enabled ({len(ignore_names)} business names will be excluded)")
+            else:
+                print(f"🚫 Ignore names enabled but no names loaded (all businesses will be checked)")
+        else:
+            print(f"🚫 Ignore names disabled (all businesses will be checked)")
+        
         if SLS_ID_FILTER:
             print(f"🎯 Filtering by SLS ID: {SLS_ID_FILTER}")
         
@@ -1461,10 +1656,13 @@ def main():
             print(f"  📏 Precise distance calculation: ❌ (faster, using spatial approximation)")
         
         # Display processing mode configuration
-        if UPDATE_DUPLICATE_SCAN_IMMEDIATELY:
-            print(f"  🔄 Processing mode: ✅ Immediate batching (businesses marked as processed in batches of {BATCH_UPDATE_SIZE})")
+        if UPDATE_DUPLICATE_SCAN_AT:
+            if UPDATE_DUPLICATE_SCAN_IMMEDIATELY:
+                print(f"  🔄 Processing mode: ✅ Immediate batching (businesses marked as processed in batches of {BATCH_UPDATE_SIZE})")
+            else:
+                print(f"  🔄 Processing mode: 📦 End-of-process batching (all businesses marked as processed at the end)")
         else:
-            print(f"  🔄 Processing mode: 📦 End-of-process batching (all businesses marked as processed at the end)")
+            print(f"  🔄 Processing mode: ❌ Updates disabled (businesses will NOT be marked as processed)")
         
         # Display processing limit configuration
         if LIMIT_PROCESSING:
@@ -1507,6 +1705,30 @@ def main():
         
         finder = NearbyBusinessFinder(RADIUS_METERS, SIMILARITY_THRESHOLD)
         finder.run_search()
+        
+        # Run AI recommendation generation if enabled
+        if RUN_AI_RECOMMENDATION_AFTER:
+            print("\n" + "=" * 70)
+            print("🤖 Running AI Recommendation Generation...")
+            print("=" * 70)
+            try:
+                from duplicate_detection_ai_recommendation import AIRecommendationGenerator
+                
+                ai_generator = AIRecommendationGenerator(
+                    batch_size=AI_RECOMMENDATION_BATCH_SIZE
+                )
+                ai_stats = ai_generator.run()
+                
+                if ai_stats['failed'] > 0:
+                    print(f"⚠️  AI recommendation completed with some failures")
+                
+            except ImportError as e:
+                print(f"❌ Could not import AI recommendation module: {e}")
+                print(f"   Make sure duplicate_detection_ai_recommendation.py exists")
+            except Exception as e:
+                print(f"❌ Error during AI recommendation generation: {e}")
+                import traceback
+                traceback.print_exc()
         
         return 0
     except Exception as e:

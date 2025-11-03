@@ -50,13 +50,13 @@ class DuplicateController extends Controller
             // Limit to candidate records that belong to the user's organization (direct columns)
             $records->where(function ($q) use ($user) {
                 $q->where('center_business_organization_id', $user->organization_id)
-                  ->orWhere('nearby_business_organization_id', $user->organization_id);
+                    ->orWhere('nearby_business_organization_id', $user->organization_id);
             });
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             // Limit to candidate records that belong to the user's organization (direct columns)
             $records->where(function ($q) use ($user) {
                 $q->where('center_business_organization_id', $user->organization_id)
-                  ->orWhere('nearby_business_organization_id', $user->organization_id);
+                    ->orWhere('nearby_business_organization_id', $user->organization_id);
             });
         }
 
@@ -65,7 +65,7 @@ class DuplicateController extends Controller
             // Use the denormalized organization ID columns on the duplicate_candidates table
             $records->where(function ($q) use ($request) {
                 $q->where('center_business_organization_id', $request->organization)
-                  ->orWhere('nearby_business_organization_id', $request->organization);
+                    ->orWhere('nearby_business_organization_id', $request->organization);
             });
         }
 
@@ -280,64 +280,64 @@ class DuplicateController extends Controller
             // Delete center business
             $centerBusiness = $candidate->centerBusiness;
             if ($centerBusiness && !$centerBusiness->trashed()) {
-                $centerBusiness->is_locked = true;
-                $centerBusiness->save();
                 $centerBusiness->deleteWithSource('duplicate');
             }
+            $centerBusiness->is_locked = true;
+            $centerBusiness->save();
 
             // Ensure nearby business is not deleted (restore if it was deleted)
             $nearbyBusiness = $candidate->nearbyBusiness;
             if ($nearbyBusiness && $nearbyBusiness->trashed()) {
                 $nearbyBusiness->deleted_at = null;
-                $nearbyBusiness->is_locked = true;
-                $nearbyBusiness->save();
             }
+            $nearbyBusiness->is_locked = true;
+            $nearbyBusiness->save();
         } else if ($request->status === 'keep1') {
             // Delete nearby business
             $nearbyBusiness = $candidate->nearbyBusiness;
             if ($nearbyBusiness && !$nearbyBusiness->trashed()) {
-                $nearbyBusiness->is_locked = true;
-                $nearbyBusiness->save();
                 $nearbyBusiness->deleteWithSource('duplicate');
             }
+            $nearbyBusiness->is_locked = true;
+            $nearbyBusiness->save();
 
             // Ensure center business is not deleted (restore if it was deleted)
             $centerBusiness = $candidate->centerBusiness;
             if ($centerBusiness && $centerBusiness->trashed()) {
                 $centerBusiness->deleted_at = null;
-                $centerBusiness->is_locked = true;
-                $centerBusiness->save();
             }
+            $centerBusiness->is_locked = true;
+            $centerBusiness->save();
         } else if ($request->status === 'keepall') {
             // Restore both businesses if they were deleted
             $centerBusiness = $candidate->centerBusiness;
             if ($centerBusiness && $centerBusiness->trashed()) {
                 $centerBusiness->deleted_at = null;
-                $centerBusiness->is_locked = true;
-                $centerBusiness->save();
             }
+            $centerBusiness->is_locked = true;
+            $centerBusiness->save();
 
             $nearbyBusiness = $candidate->nearbyBusiness;
             if ($nearbyBusiness && $nearbyBusiness->trashed()) {
                 $nearbyBusiness->deleted_at = null;
-                $nearbyBusiness->is_locked = true;
-                $nearbyBusiness->save();
             }
+            $nearbyBusiness->is_locked = true;
+            $nearbyBusiness->save();
         } else if ($request->status === 'deleteall') {
             // Delete both businesses
             $centerBusiness = $candidate->centerBusiness;
             if ($centerBusiness && !$centerBusiness->trashed()) {
-                $centerBusiness->is_locked = true;
-                $centerBusiness->save();
                 $centerBusiness->deleteWithSource('duplicate');
             }
+            $centerBusiness->is_locked = true;
+            $centerBusiness->save();
 
             $nearbyBusiness = $candidate->nearbyBusiness;
             if ($nearbyBusiness && !$nearbyBusiness->trashed()) {
-                $nearbyBusiness->is_locked = true;
-                $nearbyBusiness->save();
                 $nearbyBusiness->deleteWithSource('duplicate');
             }
+            $nearbyBusiness->is_locked = true;
+            $nearbyBusiness->save();
         }
 
         // Refresh the candidate data with updated relationships
