@@ -232,10 +232,11 @@
                     </a>
                 </li>
             @endhasrole --}}
-            @haspermission('edit_business')
+            @canany(['edit_business', 'can_access_duplicate'])
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Anomali</h6>
                 </li>
+                @haspermission('edit_business')
                 <li class="nav-item">
                     <a class="nav-link {{ str_contains(request()->url(), 'anomali') == true ? 'active' : '' }}"
                         href="/anomali">
@@ -246,6 +247,8 @@
                         <span class="nav-link-text ms-1">List Anomali</span>
                     </a>
                 </li>
+                @endhaspermission
+                @haspermission('can_access_duplicate')
                 <li class="nav-item">
                     <a class="nav-link {{ str_contains(request()->url(), 'duplikat') == true ? 'active' : '' }}"
                         href="/duplikat">
@@ -256,7 +259,8 @@
                         <span class="nav-link-text ms-1">Pemeriksaan Duplikasi</span>
                     </a>
                 </li>
-            @endhaspermission
+                @endhaspermission
+            @endcanany
             @hasrole('adminkab|adminprov')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Petugas</h6>

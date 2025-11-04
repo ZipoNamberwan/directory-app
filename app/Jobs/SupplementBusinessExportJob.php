@@ -53,6 +53,7 @@ class SupplementBusinessExportJob implements ShouldQueue
             $csv->insertOne([
                 'id',
                 'Nama_Usaha',
+                'Pemilik',
                 'Status_Bangunan',
                 'Alamat',
                 'Deskripsi',
@@ -90,6 +91,7 @@ class SupplementBusinessExportJob implements ShouldQueue
                         $csv->insertOne([
                             $row->id,
                             $this->cleanCsvValue($row->name),
+                            $this->cleanCsvValue($row->owner),
                             $this->cleanCsvValue($row->status),
                             $this->cleanCsvValue($row->address),
                             $this->cleanCsvValue($row->description),

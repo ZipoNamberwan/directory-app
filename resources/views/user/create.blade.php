@@ -29,216 +29,258 @@
                         @method('POST')
                     @endif
 
-                    <div class="row">
-                        <div class="col-md-6 mt-3">
-                            <label class="form-control-label" for="firstname">Nama <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" name="firstname"
-                                class="form-control @error('firstname') is-invalid @enderror"
-                                value="{{ @old('firstname', $user != null ? $user->firstname : '') }}" id="firstname"
-                                placeholder="Nama Lengkap">
-                            @error('firstname')
-                                <div class="error-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
+                    <div class="card mt-3 border border-secondary">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Informasi Umum
+                            </h6>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mt-3">
-                            <label class="form-control-label" for="email">Email <span
-                                    class="text-danger">*</span></label>
-                            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                                placeholder="Email" value="{{ @old('email', $user != null ? $user->email : '') }}"
-                                autocomplete="off">
-                            @error('email')
-                                <div class="error-feedback">
-                                    {{ $message }}
+                        <div class="card-body pt-0">
+                            <div class="row">
+                                <div class="col-md-6 mt-3">
+                                    <label class="form-control-label" for="firstname">Nama <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" name="firstname"
+                                        class="form-control @error('firstname') is-invalid @enderror"
+                                        value="{{ @old('firstname', $user != null ? $user->firstname : '') }}"
+                                        id="firstname" placeholder="Nama Lengkap">
+                                    @error('firstname')
+                                        <div class="error-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                 </div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mt-3">
-                            <label class="form-control-label" for="pml">Role <span class="text-danger">*</span></label>
-                            <div class="d-flex flex-column gap-2">
-                                @hasrole('adminprov')
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mt-3">
+                                    <label class="form-control-label" for="email">Email <span
+                                            class="text-danger">*</span></label>
+                                    <input type="email" name="email"
+                                        class="form-control @error('email') is-invalid @enderror" placeholder="Email"
+                                        value="{{ @old('email', $user != null ? $user->email : '') }}" autocomplete="off">
+                                    @error('email')
+                                        <div class="error-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mt-3">
+                                    <label class="form-control-label" for="pml">Role <span
+                                            class="text-danger">*</span></label>
+                                    <div class="d-flex flex-column gap-2">
+                                        @hasrole('adminprov')
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" value="adminprov" name="role"
+                                                    id="customRadio4"
+                                                    {{ old('role', $user != null ? $user->hasRole('adminprov') : '') == 'adminprov' ? 'checked' : '' }}>
+                                                <label class="custom-control-label" for="customRadio4">Admin Prov</label>
+                                            </div>
+                                        @endhasrole
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" value="adminkab" name="role"
+                                                id="customRadio1"
+                                                {{ old('role', $user != null ? $user->hasRole('adminkab') : '') == 'adminkab' ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="customRadio1">Admin Kab</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" value="operator" name="role"
+                                                id="customRadio2"
+                                                {{ old('role', $user != null ? $user->hasRole('operator') : '') == 'operator' ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="customRadio2">Operator/Organik</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" value="pml" name="role"
+                                                id="customRadio5"
+                                                {{ old('role', $user != null ? $user->hasRole('pml') : '') == 'pml' ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="customRadio5">PML</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" value="pcl" name="role"
+                                                id="customRadio3"
+                                                {{ old('role', $user != null ? $user->hasRole('pcl') : '') == 'pcl' ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="customRadio3">PCL</label>
+                                        </div>
+                                    </div>
+                                    @error('role')
+                                        <div class="error-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mt-3">
+                                    <label class="form-control-label" for="address">Jenis Akun</label>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" value="adminprov" name="role"
-                                            id="customRadio4"
-                                            {{ old('role', $user != null ? $user->hasRole('adminprov') : '') == 'adminprov' ? 'checked' : '' }}>
-                                        <label class="custom-control-label" for="customRadio4">Admin Prov</label>
+                                        <input class="form-check-input"
+                                            @if ($user != null) @if ($user->is_kendedes_user) checked @endif
+                                            @endif type="checkbox" value="kendedes"
+                                        id="kendedesCheckbox"
+                                        name="type[]">
+                                        <label class="form-check-label" for="kendedesCheckbox">
+                                            Ken Dedes Mobile
+                                        </label>
                                     </div>
-                                @endhasrole
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" value="adminkab" name="role"
-                                        id="customRadio1"
-                                        {{ old('role', $user != null ? $user->hasRole('adminkab') : '') == 'adminkab' ? 'checked' : '' }}>
-                                    <label class="custom-control-label" for="customRadio1">Admin Kab</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" value="operator" name="role"
-                                        id="customRadio2"
-                                        {{ old('role', $user != null ? $user->hasRole('operator') : '') == 'operator' ? 'checked' : '' }}>
-                                    <label class="custom-control-label" for="customRadio2">Operator/Organik</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" value="pml" name="role"
-                                        id="customRadio5"
-                                        {{ old('role', $user != null ? $user->hasRole('pml') : '') == 'pml' ? 'checked' : '' }}>
-                                    <label class="custom-control-label" for="customRadio5">PML</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" value="pcl" name="role"
-                                        id="customRadio3"
-                                        {{ old('role', $user != null ? $user->hasRole('pcl') : '') == 'pcl' ? 'checked' : '' }}>
-                                    <label class="custom-control-label" for="customRadio3">PCL</label>
-                                </div>
-                            </div>
-                            @error('role')
-                                <div class="error-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 mt-3">
-                            <label class="form-control-label" for="address">Jenis Akun</label>
-                            <div class="form-check">
-                                <input class="form-check-input"
-                                    @if ($user != null) @if ($user->is_kendedes_user) checked @endif
-                                    @endif type="checkbox" value="kendedes" id="kendedesCheckbox"
-                                name="type[]">
-                                <label class="form-check-label" for="kendedesCheckbox">
-                                    Ken Dedes Mobile
-                                </label>
-                            </div>
 
-                            <div class="form-check">
-                                <input class="form-check-input"
-                                    @if ($user != null) @if ($user->is_kenarok_user) checked @endif
-                                    @endif type="checkbox" value="kenarok" id="kenarokCheckbox"
-                                name="type[]">
-                                <label class="form-check-label" for="kenarokCheckbox">
-                                    Ken Arok
-                                </label>
-                            </div>
-                            @error('type')
-                                <div class="error-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 mt-3">
-                            <label class="form-control-label d-flex align-items-center">
-                                <i class="fas fa-edit text-info me-2"></i>
-                                Apakah boleh mengubah usaha via Web?
-                            </label>
-                            <input type="hidden" name="can_edit_business" value="0">
-                            <div class="form-check form-switch">
-                                <input value="1" onchange="toggleLabelEditPermission()" class="form-check-input"
-                                    name="can_edit_business" type="checkbox" id="can_edit_business"
-                                    {{ old('can_edit_business', $user != null ? $user->hasPermissionTo('edit_business') : false) ? 'checked' : '' }}>
-                                <label id="switchlabeleditpermission" class="form-check-label"
-                                    for="can_edit_business">Tidak</label>
-                            </div>
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Memungkinkan pengguna untuk mengedit data usaha yang sudah ada
-                            </small>
-                        </div>
-                        <div class="col-md-4 mt-3">
-                            <label class="form-control-label d-flex align-items-center">
-                                <i class="fas fa-trash text-danger me-2"></i>
-                                Apakah boleh menghapus usaha via Web?
-                            </label>
-                            <input type="hidden" name="can_delete_business" value="0">
-                            <div class="form-check form-switch">
-                                <input value="1" onchange="toggleLabelDeletePermission()" class="form-check-input"
-                                    name="can_delete_business" type="checkbox" id="can_delete_business"
-                                    {{ old('can_delete_business', $user != null ? $user->hasPermissionTo('delete_business') : false) ? 'checked' : '' }}>
-                                <label id="switchlabeldeletepermission" class="form-check-label"
-                                    for="can_delete_business">Tidak</label>
-                            </div>
-                            <small class="text-muted">
-                                <i class="fas fa-exclamation-triangle text-warning me-1"></i>
-                                <strong>Hati-hati:</strong> Memungkinkan pengguna untuk menghapus data usaha secara permanen
-                            </small>
-                        </div>
-                    </div>
-                    @hasrole('adminprov')
-                        <div class="row">
-                            <div class="col-md-4 mt-3">
-                                <label class="form-control-label" for="address">Apakah Diijinkan Upload SW Maps?</label>
-                                <input type="hidden" name="is_allowed_swmaps" value="0">
-                                <div class="form-check form-switch">
-                                    <input value="1" onchange="toggleLabelSwmaps()" class="form-check-input"
-                                        name="is_allowed_swmaps" type="checkbox" id="is_allowed_swmaps"
-                                        {{ old('is_allowed_swmaps', ($user->is_allowed_swmaps ?? 0) == 1) ? 'checked' : '' }}>
-                                    <label id="switchlabelpermission" class="form-check-label"
-                                        for="is_allowed_swmaps">Tidak</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mt-3">
-                                <label class="form-control-label">Satker <span class="text-danger">*</span></label>
-                                <select style="width: 100%;" id="organization" name="organization" class="form-control"
-                                    data-toggle="select">
-                                    <option value="0" disabled selected> -- Pilih Satker -- </option>
-                                    @foreach ($organizations as $organization)
-                                        <option value="{{ $organization->id }}"
-                                            {{ old('organization', $user != null ? ($user->organization != null ? $user->organization->id : null) : null) == $organization->id ? 'selected' : '' }}>
-                                            [{{ $organization->short_code }}] {{ $organization->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('organization')
-                                    <div class="error-feedback">
-                                        {{ $message }}
+                                    <div class="form-check">
+                                        <input class="form-check-input"
+                                            @if ($user != null) @if ($user->is_kenarok_user) checked @endif
+                                            @endif type="checkbox" value="kenarok"
+                                        id="kenarokCheckbox"
+                                        name="type[]">
+                                        <label class="form-check-label" for="kenarokCheckbox">
+                                            Ken Arok
+                                        </label>
                                     </div>
-                                @enderror
-                            </div>
-                        </div>
-                    @endhasrole
-                    @if ($user != null)
-                        <div class="col-md-4 mt-3">
-                            <label class="form-control-label" for="change_password">Apakah Mau Ganti Password?</label>
-                            <input type="hidden" name="change_password" value="0">
-                            <div class="form-check form-switch">
-                                <input value="1" onchange="toggleChangePassword()" class="form-check-input"
-                                    name="change_password" type="checkbox" id="change_password"
-                                    {{ old('change_password', 0) == 1 ? 'checked' : '' }}>
-                                <label id="switchlabelpassword" class="form-check-label"
-                                    for="change_password">Tidak</label>
-                            </div>
-                        </div>
-                    @endif
-
-                    <div class="row">
-                        <div class="col-md-6 mt-3 mb-3">
-                            <label class="form-control-label" for="password">
-                                Password <span class="text-danger">*</span>
-                            </label>
-
-                            <div class="input-group">
-                                <input type="password" name="password"
-                                    class="form-control @error('password') is-invalid @enderror" id="password"
-                                    value="{{ old('password') }}" autocomplete="new-password" placeholder="Password"
-                                    {{-- Disable password input only when editing and checkbox is not checked --}} @if ($user != null && old('change_password', 0) != 1) disabled @endif>
-                                <span class="input-group-text bg-white">
-                                    <i class="fas fa-eye" id="togglePassword" style="cursor: pointer;"></i>
-                                </span>
-                            </div>
-
-                            @error('password')
-                                <div class="error-feedback">
-                                    {{ $message }}
+                                    @error('type')
+                                        <div class="error-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                 </div>
-                            @enderror
+                            </div>
+                            @hasrole('adminprov')
+                                <div class="row">
+                                    <div class="col-md-6 mt-3">
+                                        <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                                        <select style="width: 100%;" id="organization" name="organization"
+                                            class="form-control" data-toggle="select">
+                                            <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                            @foreach ($organizations as $organization)
+                                                <option value="{{ $organization->id }}"
+                                                    {{ old('organization', $user != null ? ($user->organization != null ? $user->organization->id : null) : null) == $organization->id ? 'selected' : '' }}>
+                                                    [{{ $organization->short_code }}] {{ $organization->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('organization')
+                                            <div class="error-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            @endhasrole
+                            @if ($user != null)
+                                <div class="col-md-4 mt-3">
+                                    <label class="form-control-label" for="change_password">Apakah Mau Ganti
+                                        Password?</label>
+                                    <input type="hidden" name="change_password" value="0">
+                                    <div class="form-check form-switch">
+                                        <input value="1" onchange="toggleChangePassword()" class="form-check-input"
+                                            name="change_password" type="checkbox" id="change_password"
+                                            {{ old('change_password', 0) == 1 ? 'checked' : '' }}>
+                                        <label id="switchlabelpassword" class="form-check-label"
+                                            for="change_password">Tidak</label>
+                                    </div>
+                                </div>
+                            @endif
+                            <div class="row">
+                                <div class="col-md-6 mt-3 mb-3">
+                                    <label class="form-control-label" for="password">
+                                        Password <span class="text-danger">*</span>
+                                    </label>
+
+                                    <div class="input-group">
+                                        <input type="password" name="password"
+                                            class="form-control @error('password') is-invalid @enderror" id="password"
+                                            value="{{ old('password') }}" autocomplete="new-password"
+                                            placeholder="Password" {{-- Disable password input only when editing and checkbox is not checked --}}
+                                            @if ($user != null && old('change_password', 0) != 1) disabled @endif>
+                                        <span class="input-group-text bg-white">
+                                            <i class="fas fa-eye" id="togglePassword" style="cursor: pointer;"></i>
+                                        </span>
+                                    </div>
+
+                                    @error('password')
+                                        <div class="error-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3 border border-secondary">
+                        <div class="card-header bg-light py-3">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user-lock me-2"></i>
+                                Pengaturan Permission
+                            </h6>
+                        </div>
+                        <div class="card-body pt-0">
+                            <div class="row">
+                                <div class="col-md-4 mt-3">
+                                    <label class="form-control-label d-flex align-items-center">
+                                        <i class="fas fa-edit text-info me-2"></i>
+                                        Apakah boleh mengubah usaha dan memperbaiki anomali via Web?
+                                    </label>
+                                    <input type="hidden" name="can_edit_business" value="0">
+                                    <div class="form-check form-switch">
+                                        <input value="1" onchange="toggleLabelEditPermission()"
+                                            class="form-check-input" name="can_edit_business" type="checkbox"
+                                            id="can_edit_business"
+                                            {{ old('can_edit_business', $user != null ? $user->hasPermissionTo('edit_business') : false) ? 'checked' : '' }}>
+                                        <label id="switchlabeleditpermission" class="form-check-label"
+                                            for="can_edit_business">Tidak</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mt-3">
+                                    <label class="form-control-label d-flex align-items-center">
+                                        <i class="fas fa-trash text-danger me-2"></i>
+                                        Apakah boleh menghapus usaha via Web?
+                                    </label>
+                                    <input type="hidden" name="can_delete_business" value="0">
+                                    <div class="form-check form-switch">
+                                        <input value="1" onchange="toggleLabelDeletePermission()"
+                                            class="form-check-input" name="can_delete_business" type="checkbox"
+                                            id="can_delete_business"
+                                            {{ old('can_delete_business', $user != null ? $user->hasPermissionTo('delete_business') : false) ? 'checked' : '' }}>
+                                        <label id="switchlabeldeletepermission" class="form-check-label"
+                                            for="can_delete_business">Tidak</label>
+                                    </div>
+                                </div>
+                            </div>
+                            @hasrole('adminprov')
+                                <div class="row">
+                                    <div class="col-md-4 mt-3">
+                                        <label class="form-control-label d-flex align-items-center">
+                                            <i class="fas fa-clone text-warning me-2"></i>
+                                            Apakah boleh mengakses menu Deteksi Duplikat?
+                                        </label>
+                                        <input type="hidden" name="can_access_duplicate" value="0">
+                                        <div class="form-check form-switch">
+                                            <input value="1" onchange="toggleLabelDuplicatePermission()"
+                                                class="form-check-input" name="can_access_duplicate" type="checkbox"
+                                                id="can_access_duplicate"
+                                                {{ old('can_access_duplicate', $user != null ? $user->hasPermissionTo('can_access_duplicate') : false) ? 'checked' : '' }}>
+                                            <label id="switchlabelduplicatepermission" class="form-check-label"
+                                                for="can_access_duplicate">Tidak</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endhasrole
+
+                            @hasrole('adminprov')
+                                <div class="row">
+                                    <div class="col-md-4 mt-3">
+                                        <label class="form-control-label" for="address">Apakah Diijinkan Upload SW
+                                            Maps?</label>
+                                        <input type="hidden" name="is_allowed_swmaps" value="0">
+                                        <div class="form-check form-switch">
+                                            <input value="1" onchange="toggleLabelSwmaps()" class="form-check-input"
+                                                name="is_allowed_swmaps" type="checkbox" id="is_allowed_swmaps"
+                                                {{ old('is_allowed_swmaps', ($user->is_allowed_swmaps ?? 0) == 1) ? 'checked' : '' }}>
+                                            <label id="switchlabelpermission" class="form-check-label"
+                                                for="is_allowed_swmaps">Tidak</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endhasrole
                         </div>
                     </div>
 
@@ -339,10 +381,22 @@
                 }
             }
 
+            function toggleLabelDuplicatePermission() {
+                const checkbox = document.getElementById('can_access_duplicate');
+                const label = document.getElementById('switchlabelduplicatepermission');
+
+                if (checkbox.checked) {
+                    label.textContent = 'Ya';
+                } else {
+                    label.textContent = 'Tidak';
+                }
+            }
+
             // Initialize labels on page load
             document.addEventListener('DOMContentLoaded', function() {
                 toggleLabelEditPermission();
                 toggleLabelDeletePermission();
+                toggleLabelDuplicatePermission();
             });
         </script>
     @endpush
