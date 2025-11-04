@@ -51,7 +51,7 @@ VALID_TABLES = ['supplement_business', 'market_business']
 # Valid columns (whitelist for SQL injection protection)
 VALID_COLUMNS = [
     'id', 'name', 'description', 'address', 'owner', 'sector', 
-    'regency_id', 'subdistrict_id', 'village_id', 'sls_id', 'market_id', 'user_id'
+    'regency_id', 'subdistrict_id', 'village_id', 'sls_id', 'market_id', 'user_id', 'deleted_at'
 ]
 
 # =====================================================================
@@ -142,7 +142,7 @@ class RepairDatabaseManager:
         return self.execute_query_to_dataframe(query, params if params else None)
     
     def get_business_current_values(self, table_name, business_ids, columns):
-        """Get current values for specific businesses and columns"""
+        """Get current values for specific businesses and columns (including soft-deleted ones)"""
         if not self.connection:
             raise Exception("No database connection")
         
@@ -160,7 +160,8 @@ class RepairDatabaseManager:
         
         # Validate inputs
         validated_table = validate_table_name(table_name)
-        validated_columns = validate_column_names(['id', 'user_id'] + columns)
+        # Always include deleted_at to check for soft-deleted records
+        validated_columns = validate_column_names(['id', 'user_id', 'deleted_at'] + columns)
         
         # Build column list
         column_list = ', '.join(validated_columns)
@@ -196,6 +197,33 @@ class RepairDatabaseManager:
             return updated_count > 0
         except Exception as e:
             print(f"Error updating anomaly repair {repair_id}: {e}")
+            self.connection.rollback()
+            return False
+    
+    def update_anomaly_repair_to_deleted(self, repair_id):
+        """Update anomaly repair status to 'deleted' when business is soft-deleted"""
+        if not self.connection:
+            raise Exception("No database connection")
+        
+        try:
+            cursor = self.connection.cursor()
+            now = get_jakarta_now()
+            
+            update_query = """
+            UPDATE anomaly_repairs 
+            SET status = 'deleted', updated_at = %s 
+            WHERE id = %s
+            """
+            
+            cursor.execute(update_query, (now, repair_id))
+            updated_count = cursor.rowcount
+            
+            self.connection.commit()
+            cursor.close()
+            
+            return updated_count > 0
+        except Exception as e:
+            print(f"Error updating anomaly repair {repair_id} to deleted: {e}")
             self.connection.rollback()
             return False
     
@@ -249,6 +277,7 @@ class AnomalyRepairChecker:
         
         # Group by business type and table for efficient querying
         fixed_count = 0
+        total_deleted_count = 0
         
         for business_type in anomaly_repairs['business_type'].unique():
             # Determine table name from business type
@@ -293,6 +322,7 @@ class AnomalyRepairChecker:
                 checked_count = 0
                 no_change_count = 0
                 still_anomalous_count = 0
+                deleted_count = 0
                 
                 # Check each repair
                 for _, repair in type_anomaly_repairs.iterrows():
@@ -304,14 +334,35 @@ class AnomalyRepairChecker:
                     # Find current value for this business
                     current_business = current_values[current_values['id'] == business_id]
                     if len(current_business) == 0:
-                        # Business not found (may be deleted), skip this repair
+                        # Business not found (may be hard deleted), skip this repair
                         continue
                     
                     try:
                         current_value = current_business.iloc[0][column_name]
                         user_id = current_business.iloc[0]['user_id'] if 'user_id' in current_business.columns else None
+                        deleted_at = current_business.iloc[0]['deleted_at'] if 'deleted_at' in current_business.columns else None
                     except (KeyError, IndexError) as e:
                         print(f"    WARNING: Error accessing data for business {business_id}: {e}")
+                        continue
+                    
+                    # Check if business is soft-deleted (use pd.notna for pandas null check)
+                    if pd.notna(deleted_at):
+                        print(f"    DEBUG: Business {business_id} ({column_name}):")
+                        print(f"      Status: DELETED (deleted_at: {deleted_at})")
+                        
+                        if self.dry_run:
+                            deleted_count += 1
+                            print(f"      📊 WOULD BE MARKED AS DELETED (dry run)")
+                        else:
+                            success = self.db_manager.update_anomaly_repair_to_deleted(repair_id)
+                            
+                            if success:
+                                deleted_count += 1
+                                print(f"      🗑️  MARKED AS DELETED")
+                            else:
+                                print(f"      ❌ Failed to update repair {repair_id}")
+                        
+                        print()  # Empty line for readability
                         continue
                     
                     # Compare old_value with current_value
@@ -360,16 +411,21 @@ class AnomalyRepairChecker:
                         no_change_count += 1
                 
                 action_text = "Would be fixed" if self.dry_run else "Fixed"
+                deleted_text = "Would be marked deleted" if self.dry_run else "Marked deleted"
                 print(f"    {column_name} Summary:")
                 print(f"      Total checked: {checked_count}")
+                print(f"      {deleted_text}: {deleted_count}")
                 print(f"      No change: {no_change_count}")
                 print(f"      Changed but still anomalous: {still_anomalous_count}")
                 print(f"      {action_text}: {column_fixed_count}")
                 print()
                 fixed_count += column_fixed_count
+                total_deleted_count += deleted_count
         
         summary_text = f"Total repairs that would be fixed: {fixed_count}" if self.dry_run else f"Total repairs marked as fixed: {fixed_count}"
+        deleted_summary_text = f"Total repairs that would be marked deleted: {total_deleted_count}" if self.dry_run else f"Total repairs marked as deleted: {total_deleted_count}"
         print(f"\n{summary_text}")
+        print(f"{deleted_summary_text}")
         return fixed_count
     
     def show_statistics(self):
@@ -404,7 +460,7 @@ class AnomalyRepairChecker:
             return
         
         try:
-            if show_stats and not self.dry_run:
+            if show_stats:
                 print("BEFORE REPAIR CHECK")
                 self.show_statistics()
             
@@ -414,7 +470,7 @@ class AnomalyRepairChecker:
             
             fixed_count = self.check_repairs_by_business_type(business_type, limit)
             
-            if show_stats and not self.dry_run:
+            if show_stats:
                 print("\n" + "=" * 60)
                 print("AFTER REPAIR CHECK")
                 self.show_statistics()

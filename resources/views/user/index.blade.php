@@ -115,13 +115,23 @@
                                 <option value="kenarok">Akun Ken Arok</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="row">
                         @hasrole('adminprov')
                         <div class="col-md-3">
-                            <label class="form-control-label">Tampikan Yang Diijinkan Upload SW Maps<span class="text-danger">*</span></label>
+                            <label class="form-control-label">Tampilkan Yang Diijinkan Upload SW Maps<span class="text-danger">*</span></label>
                             <div class="form-check form-switch">
                                 <input onchange="toggleSwmaps()" value="1" class="form-check-input" 
                                     type="checkbox" id="is_allowed_swmaps">
                                 <label id="switchlabel" class="form-check-label" for="is_allowed_swmaps">Tidak</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-control-label">Tampilkan Yang Bisa Mengakses Menu Duplikat<span class="text-danger">*</span></label>
+                            <div class="form-check form-switch">
+                                <input onchange="toggleDuplicate()" value="1" class="form-check-input" 
+                                    type="checkbox" id="is_allowed_duplicate">
+                                <label id="switchlabel_duplicate" class="form-check-label" for="is_allowed_duplicate">Tidak</label>
                             </div>
                         </div>
                         @endhasrole
@@ -208,6 +218,14 @@
                     } else {
                         filterUrl = `&${filter}=0`;
                     }
+                } else if (filter === 'is_allowed_duplicate') {
+                    const checkbox = document.getElementById('is_allowed_duplicate');
+
+                    if (checkbox && checkbox.checked) {
+                        filterUrl = `&${filter}=1`;
+                    } else {
+                        filterUrl = `&${filter}=0`;
+                    }
                 } else {
                     var e = document.getElementById(filter);
                     if (e != null) {
@@ -226,7 +244,7 @@
 
             function renderTable() {
                 filterUrl = ''
-                filterTypes = ['role', 'organization', 'is_allowed_swmaps', 'type']
+                filterTypes = ['role', 'organization', 'is_allowed_swmaps', 'type', 'is_allowed_duplicate']
                 filterTypes.forEach(f => {
                     filterUrl += getFilterUrl(f)
                 });
@@ -331,6 +349,10 @@
                                 if (data && data.includes('delete_business')) {
                                     permissions.push('<span class="badge bg-warning mb-1">Bisa Hapus</span>');
                                 }
+
+                                if (data && data.includes('can_access_duplicate')) {
+                                    permissions.push('<span class="badge bg-success mb-1">Bisa Akses Duplikat</span>');
+                                }
                                 
                                 if (permissions.length === 0) {
                                     return '<span class="text-muted">-</span>';
@@ -420,6 +442,19 @@
             function toggleSwmaps() {
                 const checkbox = document.getElementById('is_allowed_swmaps');
                 const label = document.getElementById('switchlabel');
+
+                if (checkbox.checked) {
+                    label.textContent = 'Ya';
+                } else {
+                    label.textContent = 'Tidak';
+                }
+
+                renderTable();
+            }
+
+            function toggleDuplicate() {
+                const checkbox = document.getElementById('is_allowed_duplicate');
+                const label = document.getElementById('switchlabel_duplicate');
 
                 if (checkbox.checked) {
                     label.textContent = 'Ya';

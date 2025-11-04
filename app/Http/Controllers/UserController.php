@@ -56,6 +56,7 @@ class UserController extends Controller
             'type.*' => ['in:kendedes,kenarok'],
             'can_edit_business' => 'required',
             'can_delete_business' => 'required',
+            'can_access_duplicate' => 'required',
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['organization'] = 'required';
@@ -93,15 +94,19 @@ class UserController extends Controller
 
         // Handle permissions individually
         $permissions = [];
-        
+
         if ($request->can_edit_business == "1") {
             $permissions[] = 'edit_business';
         }
-        
+
         if ($request->can_delete_business == "1") {
             $permissions[] = 'delete_business';
         }
-        
+
+        if ($request->can_access_duplicate == "1") {
+            $permissions[] = 'can_access_duplicate';
+        }
+
         // Set permissions - always call with true first, then add specific permissions
         $user->setPermissionAllDatabase(true, ...$permissions);
 
@@ -145,6 +150,7 @@ class UserController extends Controller
             'change_password' => 'required',
             'can_edit_business' => 'required',
             'can_delete_business' => 'required',
+            'can_access_duplicate' => 'required',
         ];
         if ($request->change_password == "1") {
             $validateArray['password'] = ['required', Password::min(8)->mixedCase()];
@@ -187,15 +193,19 @@ class UserController extends Controller
 
         // Handle permissions individually
         $permissions = [];
-        
+
         if ($request->can_edit_business == "1") {
             $permissions[] = 'edit_business';
         }
-        
+
         if ($request->can_delete_business == "1") {
             $permissions[] = 'delete_business';
         }
-        
+
+        if ($request->can_access_duplicate == "1") {
+            $permissions[] = 'can_access_duplicate';
+        }
+
         // Set permissions - always call with true first, then add specific permissions
         $user->setPermissionAllDatabase(true, ...$permissions);
 
@@ -236,6 +246,11 @@ class UserController extends Controller
 
         if ($request->role != null && $request->role != '0') {
             $records->role($request->role);
+        }
+        if ($request->is_allowed_duplicate != null) {
+            if ($request->is_allowed_duplicate == "1") {
+                $records->permission('can_access_duplicate');
+            }
         }
         if ($request->organization != null && $request->organization != '0') {
             $records->where('organization_id', $request->organization);
@@ -305,6 +320,10 @@ class UserController extends Controller
                 $permissions[] = 'delete_business';
             }
 
+            if ($user->hasPermissionTo('can_access_duplicate')) {
+                $permissions[] = 'can_access_duplicate';
+            }
+
             $user->permission = implode(', ', $permissions);
             return $user;
         });
@@ -350,7 +369,7 @@ class UserController extends Controller
     public function toggleActingContext(Request $request)
     {
         $user = User::find(Auth::id());
-        
+
         // Check if user has any acting contexts available
         if (!$user->actingContexts()->exists()) {
             return redirect('/')->with('error', 'No acting contexts available for this user.');
