@@ -460,7 +460,7 @@ class AnomalyRepairChecker:
             return
         
         try:
-            if show_stats and not self.dry_run:
+            if show_stats:
                 print("BEFORE REPAIR CHECK")
                 self.show_statistics()
             
@@ -470,7 +470,7 @@ class AnomalyRepairChecker:
             
             fixed_count = self.check_repairs_by_business_type(business_type, limit)
             
-            if show_stats and not self.dry_run:
+            if show_stats:
                 print("\n" + "=" * 60)
                 print("AFTER REPAIR CHECK")
                 self.show_statistics()
