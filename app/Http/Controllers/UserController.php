@@ -56,11 +56,11 @@ class UserController extends Controller
             'type.*' => ['in:kendedes,kenarok'],
             'can_edit_business' => 'required',
             'can_delete_business' => 'required',
-            'can_access_duplicate' => 'required',
         ];
         if ($admin->hasRole('adminprov')) {
             $validateArray['organization'] = 'required';
             $validateArray['is_allowed_swmaps'] = 'required';
+            $validateArray['can_access_duplicate'] = 'required';
         }
 
         $validator = Validator::make($request->all(), $validateArray);
@@ -150,7 +150,6 @@ class UserController extends Controller
             'change_password' => 'required',
             'can_edit_business' => 'required',
             'can_delete_business' => 'required',
-            'can_access_duplicate' => 'required',
         ];
         if ($request->change_password == "1") {
             $validateArray['password'] = ['required', Password::min(8)->mixedCase()];
@@ -158,6 +157,7 @@ class UserController extends Controller
         if ($admin->hasRole('adminprov')) {
             $validateArray['organization'] = 'required';
             $validateArray['is_allowed_swmaps'] = 'required';
+            $validateArray['can_access_duplicate'] = 'required';
         }
 
         $validator = Validator::make($request->all(), $validateArray);

@@ -4,6 +4,7 @@
 # Python & Shell scripts (GMT times)
 0 18 * * * /venv/bin/python /var/www/python_script/polygon_matcher.py
 0 19 * * * /venv/bin/python /var/www/python_script/anomaly_detector_clean.py
+0 21 * * * /venv/bin/python /var/www/python_script/duplicate_detection.py
 30 21 * * * /venv/bin/python /var/www/python_script/backup_uploader.py
 0 22 * * * /venv/bin/python /var/www/python_script/qnap_backup_uploader.py
 15 22 * * * /venv/bin/python /var/www/python_script/backup_cleanup.py
