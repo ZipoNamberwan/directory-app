@@ -168,6 +168,7 @@ class TaggingController extends Controller
                 'organization_id' => $request->organization,
             ]);
             $business->load(['user', 'project']);
+            $business->refresh(); // Refresh to get all database defaults including is_locked
 
             return $this->successResponse(data: $business, status: 201);
         } catch (Exception $e) {
@@ -193,7 +194,11 @@ class TaggingController extends Controller
             // Check if business exists and is locked
             $existingBusiness = SupplementBusiness::withTrashed()->find($id);
             if ($existingBusiness && $existingBusiness->is_locked) {
-                return $this->errorResponse('Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki', 423);
+                return $this->errorResponse(
+                    'Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki',
+                    423,
+                    $existingBusiness->load(['user', 'project'])
+                );
             }
 
             $project = Project::withTrashed()->find($request->project['id']);
@@ -247,7 +252,11 @@ class TaggingController extends Controller
 
             // Check if business is locked
             if ($business->is_locked) {
-                return $this->errorResponse('Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki', 423);
+                return $this->errorResponse(
+                    'Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki',
+                    423,
+                    $business->load(['user', 'project'])
+                );
             }
 
             $business->delete();
