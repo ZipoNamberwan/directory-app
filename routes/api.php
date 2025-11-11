@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/business/upload-multiple', [TaggingController::class, 'uploadMultipleTags']);
     Route::put('/business/{id}', [TaggingController::class, 'updateSupplementBusiness']);
     Route::delete('/business/delete-multiple', [TaggingController::class, 'deleteMultipleTags']);
+    Route::delete('/business/delete-multiple-v2', [TaggingController::class, 'deleteMultipleTagsV2']);
     Route::delete('/business/{id}', [TaggingController::class, 'deleteSupplementBusiness']);
 
     Route::get('users/{user}/projects', [ProjectController::class, 'getProjectsByUser']);

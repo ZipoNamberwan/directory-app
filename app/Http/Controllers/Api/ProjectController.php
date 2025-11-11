@@ -22,7 +22,16 @@ class ProjectController extends Controller
 
     public function getProjectsByUser($user)
     {
-        $projects = Project::with(['user', 'user.organization', 'businesses', 'businesses.project', 'businesses.user', 'businesses.user.organization'])->where('user_id', $user)->get();
+        $projects = Project::with([
+            'user',
+            'user.organization',
+            'businesses' => function ($query) {
+                $query->withTrashed(); // include soft-deleted businesses
+            },
+            'businesses.project',
+            'businesses.user',
+            'businesses.user.organization'
+        ])->where('user_id', $user)->get();
         return $this->successResponse($projects);
     }
 
@@ -105,6 +114,19 @@ class ProjectController extends Controller
             if (!$project) {
                 return $this->successResponse(data: ['is_found' => false], message: 'Project tidak ditemukan', status: 200);
             }
+
+            // Check if any business in this project is locked
+            $lockedBusinessCount = SupplementBusiness::where('project_id', $id)
+                ->where('is_locked', true)
+                ->count();
+
+            if ($lockedBusinessCount > 0) {
+                return $this->errorResponse(
+                    'Tidak dapat menghapus project karena ada ' . $lockedBusinessCount . ' usaha yang telah diedit oleh Admin',
+                    423
+                );
+            }
+
             SupplementBusiness::where('project_id', $id)->delete();
 
             $project->delete();

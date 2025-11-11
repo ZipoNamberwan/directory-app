@@ -270,14 +270,14 @@ class TaggingController extends Controller
     {
         // create method to handle multiple tags upload, no need to validate, the return will be ids successfully uploaded
         $uploadedIds = [];
-        $lockedIds = [];
+        $lockedBusinesses = [];
 
         foreach ($request->tags as $tagData) {
             try {
                 // Check if existing business is locked
                 $existingBusiness = SupplementBusiness::withTrashed()->find($tagData['id']);
                 if ($existingBusiness && $existingBusiness->is_locked) {
-                    $lockedIds[] = $tagData['id'];
+                    $lockedBusinesses[] = $existingBusiness->load(['user', 'project']);
                     continue;
                 }
 
@@ -321,9 +321,7 @@ class TaggingController extends Controller
         }
 
         $responseData = ['uploaded_ids' => $uploadedIds];
-        if (!empty($lockedIds)) {
-            $responseData['locked_ids'] = $lockedIds;
-        }
+        $responseData['locked_tags'] = $lockedBusinesses;
 
         return $this->successResponse(
             data: $responseData,
@@ -356,6 +354,42 @@ class TaggingController extends Controller
 
             $deletedCount = SupplementBusiness::whereIn('id', $request->ids)->delete();
             return $this->successResponse(data: ['deleted_count' => $deletedCount, 'success' => true], message: 'Tagging berhasil dihapus', status: 200);
+        } catch (Exception $e) {
+            return $this->errorResponse('Gagal menghapus tagging', 500);
+        }
+    }
+
+    public function deleteMultipleTagsV2(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'uuid',
+        ]);
+
+        try {
+            // Check for locked businesses
+            $lockedBusinesses = SupplementBusiness::whereIn('id', $request->ids)
+                ->where('is_locked', true)
+                ->get()
+                ->load(['user', 'project']);
+
+            // delete only those that are not locked and return its ids
+            $deletableIds = SupplementBusiness::whereIn('id', $request->ids)
+                ->where('is_locked', false)
+                ->pluck('id')
+                ->toArray();
+            $deletedCount = SupplementBusiness::whereIn('id', $deletableIds)->delete();
+
+            return $this->successResponse(
+                data: [
+                    'success' => true,
+                    'deleted_count' => $deletedCount,
+                    'deleted_ids' => $deletableIds,
+                    'locked_tags' => $lockedBusinesses
+                ],
+                message: 'Tagging berhasil dihapus',
+                status: 200
+            );
         } catch (Exception $e) {
             return $this->errorResponse('Gagal menghapus tagging', 500);
         }
