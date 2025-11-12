@@ -121,6 +121,15 @@ class TaggingController extends Controller
         return $this->successResponse($businesses, 'Businesses retrieved successfully');
     }
 
+    public function getLockedBusinessByProject(String $projectId)
+    {
+        $businesses = SupplementBusiness::where('project_id', $projectId)
+            ->where('is_locked', true)
+            ->get()
+            ->load(['user', 'project']);
+        return $this->successResponse($businesses, 'Locked businesses retrieved successfully');
+    }
+
     public function storeSupplementBusiness(Request $request)
     {
         $request->validate([

@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/business-in-box', [TaggingController::class, 'getBusinessInBoundingBox']);
     Route::get('/business/project/{projectId}', [TaggingController::class, 'getBusinessByProject']);
+    Route::get('/business/project/locked/{projectId}', [TaggingController::class, 'getLockedBusinessByProject']);
     Route::post('/business', [TaggingController::class, 'storeSupplementBusiness']);
     Route::post('/business/upload-multiple', [TaggingController::class, 'uploadMultipleTags']);
     Route::put('/business/{id}', [TaggingController::class, 'updateSupplementBusiness']);
