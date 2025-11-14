@@ -121,6 +121,15 @@ class TaggingController extends Controller
         return $this->successResponse($businesses, 'Businesses retrieved successfully');
     }
 
+    public function getLockedBusinessByProject(String $projectId)
+    {
+        $businesses = SupplementBusiness::where('project_id', $projectId)
+            ->where('is_locked', true)
+            ->get()
+            ->load(['user', 'project']);
+        return $this->successResponse($businesses, 'Locked businesses retrieved successfully');
+    }
+
     public function storeSupplementBusiness(Request $request)
     {
         $request->validate([
@@ -168,6 +177,7 @@ class TaggingController extends Controller
                 'organization_id' => $request->organization,
             ]);
             $business->load(['user', 'project']);
+            $business->refresh(); // Refresh to get all database defaults including is_locked
 
             return $this->successResponse(data: $business, status: 201);
         } catch (Exception $e) {
@@ -193,7 +203,11 @@ class TaggingController extends Controller
             // Check if business exists and is locked
             $existingBusiness = SupplementBusiness::withTrashed()->find($id);
             if ($existingBusiness && $existingBusiness->is_locked) {
-                return $this->errorResponse('Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki', 423);
+                return $this->errorResponse(
+                    'Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki',
+                    423,
+                    $existingBusiness->load(['user', 'project'])
+                );
             }
 
             $project = Project::withTrashed()->find($request->project['id']);
@@ -247,7 +261,11 @@ class TaggingController extends Controller
 
             // Check if business is locked
             if ($business->is_locked) {
-                return $this->errorResponse('Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki', 423);
+                return $this->errorResponse(
+                    'Usaha telah diedit oleh Admin, sehingga sudah tidak bisa diperbaiki',
+                    423,
+                    $business->load(['user', 'project'])
+                );
             }
 
             $business->delete();
@@ -261,14 +279,14 @@ class TaggingController extends Controller
     {
         // create method to handle multiple tags upload, no need to validate, the return will be ids successfully uploaded
         $uploadedIds = [];
-        $lockedIds = [];
+        $lockedBusinesses = [];
 
         foreach ($request->tags as $tagData) {
             try {
                 // Check if existing business is locked
                 $existingBusiness = SupplementBusiness::withTrashed()->find($tagData['id']);
                 if ($existingBusiness && $existingBusiness->is_locked) {
-                    $lockedIds[] = $tagData['id'];
+                    $lockedBusinesses[] = $existingBusiness->load(['user', 'project']);
                     continue;
                 }
 
@@ -312,9 +330,7 @@ class TaggingController extends Controller
         }
 
         $responseData = ['uploaded_ids' => $uploadedIds];
-        if (!empty($lockedIds)) {
-            $responseData['locked_ids'] = $lockedIds;
-        }
+        $responseData['locked_tags'] = $lockedBusinesses;
 
         return $this->successResponse(
             data: $responseData,
@@ -347,6 +363,42 @@ class TaggingController extends Controller
 
             $deletedCount = SupplementBusiness::whereIn('id', $request->ids)->delete();
             return $this->successResponse(data: ['deleted_count' => $deletedCount, 'success' => true], message: 'Tagging berhasil dihapus', status: 200);
+        } catch (Exception $e) {
+            return $this->errorResponse('Gagal menghapus tagging', 500);
+        }
+    }
+
+    public function deleteMultipleTagsV2(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'uuid',
+        ]);
+
+        try {
+            // Check for locked businesses
+            $lockedBusinesses = SupplementBusiness::whereIn('id', $request->ids)
+                ->where('is_locked', true)
+                ->get()
+                ->load(['user', 'project']);
+
+            // delete only those that are not locked and return its ids
+            $deletableIds = SupplementBusiness::whereIn('id', $request->ids)
+                ->where('is_locked', false)
+                ->pluck('id')
+                ->toArray();
+            $deletedCount = SupplementBusiness::whereIn('id', $deletableIds)->delete();
+
+            return $this->successResponse(
+                data: [
+                    'success' => true,
+                    'deleted_count' => $deletedCount,
+                    'deleted_ids' => $deletableIds,
+                    'locked_tags' => $lockedBusinesses
+                ],
+                message: 'Tagging berhasil dihapus',
+                status: 200
+            );
         } catch (Exception $e) {
             return $this->errorResponse('Gagal menghapus tagging', 500);
         }
