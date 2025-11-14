@@ -35,6 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/business/{id}', [TaggingController::class, 'deleteSupplementBusiness']);
 
     Route::get('users/{user}/projects', [ProjectController::class, 'getProjectsByUser']);
+    Route::get('users/{user}/projects/v2', [ProjectController::class, 'getProjectsByUserV2']);
+    
     Route::post('mobile-projects', [ProjectController::class, 'storeMobileProject']);
     Route::get('mobile-projects/{id}', [ProjectController::class, 'show']);
     Route::put('mobile-projects/{id}', [ProjectController::class, 'updateMobileProject']);

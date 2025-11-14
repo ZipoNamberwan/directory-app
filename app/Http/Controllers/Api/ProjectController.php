@@ -25,6 +25,19 @@ class ProjectController extends Controller
         $projects = Project::with([
             'user',
             'user.organization',
+            'businesses',
+            'businesses.project',
+            'businesses.user',
+            'businesses.user.organization'
+        ])->where('user_id', $user)->get();
+        return $this->successResponse($projects);
+    }
+
+    public function getProjectsByUserV2($user)
+    {
+        $projects = Project::with([
+            'user',
+            'user.organization',
             'businesses' => function ($query) {
                 $query->withTrashed(); // include soft-deleted businesses
             },
