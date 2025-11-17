@@ -105,6 +105,7 @@ class TaggingController extends Controller
             ->map(function ($business) use ($project, $dummyUser) {
                 $business->project = $project;
                 $business->user = $dummyUser;
+                $business->is_locked = true; // Survey businesses are never locked
                 return $business;
             });
 
