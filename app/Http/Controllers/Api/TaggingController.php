@@ -245,6 +245,7 @@ class TaggingController extends Controller
                 ]
             );
             $business->load(['user', 'project']);
+            $business->refresh();
 
             return $this->successResponse(data: $business, status: 200);
         } catch (Exception $e) {
