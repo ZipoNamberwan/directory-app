@@ -21,7 +21,7 @@ class LoginController extends Controller
         //     $redirectUrl = "https://majapah.it/dashboard?callback_uri=" . url('/majapahit');
         // }
 
-        $redirectUrl = "https://majapah.it/dashboard?callback_uri=" . url('/majapahit');
+        $redirectUrl = "https://www.majapah.it/dashboard?callback_uri=" . url('/majapahit');
 
         return view('auth.login', ['redirectUrl' => $redirectUrl]);
     }
