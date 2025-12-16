@@ -29,6 +29,8 @@ class ReportExportJob implements ShouldQueue
     public $marketType;
     public $areaType;
 
+    public $timeout = 3600;
+
     /**
      * Create a new job instance.
      */
