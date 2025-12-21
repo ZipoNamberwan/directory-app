@@ -236,6 +236,7 @@
                                 <option value="notconfirmed">Belum Dikonfirmasi</option>
                                 <option value="keepone">Salah Satu Usaha Di Keep</option>
                                 <option value="keepall">Kedua Usaha Di Keep</option>
+                                <option value="deleteall">Kedua Usaha Di Delete</option>
                             </select>
                         </div>
                         <div class="col-md-3">

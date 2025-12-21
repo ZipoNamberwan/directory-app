@@ -111,7 +111,10 @@ class DuplicateController extends Controller
 
         if ($request->status && $request->status !== 'all') {
             if ($request->status === 'keepone') {
-                $records->where('status', 'keep1')->orWhere('status', 'keep2');
+                $records->where(function ($q) {
+                    $q->where('status', 'keep1')
+                        ->orWhere('status', 'keep2');
+                });
             } else {
                 $records->where('status', $request->status);
             }
@@ -182,6 +185,9 @@ class DuplicateController extends Controller
                 "data" => [],
             ]);
         }
+
+        // write code to show $records sql query for debugging
+        // dd($records->toSql(), $records->getBindings());
 
         // Apply pagination with offset and limit
         $data = $records
