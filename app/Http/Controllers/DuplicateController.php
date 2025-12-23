@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\DuplicateCandidatesExportJob;
+use App\Models\AssignmentStatus;
 use App\Models\DuplicateCandidate;
 use App\Models\Organization;
 use App\Models\Regency;
 use App\Models\Subdistrict;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class DuplicateController extends Controller
 {
@@ -396,5 +400,43 @@ class DuplicateController extends Controller
             'message' => 'Status updated successfully',
             'candidate' => $candidate,
         ]);
+    }
+
+    function downloadDuplicateCandidates(Request $request)
+    {
+        $user = User::find(Auth::id());
+        $uuid = Str::uuid();
+
+        $status = AssignmentStatus::where('user_id', Auth::id())
+            ->where('type', 'download-duplicate')
+            ->whereIn('status', ['start', 'loading'])->first();
+
+        if ($status == null) {
+            $status = AssignmentStatus::create([
+                'id' => $uuid,
+                'status' => 'start',
+                'user_id' => $user->id,
+                'type' => 'download-duplicate',
+            ]);
+
+            $organization = $request->organization;
+            if ($user->hasRole('adminkab')) {
+                $organization = $user->organization_id;
+            }
+
+            try {
+                DuplicateCandidatesExportJob::dispatch($organization, $uuid);
+            } catch (Exception $e) {
+                $status->update([
+                    'status' => 'failed',
+                    'message' => $e->getMessage(),
+                ]);
+
+                return redirect('/duplikat')->with('failed-upload', 'Download gagal diproses, log sudah disimpan');
+            }
+            return redirect('/duplikat')->with('success-upload', 'Download telah di proses, cek status pada tombol status');
+        } else {
+            return redirect('/duplikat')->with('failed-upload', 'Download tidak diproses karena masih ada proses download yang belum selesai');
+        }
     }
 }

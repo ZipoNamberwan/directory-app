@@ -209,6 +209,17 @@
                     <div class="d-flex align-items-center">
                         <h5 class="text-capitalize mb-0">Pemeriksaan Usaha yang Duplikat</h5>
                     </div>
+                    {{-- <div class="d-flex">
+                        <form action="/duplikat/download" class="me-2" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-secondary mb-0 p-2">Download</button>
+                        </form>
+                        <button onclick="refresh()" class="btn btn-secondary mb-0 p-2" data-bs-toggle="modal"
+                            data-bs-target="#statusDialog">
+                            <i class="fas fa-circle-info me-2"></i>
+                            Status
+                        </button>
+                    </div> --}}
                 </div>
             </div>
             <div class="card-body">
@@ -378,7 +389,8 @@
                                     <div class="card shadow-sm h-100" style="border-color: var(--color-keep1);">
                                         <div class="card-header py-2"
                                             style="background-color: var(--color-keep1); color: white;">
-                                            <h6 class="mb-0" style="color: white;"><i class="fas fa-building" style="color: white;"></i> Usaha A</h6>
+                                            <h6 class="mb-0" style="color: white;"><i class="fas fa-building"
+                                                    style="color: white;"></i> Usaha A</h6>
                                         </div>
                                         <div class="card-body py-2">
                                             <div id="center-business-content">
@@ -393,7 +405,8 @@
                                     <div class="card shadow-sm h-100" style="border-color: var(--color-keep2);">
                                         <div class="card-header py-2"
                                             style="background-color: var(--color-keep2); color: white;">
-                                            <h6 class="mb-0" style="color: white;"><i class="fas fa-building" style="color: white;"></i> Usaha B</h6>
+                                            <h6 class="mb-0" style="color: white;"><i class="fas fa-building"
+                                                    style="color: white;"></i> Usaha B</h6>
                                         </div>
                                         <div class="card-body py-2">
                                             <div id="nearby-business-content">
@@ -404,91 +417,122 @@
                                 </div>
                             </div>
                         </div>
-                        </div>
+                    </div>
 
-                        <!-- Current Status Display -->
-                        <div class="px-4 pb-2">
-                            <div class="d-flex flex-column align-items-center justify-content-center py-2 px-3 text-center"
-                                style="background-color: #f8f9fa; border-radius: 6px;">
-                                <div class="d-flex align-items-center mb-1">
-                                    <i class="fas fa-info-circle text-muted me-2"></i>
-                                    <span class="text-muted fw-semibold me-2">Status Saat Ini:</span>
-                                    <span id="current-status-display" class="text-dark fw-bold">Loading...</span>
-                                </div>
-                                <div id="confirmed-by-display" class="text-muted" style="display: none;">
-                                    <!-- Confirmed by information will be shown here -->
-                                </div>
+                    <!-- Current Status Display -->
+                    <div class="px-4 pb-2">
+                        <div class="d-flex flex-column align-items-center justify-content-center py-2 px-3 text-center"
+                            style="background-color: #f8f9fa; border-radius: 6px;">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-info-circle text-muted me-2"></i>
+                                <span class="text-muted fw-semibold me-2">Status Saat Ini:</span>
+                                <span id="current-status-display" class="text-dark fw-bold">Loading...</span>
                             </div>
-                        </div>
-
-                        <!-- Action Selection -->
-                        <div class="px-4 pb-2">
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-12 col-md-auto">
-                                    <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-a"
-                                        value="keep_center">
-                                    <label class="btn btn-outline-keep1 d-flex align-items-center justify-content-center"
-                                        for="action-keep-a"
-                                        style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep1); color: var(--color-keep1);">
-                                        <span class="radio-indicator me-2"
-                                            style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
-                                        </span>
-                                        <i class="fas fa-check-circle me-2" style="font-size: 14px;"></i>
-                                        <span>Keep Usaha A</span>
-                                    </label>
-                                </div>
-                                <div class="col-12 col-md-auto">
-                                    <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-b"
-                                        value="keep_nearby">
-                                    <label class="btn btn-outline-keep2 d-flex align-items-center justify-content-center"
-                                        for="action-keep-b"
-                                        style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep2); color: var(--color-keep2);">
-                                        <span class="radio-indicator me-2"
-                                            style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
-                                        </span>
-                                        <i class="fas fa-check-circle me-2" style="font-size: 14px;"></i>
-                                        <span>Keep Usaha B</span>
-                                    </label>
-                                </div>
-                                <div class="col-12 col-md-auto">
-                                    <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-both"
-                                        value="keep_both">
-                                    <label class="btn btn-outline-keepall d-flex align-items-center justify-content-center"
-                                        for="action-keep-both"
-                                        style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keepall); color: var(--color-keepall);">
-                                        <span class="radio-indicator me-2"
-                                            style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
-                                        </span>
-                                        <i class="fas fa-check-circle me-2" style="font-size: 14px;"></i>
-                                        <span>Keep Keduanya</span>
-                                    </label>
-                                </div>
-                                <div class="col-12 col-md-auto">
-                                    <input class="btn-check" type="radio" name="duplicate-action" id="action-delete-both"
-                                        value="delete_both">
-                                    <label class="btn btn-outline-delete d-flex align-items-center justify-content-center"
-                                        for="action-delete-both"
-                                        style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-delete); color: var(--color-delete);">
-                                        <span class="radio-indicator me-2"
-                                            style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
-                                        </span>
-                                        <i class="fas fa-trash-alt me-2" style="font-size: 14px;"></i>
-                                        <span>Delete Keduanya</span>
-                                    </label>
-                                </div>
+                            <div id="confirmed-by-display" class="text-muted" style="display: none;">
+                                <!-- Confirmed by information will be shown here -->
                             </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="px-4 pb-3 text-center">
-                            <button type="button" class="btn btn-primary me-2 px-4 py-2 fw-semibold rounded" id="confirm-action" disabled>
-                                <i class="fas fa-check me-2"></i>Confirm
-                            </button>
-                            <button type="button" class="btn btn-secondary px-4 py-2 fw-semibold rounded" data-bs-dismiss="modal">
-                                <i class="fas fa-times me-2"></i>Cancel
-                            </button>
                         </div>
                     </div>
+
+                    <!-- Action Selection -->
+                    <div class="px-4 pb-2">
+                        <div class="row g-2 justify-content-center">
+                            <div class="col-12 col-md-auto">
+                                <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-a"
+                                    value="keep_center">
+                                <label class="btn btn-outline-keep1 d-flex align-items-center justify-content-center"
+                                    for="action-keep-a"
+                                    style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep1); color: var(--color-keep1);">
+                                    <span class="radio-indicator me-2"
+                                        style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                                    </span>
+                                    <i class="fas fa-check-circle me-2" style="font-size: 14px;"></i>
+                                    <span>Keep Usaha A</span>
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-auto">
+                                <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-b"
+                                    value="keep_nearby">
+                                <label class="btn btn-outline-keep2 d-flex align-items-center justify-content-center"
+                                    for="action-keep-b"
+                                    style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keep2); color: var(--color-keep2);">
+                                    <span class="radio-indicator me-2"
+                                        style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                                    </span>
+                                    <i class="fas fa-check-circle me-2" style="font-size: 14px;"></i>
+                                    <span>Keep Usaha B</span>
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-auto">
+                                <input class="btn-check" type="radio" name="duplicate-action" id="action-keep-both"
+                                    value="keep_both">
+                                <label class="btn btn-outline-keepall d-flex align-items-center justify-content-center"
+                                    for="action-keep-both"
+                                    style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-keepall); color: var(--color-keepall);">
+                                    <span class="radio-indicator me-2"
+                                        style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                                    </span>
+                                    <i class="fas fa-check-circle me-2" style="font-size: 14px;"></i>
+                                    <span>Keep Keduanya</span>
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-auto">
+                                <input class="btn-check" type="radio" name="duplicate-action" id="action-delete-both"
+                                    value="delete_both">
+                                <label class="btn btn-outline-delete d-flex align-items-center justify-content-center"
+                                    for="action-delete-both"
+                                    style="min-width: 180px; padding: 10px 16px; border-width: 2px; border-radius: 8px; transition: all 0.3s ease; font-weight: 600; border-color: var(--color-delete); color: var(--color-delete);">
+                                    <span class="radio-indicator me-2"
+                                        style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                                    </span>
+                                    <i class="fas fa-trash-alt me-2" style="font-size: 14px;"></i>
+                                    <span>Delete Keduanya</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="px-4 pb-3 text-center">
+                        <button type="button" class="btn btn-primary me-2 px-4 py-2 fw-semibold rounded"
+                            id="confirm-action" disabled>
+                            <i class="fas fa-check me-2"></i>Confirm
+                        </button>
+                        <button type="button" class="btn btn-secondary px-4 py-2 fw-semibold rounded"
+                            data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="statusDialog" tabindex="-1" role="dialog" aria-labelledby="statusDialogLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Status Download</h5>
+                    <button onclick="refresh()" class="btn btn-sm btn-secondary mb-0 p-2">
+                        Refresh
+                    </button>
+                    {{-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> --}}
+                </div>
+                <div class="modal-body">
+                    <table id="statusTable" class="align-items-center mb-0 text-sm">
+                        <thead>
+                            <tr>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">File</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Dibuat Oleh</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Status</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Dibuat pada</th>
+                                <th class="text-uppercase text-small font-weight-bolder opacity-7">Pesan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -503,6 +547,11 @@
     <script src="/vendor/sweetalert2/sweetalert2.js"></script>
 
     <script src="/vendor/tabulator/tabulator.min.js"></script>
+    <script src="/vendor/datatables/dataTables.min.js"></script>
+    <script src="/vendor/datatables/dataTables.bootstrap5.min.js"></script>
+
+    <script src="/vendor/datatables/responsive.bootstrap5.min.js"></script>
+    <script src="/vendor/datatables/dataTables.responsive.min.js"></script>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -1163,12 +1212,12 @@
                 // Initialize map if not already created
                 if (!businessMap) {
                     businessMap = L.map('business-map', {
-                        zoomControl: false,      // Disable zoom controls
-                        scrollWheelZoom: false,  // Disable scroll wheel zoom
-                        doubleClickZoom: false,  // Disable double click zoom
-                        touchZoom: false,        // Disable touch zoom
-                        keyboard: false,         // Disable keyboard zoom
-                        dragging: true          // Keep dragging enabled
+                        zoomControl: false, // Disable zoom controls
+                        scrollWheelZoom: false, // Disable scroll wheel zoom
+                        doubleClickZoom: false, // Disable double click zoom
+                        touchZoom: false, // Disable touch zoom
+                        keyboard: false, // Disable keyboard zoom
+                        dragging: true // Keep dragging enabled
                     });
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
@@ -1311,31 +1360,35 @@
                 if (!candidateData) {
                     return '';
                 }
-                
+
                 // Normalize values for comparison (treat null/undefined as empty string)
                 const normalizedCurrent = (currentValue || '').toString().trim();
                 const normalizedCandidate = (candidateValue || '').toString().trim();
-                
+
                 // Don't show warning if values are the same
                 if (normalizedCurrent === normalizedCandidate) {
                     return '';
                 }
-                
-                const tooltipId = `tooltip-${type}-${fieldName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                
+
+                const tooltipId =
+                    `tooltip-${type}-${fieldName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
                 // Get field display name
                 const fieldDisplayName = fieldName === 'name' ? 'Nama Usaha' : 'Pemilik';
-                
+
                 // Create appropriate tooltip message based on the change type
                 let tooltipMessage;
                 if (normalizedCandidate === '' && normalizedCurrent !== '') {
-                    tooltipMessage = `${fieldDisplayName} telah berubah: <br><strong>'${normalizedCurrent}'</strong><br>(sebelumnya kosong)`;
+                    tooltipMessage =
+                        `${fieldDisplayName} telah berubah: <br><strong>'${normalizedCurrent}'</strong><br>(sebelumnya kosong)`;
                 } else if (normalizedCandidate !== '' && normalizedCurrent === '') {
-                    tooltipMessage = `${fieldDisplayName} telah dihapus: <br><strong>'${normalizedCandidate}'</strong><br>(sekarang kosong)`;
+                    tooltipMessage =
+                        `${fieldDisplayName} telah dihapus: <br><strong>'${normalizedCandidate}'</strong><br>(sekarang kosong)`;
                 } else {
-                    tooltipMessage = `${fieldDisplayName} telah berubah dari: <br><strong>'${normalizedCandidate}'</strong><br>menjadi: <br><strong>'${normalizedCurrent}'</strong>`;
+                    tooltipMessage =
+                        `${fieldDisplayName} telah berubah dari: <br><strong>'${normalizedCandidate}'</strong><br>menjadi: <br><strong>'${normalizedCurrent}'</strong>`;
                 }
-                
+
                 return ` <i class="fas fa-exclamation-triangle text-warning ms-1" 
                            style="font-size: 0.8rem; cursor: help;" 
                            data-bs-toggle="tooltip" 
@@ -1357,7 +1410,7 @@
                 // Check if business name contains owner information in <> or () brackets
                 const angleMatch = currentName.match(/^(.*?)\s*<([^>]+)>\s*$/);
                 const parenMatch = currentName.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
-                
+
                 if (angleMatch) {
                     // Extract name and owner from angle brackets
                     currentName = angleMatch[1].trim();
@@ -1454,14 +1507,14 @@
                 const response = await fetch(`/audit/${businessId}/${encodeURIComponent(businessType)}`);
                 if (response.ok) {
                     const auditData = await response.json();
-                    
+
                     // Find the most recent audit where column_name is 'deleted_at' and new_value is not null
-                    const deletionAudit = auditData.find(audit => 
-                        audit.column_name === 'deleted_at' && 
-                        audit.new_value !== null && 
+                    const deletionAudit = auditData.find(audit =>
+                        audit.column_name === 'deleted_at' &&
+                        audit.new_value !== null &&
                         audit.new_value !== ''
                     );
-                    
+
                     if (deletionAudit) {
                         // Update header with medium information if header element is provided
                         if (headerElement && businessLabel) {
@@ -1485,11 +1538,12 @@
                                         mediumDisplay = deletionAudit.medium;
                                 }
                             }
-                            
+
                             // Update header with medium info
-                            const mediumBadge = mediumDisplay ? 
-                                ` <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">melalui ${mediumDisplay}</span>` : '';
-                            
+                            const mediumBadge = mediumDisplay ?
+                                ` <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">melalui ${mediumDisplay}</span>` :
+                                '';
+
                             headerElement.innerHTML =
                                 `<i class="fas fa-building"></i> ${businessLabel} <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">DELETED</span>${mediumBadge}`;
                         }
@@ -1665,7 +1719,8 @@
             if (lastConfirmedBy && status !== 'notconfirmed') {
                 const userName = lastConfirmedBy.firstname || 'Unknown';
                 const orgId = lastConfirmedBy.organization_id || '-';
-                confirmedByDisplay.innerHTML = `<small>Dikonfirmasi terakhir oleh: <span class="fw-bold">${userName} (${orgId})</span></small>`;
+                confirmedByDisplay.innerHTML =
+                    `<small>Dikonfirmasi terakhir oleh: <span class="fw-bold">${userName} (${orgId})</span></small>`;
                 confirmedByDisplay.style.display = 'block';
             } else {
                 confirmedByDisplay.style.display = 'none';
@@ -1705,7 +1760,8 @@
             } else if (action === 'delete_both') {
                 // Delete both action - red theme with trash icon
                 title = 'Delete Keduanya';
-                htmlMessage = `<span style="color: ${COLOR_SCHEME.delete.primary}; font-weight: bold;">Kedua usaha akan dihapus permanen!</span> Tindakan ini tidak dapat dibatalkan. Apakah yakin?`;
+                htmlMessage =
+                    `<span style="color: ${COLOR_SCHEME.delete.primary}; font-weight: bold;">Kedua usaha akan dihapus permanen!</span> Tindakan ini tidak dapat dibatalkan. Apakah yakin?`;
                 iconType = 'warning';
                 confirmButtonColor = COLOR_SCHEME.delete.primary; // Red color
                 confirmButtonText = '<i class="fas fa-trash-alt me-1"></i>Yes, Delete Keduanya!';
@@ -1816,5 +1872,120 @@
                     });
                 });
         }
+    </script>
+
+    <script>
+        function refresh() {
+            tableStatus.ajax.url('/status/data/7').load();
+        }
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+
+            let formatted = new Intl.DateTimeFormat('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).format(date);
+            return formatted.replace(" pukul ", " ").replace(/\./g, ":");
+        }
+
+        let tableStatus = new DataTable('#statusTable', {
+            order: [],
+            serverSide: true,
+            processing: true,
+            // deferLoading: 0,
+            ajax: {
+                url: '/status/data/7',
+                type: 'GET',
+            },
+            responsive: true,
+            columns: [{
+                    responsivePriority: 1,
+                    width: "10%",
+                    data: "id",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            if (row.status == 'success') {
+                                return `
+                        <form class="my-2" action="/status/download/7" method="POST">
+                            @csrf
+                            <input type="hidden" name="id" value="${data}"> 
+                            <button class="btn btn-outline-secondary btn-sm ms-auto p-1 m-0" type="submit">
+                                <i class="fas fa-download mx-1"></i>
+                            </button>
+                        </form>
+                        `
+                            } else {
+                                return '-'
+                            }
+                        }
+                        return data;
+                    }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "user.firstname",
+                    type: "text",
+                },
+                {
+                    responsivePriority: 2,
+                    width: "10%",
+                    data: "status",
+                    type: "text",
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+
+                            var color = 'info'
+                            if (data == 'success') {
+                                color = 'success'
+                            } else if (data == 'failed') {
+                                color = 'danger'
+                            } else if (data == 'success') {
+                                color = 'success'
+                            } else if (data == 'loading' || data == 'processing') {
+                                color = 'secondary'
+                            } else if (data == 'success with error') {
+                                color = 'danger'
+                            } else {
+                                color = 'info'
+                            }
+
+                            return '<p class="mb-0"><span class="badge badge-small bg-' + color +
+                                '">' +
+                                data + '</span></p>';
+                        }
+                        return data;
+                    }
+                },
+                {
+                    responsivePriority: 3,
+                    width: "10%",
+                    data: "created_at",
+                    type: "text",
+                    render: function(data, type, row) {
+                        return formatDate(data)
+                    }
+                },
+                {
+                    responsivePriority: 4,
+                    width: "10%",
+                    data: "message",
+                    type: "text",
+                },
+            ],
+            language: {
+                paginate: {
+                    previous: '<i class="fas fa-angle-left"></i>',
+                    next: '<i class="fas fa-angle-right"></i>'
+                }
+            }
+        });
     </script>
 @endpush

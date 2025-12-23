@@ -32,6 +32,8 @@ class AssignmentStatus extends Model
             return ['dashboard-regency', 'dashboard-user', 'dashboard-market', 'dashboard-supplement', 'dashboard-area'];
         } else if ($value == '6') {
             return 'download-anomaly';
+        } else if ($value == '7') {
+            return 'download-duplicate';
         } else {
             return null;
         }
@@ -57,6 +59,9 @@ class AssignmentStatus extends Model
         } else if ($value == '6') {
             // 'download-anomaly';
             return ['name' => 'anomaly', 'extension' => '.csv'];
+        } else if ($value == '7') {
+            // 'download-duplicate';
+            return ['name' => 'duplicate', 'extension' => '.csv'];
         } else {
             return null;
         }

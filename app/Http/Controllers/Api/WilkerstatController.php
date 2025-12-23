@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\DatabaseSelector;
 use App\Http\Controllers\Controller;
 use App\Models\SlsBusiness;
 use App\Models\SlsUpdatePrelist;
@@ -48,7 +49,8 @@ class WilkerstatController extends Controller
         }
 
         $filteredSlsIds = $filteredSls->pluck('id');
-        $businesses = SlsBusiness::whereIn('sls_id', $filteredSlsIds)
+        $businesses = SlsBusiness::on(DatabaseSelector::getConnection(substr($villageId, 0, 4)))
+            ->whereIn('sls_id', $filteredSlsIds)
             // ->with(['sls', 'village'])
             ->get();
 
@@ -68,7 +70,8 @@ class WilkerstatController extends Controller
             return $this->errorResponse('Tidak ada assignment untuk SLS ini', 404);
         }
 
-        $businesses = SlsBusiness::whereIn('sls_id', [$slsId])
+        $businesses = SlsBusiness::on(DatabaseSelector::getConnection(substr($slsId, 0, 4)))
+            ->whereIn('sls_id', [$slsId])
             // ->with(['sls', 'village'])
             ->get();
 
