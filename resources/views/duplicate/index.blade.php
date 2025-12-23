@@ -209,7 +209,7 @@
                     <div class="d-flex align-items-center">
                         <h5 class="text-capitalize mb-0">Pemeriksaan Usaha yang Duplikat</h5>
                     </div>
-                    <div class="d-flex" style="display: none !important;">
+                    <div class="d-flex">
                         <form action="/duplikat/download" class="me-2" method="POST">
                             @csrf
                             <button type="submit" class="btn btn-secondary mb-0 p-2">Download</button>
