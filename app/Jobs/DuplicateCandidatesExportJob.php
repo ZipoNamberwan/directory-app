@@ -4,6 +4,8 @@ namespace App\Jobs;
 
 use App\Models\AssignmentStatus;
 use App\Models\DuplicateCandidate;
+use App\Models\MarketBusiness;
+use App\Models\SupplementBusiness;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -58,6 +60,8 @@ class DuplicateCandidatesExportJob implements ShouldQueue
                 'Status Perbaikan',
                 'Dikonfirmasi Terakhir Oleh',
                 'Dikonfirmasi Terakhir Oleh Email',
+                'SLS Usaha A',
+                'SLS Usaha B',
             ]);
 
             $candidates = DuplicateCandidate::query();
@@ -76,11 +80,38 @@ class DuplicateCandidatesExportJob implements ShouldQueue
             $candidates
                 ->with([
                     'lastConfirmedBy:id,firstname,email',
+                    'centerBusiness' => function ($morphTo) {
+                        $morphTo->constrain([
+                            SupplementBusiness::class => function ($query) {
+                                $query->withTrashed()->with([
+                                    'sls'
+                                ]);
+                            },
+                            MarketBusiness::class => function ($query) {
+                                $query->withTrashed()->with([
+                                    'sls'
+                                ]);
+                            },
+                        ]);
+                    },
+                    'nearbyBusiness' => function ($morphTo) {
+                        $morphTo->constrain([
+                            SupplementBusiness::class => function ($query) {
+                                $query->withTrashed()->with([
+                                    'sls'
+                                ]);
+                            },
+                            MarketBusiness::class => function ($query) {
+                                $query->withTrashed()->with([
+                                    'sls'
+                                ]);
+                            },
+                        ]);
+                    }
                 ])
                 ->orderBy('created_at')
                 ->chunk(1000, function ($candidateRecords) use ($csv, &$chunkCount) {
                     $chunkCount++;
-                    $chunkStart = microtime(true);
 
                     foreach ($candidateRecords as $candidate) {
 
@@ -109,10 +140,10 @@ class DuplicateCandidatesExportJob implements ShouldQueue
                             $status,
                             $candidate->lastConfirmedBy?->firstname ?? '',
                             $candidate->lastConfirmedBy?->email ?? '',
+                            $candidate->centerBusiness?->sls?->id ?? '',
+                            $candidate->nearbyBusiness?->sls?->id ?? '',
                         ]);
                     }
-
-                    $chunkTime = microtime(true) - $chunkStart;
                 });
 
             fclose($stream);
