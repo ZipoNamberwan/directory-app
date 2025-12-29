@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\DatabaseSelector;
 use App\Http\Controllers\Controller;
 use App\Models\SlsBusiness;
+use App\Models\SlsBusinessUploadHistory;
 use App\Models\SlsUpdatePrelist;
 use App\Models\Village;
 use App\Traits\ApiResponser;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class WilkerstatController extends Controller
 {
@@ -111,6 +113,58 @@ class WilkerstatController extends Controller
             return $this->successResponse('Sukses mengubah status download prelist baru');
         } catch (Exception $e) {
             return $this->errorResponse('Gagal mengubah status prelist: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function updateBusinessStatus(Request $request)
+    {
+        // Validate the request
+        $validated = $request->validate([
+            'user_id' => 'required|string',
+            'wilayah' => 'required|string',
+            'total' => 'required|integer|min:0',
+            'nama_ketua_sls' => 'required|string',
+            'no_hp' => 'nullable|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'data' => 'required|array|min:1',
+            'data.*.id' => 'required|string|uuid',
+            'data.*.status' => 'required|integer|in:1,2,3,4,5',
+        ]);
+
+        try {
+            $dataUpdates = $validated['data'];
+            $slsId = $validated['wilayah'];
+            $connection = DatabaseSelector::getConnection(substr($slsId, 0, 4));
+
+            // Build bulk update using CASE statement
+            $query = SlsBusiness::on($connection);
+
+            $ids = array_column($dataUpdates, 'id');
+            $caseStatement = 'CASE id';
+
+            foreach ($dataUpdates as $businessData) {
+                $caseStatement .= " WHEN '{$businessData['id']}' THEN {$businessData['status']}";
+            }
+
+            $caseStatement .= ' END';
+
+            $query->whereIn('id', $ids)
+                ->update(['status_id' => DB::raw($caseStatement)]);
+
+            SlsBusinessUploadHistory::create([
+                'sls_id' => $slsId,
+                'total' => $validated['total'],
+                'chief_name' => $validated['nama_ketua_sls'],
+                'chief_phone' => $validated['no_hp'] ?? '',
+                'chief_latitude' => $validated['latitude'],
+                'chief_longitude' => $validated['longitude'],
+                'user_id' => Auth::id(),
+            ]);
+
+            return $this->successResponse('Sukses mengubah status usaha');
+        } catch (Exception $e) {
+            return $this->errorResponse('Gagal mengubah status usaha: ' . $e->getMessage(), 500);
         }
     }
 }
