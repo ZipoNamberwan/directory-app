@@ -39,6 +39,7 @@ class WilkerstatController extends Controller
 
     public function getBusinessByVillage($villageId)
     {
+        $source = 'EFORM';
         // Only eager load wilkerstatSls WITHOUT nested village
         $user = Auth::user();
         $sls = $user->wilkerstatSls;
@@ -53,6 +54,7 @@ class WilkerstatController extends Controller
         $filteredSlsIds = $filteredSls->pluck('id');
         $businesses = SlsBusiness::on(DatabaseSelector::getConnection(substr($villageId, 0, 4)))
             ->whereIn('sls_id', $filteredSlsIds)
+            ->where('source', $source)
             // ->with(['sls', 'village'])
             ->get();
 
@@ -61,6 +63,7 @@ class WilkerstatController extends Controller
 
     public function getBusinessBySls($slsId)
     {
+        $source = 'EFORM';
         // Only eager load wilkerstatSls WITHOUT nested village
         $user = Auth::user();
         $sls = $user->wilkerstatSls;
@@ -74,6 +77,7 @@ class WilkerstatController extends Controller
 
         $businesses = SlsBusiness::on(DatabaseSelector::getConnection(substr($slsId, 0, 4)))
             ->whereIn('sls_id', [$slsId])
+            ->where('source', $source)
             // ->with(['sls', 'village'])
             ->get();
 
