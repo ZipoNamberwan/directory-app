@@ -1,5 +1,5 @@
-# Base image
-FROM dunglas/frankenphp
+# Base image using php 8.4 with frankenphp
+FROM dunglas/frankenphp:php8.4
 
 # Set timezone to Asia/Jakarta
 # ENV TZ=Asia/Jakarta
@@ -27,6 +27,9 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     && docker-php-ext-install pdo_mysql mysqli mbstring exif pcntl bcmath gd zip \
     && apt-get clean
+
+# Set git safe directory
+RUN git config --global --add safe.directory /var/www
 
 # Setup Python packages    
 RUN python3 -m venv /venv

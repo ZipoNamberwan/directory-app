@@ -5,85 +5,136 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
+
     public function up(): void
     {
-        $this->addUuid('regency_uuid', $this->regencyTables());
-        $this->addUuid('subdistrict_uuid', $this->subdistrictTables());
-        $this->addUuid('village_uuid', $this->villageTables());
-        $this->addUuid('sls_uuid', $this->slsTables());
-    }
-
-    private function addUuid(string $column, array $tables): void
-    {
-        foreach ($tables as $table) {
-            Schema::table($table, function (Blueprint $tableBlueprint) use ($column) {
-                if (! Schema::hasColumn($tableBlueprint->getTable(), $column)) {
-                    $tableBlueprint->uuid($column)->nullable()->after(str_replace('_uuid', '_id', $column));
-                }
-            });
+        foreach ($this->uuidMap() as $uuidColumn => $config) {
+            $this->addUuidColumn(
+                $uuidColumn,
+                $config['tables'],
+                $config['default_after']
+            );
         }
     }
 
-    private function regencyTables(): array
+    public function down(): void
+    {
+        foreach ($this->uuidMap() as $uuidColumn => $config) {
+            foreach ($config['tables'] as $key => $value) {
+                $table = is_array($value) ? $key : $value;
+
+                if (Schema::hasColumn($table, $uuidColumn)) {
+                    Schema::table($table, function (Blueprint $tableBlueprint) use ($uuidColumn) {
+                        $tableBlueprint->dropColumn($uuidColumn);
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * ======================================================
+     * UUID COLUMN MAP (Single Source of Truth)
+     * ======================================================
+     */
+    private function uuidMap(): array
     {
         return [
-            'market_business',
-            'supplement_business',
-            'sls_business',
-            'non_sls_business',
-            'markets',
-            'market_upload_status',
-            'report_regency',
-            'subdistricts',
-            'supplement_upload_status',
-            'survey_business',
-            'user_acting_context',
-            'users',
+
+            'regency_uuid' => [
+                'default_after' => 'regency_id',
+                'tables' => [
+                    'market_business',
+                    'supplement_business',
+                    'sls_business',
+                    'non_sls_business',
+                    'markets',
+                    'market_upload_status',
+                    'report_regency',
+                    'subdistricts',
+                    'supplement_upload_status',
+                    'survey_business',
+                    'users',
+
+                    // 👇 special case handled declaratively
+                    'user_acting_contexts' => [
+                        'after' => 'acting_reg_id',
+                    ],
+                ],
+            ],
+
+            'subdistrict_uuid' => [
+                'default_after' => 'subdistrict_id',
+                'tables' => [
+                    'market_business',
+                    'supplement_business',
+                    'sls_business',
+                    'non_sls_business',
+                    'markets',
+                    'report_subdistrict',
+                    'villages',
+                    'supplement_upload_status',
+                    'survey_business',
+                ],
+            ],
+
+            'village_uuid' => [
+                'default_after' => 'village_id',
+                'tables' => [
+                    'market_business',
+                    'supplement_business',
+                    'sls_business',
+                    'non_sls_business',
+                    'markets',
+                    'report_village',
+                    'sls',
+                    'supplement_upload_status',
+                    'survey_business',
+                ],
+            ],
+
+            'sls_uuid' => [
+                'default_after' => 'sls_id',
+                'tables' => [
+                    'market_business',
+                    'supplement_business',
+                    'sls_business',
+                    'non_sls_business',
+                    'report_sls',
+                    'supplement_upload_status',
+                    'survey_business',
+                    'sls_update_prelist',
+                    'sls_user_wilkerstat',
+                ],
+            ],
         ];
     }
 
-    private function subdistrictTables(): array
-    {
-        return [
-            'market_business',
-            'supplement_business',
-            'sls_business',
-            'non_sls_business',
-            'markets',
-            'report_subdistrict',
-            'villages',
-            'supplement_upload_status',
-            'survey_business',
-        ];
-    }
+    /**
+     * ======================================================
+     * ADD UUID COLUMN (Generic + Safe)
+     * ======================================================
+     */
+    private function addUuidColumn(
+        string $column,
+        array $tables,
+        string $defaultAfter
+    ): void {
+        foreach ($tables as $key => $value) {
 
-    private function villageTables(): array
-    {
-        return [
-            'market_business',
-            'supplement_business',
-            'sls_business',
-            'non_sls_business',
-            'markets',
-            'report_village',
-            'sls',
-            'supplement_upload_status',
-            'survey_business',
-        ];
-    }
+            if (is_array($value)) {
+                $table = $key;
+                $after = $value['after'];
+            } else {
+                $table = $value;
+                $after = $defaultAfter;
+            }
 
-    private function slsTables(): array
-    {
-        return [
-            'market_business',
-            'supplement_business',
-            'sls_business',
-            'non_sls_business',
-            'report_sls',
-            'supplement_upload_status',
-            'survey_business',
-            'sls_update_prelist',
-            'sls_user_wilkerstat',
-        ];
+            Schema::table($table, function (Blueprint $tableBlueprint) use ($column, $after) {
+                if (!Schema::hasColumn($tableBlueprint->getTable(), $column)) {
+                    $tableBlueprint->uuid($column)->nullable()->after($after);
+                }
+            });
+        }
     }
 };

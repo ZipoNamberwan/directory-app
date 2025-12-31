@@ -34,52 +34,6 @@ return new class extends Migration
             $table->uuid('uuid')->nullable()->after('id');
         });
 
-        // $isDefaultConnection = DB::getDefaultConnection() == DatabaseSelector::getDefaultConnection();
-        // $regencies = Regency::all();
-        // foreach ($regencies as $regency) {
-        //     if ($isDefaultConnection) {
-        //         $regency->uuid = (string) Str::uuid();
-        //         $regency->save();
-        //     } else {
-        //         $regency->uuid = Regency::on(DatabaseSelector::getDefaultConnection())->find($regency->id)->uuid;
-        //         $regency->save();
-        //     }
-        // }
-
-        // $subdistricts = Subdistrict::all();
-        // foreach ($subdistricts as $subdistrict) {
-        //     if ($isDefaultConnection) {
-        //         $subdistrict->uuid = (string) Str::uuid();
-        //         $subdistrict->save();
-        //     } else {
-        //         $subdistrict->uuid = Subdistrict::on(DatabaseSelector::getDefaultConnection())->find($subdistrict->id)->uuid;
-        //         $subdistrict->save();
-        //     }
-        // }
-
-        // $villages = Village::all();
-        // foreach ($villages as $village) {
-        //     if ($isDefaultConnection) {
-        //         $village->uuid = (string) Str::uuid();
-        //         $village->save();
-        //     } else {
-        //         $village->uuid = Village::on(DatabaseSelector::getDefaultConnection())->find($village->id)->uuid;
-        //         $village->save();
-        //     }
-        // }
-
-        // $slss = Sls::all();
-        // foreach ($slss as $sls) {
-        //     if ($isDefaultConnection) {
-        //         $sls->uuid = (string) Str::uuid();
-        //         $sls->save();
-        //     } else {
-        //         $sls->uuid = Sls::on(DatabaseSelector::getDefaultConnection())->find($sls->id)->uuid;
-        //         $sls->save();
-        //     }
-        // }
-
-
         $sourceConnection = DatabaseSelector::getDefaultConnection();
         $targetConnection = DB::getDefaultConnection();
 
