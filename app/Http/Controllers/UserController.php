@@ -356,7 +356,6 @@ class UserController extends Controller
 
     public function getUserByOrganization($organization)
     {
-        $users = [];
         $users = User::where('organization_id', $organization)->get();
         return response()->json($users);
     }

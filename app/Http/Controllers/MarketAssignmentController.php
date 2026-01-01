@@ -34,7 +34,7 @@ class MarketAssignmentController extends Controller
 
         if ($user->hasRole('adminkab')) {
             $markets = Market::where('organization_id', $user->organization_id)->get();
-            $users = User::where('organization_id', $user->organization_id)->role(['operator', 'pml'])->get();
+            $users = User::where('organization_id', $user->organization_id)->get();
         }
 
         return view('market.list-assignment', ['markets' => $markets, 'users' => $users, 'organizations' => $organizations]);
