@@ -82,7 +82,7 @@ class UserController extends Controller
             'email' => $request->email,
             'username' => $request->email,
             'password' => Hash::make($request->password),
-            'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? $request->organization : null) : $admin->regency->id,
+            'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? Regency::where('long_code', $request->organization)->first()->id : null) : $admin->regency->id,
             'organization_id' => $admin->hasRole('adminprov') ? $request->organization  : $admin->organization->id,
             'must_change_password' => false,
             'is_kendedes_user' => in_array('kendedes', $request->type ?? []),
@@ -180,7 +180,7 @@ class UserController extends Controller
             'firstname' => $request->firstname,
             'email' => $request->email,
             'username' => $request->email,
-            'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? $request->organization : null) : $admin->regency->id,
+            'regency_id' => $admin->hasRole('adminprov') ? ($request->organization != '3500' ? Regency::where('long_code', $request->organization)->first()->id : null) : $admin->regency->id,
             'organization_id' => $admin->hasRole('adminprov') ? $request->organization  : $admin->organization->id,
             'password' => $request->change_password == "1" ? Hash::make($request->password) : $user->password,
             'is_kendedes_user' => in_array('kendedes', $request->type ?? []),
@@ -354,17 +354,13 @@ class UserController extends Controller
         return response()->json($users);
     }
 
-    public function getUserByRegency($regency)
+    public function getUserByOrganization($organization)
     {
         $users = [];
-        if ($regency != '3500') {
-            $users = User::where('regency_id', $regency)->role(['adminkab', 'pml', 'operator'])->get();
-        } else {
-            $users = User::where('regency_id', null)->role(['adminprov', 'pml', 'operator'])->get();
-        }
-
+        $users = User::where('organization_id', $organization)->get();
         return response()->json($users);
     }
+
 
     public function toggleActingContext(Request $request)
     {

@@ -86,7 +86,7 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::delete('/pasar/{id}', [MarketController::class, 'deleteMarketBusiness']);
 		Route::post('/pasar/download', [MarketController::class, 'downloadUploadedData']);
 		Route::post('/pasar/download/swmap', [MarketController::class, 'downloadSwmapsExport']);
-		Route::get('/pasar/kab/{regency}', [MarketController::class, 'getMarketByRegency']);
+		Route::get('/pasar/org/{organization}', [MarketController::class, 'getMarketByOrganization']);
 		Route::get('/pasar/filter', [MarketController::class, 'getMarketByFilter']);
 		Route::get('/pasar/type', [MarketController::class, 'getMarketTypes']);
 
@@ -126,7 +126,7 @@ Route::group(['middleware' => 'auth'], function () {
 	});
 
 	Route::group(['middleware' => ['role:adminkab|adminprov']], function () {
-		Route::get('/users/kab/{regency}', [UserController::class, 'getUserByRegency']);
+		Route::get('/users/org/{organization}', [UserController::class, 'getUserByOrganization']);
 
 		Route::get('/report/{date}/{type}/{level}/{id}', [ReportController::class, 'getReport']);
 		Route::get('/users/data', [UserController::class, 'getUserData']);

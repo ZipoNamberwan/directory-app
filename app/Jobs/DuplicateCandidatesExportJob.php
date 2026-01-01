@@ -140,8 +140,8 @@ class DuplicateCandidatesExportJob implements ShouldQueue
                             $status,
                             $candidate->lastConfirmedBy?->firstname ?? '',
                             $candidate->lastConfirmedBy?->email ?? '',
-                            $candidate->centerBusiness?->sls?->id ?? '',
-                            $candidate->nearbyBusiness?->sls?->id ?? '',
+                            $candidate->centerBusiness?->sls?->long_code ?? '',
+                            $candidate->nearbyBusiness?->sls?->long_code ?? '',
                         ]);
                     }
                 });

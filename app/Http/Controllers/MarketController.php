@@ -376,9 +376,9 @@ class MarketController extends Controller
         ]);
     }
 
-    public function getMarketByRegency($regency)
+    public function getMarketByOrganization($organization)
     {
-        $markets = Market::where('organization_id', $regency)->get();
+        $markets = Market::where('organization_id', $organization)->get();
 
         return response()->json($markets);
     }

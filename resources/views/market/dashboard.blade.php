@@ -551,7 +551,7 @@
                         let isTotal = row.is_total_row;
                         let nameDisplay = isTotal ?
                             `<strong style="color:#2196F3;font-size:1.1em;">${row.name}</strong>` :
-                            `[${row.id}] ${row.name}`;
+                            `[${row.long_code}] ${row.name}`;
 
                         return `<div class="d-flex gap-3 align-items-center">
                             <h6 class="text-sm mb-1 ${isTotal ? "font-weight-bold" : ""}" 

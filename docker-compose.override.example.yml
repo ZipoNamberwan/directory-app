@@ -43,3 +43,12 @@ services:
 #       APP_ENV: local
 #       APP_DEBUG: "true"
 #       APP_LOG_LEVEL: debug
+db:
+    volumes:
+      - ./docker/mysql/my-dev.cnf:/tmp/my-dev.cnf
+    command: >
+      bash -c "
+      cp /tmp/my-dev.cnf /etc/mysql/conf.d/my-dev.cnf &&
+      chmod 644 /etc/mysql/conf.d/my-dev.cnf &&
+      exec docker-entrypoint.sh mysqld
+      "

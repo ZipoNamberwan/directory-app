@@ -96,6 +96,21 @@ return new class extends Migration
             ],
 
             // =========================
+            // MASTER TABLES (hierarchical)
+            // =========================
+            'subdistricts' => [
+                'regency_id' => ['master' => 'regencies', 'uuid' => 'regency_uuid'],
+            ],
+
+            'villages' => [
+                'subdistrict_id' => ['master' => 'subdistricts', 'uuid' => 'subdistrict_uuid'],
+            ],
+
+            'sls' => [
+                'village_id' => ['master' => 'villages', 'uuid' => 'village_uuid'],
+            ],
+
+            // =========================
             // SURVEY / USER
             // =========================
             'survey_business' => [

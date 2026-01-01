@@ -48,15 +48,12 @@
                 <div class="row mb-3">
                     @hasrole('adminprov')
                         <div class="col-md-3">
-                            <label class="form-control-label">Kabupaten <span class="text-danger">*</span></label>
-                            <select id="regency" class="form-control" data-toggle="select">
-                                <option value="0" disabled selected> -- Pilih Kabupaten -- </option>
-                                <option value="3500">
-                                    [00] Provinsi Jawa Timur
-                                </option>
-                                @foreach ($regencies as $regency)
-                                    <option value="{{ $regency->id }}">
-                                        [{{ $regency->short_code }}] {{ $regency->name }}
+                            <label class="form-control-label">Satker <span class="text-danger">*</span></label>
+                            <select id="organization" class="form-control" data-toggle="select">
+                                <option value="0" disabled selected> -- Pilih Satker -- </option>
+                                @foreach ($organizations as $organization)
+                                    <option value="{{ $organization->id }}">
+                                        [{{ $organization->short_code }}] {{ $organization->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -122,8 +119,8 @@
                 placeholder: 'Pilih User'
             },
             {
-                selector: '#regency',
-                placeholder: 'Pilih Kabupaten'
+                selector: '#organization',
+                placeholder: 'Pilih Satker'
             },
         ];
 
@@ -144,7 +141,7 @@
             '#user': () => {
                 renderTable()
             },
-            '#regency': () => {
+            '#organization': () => {
                 loadMarket(null, null)
                 loadUser(null, null)
                 renderTable()
@@ -174,7 +171,7 @@
 
         function renderTable() {
             filterUrl = ''
-            filterTypes = ['market', 'user', 'regency']
+            filterTypes = ['market', 'user', 'organization']
             filterTypes.forEach(f => {
                 filterUrl += getFilterUrl(f)
             });
@@ -182,14 +179,14 @@
             table.ajax.url('/pasar-assignment/pivot?' + filterUrl).load();
         }
 
-        function loadMarket(regencyid = null, selectedmarket = null) {
+        function loadMarket(organizationid = null, selectedmarket = null) {
 
-            let regencySelector = `#regency`;
+            let organizationSelector = `#organization`;
             let marketSelector = `#market`;
 
-            let id = $(regencySelector).val();
-            if (regencyid != null) {
-                id = regencyid;
+            let id = $(organizationSelector).val();
+            if (organizationid != null) {
+                id = organizationid;
             }
 
             $(marketSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
@@ -197,7 +194,7 @@
             if (id != null) {
                 $.ajax({
                     type: 'GET',
-                    url: '/pasar/kab/' + id,
+                    url: '/pasar/org/' + id,
                     success: function(response) {
                         $(marketSelector).empty().append(
                             `<option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>`);
@@ -214,14 +211,14 @@
             }
         }
 
-        function loadUser(regencyid = null, selecteduser = null) {
+        function loadUser(organizationid = null, selecteduser = null) {
 
-            let regencySelector = `#regency`;
+            let organizationSelector = `#organization`;
             let userSelector = `#user`;
 
-            let id = $(regencySelector).val();
-            if (regencyid != null) {
-                id = regencyid;
+            let id = $(organizationSelector).val();
+            if (organizationid != null) {
+                id = organizationid;
             }
 
             $(userSelector).empty().append(`<option value="0" disabled selected>Processing...</option>`);
@@ -229,7 +226,7 @@
             if (id != null) {
                 $.ajax({
                     type: 'GET',
-                    url: '/users/kab/' + id,
+                    url: '/users/org/' + id,
                     success: function(response) {
                         $(userSelector).empty().append(
                             `<option value="0" disabled selected> -- Pilih User -- </option>`);
