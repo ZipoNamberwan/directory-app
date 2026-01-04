@@ -107,6 +107,9 @@ DEBUG_LIMIT = 2000000  # Number of businesses to process in debug mode
 LIMIT_PROCESSING = False  # Set to True to limit the number of businesses to process
 PROCESSING_LIMIT = 1500000  # Number of businesses to process when LIMIT_PROCESSING = True (set to None for no limit)
 
+# Memory management configuration
+DATABASE_FETCH_BATCH_SIZE = 100000  # Number of records to fetch from database at a time (to prevent memory issues)
+
 # Duplicate detection settings
 SIMILARITY_THRESHOLD = 0.75  # Minimum similarity score (0.0 - 1.0) to consider as similar
 
@@ -168,7 +171,10 @@ DB_CONFIG = {
     'user': os.getenv('DB_MAIN_USERNAME', 'root'),
     'password': os.getenv('DB_MAIN_PASSWORD', ''),
     'database': os.getenv('DB_MAIN_DATABASE', 'database'),
-    'charset': 'utf8mb4'
+    'charset': 'utf8mb4',
+    'connect_timeout': 28800,  # 8 hours
+    'use_pure': False,  # Use C extension for better performance
+    'consume_results': True  # Automatically consume results
 }
 
 # Business tables configuration
@@ -967,41 +973,61 @@ class DatabaseManager:
         debug_info = f" (DEBUG: limiting to {DEBUG_LIMIT} records)" if DEBUG_MODE else ""
         print(f"📊 Loading businesses from {table_name}{debug_info}...")
         
-        cursor = self.connection.cursor(dictionary=True)
+        cursor = self.connection.cursor(dictionary=True, buffered=False)
         cursor.execute(query)
-        results = cursor.fetchall()
-        cursor.close()
         
+        # Process results in batches to avoid memory issues
         businesses = []
-        for row in results:
-            # Handle owner extraction based on business type
-            if business_type == 'market':
-                # Extract owner from name for market businesses
-                cleaned_name, extracted_owner = extract_owner_from_name(row['name'] or "")
-                name = cleaned_name
-                owner = extracted_owner
-            else:
-                # Use direct owner field for supplement businesses
-                name = row['name'] or ""
-                owner = row['owner'] or ""
-            
-            business = Business(
-                id=str(row['id']),  # Ensure string type
-                name=name,
-                owner=owner,
-                latitude=float(row['latitude']),
-                longitude=float(row['longitude']),
-                user_id=str(row['user_id']),  # Ensure string type
-                sls_id=str(row['sls_id']) if row['sls_id'] else "",  # Ensure string type
-                business_type=business_type,
-                address=row['address'] or "",
-                project_id=str(row['project_id']) if business_type == 'supplement' and row.get('project_id') else "",
-                organization_id=str(row['organization_id']) if business_type == 'supplement' and row.get('organization_id') else "",
-                market_id=str(row['market_id']) if business_type == 'market' and row.get('market_id') else ""
-            )
-            businesses.append(business)
+        batch_size = DATABASE_FETCH_BATCH_SIZE  # Use configurable batch size
+        batch_count = 0
+        seen_ids = set()  # Track IDs to verify no duplicates
+        total_records = 0
         
-        print(f"✓ Loaded {len(businesses)} businesses from {table_name}")
+        while True:
+            rows = cursor.fetchmany(batch_size)
+            if not rows:
+                break
+            
+            batch_count += 1
+            total_records += len(rows)
+            print(f"  Processing batch {batch_count} ({len(rows)} records, {total_records} total)...")
+            
+            for row in rows:
+                # Handle owner extraction based on business type
+                if business_type == 'market':
+                    # Extract owner from name for market businesses
+                    cleaned_name, extracted_owner = extract_owner_from_name(row['name'] or "")
+                    name = cleaned_name
+                    owner = extracted_owner
+                else:
+                    # Use direct owner field for supplement businesses
+                    name = row['name'] or ""
+                    owner = row['owner'] or ""
+                
+                business = Business(
+                    id=str(row['id']),  # Ensure string type
+                    name=name,
+                    owner=owner,
+                    latitude=float(row['latitude']),
+                    longitude=float(row['longitude']),
+                    user_id=str(row['user_id']),  # Ensure string type
+                    sls_id=str(row['sls_id']) if row['sls_id'] else "",  # Ensure string type
+                    business_type=business_type,
+                    address=row['address'] or "",
+                    project_id=str(row['project_id']) if business_type == 'supplement' and row.get('project_id') else "",
+                    organization_id=str(row['organization_id']) if business_type == 'supplement' and row.get('organization_id') else "",
+                    market_id=str(row['market_id']) if business_type == 'market' and row.get('market_id') else ""
+                )
+                
+                # Verify no duplicate IDs (sanity check)
+                if business.id in seen_ids:
+                    print(f"  ⚠️  WARNING: Duplicate ID detected: {business.id}")
+                seen_ids.add(business.id)
+                
+                businesses.append(business)
+        
+        cursor.close()
+        print(f"✓ Loaded {len(businesses)} businesses from {table_name} (unique IDs: {len(seen_ids)})")
         return businesses
     
     def save_duplicate_candidate(self, comparison: 'DuplicateComparison') -> bool:

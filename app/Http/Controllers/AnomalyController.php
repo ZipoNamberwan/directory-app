@@ -103,7 +103,17 @@ class AnomalyController extends Controller
             ->leftJoin('organizations as o_sb', 'sb.organization_id', '=', 'o_sb.id')
 
             // 👇 Join organizations through markets for market_business
-            ->leftJoin('organizations as o_m', 'm.organization_id', '=', 'o_m.id');
+            ->leftJoin('organizations as o_m', 'm.organization_id', '=', 'o_m.id')
+
+            // 👇 Join regencies, subdistricts, villages, and sls for long_code
+            ->leftJoin('regencies as r_sb', 'sb.regency_id', '=', 'r_sb.id')
+            ->leftJoin('regencies as r_mb', 'mb.regency_id', '=', 'r_mb.id')
+            ->leftJoin('subdistricts as sd_sb', 'sb.subdistrict_id', '=', 'sd_sb.id')
+            ->leftJoin('subdistricts as sd_mb', 'mb.subdistrict_id', '=', 'sd_mb.id')
+            ->leftJoin('villages as v_sb', 'sb.village_id', '=', 'v_sb.id')
+            ->leftJoin('villages as v_mb', 'mb.village_id', '=', 'v_mb.id')
+            ->leftJoin('sls as sls_sb', 'sb.sls_id', '=', 'sls_sb.id')
+            ->leftJoin('sls as sls_mb', 'mb.sls_id', '=', 'sls_mb.id');
 
         // Apply all filters directly in the join query for maximum performance
         $this->applyOptimizedFilters($query, $request);
@@ -136,6 +146,12 @@ class AnomalyController extends Controller
                 DB::raw('COALESCE(sb.village_id, mb.village_id) as village_id'),
                 DB::raw('COALESCE(sb.sls_id, mb.sls_id) as sls_id'),
                 DB::raw('COALESCE(sb.organization_id, m.organization_id) as organization_id'),
+
+                // 👇 Long codes for regency, subdistrict, village, and sls
+                DB::raw('COALESCE(r_sb.long_code, r_mb.long_code) as regency_long_code'),
+                DB::raw('COALESCE(sd_sb.long_code, sd_mb.long_code) as subdistrict_long_code'),
+                DB::raw('COALESCE(v_sb.long_code, v_mb.long_code) as village_long_code'),
+                DB::raw('COALESCE(sls_sb.long_code, sls_mb.long_code) as sls_long_code'),
                 DB::raw('COALESCE(sb.deleted_at, mb.deleted_at) as deleted_at'),
 
                 // 👇 User fields
@@ -313,9 +329,13 @@ class AnomalyController extends Controller
                     'latitude' => $business['latitude'],
                     'longitude' => $business['longitude'],
                     'regency_id' => $business['regency_id'],
+                    'regency_long_code' => $business['regency_long_code'],
                     'subdistrict_id' => $business['subdistrict_id'],
+                    'subdistrict_long_code' => $business['subdistrict_long_code'],
                     'village_id' => $business['village_id'],
+                    'village_long_code' => $business['village_long_code'],
                     'sls_id' => $business['sls_id'],
+                    'sls_long_code' => $business['sls_long_code'],
                     'owner' => $business['owner'],
                     'market_name' => $business['market_name'],
                     'deleted_at' => $business['deleted_at'],
@@ -408,7 +428,13 @@ class AnomalyController extends Controller
      */
     private function findBusiness($businessId, $withRelations = true, $includeTrashed = false)
     {
-        $baseRelations = $withRelations ? ['user:id,firstname,email'] : [];
+        $baseRelations = $withRelations ? [
+            'user:id,firstname,email',
+            'regency:id,long_code',
+            'subdistrict:id,long_code',
+            'village:id,long_code',
+            'sls:id,long_code'
+        ] : [];
 
         // Try MarketBusiness first
         $marketQuery = MarketBusiness::with(array_merge(
@@ -696,9 +722,13 @@ class AnomalyController extends Controller
             'latitude' => $business->latitude,
             'longitude' => $business->longitude,
             'regency_id' => $business->regency_id,
+            'regency_long_code' => $business->regency->long_code ?? null,
             'subdistrict_id' => $business->subdistrict_id,
+            'subdistrict_long_code' => $business->subdistrict->long_code ?? null,
             'village_id' => $business->village_id,
+            'village_long_code' => $business->village->long_code ?? null,
             'sls_id' => $business->sls_id,
+            'sls_long_code' => $business->sls->long_code ?? null,
             'owner' => $business->owner ?? null,
             'market_name' => $isMarketBusiness ? ($business->market->name ?? null) : null,
             'deleted_at' => $business->deleted_at,

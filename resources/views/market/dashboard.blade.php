@@ -69,16 +69,14 @@
                         <div class="row">
                             <div class="col-8">
                                 <div class="numbers">
-                                    <p class="text-sm mb-2 text-uppercase font-weight-bold">Pemutakhiran Direktori Sentra
-                                        Ekonomi
+                                    <p class="text-sm mb-2 text-uppercase font-weight-bold">Pemutakhiran Usaha
                                     </p>
                                     <h5 class="font-weight-bolder">
 
                                     </h5>
-                                    <p class="mb-0">
+                                    <p class="mb-2">
                                         <span class="text-sm"><strong
-                                                class="text-success">{{ $latestTotalBusiness }}</strong>
-                                            usaha sentra ekonomi sudah dimutakhirkan.</span>
+                                                class="text-success">{{ $latestTotalBusiness }}</strong> usaha sudah dimutakhirkan.</span>
                                     </p>
                                     <p class="text-xs text-secondary mb-0">
                                         Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}

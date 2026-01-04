@@ -212,10 +212,10 @@ class DuplicateController extends Controller
     {
         $candidate = DuplicateCandidate::with([
             'centerBusiness' => function ($query) {
-                $query->withTrashed()->with(['user']);
+                $query->withTrashed()->with(['user', 'regency', 'subdistrict', 'village', 'sls']);
             },
             'nearbyBusiness' => function ($query) {
-                $query->withTrashed()->with(['user']);
+                $query->withTrashed()->with(['user', 'regency', 'subdistrict', 'village', 'sls']);
             },
             'lastConfirmedBy'
         ])->find($candidateId);

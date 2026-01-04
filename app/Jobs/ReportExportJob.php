@@ -392,7 +392,7 @@ class ReportExportJob implements ShouldQueue
 
                 foreach ($records as $record) {
                     $csv->insertOne([
-                        $record['id'],
+                        $record['long_code'],
                         $record['name'],
                         $record['market_total'],
                         $record['supplement_total'],
