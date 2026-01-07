@@ -34,9 +34,14 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
       - ./backup:/var/www/backup
-      - ./docker/mysql/my-prod.cnf:/etc/mysql/conf.d/my-prod.cnf:ro
+      - ./docker/mysql/my-prod.cnf:/etc/mysql/conf.d/my.cnf:ro
     networks:
       - laravel_network
+    mem_limit: 20g
+    deploy:
+      resources:
+        limits:
+          memory: 20g
 
   redis:
     container_name: directory-app-redis

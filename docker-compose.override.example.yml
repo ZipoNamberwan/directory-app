@@ -45,7 +45,12 @@ services:
 #       APP_LOG_LEVEL: debug
 db:
     volumes:
-      - ./docker/mysql/my-dev.cnf:/tmp/my-dev.cnf
+      - ./docker/mysql/my-dev.cnf:/etc/mysql/conf.d/my.cnf:ro
+    deploy:
+    mem_limit: 8g
+    resources:
+      limits:
+        memory: 8g
     command: >
       bash -c "
       cp /tmp/my-dev.cnf /etc/mysql/conf.d/my-dev.cnf &&
