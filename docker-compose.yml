@@ -29,12 +29,18 @@ services:
       MYSQL_USER: ${DB_MAIN_USERNAME}
       MYSQL_PASSWORD: ${DB_MAIN_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_MAIN_PASSWORD}
+    ports:
+      - "3310:3306"
     volumes:
       - dbdata:/var/lib/mysql
       - ./backup:/var/www/backup
-      # - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql/my-prod.cnf:/etc/mysql/conf.d/my.cnf:ro
     networks:
       - laravel_network
+    deploy:
+      resources:
+        limits:
+          memory: 20g
 
   redis:
     container_name: directory-app-redis

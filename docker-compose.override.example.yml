@@ -16,19 +16,19 @@ services:
       APP_ENV: local
       APP_DEBUG: "true"
       APP_LOG_LEVEL: debug
-    # entrypoint: 
-    #   - bash
-    #   - -c
-    #   - |
-    #     echo 'Fixing permissions...'
-    #     chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-    #     chmod -R 775 /var/www/storage /var/www/bootstrap/cache
-    #     mkdir -p /var/www/storage/logs
-    #     touch /var/www/storage/logs/laravel.log
-    #     chown www-data:www-data /var/www/storage/logs/laravel.log
-    #     chmod 664 /var/www/storage/logs/laravel.log
-    #     echo 'Starting supervisord...'
-    #     exec supervisord -c /etc/supervisor/supervisord.conf
+    entrypoint:
+      - bash
+      - -c
+      - |
+        echo 'Fixing permissions...'
+        chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/public
+        chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/public
+        mkdir -p /var/www/storage/logs
+        touch /var/www/storage/logs/laravel.log
+        chown www-data:www-data /var/www/storage/logs/laravel.log
+        chmod 664 /var/www/storage/logs/laravel.log
+        echo 'Starting supervisord...'
+        exec supervisord -c /etc/supervisor/supervisord.conf
 
 # # Windows Dev Docker Setup (uncomment to use)
 # services:
@@ -43,3 +43,11 @@ services:
 #       APP_ENV: local
 #       APP_DEBUG: "true"
 #       APP_LOG_LEVEL: debug
+  db:
+      volumes:
+        - ./docker/mysql/my-dev.cnf:/etc/mysql/conf.d/my.cnf:ro
+      deploy:
+      mem_limit: 8g
+      resources:
+        limits:
+          memory: 8g
