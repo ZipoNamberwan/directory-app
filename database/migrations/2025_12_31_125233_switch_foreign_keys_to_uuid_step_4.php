@@ -169,13 +169,17 @@ return new class extends Migration
                 }
 
                 // Add UUID FK
-                Schema::table($table, function (Blueprint $tableBlueprint) use ($uuidColumn, $masterTable) {
-                    $tableBlueprint->foreign($uuidColumn)
-                        ->references('uuid')
-                        ->on($masterTable)
-                        ->onUpdate('cascade')
-                        ->onDelete('restrict');
-                });
+                try {
+                    Schema::table($table, function (Blueprint $tableBlueprint) use ($uuidColumn, $masterTable) {
+                        $tableBlueprint->foreign($uuidColumn)
+                            ->references('uuid')
+                            ->on($masterTable)
+                            ->onUpdate('cascade')
+                            ->onDelete('restrict');
+                    });
+                } catch (\Throwable $e) {
+                    // ignore if already exists
+                }
             }
         }
     }
@@ -206,13 +210,17 @@ return new class extends Migration
                 }
 
                 // Restore legacy FK
-                Schema::table($table, function (Blueprint $tableBlueprint) use ($fkColumn, $masterTable) {
-                    $tableBlueprint->foreign($fkColumn)
-                        ->references('id')
-                        ->on($masterTable)
-                        ->onUpdate('cascade')
-                        ->onDelete('restrict');
-                });
+                try {
+                    Schema::table($table, function (Blueprint $tableBlueprint) use ($fkColumn, $masterTable) {
+                        $tableBlueprint->foreign($fkColumn)
+                            ->references('id')
+                            ->on($masterTable)
+                            ->onUpdate('cascade')
+                            ->onDelete('restrict');
+                    });
+                } catch (\Throwable $e) {
+                    // ignore if already exists
+                }
             }
         }
 

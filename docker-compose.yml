@@ -37,7 +37,6 @@ services:
       - ./docker/mysql/my-prod.cnf:/etc/mysql/conf.d/my.cnf:ro
     networks:
       - laravel_network
-    mem_limit: 20g
     deploy:
       resources:
         limits:

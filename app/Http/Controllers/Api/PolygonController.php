@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Sls;
 use App\Models\Village;
+use App\Models\Subdistrict;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Http\Request;
@@ -15,13 +16,21 @@ class PolygonController extends Controller
 
     public function getVillagesBySubdistrict($subdistrict)
     {
-        $villages = Village::where('subdistrict_id', $subdistrict)->get();
+        $subdistrict = Subdistrict::where('long_code', $subdistrict)->first();
+        if (!$subdistrict) {
+            return $this->errorResponse('Desa tidak ditemukan.', 404);
+        }
+        $villages = Village::where('subdistrict_id', $subdistrict->id)->get();
         return $this->successResponse($villages);
     }
 
     public function getSlsByVillage($village)
     {
-        $sls = Sls::where('village_id', $village)->get();
+        $village = Village::where('long_code', $village)->first();
+        if (!$village) {
+            return $this->errorResponse('SLS tidak ditemukan.', 404);
+        }
+        $sls = Sls::where('village_id', $village->id)->get();
         return $this->successResponse($sls);
     }
 
@@ -29,6 +38,7 @@ class PolygonController extends Controller
     {
         $id = $request->id;
         $type = $request->type;
+        $code = '';
 
         if (!in_array($type, ['village', 'sls'])) {
             return $this->errorResponse('Invalid type specified.', 400);
@@ -39,6 +49,7 @@ class PolygonController extends Controller
             if (!$village) {
                 return $this->errorResponse('Desa tidak ditemukan.', 404);
             }
+            $code = $village->long_code;
         }
 
         if ($type === 'sls') {
@@ -46,11 +57,10 @@ class PolygonController extends Controller
             if (!$sls) {
                 return $this->errorResponse('SLS tidak ditemukan.', 404);
             }
-
-            $id = substr($sls->id, 0, 14);
+            $code = substr($sls->long_code , 0, 14);
         }
 
-        $fileName = "{$id}.geojson";
+        $fileName = "{$code}.geojson";
         $filePath = storage_path("app/private/geojson/{$fileName}");
 
         if (!file_exists($filePath)) {
