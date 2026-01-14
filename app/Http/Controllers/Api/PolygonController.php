@@ -26,11 +26,7 @@ class PolygonController extends Controller
 
     public function getSlsByVillage($village)
     {
-        $village = Village::where('long_code', $village)->first();
-        if (!$village) {
-            return $this->errorResponse('SLS tidak ditemukan.', 404);
-        }
-        $sls = Sls::where('village_id', $village->id)->get();
+        $sls = Sls::where('village_id', $village)->get();
         return $this->successResponse($sls);
     }
 
