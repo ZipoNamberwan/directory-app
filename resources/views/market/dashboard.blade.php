@@ -174,7 +174,7 @@
                         <p class="text-sm">Kondisi tanggal: <strong>{{ $updateDate }} {{ $updateTime }}</strong></p>
                     </div>
                     <div class="card-body">
-                        <div class="row mb-4">
+                        {{-- <div class="row mb-4">
                             @hasrole('adminprov')
                                 <div class="col-md-4">
                                     <label class="form-control-label">Satker <span class="text-danger">*</span></label>
@@ -202,7 +202,7 @@
 
                             <!-- Chart -->
                             <canvas id="proggress_chart"></canvas>
-                        </div>
+                        </div> --}}
 
                         <table id="totalTable" class="align-items-center text-sm mt-6">
                             <thead>
@@ -328,10 +328,10 @@
                 selector: '#organizationUser',
                 placeholder: 'Pilih Satker'
             },
-            {
-                selector: '#organizationGraph',
-                placeholder: 'Pilih Satker'
-            },
+            // {
+            //    selector: '#organizationGraph',
+            //    placeholder: 'Pilih Satker'
+            //},
             {
                 selector: '#regency',
                 placeholder: 'Pilih Kabupaten'
@@ -360,9 +360,9 @@
             '#organizationUser': () => {
                 renderTable('user', userTable);
             },
-            '#organizationGraph': () => {
-                renderChart();
-            },
+            // '#organizationGraph': () => {
+            //     renderChart();
+            // },
             '#regency': () => {
                 loadSubdistrict(null, null);
                 renderTable('regency', areaTable);
@@ -888,7 +888,7 @@
         });
     </script>
 
-    <script>
+    {{-- <script>
         function createChart(elementId, labels, data) {
             var ctx = document.getElementById(elementId).getContext('2d');
             return new Chart(ctx, {
@@ -962,5 +962,5 @@
                     });
             }
         }
-    </script>
+    </script> --}}
 @endpush
