@@ -66,7 +66,7 @@ class MarketMasterExportJob implements ShouldQueue
                         $csv->insertOne([
                             $row->id,
                             $row->name,
-                            '[' . $row->regency->id . '] ' . $row->regency->name,
+                            '[' . $row->regency->long_code . '] ' . $row->regency->name,
                             '[' . $row->subdistrict->short_code . '] ' . $row->subdistrict->name,
                             '[' . $row->village->short_code . '] ' . $row->village->name,
                             '[' . $row->organization->id . '] ' . $row->organization->name,

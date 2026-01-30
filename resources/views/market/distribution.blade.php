@@ -233,7 +233,7 @@
                 if (id != null) {
                     $.ajax({
                         type: 'GET',
-                        url: '/pasar/kab/' + id,
+                        url: '/pasar/org/' + id,
                         success: function(response) {
                             $(marketSelector).empty().append(
                                 `<option value="0" disabled selected> -- Pilih Sentra Ekonomi -- </option>`);

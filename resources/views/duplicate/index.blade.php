@@ -1334,6 +1334,12 @@
             // Check if business is deleted
             const isDeleted = business.deleted_at !== null;
 
+            // Helper function to capitalize first letter of each word
+            const capitalizeWords = (str) => {
+                if (!str) return '-';
+                return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+            };
+
             // Format user information
             const userInfo = business.user ?
                 `${business.user.firstname || '-'} (${business.user.organization_id || '-'})` :
@@ -1341,7 +1347,7 @@
 
             // Format organization information    
             const orgInfo = business.organization ?
-                `${business.organization.name || '-'} (${business.organization.id || '-'})` :
+                `${capitalizeWords(business.organization.name)} (${business.organization.id || '-'})` :
                 '-';
 
             // Format created_at date and time
@@ -1450,6 +1456,13 @@
             }
 
             const businessColor = type === 'center' ? COLOR_SCHEME.keep1.primary : COLOR_SCHEME.keep2.primary;
+            
+            // Format location information
+            const regencyInfo = business.regency ? `[${business.regency.long_code}] ${capitalizeWords(business.regency.name)}` : '-';
+            const subdistrictInfo = business.subdistrict ? `[${business.subdistrict.long_code}] ${capitalizeWords(business.subdistrict.name)}` : '-';
+            const villageInfo = business.village ? `[${business.village.long_code}] ${capitalizeWords(business.village.name)}` : '-';
+            const slsInfo = business.sls ? `[${business.sls.long_code}] ${capitalizeWords(business.sls.name)}` : '-';
+            
             const content = `
                 <h6 class="fw-bold mb-1" style="color: ${businessColor};">${displayName}${nameWarning}</h6>
                 <p class="mb-1 small"><strong>Pemilik:</strong> ${displayOwner}${ownerWarning}</p>
@@ -1457,6 +1470,10 @@
                 <p class="mb-1 small"><strong>Alamat:</strong> ${business.address || '-'}</p>
                 <p class="mb-1 small"><strong>Status:</strong> ${business.status || '-'}</p>
                 <p class="mb-1 small"><strong>Sektor:</strong> ${business.sector ? business.sector.substring(0, 50) + '...' : '-'}</p>
+                <p class="mb-1 small"><strong>Kabupaten:</strong> ${regencyInfo}</p>
+                <p class="mb-1 small"><strong>Kecamatan:</strong> ${subdistrictInfo}</p>
+                <p class="mb-1 small"><strong>Desa:</strong> ${villageInfo}</p>
+                <p class="mb-1 small"><strong>SLS:</strong> ${slsInfo}</p>
                 <p class="mb-1 small"><strong>Satker:</strong> ${orgInfo}</p>
                 <p class="mb-1 small"><strong>Petugas:</strong> ${userInfo}</p>
                 <p class="mb-1 small"><strong>Jenis Usaha:</strong> ${businessType}</p>

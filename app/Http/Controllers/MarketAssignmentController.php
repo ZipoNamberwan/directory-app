@@ -8,6 +8,7 @@ use App\Jobs\MarketAssignmentNotificationJob;
 use App\Models\AssignmentStatus;
 use App\Models\Market;
 use App\Models\MarketUserPivot;
+use App\Models\Organization;
 use App\Models\Regency;
 use App\Models\User;
 use Exception;
@@ -27,16 +28,16 @@ class MarketAssignmentController extends Controller
     public function showMarketAssignmentPage()
     {
         $user = User::find(Auth::id());
-        $regencies = Regency::all();
+        $organizations = Organization::all();
         $markets = [];
         $users = [];
 
         if ($user->hasRole('adminkab')) {
-            $markets = Market::where('regency_id', $user->regency_id)->get();
-            $users = User::where('regency_id', $user->regency_id)->role(['operator', 'pml'])->get();
+            $markets = Market::where('organization_id', $user->organization_id)->get();
+            $users = User::where('organization_id', $user->organization_id)->get();
         }
 
-        return view('market.list-assignment', ['markets' => $markets, 'users' => $users, 'regencies' => $regencies]);
+        return view('market.list-assignment', ['markets' => $markets, 'users' => $users, 'organizations' => $organizations]);
     }
 
     public function getUserMarketPivot(Request $request)
@@ -49,16 +50,15 @@ class MarketAssignmentController extends Controller
             $records = MarketUserPivot::query();
         } else if ($user->hasRole('adminkab')) {
             $records = MarketUserPivot::whereHas('market', function ($query) use ($user) {
-                $query->where('regency_id', $user->regency_id);
+                $query->where('organization_id', $user->organization_id);
             });
         }
 
         $recordsTotal = $records->count();
 
-        if ($request->regency && $request->regency !== '0') {
-            $regency = $request->regency != '3500' ? $request->regency : null;
-            $records->whereHas('user', function ($query) use ($regency) {
-                $query->where('regency_id', $regency);
+        if ($request->organization && $request->organization !== '0') {
+            $records->whereHas('user', function ($query) use ($request) {
+                $query->where('organization_id', $request->organization);
             });
         }
         if ($request->market && $request->market !== '0') {

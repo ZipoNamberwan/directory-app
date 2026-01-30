@@ -1016,14 +1016,14 @@
                         let row = cell.getRow().getData().business;
 
                         let areaId = "";
-                        if (row.sls_id) {
-                            areaId = row.sls_id;
-                        } else if (row.village_id) {
-                            areaId = row.village_id;
-                        } else if (row.subdistrict_id) {
-                            areaId = row.subdistrict_id;
-                        } else if (row.regency_id) {
-                            areaId = row.regency_id;
+                        if (row.sls_long_code) {
+                            areaId = row.sls_long_code;
+                        } else if (row.village_long_code) {
+                            areaId = row.village_long_code;
+                        } else if (row.subdistrict_long_code) {
+                            areaId = row.subdistrict_long_code;
+                        } else if (row.regency_long_code) {
+                            areaId = row.regency_long_code;
                         }
 
                         if (!areaId) return "-";

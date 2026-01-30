@@ -1026,14 +1026,14 @@
                         }
 
                         let areaId = "";
-                        if (row.sls && row.sls.id) {
-                            areaId = row.sls.id;
-                        } else if (row.village && row.village.id) {
-                            areaId = row.village.id;
-                        } else if (row.subdistrict && row.subdistrict.id) {
-                            areaId = row.subdistrict.id;
-                        } else if (row.regency && row.regency.id) {
-                            areaId = row.regency.id;
+                        if (row.sls && row.sls.long_code) {
+                            areaId = row.sls.long_code;
+                        } else if (row.village && row.village.long_code) {
+                            areaId = row.village.long_code;
+                        } else if (row.subdistrict && row.subdistrict.long_code) {
+                            areaId = row.subdistrict.long_code;
+                        } else if (row.regency && row.regency.long_code) {
+                            areaId = row.regency.long_code;
                         }
 
                         let areaNames = [];

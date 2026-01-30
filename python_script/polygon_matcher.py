@@ -1,5 +1,6 @@
 import os
 import time
+import gc
 from dotenv import load_dotenv
 import mysql.connector
 import pandas as pd
@@ -118,26 +119,83 @@ def load_all_sls(sls_root: str, debug_limit: int = None) -> gpd.GeoDataFrame:
     if not frames:
         raise RuntimeError("SLS load failed: no valid GeoDataFrames created.")
 
+    print("🔗 Concatenating all SLS polygons...")
     sls_gdf = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), crs=POINTS_CRS)
     sls_gdf.set_geometry("geometry", inplace=True)
+    
+    # Free memory from individual frames
+    del frames
+    gc.collect()
+    
+    print(f"✓ Concatenated {len(sls_gdf):,} polygons")
 
-    # Build spatial index (lazily built on first sjoin; we force it for early cost)
-    print("🧱 Building spatial index for SLS (one-time)...")
+    # Build spatial index (memory-intensive operation)
+    print("🧱 Building spatial index for SLS (this may take a while)...")
+    t_index_start = time.time()
     _ = sls_gdf.sindex
+    index_dt = time.time() - t_index_start
+    print(f"✓ Spatial index built in {index_dt:.1f}s")
 
     dt = time.time() - t0
     print(f"✅ SLS loaded: {len(sls_gdf):,} polygons from {len(files):,} files in {dt:.1f}s")
     return sls_gdf
 
 # =========================
+# AREA LOOKUP TABLES
+# =========================
+def load_regencies(cursor) -> dict:
+    """Load regencies into a lookup dict: {long_code: uuid}"""
+    cursor.execute("SELECT id, long_code FROM regencies")
+    return {row["long_code"]: row["id"] for row in cursor.fetchall()}
+
+def load_subdistricts(cursor) -> dict:
+    """Load subdistricts into a lookup dict: {long_code: uuid}"""
+    cursor.execute("SELECT id, long_code FROM subdistricts")
+    return {row["long_code"]: row["id"] for row in cursor.fetchall()}
+
+def load_villages(cursor) -> dict:
+    """Load villages into a lookup dict: {long_code: uuid}"""
+    cursor.execute("SELECT id, long_code FROM villages")
+    return {row["long_code"]: row["id"] for row in cursor.fetchall()}
+
+def load_sls(cursor) -> dict:
+    """Load sls into a lookup dict: {long_code: uuid}"""
+    cursor.execute("SELECT id, long_code FROM sls")
+    return {row["long_code"]: row["id"] for row in cursor.fetchall()}
+
+def load_all_area_lookups(cursor) -> tuple:
+    """Load all area lookup tables and return as tuple of dicts."""
+    print("📚 Loading area lookup tables...")
+    t0 = time.time()
+    
+    regencies = load_regencies(cursor)
+    subdistricts = load_subdistricts(cursor)
+    villages = load_villages(cursor)
+    sls = load_sls(cursor)
+    
+    dt = time.time() - t0
+    print(f"✅ Loaded {len(regencies):,} regencies, {len(subdistricts):,} subdistricts, {len(villages):,} villages, {len(sls):,} sls in {dt:.1f}s")
+    
+    return regencies, subdistricts, villages, sls
+
+# =========================
 # ID DERIVATION
 # =========================
-def derive_ids_from_sls_code(sls_code: str):
-    """Return (regency_id, subdistrict_id, village_id, sls_id) from SLS base code."""
-    reg_id = sls_code[:ID_SLICE["regency"]] if ID_SLICE.get("regency") else None
-    sub_id = sls_code[:ID_SLICE["subdistrict"]] if ID_SLICE.get("subdistrict") else None
-    vil_id = sls_code[:ID_SLICE["village"]] if ID_SLICE.get("village") else None
-    sls_id = sls_code + ID_SLICE.get("sls_suffix", "")
+def derive_ids_from_sls_code(sls_code: str, regencies_lookup: dict, subdistricts_lookup: dict, 
+                             villages_lookup: dict, sls_lookup: dict):
+    """Return (regency_id, subdistrict_id, village_id, sls_id) using UUID lookups from long_code."""
+    # Derive the long_codes from the sls_code using the old slicing logic
+    regency_code = sls_code[:ID_SLICE["regency"]] if ID_SLICE.get("regency") else None
+    subdistrict_code = sls_code[:ID_SLICE["subdistrict"]] if ID_SLICE.get("subdistrict") else None
+    village_code = sls_code[:ID_SLICE["village"]] if ID_SLICE.get("village") else None
+    sls_code_full = sls_code + ID_SLICE.get("sls_suffix", "")
+    
+    # Look up the UUIDs from the lookup dictionaries
+    reg_id = regencies_lookup.get(regency_code)
+    sub_id = subdistricts_lookup.get(subdistrict_code)
+    vil_id = villages_lookup.get(village_code)
+    sls_id = sls_lookup.get(sls_code_full)
+    
     return reg_id, sub_id, vil_id, sls_id
 
 # =========================
@@ -354,7 +412,9 @@ def join_points_to_sls_chunked(points_gdf: gpd.GeoDataFrame, sls_gdf: gpd.GeoDat
 # =========================
 # PROCESS SINGLE TABLE
 # =========================
-def process_table(cursor, conn, table_name: str, sls_gdf: gpd.GeoDataFrame):
+def process_table(cursor, conn, table_name: str, sls_gdf: gpd.GeoDataFrame, 
+                 regencies_lookup: dict, subdistricts_lookup: dict, 
+                 villages_lookup: dict, sls_lookup: dict):
     """Process a single table with geolocation matching."""
     print(f"\n{'='*60}")
     print(f"🎯 Processing table: {table_name}")
@@ -403,7 +463,9 @@ def process_table(cursor, conn, table_name: str, sls_gdf: gpd.GeoDataFrame):
             if sls_base is None or pd.isna(sls_base):
                 failed_ids.append(rid)  # mark as failed later
                 continue
-            reg_id, sub_id, vil_id, sls_id = derive_ids_from_sls_code(str(sls_base))
+            reg_id, sub_id, vil_id, sls_id = derive_ids_from_sls_code(
+                str(sls_base), regencies_lookup, subdistricts_lookup, villages_lookup, sls_lookup
+            )
             row_tuple = (reg_id, sub_id, vil_id, sls_id, "sls", rid)
             updates.append(row_tuple)
             matched_in_batch += 1
@@ -446,26 +508,30 @@ def process_table(cursor, conn, table_name: str, sls_gdf: gpd.GeoDataFrame):
 def main():
     global_start = time.time()
 
-    # 1) Load SLS polygons once (with progress)
-    sls_gdf = load_all_sls(SLS_DIR, DEBUG_SLS_LIMIT if DEBUG_MODE else None)
-
-    # 2) Connect DB
+    # 1) Connect DB
     print("🔌 Connecting to DB...")
     conn = mysql.connector.connect(**DB)
     cursor = conn.cursor(dictionary=True)
-
-    # 3) Process each table
+    
+    # 2) Load area lookup tables
+    regencies_lookup, subdistricts_lookup, villages_lookup, sls_lookup = load_all_area_lookups(cursor)
+    
+    # 3) Load SLS polygons once (with progress)
+    sls_gdf = load_all_sls(SLS_DIR, DEBUG_SLS_LIMIT if DEBUG_MODE else None)
+    
+    # 4) Process each table
     all_results = []
     
     for table_name in TABLES_TO_PROCESS:
         try:
-            result = process_table(cursor, conn, table_name, sls_gdf)
+            result = process_table(cursor, conn, table_name, sls_gdf, 
+                                 regencies_lookup, subdistricts_lookup, villages_lookup, sls_lookup)
             all_results.append(result)
         except Exception as e:
             print(f"❌ Error processing table {table_name}: {e}")
             continue
 
-    # 4) Summary
+    # 5) Summary
     total_dt = time.time() - global_start
     print("\n" + "="*80)
     print("🎉 ALL TABLES COMPLETED")

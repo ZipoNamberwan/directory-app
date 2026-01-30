@@ -17,7 +17,6 @@ import glob
 import base64
 import time
 import sys
-import shutil
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from dotenv import load_dotenv
@@ -32,9 +31,6 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Backup directory relative to script location
 BACKUP_DIR = os.path.join(os.path.dirname(__file__), '..', 'backup')
-
-# Temporary directory for safe copying (within backup folder)
-TEMP_DIR = os.path.join(BACKUP_DIR, 'temp')
 
 # File stability check - wait time to ensure file is not being written
 FILE_STABILITY_WAIT = 30  # seconds
@@ -106,18 +102,14 @@ class QNAPBackupUploader:
             raise
     
     def upload_backup_file(self, file_path):
-        """Upload backup file to QNAP NAS - equivalent to PHP curl upload"""
-        temp_file = None
+        """Upload backup file to QNAP NAS with streaming support"""
         try:
             # Get authentication SID if not already obtained
             if not self.sid:
                 self.get_auth_sid()
             
-            # Create safe copy first
-            temp_file = self.create_safe_copy(file_path)
-            
-            file_name = os.path.basename(file_path)  # Use original filename
-            file_size = os.path.getsize(temp_file)
+            file_name = os.path.basename(file_path)
+            file_size = os.path.getsize(file_path)
             
             print(f"📤 Uploading to QNAP NAS: {file_name} ({self.format_file_size(file_size)})...")
             
@@ -131,18 +123,24 @@ class QNAPBackupUploader:
             
             print(f"🌐 Upload URL: {url_upload}")
             
-            # Prepare file for upload using temp file (equivalent to PHP CURLFILE)
-            with open(temp_file, 'rb') as f:
+            # Stream upload with progress tracking
+            print("⏳ Uploading file...")
+            
+            with open(file_path, 'rb') as f:
                 files = {
                     'file': (file_name, f, 'application/sql')
                 }
                 
-                # Upload file with timeout (equivalent to PHP curl_exec)
-                print("⏳ Uploading file...")
+                # Increased timeout based on file size: 1 second per 100MB minimum 10 minutes
+                timeout = max(600, (file_size / (100 * 1024 * 1024)) * 60)
+                print(f"   Upload timeout: {int(timeout)} seconds ({self.format_file_size(file_size)} file)")
+                
+                # Upload file with dynamic timeout
                 response = self.session.post(
                     url_upload, 
                     files=files, 
-                    timeout=300  # 5 minutes timeout
+                    timeout=timeout,
+                    stream=True
                 )
             
             print(f"📄 Upload response status: {response.status_code}")
@@ -161,10 +159,6 @@ class QNAPBackupUploader:
         except Exception as e:
             print(f"✗ Error uploading to QNAP: {e}")
             raise
-        finally:
-            # Always cleanup temp file
-            if temp_file:
-                self.cleanup_temp_file(temp_file)
     
     def find_backup_files(self, all_files=False):
         """Find backup files to upload from all three databases"""
@@ -258,44 +252,6 @@ class QNAPBackupUploader:
         except Exception as e:
             print(f"   Error checking file stability: {e}")
             return False
-    
-    def create_safe_copy(self, source_file):
-        """Create a safe copy of the backup file to avoid upload conflicts"""
-        try:
-            # Ensure temp directory exists
-            os.makedirs(TEMP_DIR, exist_ok=True)
-            
-            # Create temp file name with timestamp
-            filename = os.path.basename(source_file)
-            name, ext = os.path.splitext(filename)
-            timestamp = datetime.now().strftime("%H%M%S")
-            temp_filename = f"{name}_upload_{timestamp}{ext}"
-            temp_file = os.path.join(TEMP_DIR, temp_filename)
-            
-            print(f"📋 Creating safe copy: {temp_filename}")
-            
-            # Copy file
-            shutil.copy2(source_file, temp_file)
-            
-            # Verify copy
-            if os.path.getsize(source_file) != os.path.getsize(temp_file):
-                raise Exception("File copy size mismatch")
-            
-            print(f"✓ Safe copy created: {self.format_file_size(os.path.getsize(temp_file))}")
-            return temp_file
-            
-        except Exception as e:
-            print(f"✗ Error creating safe copy: {e}")
-            raise
-    
-    def cleanup_temp_file(self, temp_file):
-        """Clean up temporary file after upload"""
-        try:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
-                print(f"🗑️  Cleaned up temp file: {os.path.basename(temp_file)}")
-        except Exception as e:
-            print(f"⚠️  Warning: Could not clean up temp file {temp_file}: {e}")
     
     def format_file_size(self, size_bytes):
         """Format file size in human readable format"""

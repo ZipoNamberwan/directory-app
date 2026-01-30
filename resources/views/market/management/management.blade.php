@@ -514,7 +514,7 @@
                     render: function(data, type, row) {
                         if (type === 'display') {
                             // Safely get IDs for area code
-                            const regencyId = row.regency && row.regency.id ? row.regency.id : '';
+                            const regencyId = row.regency && row.regency.long_code ? row.regency.long_code : '';
                             const subdistrictId = row.subdistrict && row.subdistrict.short_code ? row.subdistrict.short_code : '';
                             const villageId = data && data.short_code ? data.short_code : '';
                             const areaCode = [regencyId, subdistrictId, villageId].filter(Boolean).join('');

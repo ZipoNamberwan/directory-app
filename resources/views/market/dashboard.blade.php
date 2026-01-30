@@ -69,16 +69,14 @@
                         <div class="row">
                             <div class="col-8">
                                 <div class="numbers">
-                                    <p class="text-sm mb-2 text-uppercase font-weight-bold">Pemutakhiran Direktori Sentra
-                                        Ekonomi
+                                    <p class="text-sm mb-2 text-uppercase font-weight-bold">Pemutakhiran Usaha
                                     </p>
                                     <h5 class="font-weight-bolder">
 
                                     </h5>
-                                    <p class="mb-0">
+                                    <p class="mb-2">
                                         <span class="text-sm"><strong
-                                                class="text-success">{{ $latestTotalBusiness }}</strong>
-                                            usaha sentra ekonomi sudah dimutakhirkan.</span>
+                                                class="text-success">{{ $latestTotalBusiness }}</strong> usaha sudah dimutakhirkan.</span>
                                     </p>
                                     <p class="text-xs text-secondary mb-0">
                                         Kondisi tanggal: {{ $updateDate }} {{ $updateTime }}
@@ -551,7 +549,7 @@
                         let isTotal = row.is_total_row;
                         let nameDisplay = isTotal ?
                             `<strong style="color:#2196F3;font-size:1.1em;">${row.name}</strong>` :
-                            `[${row.id}] ${row.name}`;
+                            `[${row.long_code}] ${row.name}`;
 
                         return `<div class="d-flex gap-3 align-items-center">
                             <h6 class="text-sm mb-1 ${isTotal ? "font-weight-bold" : ""}" 
