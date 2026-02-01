@@ -30,7 +30,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 BACKUP_DIR = os.path.join(os.path.dirname(__file__), '..', 'backup')
 
 # Default retention days (can be overridden by command line or environment)
-DEFAULT_RETENTION_DAYS = int(os.getenv('BACKUP_RETENTION_DAYS', 4))
+DEFAULT_RETENTION_DAYS = int(os.getenv('BACKUP_RETENTION_DAYS', 1))
 
 # Database prefixes to clean
 DATABASE_PREFIXES = ['DB_MAIN', 'DB_2', 'DB_3']
