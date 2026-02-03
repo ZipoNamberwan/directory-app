@@ -38,7 +38,7 @@ def get_jakarta_now():
     return datetime.now(JAKARTA_TZ)
 
 # Absolute paths
-SLS_DIR = os.path.join(BASE_DIR, "python_script/geojson/sls_by_subdistrict")
+GEOJSON_BASE_DIR = os.path.join(BASE_DIR, "storage/app/private/geojson")
 SLS_FILE_EXTS = (".json", ".geojson")
 DOTENV_PATH = os.path.join(BASE_DIR, ".env")
 
@@ -145,22 +145,50 @@ def load_all_sls(sls_root: str, debug_limit: int = None) -> gpd.GeoDataFrame:
 # =========================
 def load_regencies(cursor) -> dict:
     """Load regencies into a lookup dict: {long_code: uuid}"""
-    cursor.execute("SELECT id, long_code FROM regencies")
+    cursor.execute(
+        """
+        SELECT r.id, r.long_code
+        FROM regencies r
+        INNER JOIN area_periods ap ON ap.id = r.area_period_id
+        WHERE ap.is_active = 1
+        """
+    )
     return {row["long_code"]: row["id"] for row in cursor.fetchall()}
 
 def load_subdistricts(cursor) -> dict:
     """Load subdistricts into a lookup dict: {long_code: uuid}"""
-    cursor.execute("SELECT id, long_code FROM subdistricts")
+    cursor.execute(
+        """
+        SELECT s.id, s.long_code
+        FROM subdistricts s
+        INNER JOIN area_periods ap ON ap.id = s.area_period_id
+        WHERE ap.is_active = 1
+        """
+    )
     return {row["long_code"]: row["id"] for row in cursor.fetchall()}
 
 def load_villages(cursor) -> dict:
     """Load villages into a lookup dict: {long_code: uuid}"""
-    cursor.execute("SELECT id, long_code FROM villages")
+    cursor.execute(
+        """
+        SELECT v.id, v.long_code
+        FROM villages v
+        INNER JOIN area_periods ap ON ap.id = v.area_period_id
+        WHERE ap.is_active = 1
+        """
+    )
     return {row["long_code"]: row["id"] for row in cursor.fetchall()}
 
 def load_sls(cursor) -> dict:
     """Load sls into a lookup dict: {long_code: uuid}"""
-    cursor.execute("SELECT id, long_code FROM sls")
+    cursor.execute(
+        """
+        SELECT s.id, s.long_code
+        FROM sls s
+        INNER JOIN area_periods ap ON ap.id = s.area_period_id
+        WHERE ap.is_active = 1
+        """
+    )
     return {row["long_code"]: row["id"] for row in cursor.fetchall()}
 
 def load_all_area_lookups(cursor) -> tuple:
@@ -177,6 +205,25 @@ def load_all_area_lookups(cursor) -> tuple:
     print(f"✅ Loaded {len(regencies):,} regencies, {len(subdistricts):,} subdistricts, {len(villages):,} villages, {len(sls):,} sls in {dt:.1f}s")
     
     return regencies, subdistricts, villages, sls
+
+# =========================
+# AREA PERIOD (ACTIVE VERSION)
+# =========================
+def get_active_area_period_version(cursor) -> str:
+    """Return the active area_periods.period_version as a string."""
+    cursor.execute("SELECT period_version FROM area_periods WHERE is_active = 1 LIMIT 1")
+    row = cursor.fetchone()
+    if not row or row.get("period_version") is None:
+        raise RuntimeError("No active area_periods row found (is_active = 1).")
+    return str(row["period_version"])
+
+def get_sls_dir_for_period_version(period_version: str) -> str:
+        """Return SLS directory path for the given area period version.
+
+        Layout:
+            storage/app/private/geojson/<period_version>/sls_by_subdistrict
+        """
+        return os.path.join(GEOJSON_BASE_DIR, str(period_version), "sls_by_subdistrict")
 
 # =========================
 # ID DERIVATION
@@ -512,14 +559,20 @@ def main():
     print("🔌 Connecting to DB...")
     conn = mysql.connector.connect(**DB)
     cursor = conn.cursor(dictionary=True)
+
+    # 2) Determine active area period version (used for geojson folder naming)
+    active_version = get_active_area_period_version(cursor)
+    sls_dir = get_sls_dir_for_period_version(active_version)
+    print(f"🗂️ Active area period version: {active_version}")
+    print(f"📁 Using SLS folder: {sls_dir}")
     
-    # 2) Load area lookup tables
+    # 3) Load area lookup tables
     regencies_lookup, subdistricts_lookup, villages_lookup, sls_lookup = load_all_area_lookups(cursor)
     
-    # 3) Load SLS polygons once (with progress)
-    sls_gdf = load_all_sls(SLS_DIR, DEBUG_SLS_LIMIT if DEBUG_MODE else None)
+    # 4) Load SLS polygons once (with progress)
+    sls_gdf = load_all_sls(sls_dir, DEBUG_SLS_LIMIT if DEBUG_MODE else None)
     
-    # 4) Process each table
+    # 5) Process each table
     all_results = []
     
     for table_name in TABLES_TO_PROCESS:

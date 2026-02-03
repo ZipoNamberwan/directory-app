@@ -39,7 +39,7 @@ RUN pip install mysql-connector-python \
     geojson shapely python-dotenv \
     geopandas rtree pandas numpy tqdm \
     google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib \
-    geopy openai
+    geopy openai pytz
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
