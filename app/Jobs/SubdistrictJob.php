@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Helpers\DatabaseSelector;
+use App\Models\AreaPeriod;
 use App\Models\Regency;
 use App\Models\Subdistrict;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,17 +29,23 @@ class SubdistrictJob implements ShouldQueue
      */
     public function handle(): void
     {
+        $version = 2;
+        $periodId = AreaPeriod::where('period_version', $version)->first()->id;
+
+        $data = [];
+        foreach ($this->records as $record) {
+            $uuid = Str::uuid()->toString();
+            $data[] = [
+                'id' => $uuid,
+                'short_code' => $record['kec'],
+                'long_code' => $record['prov'] . $record['kab'] . $record['kec'],
+                'name' => $record['kec_name'],
+                'regency_id' => Regency::withoutGlobalScopes()->where('area_period_id', $periodId)->where('long_code', $record['prov'] . $record['kab'])->first()->id,
+                'area_period_id' => $periodId,
+            ];
+        }
+
         foreach (DatabaseSelector::getListConnections() as $connection) {
-            $data = [];
-            foreach ($this->records as $record) {
-                $data[] = [
-                    'id' => $record['prov'] . $record['kab'] . $record['kec'],
-                    'short_code' => $record['kec'],
-                    'long_code' => $record['prov'] . $record['kab'] . $record['kec'],
-                    'name' => $record['kec_name'],
-                    'regency_id' => Regency::find($record['prov'] . $record['kab'])->id,
-                ];
-            }
             Subdistrict::on($connection)->insert($data);
         }
     }
