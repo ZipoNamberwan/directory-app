@@ -17,7 +17,7 @@ class AreaSeeder extends Seeder
      */
     public function run(): void
     {
-        $types = ['sls'];
+        $types = ['kec', 'des', 'sls'];
 
         foreach ($types as $type) {
 
