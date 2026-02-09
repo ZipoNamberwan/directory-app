@@ -15,6 +15,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class MarketBusinessImportSheet implements
     ToCollection,
@@ -96,7 +97,7 @@ class MarketBusinessImportSheet implements
                         if (!is_numeric($record['latitude'])) {
                             $rowErrors[] = "Latitude tidak valid (bukan angka) pada baris $rowNumber.";
                         } else {
-                            $latitude = (float)$record['latitude'];
+                            $latitude = (float) $record['latitude'];
 
                             if ($latitude < -90 || $latitude > 90) {
                                 $rowErrors[] = "Latitude di luar rentang yang diperbolehkan (-90 sampai 90) pada baris $rowNumber.";
@@ -118,7 +119,7 @@ class MarketBusinessImportSheet implements
                         if (!is_numeric($record['longitude'])) {
                             $rowErrors[] = "Longitude tidak valid (bukan angka) pada baris $rowNumber.";
                         } else {
-                            $longitude = (float)$record['longitude'];
+                            $longitude = (float) $record['longitude'];
 
                             if ($longitude < -180 || $longitude > 180) {
                                 $rowErrors[] = "Longitude di luar rentang yang diperbolehkan (-180 sampai 180) pada baris $rowNumber.";
@@ -143,6 +144,12 @@ class MarketBusinessImportSheet implements
 
                             'latitude' => $record['latitude'],
                             'longitude' => $record['longitude'],
+
+                            // 👇 spatial column
+                            'coordinate' => DB::raw(
+                                "ST_PointFromText('POINT({$record['longitude']} {$record['latitude']})', 4326, 'axis-order=long-lat')"
+                            ),
+
                             'market_id' => $this->status->market_id,
                             'user_id' => $this->status->user_id,
                             'upload_id' => $this->status->id,
@@ -225,7 +232,7 @@ class MarketBusinessImportSheet implements
             return false;
         }
 
-        $parts = explode('.', (string)$value);
+        $parts = explode('.', (string) $value);
         $beforeDot = ltrim($parts[0], '-');
         $afterDot = isset($parts[1]) ? $parts[1] : '';
 
