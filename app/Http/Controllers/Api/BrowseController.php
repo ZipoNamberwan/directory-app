@@ -45,12 +45,8 @@ class BrowseController extends Controller
             $minLat
         );
 
-        $project = Project::where('type', 'swmaps market')->first();
-
-        $marketQuery = MarketBusiness::with(['user']);
-        if ($project != null) {
-            $marketQuery->with(['market']);
-        }
+        $now = now();
+        $marketQuery = MarketBusiness::with(['user', 'market']);
 
         $marketBusinesses = $marketQuery
             ->whereRaw(
@@ -58,28 +54,34 @@ class BrowseController extends Controller
                 [$polygonWkt]
             )
             ->get()
-            ->map(function ($business) use ($project) {
-                if ($project != null) {
-                    $business->project = [
-                        'id' => $project->id,
-                        'name' => $project->name,
-                        'type' => $project->type,
-                        'description' => $business->market->name,
-                        'created_at' => $project->created_at,
-                        'updated_at' => $project->updated_at,
-                    ];
-                } else {
-                    $business->project = null;
-                }
+            ->map(function ($business) use ($now) {
+                $business->project = [
+                    'id' => 'swmaps market',
+                    'name' => 'Sentra Ekonomi SWMaps',
+                    'type' => 'swmaps market',
+                    'description' => $business->market->name,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
                 return $business;
             });
 
-        $supplementSwmapsBusinesses = SupplementBusiness::with(['project', 'user'])
+        $supplementSwmapsBusinesses = SupplementBusiness::with(['user'])
             ->whereRaw(
                 "MBRContains(ST_PolygonFromText(?, 4326, 'axis-order=long-lat'), coordinate)",
                 [$polygonWkt]
             )
-            ->get();
+            ->get()
+            ->map(function ($business) use ($now) {
+                $business->project = [
+                    'id' => 'kendedes mobile',
+                    'name' => 'Kendedes Mobile',
+                    'type' => 'kendedes mobile',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+                return $business;
+            });
 
         // $project = [
         //     'id' => 'survey',
@@ -106,11 +108,9 @@ class BrowseController extends Controller
         //     });
 
         $combinedBusiness = $marketBusinesses->merge($supplementSwmapsBusinesses)
-            /* ->merge($surveyBusinesses) */ ;
+            /* ->merge($surveyBusinesses) */;
 
         return $this->successResponse($combinedBusiness, 'Businesses retrieved successfully');
-
-
     }
 
     public function getBusinessBySls(Request $request)
@@ -131,12 +131,8 @@ class BrowseController extends Controller
         $bufferRadians = $bufferMeters / $earthRadiusMeters;
         $bufferDegrees = rad2deg($bufferRadians);
 
-        $project = Project::where('type', 'swmaps market')->first();
-
-        $marketQuery = MarketBusiness::with(['user']);
-        if ($project != null) {
-            $marketQuery->with(['market']);
-        }
+        $now = now();
+        $marketQuery = MarketBusiness::with(['user', 'market']);
 
         $marketBusinesses = $marketQuery
             ->whereRaw(
@@ -144,28 +140,34 @@ class BrowseController extends Controller
                 [$slsGeom, $bufferDegrees]
             )
             ->get()
-            ->map(function ($business) use ($project) {
-                if ($project != null) {
-                    $business->project = [
-                        'id' => $project->id,
-                        'name' => $project->name,
-                        'type' => $project->type,
-                        'description' => $business->market->name,
-                        'created_at' => $project->created_at,
-                        'updated_at' => $project->updated_at,
-                    ];
-                } else {
-                    $business->project = null;
-                }
+            ->map(function ($business) use ($now) {
+                $business->project = [
+                    'id' => 'swmaps market',
+                    'name' => 'Sentra Ekonomi SWMaps',
+                    'type' => 'swmaps market',
+                    'description' => $business->market->name,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
                 return $business;
             });
 
-        $supplementSwmapsBusinesses = SupplementBusiness::with(['project', 'user'])
+        $supplementSwmapsBusinesses = SupplementBusiness::with(['user'])
             ->whereRaw(
                 'ST_Intersects(coordinate, ST_Buffer(ST_GeomFromWKB(?), ?))',
                 [$slsGeom, $bufferDegrees]
             )
-            ->get();
+            ->get()
+            ->map(function ($business) use ($now) {
+                $business->project = [
+                    'id' => 'kendedes mobile',
+                    'name' => 'Kendedes Mobile',
+                    'type' => 'kendedes mobile',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+                return $business;
+            });
 
         $combinedBusiness = $marketBusinesses->merge($supplementSwmapsBusinesses);
 

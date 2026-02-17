@@ -2,7 +2,7 @@
 # =====================
 # InnoDB (MAIN MEMORY)
 # =====================
-innodb_buffer_pool_size        = 6G
+innodb_buffer_pool_size        = 2G
 innodb_buffer_pool_instances   = 4
 
 # =====================

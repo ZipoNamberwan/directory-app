@@ -10,7 +10,7 @@ return new class extends Migration {
     public function up(): void
     {
         $tables = ['supplement_business', 'market_business'];
-        $chunk = 5000;
+        $chunk = 1000;
 
         foreach ($tables as $table) {
             DB::statement(

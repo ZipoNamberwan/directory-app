@@ -15,7 +15,7 @@ return new class extends Migration {
             'villages' => 'village',
             'sls' => 'sls_by_subdistrict',
         ];
-        $chunk = 5000;
+        $chunk = 1000;
 
         foreach ($tables as $table => $areaType) {
             DB::statement(
