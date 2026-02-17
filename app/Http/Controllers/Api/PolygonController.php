@@ -19,13 +19,13 @@ class PolygonController extends Controller
         if (!$subdistrict) {
             return $this->errorResponse('Desa tidak ditemukan.', 404);
         }
-        $villages = Village::where('subdistrict_id', $subdistrict->id)->get();
+        $villages = Village::where('subdistrict_id', $subdistrict->id)->orderBy('long_code')->get();
         return $this->successResponse($villages);
     }
 
     public function getSlsByVillage($village)
     {
-        $sls = Sls::where('village_id', $village)->get();
+        $sls = Sls::where('village_id', $village)->orderBy('long_code')->get();
         return $this->successResponse($sls);
     }
 
