@@ -33,14 +33,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/business-in-box-spatial', [BrowseController::class, 'getBusinessInBoundingBox']);
     Route::get('/business-by-sls', [BrowseController::class, 'getBusinessBySls']);
 
-    Route::middleware(['api', 'api-closed'])->group(function () {
+    // Route::middleware(['api', 'api-closed'])->group(function () {
         Route::post('/business', [TaggingController::class, 'storeSupplementBusiness']);
         Route::post('/business/upload-multiple', [TaggingController::class, 'uploadMultipleTags']);
         Route::put('/business/{id}', [TaggingController::class, 'updateSupplementBusiness']);
         Route::delete('/business/delete-multiple', [TaggingController::class, 'deleteMultipleTags']);
         Route::delete('/business/delete-multiple-v2', [TaggingController::class, 'deleteMultipleTagsV2']);
         Route::delete('/business/{id}', [TaggingController::class, 'deleteSupplementBusiness']);
-    });
+    // });
 
     Route::get('users/{user}/projects', [ProjectController::class, 'getProjectsByUser']);
     Route::get('users/{user}/projects/v2', [ProjectController::class, 'getProjectsByUserV2']);
