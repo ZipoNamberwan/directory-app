@@ -14,7 +14,7 @@ class BaseModel extends Model
         static::updating(function ($model) {
             $dirty = $model->getDirty();
 
-            $ignore = ['updated_at'];
+            $ignore = ['updated_at', 'coordinate'];
 
             foreach ($dirty as $column => $newValue) {
                 if (in_array($column, $ignore)) {

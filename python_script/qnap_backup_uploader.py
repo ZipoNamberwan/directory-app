@@ -128,7 +128,7 @@ class QNAPBackupUploader:
             
             with open(file_path, 'rb') as f:
                 files = {
-                    'file': (file_name, f, 'application/sql')
+                    'file': (file_name, f, 'application/zip')
                 }
                 
                 # Increased timeout based on file size: 1 second per 100MB minimum 10 minutes
@@ -171,7 +171,7 @@ class QNAPBackupUploader:
             
             for db_prefix in db_prefixes:
                 # Pattern to match backup files for this database
-                pattern = os.path.join(BACKUP_DIR, f'{db_prefix}_*.sql')
+                pattern = os.path.join(BACKUP_DIR, f'{db_prefix}_*.zip')
                 db_backup_files = glob.glob(pattern)
                 
                 if not db_backup_files:
@@ -341,7 +341,7 @@ def check_setup():
         total_files = 0
         
         for db_prefix in db_prefixes:
-            pattern = os.path.join(BACKUP_DIR, f'{db_prefix}_*.sql')
+            pattern = os.path.join(BACKUP_DIR, f'{db_prefix}_*.zip')
             db_files = glob.glob(pattern)
             if db_files:
                 print(f"✓ Found {len(db_files)} backup files for {db_prefix}")
@@ -395,9 +395,9 @@ Basic Commands:
   python {script_name} --test            # Test QNAP connection only
 
 Supported Databases:
-  - DB_MAIN_*.sql files (Main database)
-  - DB_2_*.sql files (Database 2)
-  - DB_3_*.sql files (Database 3)
+    - DB_MAIN_*.zip files (Main database)
+    - DB_2_*.zip files (Database 2)
+    - DB_3_*.zip files (Database 3)
 
 Backup Modes:
   Default mode: Finds the latest stable file from each database (up to 3 files)

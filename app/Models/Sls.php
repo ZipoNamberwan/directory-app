@@ -13,6 +13,9 @@ class Sls extends Model
     protected $guarded = [];
     public $timestamps = false;
     protected $table = 'sls';
+    protected $hidden = [
+        'geom',
+    ];
 
     public function village()
     {

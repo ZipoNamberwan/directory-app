@@ -29,6 +29,7 @@ dump_database() {
   CUSTOM_NAME="$6"
 
   OUTFILE="$BACKUP_DIR/${CUSTOM_NAME}_${DATE}.sql"
+  ZIPFILE="$BACKUP_DIR/${CUSTOM_NAME}_${DATE}.zip"
 
   echo "📦 Backing up $DB_NAME to $OUTFILE"
   export MYSQL_PWD="$DB_PASS"
@@ -48,6 +49,17 @@ dump_database() {
     "$DB_NAME" \
     pulse_aggregates pulse_entries pulse_values \
     >> "$OUTFILE"
+
+  # 3. Zip the dump and delete the original .sql (only if zip succeeds)
+  if command -v zip >/dev/null 2>&1; then
+    echo "🗜️  Zipping $OUTFILE to $ZIPFILE"
+    rm -f "$ZIPFILE"
+    zip -9 -q -j "$ZIPFILE" "$OUTFILE"
+    rm -f "$OUTFILE"
+  else
+    echo "❌ zip command not found; cannot compress backups"
+    exit 1
+  fi
 
   unset MYSQL_PWD
 }

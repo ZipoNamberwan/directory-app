@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BrowseController;
 use App\Http\Controllers\Api\PolygonController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\TaggingController;
@@ -29,6 +30,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/business/project/{projectId}', [TaggingController::class, 'getBusinessByProject']);
     Route::get('/business/project/locked/{projectId}', [TaggingController::class, 'getLockedBusinessByProject']);
     
+    Route::get('/business-in-box-spatial', [BrowseController::class, 'getBusinessInBoundingBox']);
+    Route::get('/business-by-sls', [BrowseController::class, 'getBusinessBySls']);
+
     // Route::middleware(['api', 'api-closed'])->group(function () {
         Route::post('/business', [TaggingController::class, 'storeSupplementBusiness']);
         Route::post('/business/upload-multiple', [TaggingController::class, 'uploadMultipleTags']);

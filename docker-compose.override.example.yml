@@ -29,6 +29,13 @@ services:
         chmod 664 /var/www/storage/logs/laravel.log
         echo 'Starting supervisord...'
         exec supervisord -c /etc/supervisor/supervisord.conf
+  db:
+    volumes:
+      - ./docker/mysql/my-dev.cnf:/etc/mysql/conf.d/my.cnf:ro
+    deploy:
+      resources:
+        limits:
+          memory: 8g
 
 # # Windows Dev Docker Setup (uncomment to use)
 # services:
@@ -43,10 +50,19 @@ services:
 #       APP_ENV: local
 #       APP_DEBUG: "true"
 #       APP_LOG_LEVEL: debug
-db:
-    volumes:
-      - ./docker/mysql/my-dev.cnf:/etc/mysql/conf.d/my.cnf:ro
-    deploy:
-      resources:
-        limits:
-          memory: 8g
+#   db:
+#     deploy:
+#       resources:
+#         limits:
+#           memory: 6g
+#     entrypoint:
+#       - bash
+#       - -c
+#       - |
+#         cp /mnt/my.cnf /etc/mysql/my.cnf
+#         chmod 644 /etc/mysql/my.cnf
+#         exec docker-entrypoint.sh mysqld --defaults-extra-file=/etc/mysql/my.cnf
+#     volumes:
+#       - ./docker/mysql/my-dev.cnf:/etc/mysql/conf.d/my.cnf:ro
+#       - ./docker/mysql/my-dev.cnf:/mnt/my.cnf:ro
+

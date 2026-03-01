@@ -13,6 +13,9 @@ class Regency extends Model
     protected $guarded = [];
     public $timestamps = false;
     protected $table = 'regencies';
+    protected $hidden = [
+        'geom',
+    ];
 
     public function subdistricts()
     {

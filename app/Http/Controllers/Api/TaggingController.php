@@ -9,6 +9,7 @@ use App\Models\SupplementBusiness;
 use App\Models\SurveyBusiness;
 use Illuminate\Http\Request;
 use App\Traits\ApiResponser;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
 class TaggingController extends Controller
@@ -116,13 +117,13 @@ class TaggingController extends Controller
         return $this->successResponse($combinedBusiness, 'Businesses retrieved successfully');
     }
 
-    public function getBusinessByProject(String $projectId)
+    public function getBusinessByProject(string $projectId)
     {
         $businesses = SupplementBusiness::where('project_id', $projectId)->get();
         return $this->successResponse($businesses, 'Businesses retrieved successfully');
     }
 
-    public function getLockedBusinessByProject(String $projectId)
+    public function getLockedBusinessByProject(string $projectId)
     {
         $businesses = SupplementBusiness::where('project_id', $projectId)
             ->where('is_locked', true)
@@ -176,6 +177,11 @@ class TaggingController extends Controller
                 'user_id' => $request->user,
                 'project_id' => $request->project['id'],
                 'organization_id' => $request->organization,
+
+                // 👇 spatial column
+                'coordinate' => DB::raw(
+                    "ST_PointFromText('POINT({$request->longitude} {$request->latitude})', 4326, 'axis-order=long-lat')"
+                ),
             ]);
             $business->load(['user', 'project']);
             $business->refresh(); // Refresh to get all database defaults including is_locked
@@ -186,7 +192,7 @@ class TaggingController extends Controller
         }
     }
 
-    public function updateSupplementBusiness(Request $request, String $id)
+    public function updateSupplementBusiness(Request $request, string $id)
     {
         $request->validate([
             'name' => 'required',
@@ -241,7 +247,12 @@ class TaggingController extends Controller
                     'user_id' => $request->user,
                     'project_id' => $request->project['id'],
                     'organization_id' => $request->organization,
-                    'deleted_at' => null
+                    'deleted_at' => null,
+
+                    // ✅ always regenerated
+                    'coordinate' => DB::raw(
+                        "ST_PointFromText('POINT({$request->longitude} {$request->latitude})', 4326, 'axis-order=long-lat')"
+                    ),
                 ]
             );
             $business->load(['user', 'project']);
@@ -253,7 +264,7 @@ class TaggingController extends Controller
         }
     }
 
-    public function deleteSupplementBusiness(String $id)
+    public function deleteSupplementBusiness(string $id)
     {
         try {
             $business = SupplementBusiness::find($id);
@@ -321,7 +332,12 @@ class TaggingController extends Controller
                         'user_id' => $tagData['user'],
                         'project_id' => $tagData['project']['id'],
                         'organization_id' => $tagData['organization'],
-                        'deleted_at' => null
+                        'deleted_at' => null,
+
+                        // 👇 spatial column
+                        'coordinate' => DB::raw(
+                            "ST_PointFromText('POINT({$tagData['longitude']} {$tagData['latitude']})', 4326, 'axis-order=long-lat')"
+                        ),
                     ]
                 );
 

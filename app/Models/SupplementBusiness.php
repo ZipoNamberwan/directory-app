@@ -17,7 +17,9 @@ class SupplementBusiness extends BaseModel
     protected $casts = [
         'is_locked' => 'boolean',
     ];
-    
+    protected $hidden = [
+        'coordinate',
+    ];
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

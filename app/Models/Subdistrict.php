@@ -12,6 +12,9 @@ class Subdistrict extends Model
     use HasFactory, HasUuids;
     protected $guarded = [];
     public $timestamps = false;
+    protected $hidden = [
+        'geom',
+    ];
 
     public function regency()
     {
