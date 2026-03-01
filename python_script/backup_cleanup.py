@@ -60,7 +60,7 @@ class BackupCleaner:
         """Find backup files older than retention period for a specific database"""
         try:
             # Pattern to match backup files for this database
-            pattern = os.path.join(self.backup_dir, f'{db_prefix}_*.sql')
+            pattern = os.path.join(self.backup_dir, f'{db_prefix}_*.zip')
             all_files = glob.glob(pattern)
             
             if not all_files:
@@ -227,7 +227,7 @@ def show_backup_summary():
         total_size = 0
         
         for db_prefix in DATABASE_PREFIXES:
-            pattern = os.path.join(BACKUP_DIR, f'{db_prefix}_*.sql')
+            pattern = os.path.join(BACKUP_DIR, f'{db_prefix}_*.zip')
             files = glob.glob(pattern)
             
             if not files:
@@ -281,9 +281,9 @@ Options:
   --help, -h        Show this help message
 
 Supported Databases:
-  - DB_MAIN_*.sql files
-  - DB_2_*.sql files  
-  - DB_3_*.sql files
+    - DB_MAIN_*.zip files
+    - DB_2_*.zip files  
+    - DB_3_*.zip files
 
 Environment Variables (.env file):
   BACKUP_RETENTION_DAYS=7                         # Default retention period
@@ -303,7 +303,7 @@ Safety Features:
 
 Note: 
   - Files are identified by modification time
-  - Only .sql files matching the database patterns are processed
+    - Only .zip files matching the database patterns are processed
   - The script preserves files within the retention period
 """)
 
