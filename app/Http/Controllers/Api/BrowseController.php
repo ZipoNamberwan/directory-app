@@ -46,7 +46,7 @@ class BrowseController extends Controller
         );
 
         $now = now();
-        $marketQuery = MarketBusiness::with(['user', 'market']);
+        $marketQuery = MarketBusiness::with(['user', 'market', 'regency', 'subdistrict', 'village', 'sls']);
 
         $marketBusinesses = $marketQuery
             ->whereRaw(
@@ -66,7 +66,7 @@ class BrowseController extends Controller
                 return $business;
             });
 
-        $supplementSwmapsBusinesses = SupplementBusiness::with(['user'])
+        $supplementSwmapsBusinesses = SupplementBusiness::with(['user', 'regency', 'subdistrict', 'village', 'sls'])
             ->whereRaw(
                 "MBRContains(ST_PolygonFromText(?, 4326, 'axis-order=long-lat'), coordinate)",
                 [$polygonWkt]
@@ -156,7 +156,7 @@ class BrowseController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $marketBusinesses = MarketBusiness::with(['user', 'market'])
+        $marketBusinesses = MarketBusiness::with(['user', 'market', 'regency', 'subdistrict', 'village', 'sls'])
             ->whereRaw(
                 'ST_Intersects(
                     coordinate,
@@ -185,7 +185,7 @@ class BrowseController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $supplementBusinesses = SupplementBusiness::with(['user'])
+        $supplementBusinesses = SupplementBusiness::with(['user', 'regency', 'subdistrict', 'village', 'sls'])
             ->whereRaw(
                 'ST_Intersects(
                     coordinate,
