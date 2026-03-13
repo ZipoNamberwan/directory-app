@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\MarketBusiness;
 use App\Models\Project;
+use App\Models\SbrBusiness;
 use App\Models\SupplementBusiness;
 use App\Models\SurveyBusiness;
 use Illuminate\Http\Request;
@@ -84,35 +85,56 @@ class TaggingController extends Controller
 
         // Project field in mobile is mandatory, so we create a dummy project for survey businesses
         // This is a workaround to ensure the project field is always present
-        $project = [
-            'id' => 'survey',
-            'name' => 'Survey Project',
-            'type' => 'survey',
-            'description' => null,
-            'created_at' => '2024-06-28 10:15:30',
-            'updated_at' => '2024-06-28 10:15:30',
-        ];
         // Dummy user temporary only before all have migrated to new mobile version
-        $dummyUser = [
-            'id' => 'dummy-user',
-            'firstname' => 'Survei BPS',
-            'email' => 'dummy@example.com',
-        ];
         // Query Survey businesses within the bounding box
         $surveyBusinesses = SurveyBusiness::with(['survey'])
             ->whereBetween('latitude', [$minLat, $maxLat])
             ->whereBetween('longitude', [$minLng, $maxLng])
             ->get()
-            ->map(function ($business) use ($project, $dummyUser) {
-                $business->project = $project;
-                $business->user = $dummyUser;
+            ->map(function ($business) {
+                $business->project = [
+                    'id' => 'survey',
+                    'name' => 'Survey Project',
+                    'type' => 'survey',
+                    'description' => null,
+                    'created_at' => '2024-06-28 10:15:30',
+                    'updated_at' => '2024-06-28 10:15:30',
+                ];
+                $business->user = [
+                    'id' => 'dummy-user',
+                    'firstname' => 'Survei BPS',
+                    'email' => 'dummy@example.com',
+                ];
                 $business->is_locked = true; // Survey businesses are never locked
+                return $business;
+            });
+
+        // Query SBR businesses within the bounding box
+        $sbrBusinesses = SbrBusiness::whereBetween('latitude', [$minLat, $maxLat])
+            ->whereBetween('longitude', [$minLng, $maxLng])
+            ->get()
+            ->map(function ($business) {
+                $business->project = [
+                    'id' => 'sbr',
+                    'name' => 'SBR Matchapro',
+                    'type' => 'survey',
+                    'description' => null,
+                    'created_at' => '2024-06-28 10:15:30',
+                    'updated_at' => '2024-06-28 10:15:30',
+                ];
+                $business->user =  [
+                    'id' => 'dummy-sbr',
+                    'firstname' => 'SBR Matchapro',
+                    'email' => 'dummy@example.com',
+                ];
+                $business->is_locked = true; // SBR businesses are never locked
                 return $business;
             });
 
         // Combine all businesses into a single collection
         $combinedBusiness = $marketBusinesses->merge($supplementSwmapsBusinesses)
-            ->merge($surveyBusinesses);
+            ->merge($surveyBusinesses)
+            ->merge($sbrBusinesses);
 
         return $this->successResponse($combinedBusiness, 'Businesses retrieved successfully');
     }
