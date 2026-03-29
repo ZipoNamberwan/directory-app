@@ -121,11 +121,12 @@ class TaggingController extends Controller
             ->whereBetween('longitude', [$minLng, $maxLng])
             ->get()
             ->map(function ($business) use ($statusMap) {
+                $business->description = $statusMap[$business->status_sbr] ?? 'Unknown';
                 $business->project = [
                     'id' => 'sbr',
                     'name' => 'SBR Matchapro',
                     'type' => 'survey',
-                    'description' => $statusMap[$business->status_sbr] ?? 'Unknown',
+                    'description' => null,
                     'created_at' => '2024-06-28 10:15:30',
                     'updated_at' => '2024-06-28 10:15:30',
                 ];
