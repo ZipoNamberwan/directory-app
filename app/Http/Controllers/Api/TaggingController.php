@@ -110,15 +110,22 @@ class TaggingController extends Controller
             });
 
         // Query SBR businesses within the bounding box
+        $statusMap = [
+            99 => 'Tidak ditemukan',
+            1  => 'Ditemukan',
+            3  => 'Tutup',
+            4  => 'Ganda',
+        ];  
+
         $sbrBusinesses = SbrBusiness::whereBetween('latitude', [$minLat, $maxLat])
             ->whereBetween('longitude', [$minLng, $maxLng])
             ->get()
-            ->map(function ($business) {
+            ->map(function ($business) use ($statusMap) {
                 $business->project = [
                     'id' => 'sbr',
                     'name' => 'SBR Matchapro',
                     'type' => 'survey',
-                    'description' => null,
+                    'description' => $statusMap[$business->status_sbr] ?? 'Unknown',
                     'created_at' => '2024-06-28 10:15:30',
                     'updated_at' => '2024-06-28 10:15:30',
                 ];
