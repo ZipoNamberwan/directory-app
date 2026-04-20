@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SbrBusiness extends Model
+class AgricultureBusiness extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
+
     protected $guarded = [];
-    protected $table = 'sbr_business';
+
+    protected $table = 'agriculture_business';
+
     public $incrementing = false;
 
     protected $hidden = [

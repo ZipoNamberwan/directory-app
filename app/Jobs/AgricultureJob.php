@@ -2,19 +2,15 @@
 
 namespace App\Jobs;
 
-use App\Models\SbrBusiness;
+use App\Models\AgricultureBusiness;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class SbrJob implements ShouldQueue
+class AgricultureJob implements ShouldQueue
 {
     use Queueable;
-
-    /**
-     * Create a new job instance.
-     */
 
     /**
      * Create a new job instance.
@@ -27,12 +23,10 @@ class SbrJob implements ShouldQueue
     public function handle(): void
     {
         if (($handle = fopen($this->filePath, 'r')) !== false) {
-
             $header = null;
             $batch = [];
 
-            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
-
+            while (($row = fgetcsv($handle, 1000, ';')) !== false) {
                 if (!$header) {
                     $header = $row;
                     continue;
@@ -42,7 +36,6 @@ class SbrJob implements ShouldQueue
 
                 $batch[] = $record;
 
-                // insert every 1000 rows
                 if (count($batch) === 1000) {
                     $this->insertBatch($batch);
                     $batch = [];
@@ -60,31 +53,50 @@ class SbrJob implements ShouldQueue
     public function insertBatch($records)
     {
         $data = [];
+
+        $subsectorMap = [
+            1 => 'Tanaman pangan',
+            2 => 'Hortikultura',
+            3 => 'Perkebunan',
+            4 => 'Peternakan',
+            5 => 'Kehutanan',
+            6 => 'Budidaya/Penangkapan Ikan',
+            7 => 'Jasa Pertanian',
+        ];
+
         foreach ($records as $record) {
-            if ($record['extracted_coordinate_validation'] === 'invalid') {
-                continue; // Skip records with invalid coordinates
+            preg_match_all('/\d/', (string) $record['data_subsektor'], $matches);
+
+            if (empty($matches[0])) {
+                $description = null;
+            } else {
+                $descriptions = array_map(
+                    fn($digit) => $subsectorMap[(int)$digit] ?? $digit,
+                    $matches[0]
+                );
+                $description = implode(', ', $descriptions);
             }
+
             $uuid = Str::uuid()->toString();
+
             $data[] = [
                 'id' => $uuid,
-                'name' => $record['nama_usaha'],
-                'address' => $record['alamat_usaha'],
-                'sector' => $record['extracted_kategori'],
-                'latitude' => $record['valid_latitude'],
-                'longitude' => $record['valid_longitude'],
-                'idsbr' => $record['idsbr'],
-                'status_sbr' => $record['gcs_result'],
-                // 👇 spatial column
+                'name' => $record['data_nama_krt'],
+                'sector' => 'A',
+                'description' => $description,
+                'owner' => $record['data_nama_krt'],
+                'latitude' => $record['latitude'],
+                'longitude' => $record['longitude'],
+                'id_agriculture' => $record['uuid'],
                 'coordinate' => DB::raw(
-                    "ST_SRID(POINT({$record['valid_longitude']}, {$record['valid_latitude']}), 4326)"
+                    "ST_SRID(POINT({$record['longitude']}, {$record['latitude']}), 4326)"
                 ),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
         }
-
         collect($data)
             ->chunk(1000)
-            ->each(fn($chunk) => SbrBusiness::insert($chunk->toArray()));
+            ->each(fn($chunk) => AgricultureBusiness::insert($chunk->toArray()));
     }
 }

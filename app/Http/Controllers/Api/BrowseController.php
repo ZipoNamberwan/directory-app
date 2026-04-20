@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AgricultureBusiness;
 use App\Models\MarketBusiness;
-use App\Models\Project;
+use App\Models\SbrBusiness;
 use App\Models\Sls;
 use App\Models\SupplementBusiness;
-use App\Models\SurveyBusiness;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 
@@ -83,32 +83,66 @@ class BrowseController extends Controller
                 return $business;
             });
 
-        // $project = [
-        //     'id' => 'survey',
-        //     'name' => 'Survey Project',
-        //     'type' => 'survey',
-        //     'description' => null,
-        //     'created_at' => '2024-06-28 10:15:30',
-        //     'updated_at' => '2024-06-28 10:15:30',
-        // ];
-        // $dummyUser = [
-        //     'id' => 'dummy-user',
-        //     'firstname' => 'Survei BPS',
-        //     'email' => 'dummy@example.com',
-        // ];
-        // $surveyBusinesses = SurveyBusiness::with(['survey'])
-        //     ->whereBetween('latitude', [$minLat, $maxLat])
-        //     ->whereBetween('longitude', [$minLng, $maxLng])
-        //     ->get()
-        //     ->map(function ($business) use ($project, $dummyUser) {
-        //         $business->project = $project;
-        //         $business->user = $dummyUser;
-        //         $business->is_locked = true;
-        //         return $business;
-        //     });
+        $statusMap = [
+            99 => 'Tidak ditemukan',
+            1  => 'Ditemukan',
+            3  => 'Tutup',
+            4  => 'Ganda',
+        ];
+
+        $sbrBusinesses = SbrBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
+            ->whereRaw(
+                "MBRContains(ST_PolygonFromText(?, 4326, 'axis-order=long-lat'), coordinate)",
+                [$polygonWkt]
+            )
+            ->get()
+            ->map(function ($business) use ($statusMap) {
+                $label = $statusMap[$business->status_sbr] ?? 'Unknown';
+                $business->description = "Status SBR: {$business->status_sbr} ({$label})";
+                $business->project = [
+                    'id' => 'sbr',
+                    'name' => 'SBR Matchapro',
+                    'type' => 'sbr',
+                    'description' => null,
+                    'created_at' => '2024-06-28 10:15:30',
+                    'updated_at' => '2024-06-28 10:15:30',
+                ];
+                $business->user =  [
+                    'id' => 'dummy-sbr',
+                    'firstname' => 'SBR Matchapro',
+                    'email' => 'dummy@example.com',
+                ];
+                $business->is_locked = true;
+                return $business;
+            });
+
+        $agricultureBusinesses = AgricultureBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
+            ->whereRaw(
+                "MBRContains(ST_PolygonFromText(?, 4326, 'axis-order=long-lat'), coordinate)",
+                [$polygonWkt]
+            )
+            ->get()
+            ->map(function ($business) use ($statusMap) {
+                $business->project = [
+                    'id' => 'agriculture',
+                    'name' => 'ST2023 Wilkerstat',
+                    'type' => 'agriculture',
+                    'description' => null,
+                    'created_at' => '2024-06-28 10:15:30',
+                    'updated_at' => '2024-06-28 10:15:30',
+                ];
+                $business->user =  [
+                    'id' => 'dummy-agriculture',
+                    'firstname' => 'ST2023 Wilkerstat',
+                    'email' => 'dummy@example.com',
+                ];
+                $business->is_locked = true;
+                return $business;
+            });
+
 
         $combinedBusiness = $marketBusinesses->merge($supplementSwmapsBusinesses)
-            /* ->merge($surveyBusinesses) */;
+            ->merge($sbrBusinesses)->merge($agricultureBusinesses);
 
         return $this->successResponse($combinedBusiness, 'Businesses retrieved successfully');
     }
@@ -129,10 +163,10 @@ class BrowseController extends Controller
 
         $sls = Sls::withoutGlobalScopes()
             ->with([
-                    'village.subdistrict.regency'
-                ])
-                ->where('id', $slsId)
-                ->selectRaw('
+                'village.subdistrict.regency'
+            ])
+            ->where('id', $slsId)
+            ->selectRaw('
                     id,
                     village_id,
                     name,
@@ -207,7 +241,84 @@ class BrowseController extends Controller
                 return $business;
             });
 
-        $combinedBusiness = $marketBusinesses->merge($supplementBusinesses);
+        /*
+        |--------------------------------------------------------------------------
+        | SBR BUSINESSES (ALL COLUMNS)
+        |--------------------------------------------------------------------------
+        */
+
+        $statusMap = [
+            99 => 'Tidak ditemukan',
+            1  => 'Ditemukan',
+            3  => 'Tutup',
+            4  => 'Ganda',
+        ];
+
+        $sbrBusinesses = SbrBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
+            ->whereRaw(
+                'ST_Intersects(
+                    coordinate,
+                    ST_GeomFromText(?, 4326)
+                )',
+                [$sls->geom_wkt]
+            )
+            ->get()
+            ->map(function ($business) use ($statusMap) {
+                $label = $statusMap[$business->status_sbr] ?? 'Unknown';
+                $business->description = "Status SBR: {$business->status_sbr} ({$label})";
+                $business->project = [
+                    'id' => 'sbr',
+                    'name' => 'SBR Matchapro',
+                    'type' => 'sbr',
+                    'description' => null,
+                    'created_at' => '2024-06-28 10:15:30',
+                    'updated_at' => '2024-06-28 10:15:30',
+                ];
+                $business->user =  [
+                    'id' => 'dummy-sbr',
+                    'firstname' => 'SBR Matchapro',
+                    'email' => 'dummy@example.com',
+                ];
+                $business->is_locked = true;
+                return $business;
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | AGRICULTURE BUSINESSES (ALL COLUMNS)
+        |--------------------------------------------------------------------------
+        */
+
+        $agricultureBusinesses = AgricultureBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
+            ->whereRaw(
+                'ST_Intersects(
+                    coordinate,
+                    ST_GeomFromText(?, 4326)
+                )',
+                [$sls->geom_wkt]
+            )
+            ->get()
+            ->map(function ($business) {
+                $business->project = [
+                    'id' => 'agriculture',
+                    'name' => 'ST2023 Wilkerstat',
+                    'type' => 'agriculture',
+                    'description' => null,
+                    'created_at' => '2024-06-28 10:15:30',
+                    'updated_at' => '2024-06-28 10:15:30',
+                ];
+                $business->user =  [
+                    'id' => 'dummy-agriculture',
+                    'firstname' => 'ST2023 Wilkerstat',
+                    'email' => 'dummy@example.com',
+                ];
+                $business->is_locked = true;
+                return $business;
+            });
+
+        $combinedBusiness = $marketBusinesses->merge($supplementBusinesses)
+            ->merge($sbrBusinesses)
+            ->merge($agricultureBusinesses);
 
         /*
         |--------------------------------------------------------------------------
@@ -217,7 +328,7 @@ class BrowseController extends Controller
         return $this->successResponse([
             'sls' => [
                 'id' => $sls->id,
-                'name'=> $sls->name,
+                'name' => $sls->name,
                 'short_code' => $sls->short_code,
                 'long_code' => $sls->long_code,
                 'village_id' => $sls->village_id,
@@ -244,7 +355,7 @@ class BrowseController extends Controller
                         ]
                     ]
                 ],
-                                
+
                 'geojson' => json_decode($sls->geom_geojson),
 
             ],
