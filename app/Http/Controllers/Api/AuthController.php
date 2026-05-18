@@ -164,4 +164,43 @@ class AuthController extends Controller
             'token' => $token
         ], 'Login successful');
     }
+
+    public function changeProfile(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return $this->errorResponse('User tidak ditemukan', 422);
+        }
+
+        $requiresRole = !($user->hasRole('adminkab') || $user->hasRole('adminprov') || $user->hasRole('operator'));
+
+        $requiresOrganization = $user->hasRole('adminkab') || $user->hasRole('operator') || $user->hasRole('pcl') || $user->hasRole('pml');
+
+        $request->validate([
+            'role' => $requiresRole ? ['required', 'string'] : ['nullable', 'string'],
+            'organization' => $requiresOrganization ? ['required'] : ['nullable'],
+        ]);
+
+        $user->firstname = $request->name;
+        if ($requiresOrganization) {
+            $user->organization_id = $request->organization ?? $user->organization_id;
+        }
+        $user->save();
+
+        if ($requiresRole && $requiresOrganization && $request->role) {
+            $user->assignRoleAllDatabase($request->role);
+        }
+
+        $user->load(['organization', 'roles']);
+
+        return $this->successResponse([
+            'user' => $user,
+        ], 'Update successful');
+    }
 }
