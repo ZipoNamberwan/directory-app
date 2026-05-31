@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\TaggingController;
 use App\Http\Controllers\Api\VersionController;
 use App\Http\Controllers\Api\WilkerstatController;
+use App\Http\Controllers\Api\StatisticController;
 use App\Http\Controllers\MajapahitLoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/villages/{subdistrict}', [PolygonController::class, 'getVillagesBySubdistrict']);
     Route::get('/sls/{village}', [PolygonController::class, 'getSlsByVillage']);
     Route::post('/polygon/download', [PolygonController::class, 'downloadPolygonData']);
+    Route::get('/statistics/{type}/{longCode}', [StatisticController::class, 'getStatistics']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
 });

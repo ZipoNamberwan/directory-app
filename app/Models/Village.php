@@ -39,4 +39,9 @@ class Village extends Model
     {
         return $this->belongsTo(AreaPeriod::class, 'area_period_id');
     }
+
+    public function statistics()
+    {
+        return $this->morphMany(KbliStatistic::class, 'area');
+    }
 }
