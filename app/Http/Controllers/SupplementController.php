@@ -33,14 +33,16 @@ class SupplementController extends Controller
 
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
-            $regencies = Regency::all();
+            $regencies = Regency::orderBy('long_code')->get();
         } else if ($user->hasRole('adminkab')) {
-            $regencies = Regency::where('id', $user->regency_id)->get();
-            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
+            $oldRegency = Regency::withoutGlobalScope('activePeriod')->where('id', $user->regency_id)->first();
+            $regencies = Regency::where('long_code', $oldRegency->long_code)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->orderBy('long_code')->get();
             $users = User::where('organization_id', $user->organization_id)->get();
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
-            $regencies = Regency::where('id', $user->regency_id)->get();
-            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
+            $oldRegency = Regency::withoutGlobalScope('activePeriod')->where('id', $user->regency_id)->first();
+            $regencies = Regency::where('long_code', $oldRegency->long_code)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->orderBy('long_code')->get();
         }
 
         $projectTypes = [

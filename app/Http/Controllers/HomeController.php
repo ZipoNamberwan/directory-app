@@ -236,7 +236,7 @@ class HomeController extends Controller
 
     public function getSubdistrict($regency_id)
     {
-        $subdistricts = Subdistrict::where('regency_id', $regency_id)->get();
+        $subdistricts = Subdistrict::where('regency_id', $regency_id)->orderBy('long_code')->get();
 
         return response()->json($subdistricts);
     }
@@ -250,9 +250,9 @@ class HomeController extends Controller
             $village = Village::whereIn(
                 'id',
                 SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->select('village_id')->where('pcl_id', $user->id)->where('village_id', 'like', "{$subdistrict_id}%")->distinct()->pluck('village_id')
-            )->get();
+            )->orderBy('long_code')->get();
         } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml') || $user->hasRole('operator')) {
-            $village = Village::where('subdistrict_id', $subdistrict_id)->get();
+            $village = Village::where('subdistrict_id', $subdistrict_id)->orderBy('long_code')->get();
         }
 
         return response()->json($village);
@@ -266,9 +266,9 @@ class HomeController extends Controller
             $sls = Sls::whereIn(
                 'id',
                 SlsBusiness::on(DatabaseSelector::getConnection($user->regency_id))->select('sls_id')->where('pcl_id', $user->id)->where('sls_id', 'like', "{$village_id}%")->distinct()->pluck('sls_id')
-            )->get();
+            )->orderBy('long_code')->get();
         } else if ($user->hasRole('adminprov') || $user->hasRole('adminkab') || $user->hasRole('pml') || $user->hasRole('operator')) {
-            $sls = Sls::where('village_id', $village_id)->get();
+            $sls = Sls::where('village_id', $village_id)->orderBy('long_code')->get();
         }
 
         return response()->json($sls);

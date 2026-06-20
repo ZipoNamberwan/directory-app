@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BrowseController;
+use App\Http\Controllers\Api\InfoController;
 use App\Http\Controllers\Api\PolygonController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\TaggingController;
@@ -61,6 +62,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sls/{village}', [PolygonController::class, 'getSlsByVillage']);
     Route::post('/polygon/download', [PolygonController::class, 'downloadPolygonData']);
     Route::get('/statistics/{type}/{longCode}', [StatisticController::class, 'getStatistics']);
+
+    Route::get('/info', [InfoController::class, 'index']);
+    Route::get('/info/{id}', [InfoController::class, 'show']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
 });

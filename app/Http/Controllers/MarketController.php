@@ -37,20 +37,22 @@ class MarketController extends Controller
 
         if ($user->hasRole('adminprov')) {
             $organizations = Organization::all();
-            $regencies = Regency::all();
+            $regencies = Regency::orderBy('long_code')->get();
             $isAdmin = true;
         } else if ($user->hasRole('adminkab')) {
             $markets = Market::where('organization_id', $user->organization_id)->get();
             $users = User::where('organization_id', $user->organization_id)->get();
-            $regencies = Regency::where('id', $user->regency_id)->get();
-            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
+            $oldRegency = Regency::withoutGlobalScope('activePeriod')->where('id', $user->regency_id)->first();
+            $regencies = Regency::where('long_code', $oldRegency->long_code)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->orderBy('long_code')->get();
             $isAdmin = true;
             $marketTypes = MarketType::all();
         } else if ($user->hasRole('pml') || $user->hasRole('operator')) {
             $markets = $user->markets;
             $marketIds = $user->markets()->pluck('markets.id');
-            $regencies = Regency::where('id', $user->regency_id)->get();
-            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->get();
+            $oldRegency = Regency::withoutGlobalScope('activePeriod')->where('id', $user->regency_id)->first();
+            $regencies = Regency::where('long_code', $oldRegency->long_code)->get();
+            $subdistricts = Subdistrict::where('regency_id', $user->regency_id)->orderBy('long_code')->get();
 
             $users = User::whereHas('markets', function ($query) use ($marketIds) {
                 $query->whereIn('markets.id', $marketIds);
