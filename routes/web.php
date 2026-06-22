@@ -33,6 +33,10 @@ Route::get('/majapahit', [MajapahitLoginController::class, 'login']);
 Route::get('/majapahit-mobile-login', [MajapahitLoginController::class, 'loginApi']);
 Route::get('/login-redirect', [MajapahitLoginController::class, 'redirectApi']);
 
+// Keycloak routes
+Route::get('/login/majapahit', [MajapahitLoginController::class, 'redirectToMajapahit']);
+Route::get('/majapahit-auth', [MajapahitLoginController::class, 'handleMajapahitCallback']);
+
 Route::get('/.well-known/assetlinks.json', function () {
 	$path = public_path('.well-known/assetlinks.json');
 	return Response::file($path, ['Content-Type' => 'application/json']);

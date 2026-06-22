@@ -5,8 +5,9 @@ namespace App\Providers;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-
+use SocialiteProviders\Manager\SocialiteWasCalled;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -29,5 +30,12 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production') {
             URL::forceScheme('https');
         }
+
+        Event::listen(function (SocialiteWasCalled $event) {
+            $event->extendSocialite(
+                'keycloak',
+                \SocialiteProviders\Keycloak\Provider::class
+            );
+        });
     }
 }

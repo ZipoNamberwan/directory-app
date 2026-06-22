@@ -11,6 +11,7 @@ use Firebase\JWT\Key;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Socialite\Facades\Socialite;
 
 class MajapahitLoginController extends Controller
 {
@@ -151,13 +152,88 @@ class MajapahitLoginController extends Controller
                 return $this->errorResponse('Terjadi kesalahan pada aplikasi ini, silahkan coba lagi', 500);
             }
         }
-
-
-        return $this->errorResponse('Anda belum masuk ke akun Kendedes, silahkan buka melalui Majapahit', 401);
     }
 
     public function redirectApi(Request $request)
     {
         return view('mobile/info');
+    }
+
+    // Keycloak login method
+    public function redirectToMajapahit(Request $request)
+    {
+        $source = $request->query('source', 'web'); // 'web' or 'android'
+
+        return Socialite::driver('keycloak')
+            ->with(['state' => json_encode(['source' => $source])])
+            ->redirect();
+    }
+
+    public function handleMajapahitCallback(Request $request)
+    {
+        $state = json_decode($request->query('state', '{}'), true);
+        $source = $state['source'] ?? 'web';
+
+        $socialiteUser = Socialite::driver('keycloak')->stateless()->user();
+
+        try {
+            $user = User::where('email', $socialiteUser->email)->first();
+
+            $regencyId = null;
+            if ($socialiteUser->user['satker'] !== '3500') {
+                $regency = Regency::where('long_code', $socialiteUser->user['satker'])->first();
+                $regencyId = $regency?->id; // safer null handling
+            }
+
+            $userData = [
+                'email' => $socialiteUser->email,
+                'username' => $socialiteUser->email,
+                'firstname' => $socialiteUser->name,
+                'regency_id' => $regencyId,
+                'organization_id' => $socialiteUser->user['satker'],
+            ];
+
+            if (!$user) {
+                // $userData['role'] = 'operator';
+                $userData['password'] = Hash::make('se26Sukses');
+
+                $user = User::create($userData);
+                $user->assignRoleAllDatabase('operator');
+            } else {
+                $updateData = [
+                    'firstname' => $userData['firstname'],
+                    'regency_id' => $userData['regency_id'],
+                ];
+                if (array_key_exists('organization_id', $userData) && !is_null($userData['organization_id'])) {
+                    $updateData['organization_id'] = $userData['organization_id'];
+                }
+                $user->update($updateData);
+            }
+
+            if ($source === 'web') {
+                Auth::login($user, true);
+                return redirect('/');
+            } elseif ($source === 'android') {
+                $user = $user->load(['organization', 'roles']);
+                $token = $user->createToken('mobile-token')->plainTextToken;
+
+                $userPayload = [
+                    'token' => $token,
+                    'user' => $user,
+                ];
+
+                $encoded = base64_encode(json_encode($userPayload));
+
+                return redirect('/login-redirect?data=' . $encoded);
+            } else {
+                return $this->errorResponse('Sumber login tidak valid', 400);
+            }
+        } catch (Exception $e) {
+            if (str_contains($e->getMessage(), 'Expired token') || str_contains($e->getMessage(), 'Signature verification failed')) {
+                return $this->errorResponse('Token Majapahit tidak valid, silahkan buka ulang Majapahit', 401);
+            } else {
+                return $this->errorResponse('Terjadi kesalahan pada aplikasi ini, silahkan coba lagi', 500);
+            }
+        }
     }
 }
