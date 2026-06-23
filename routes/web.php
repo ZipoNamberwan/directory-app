@@ -21,6 +21,7 @@ use App\Http\Controllers\MarketManagementController;
 use App\Http\Controllers\PclController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SupplementController;
+use App\Http\Controllers\InfoController;
 use App\Http\Controllers\UserController;
 
 // Route::get('/info', function () {
@@ -189,6 +190,9 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::patch('/pasar/{id}', [MarketController::class, 'updateMarket']);
 		Route::delete('/pasar/{id}/delete', [MarketController::class, 'confirmDeleteBusiness']);
 	});
+
+	Route::get('/info/data', [InfoController::class, 'getData']);
+	Route::resource('info', InfoController::class);
 
 	Route::get('/{page}', [PageController::class, 'index'])->name('page');
 

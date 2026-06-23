@@ -261,6 +261,21 @@
                 </li>
                 @endhaspermission
             @endcanany
+            @hasrole('adminprov')
+                <li class="nav-item mt-3">
+                    <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Lainnya</h6>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('info') || request()->is('info/*') ? 'active' : '' }}"
+                        href="/info">
+                        <div
+                            class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-circle-info text-primary text-sm opacity-10"></i>
+                        </div>
+                        <span class="nav-link-text ms-1">Info</span>
+                    </a>
+                </li>
+            @endhasrole
             @hasrole('adminkab|adminprov')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Petugas</h6>
@@ -276,6 +291,7 @@
                     </a>
                 </li>
             @endhasrole
+
             @if(Auth::user()->actingContexts()->exists() && Auth::user()->actingContext)
                 <li class="nav-item px-3 mt-2">
                     <form method="POST" action="{{ route('acting-context.toggle') }}" class="w-100">
