@@ -12,7 +12,8 @@ class InfoController extends Controller
 {
     use ApiResponser;
 
-    public function index(Request $request) {
+    public function index(Request $request)
+    {
         $lastCheck = $request->last_check;
         $columns = ['id', 'title', 'subtitle', 'tags', 'type', 'is_published', 'published_at', 'created_at', 'updated_at'];
         if ($lastCheck == null) {
@@ -20,12 +21,19 @@ class InfoController extends Controller
         } else {
             $info = Info::select($columns)->where('updated_at', '>', $lastCheck)->orderBy('updated_at', 'desc')->get();
         }
+
+        $info = $info->map(function ($item) {
+            $item->is_published = (int) $item->is_published;
+            return $item;
+        });
         return $this->successResponse($info, 'Info retrieved successfully');
     }
 
-    public function show(string $id) {
+    public function show(string $id)
+    {
         try {
             $info = Info::findOrFail($id);
+            $info->is_published = (int) $info->is_published;
             return $this->successResponse($info, 'Info retrieved successfully');
         } catch (Exception $e) {
             return $this->errorResponse('Info not found', 404);
