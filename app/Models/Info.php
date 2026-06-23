@@ -17,7 +17,7 @@ class Info extends Model
     protected $keyType = 'string';
 
     protected $casts = [
-        'is_published' => 'boolean',
+        'is_published' => 'integer',
         'published_at' => 'datetime',
     ];
 
