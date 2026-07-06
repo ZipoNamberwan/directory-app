@@ -30,6 +30,12 @@ class AgricultureJob implements ShouldQueue
 
                 $rowNumber++;
 
+                // Combine headers with row values safely
+                if (count($header) !== count($row)) {
+                    // Skip or log corrupted row lengths if necessary
+                    continue;
+                }
+
                 $record = array_combine($header, $row);
 
                 $batch[] = [
@@ -75,39 +81,40 @@ class AgricultureJob implements ShouldQueue
             $record = $item['record'];
             $rowNumber = $item['row'];
 
+            // Updated column keys mapping directly to your split_1.csv structure
             $latitude = $record['latitude'] ?? null;
             $longitude = $record['longitude'] ?? null;
-            $name = $record['data_nama_krt'] ?? null;
-            $subsectorRaw = $record['data_subsektor'] ?? null;
+            $name = $record['nama_krt'] ?? $record['nama'] ?? null; 
+            $subsectorRaw = $record['subsektor'] ?? null;
 
-            // Fallback to alternate columns when lat/lng are empty
+            // Fallback strategy if coordinates are displaced inside other columns
             if (!$this->isValidCoordinate($latitude) || !$this->isValidCoordinate($longitude)) {
                 $latitude = $record['id_project_kategori'] ?? null;
                 $longitude = $record['accuracy'] ?? null;
-                $name = $record['source_file'] ?? null;
-                $subsectorRaw = $record['idsls'] ?? null;
+                $name = $record['source_file'] ?? $name;
+                $subsectorRaw = $record['idsls'] ?? $subsectorRaw;
             }
 
             $reasons = [];
 
-            // Still no valid coordinates
+            // Validation: Coordinates
             if (!$this->isValidCoordinate($latitude) || !$this->isValidCoordinate($longitude)) {
                 $reasons[] = 'missing_or_invalid_coordinates';
             }
 
-            // Name must not be empty/blank
+            // Validation: Name
             if ($name === null || trim((string) $name) === '') {
                 $reasons[] = 'missing_name';
             }
 
-            // Build description, tracking whether any digit was unmapped
+            // Parse subsector formatting (e.g., "[1 3 4 5]")
             $description = null;
             $hasInvalidSubsector = false;
 
             preg_match_all('/\d/', (string) $subsectorRaw, $matches);
 
             if (empty($matches[0])) {
-                $hasInvalidSubsector = true; // no subsector digits found at all
+                $hasInvalidSubsector = true; 
             } else {
                 $descriptions = [];
                 foreach ($matches[0] as $digit) {
@@ -115,7 +122,7 @@ class AgricultureJob implements ShouldQueue
                     if (isset($subsectorMap[$digit])) {
                         $descriptions[] = $subsectorMap[$digit];
                     } else {
-                        $hasInvalidSubsector = true; // digit not in map (e.g. 0)
+                        $hasInvalidSubsector = true; 
                     }
                 }
                 $description = !empty($descriptions) ? implode(', ', $descriptions) : null;
@@ -147,7 +154,8 @@ class AgricultureJob implements ShouldQueue
                 'owner' => $name,
                 'latitude' => $latitude,
                 'longitude' => $longitude,
-                'id_agriculture' => $record['uuid'] ?? null,
+                // Maps to the unique ID present in your CSV file
+                'id_agriculture' => $record['id'] ?? null, 
                 'coordinate' => DB::raw(
                     "ST_SRID(POINT({$longitude}, {$latitude}), 4326)"
                 ),
