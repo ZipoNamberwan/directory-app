@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Jobs\RegencyJob;
 use App\Models\Regency;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
@@ -17,7 +18,7 @@ class AreaSeeder extends Seeder
      */
     public function run(): void
     {
-        $types = ['kec', 'des', 'sls'];
+        $types = ['kab', 'kec', 'des', 'sls'];
 
         foreach ($types as $type) {
 
@@ -48,7 +49,9 @@ class AreaSeeder extends Seeder
                             // Close the file
                             fclose($handle);
 
-                            if ($type == 'kec') {
+                            if ($type == 'kab') {
+                                RegencyJob::dispatch($csvData);
+                            } else if ($type == 'kec') {
                                 SubdistrictJob::dispatch($csvData);
                             } else if ($type == 'des') {
                                 VillageJob::dispatch($csvData);

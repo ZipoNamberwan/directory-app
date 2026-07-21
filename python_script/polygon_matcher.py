@@ -46,11 +46,17 @@ DOTENV_PATH = os.path.join(BASE_DIR, ".env")
 TABLES_TO_PROCESS = ["supplement_business", "market_business"]
 
 # ID slicing
+# NOTE: DB `sls.long_code` is always 16 digits, with the last 2 digits being
+# a real suffix (e.g. "00" for regular SLS, "01"/"02"/... for sub-units).
+# Geojson filenames can be either 14 digits (legacy, no suffix info) or
+# 16 digits (full code including real suffix). See derive_ids_from_sls_code().
 ID_SLICE = {
     "regency": 4,
     "subdistrict": 7,
     "village": 10,
-    "sls_suffix": "00",
+    "sls_full_len": 16,
+    "sls_legacy_len": 14,
+    "sls_suffix": "00",  # only used to pad legacy 14-digit filenames
 }
 
 # Load .env using absolute path
@@ -79,7 +85,8 @@ def list_sls_files(sls_root: str):
 def load_all_sls(sls_root: str, debug_limit: int = None) -> gpd.GeoDataFrame:
     """
     Load SLS polygons into a single GeoDataFrame.
-    Adds '__filename' (basename without extension).
+    Adds '__filename' (basename without extension) — this may be either a
+    14-digit legacy code or a 16-digit full code, depending on the file.
     Ensures CRS is POINTS_CRS; reprojects if needed.
     Shows progress for files and total polygons loaded.
     If debug_limit is set, only loads up to that many polygons for fast testing.
@@ -122,11 +129,11 @@ def load_all_sls(sls_root: str, debug_limit: int = None) -> gpd.GeoDataFrame:
     print("🔗 Concatenating all SLS polygons...")
     sls_gdf = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), crs=POINTS_CRS)
     sls_gdf.set_geometry("geometry", inplace=True)
-    
+
     # Free memory from individual frames
     del frames
     gc.collect()
-    
+
     print(f"✓ Concatenated {len(sls_gdf):,} polygons")
 
     # Build spatial index (memory-intensive operation)
@@ -180,7 +187,7 @@ def load_villages(cursor) -> dict:
     return {row["long_code"]: row["id"] for row in cursor.fetchall()}
 
 def load_sls(cursor) -> dict:
-    """Load sls into a lookup dict: {long_code: uuid}"""
+    """Load sls into a lookup dict: {long_code: uuid}. long_code is always 16 digits."""
     cursor.execute(
         """
         SELECT s.id, s.long_code
@@ -195,15 +202,15 @@ def load_all_area_lookups(cursor) -> tuple:
     """Load all area lookup tables and return as tuple of dicts."""
     print("📚 Loading area lookup tables...")
     t0 = time.time()
-    
+
     regencies = load_regencies(cursor)
     subdistricts = load_subdistricts(cursor)
     villages = load_villages(cursor)
     sls = load_sls(cursor)
-    
+
     dt = time.time() - t0
     print(f"✅ Loaded {len(regencies):,} regencies, {len(subdistricts):,} subdistricts, {len(villages):,} villages, {len(sls):,} sls in {dt:.1f}s")
-    
+
     return regencies, subdistricts, villages, sls
 
 # =========================
@@ -228,22 +235,66 @@ def get_sls_dir_for_period_version(period_version: str) -> str:
 # =========================
 # ID DERIVATION
 # =========================
-def derive_ids_from_sls_code(sls_code: str, regencies_lookup: dict, subdistricts_lookup: dict, 
+def derive_ids_from_sls_code(sls_code: str, regencies_lookup: dict, subdistricts_lookup: dict,
                              villages_lookup: dict, sls_lookup: dict):
-    """Return (regency_id, subdistrict_id, village_id, sls_id) using UUID lookups from long_code."""
-    # Derive the long_codes from the sls_code using the old slicing logic
+    """
+    Return (regency_id, subdistrict_id, village_id, sls_id, match_level).
+
+    Background:
+      - DB `sls.long_code` is ALWAYS 16 digits. The last 2 digits are a real
+        suffix: "00" for a regular/parent SLS, or another value (e.g. "01",
+        "02", ...) for a sub-unit (e.g. dorms/complexes sharing a parent
+        polygon).
+      - Geojson filenames (sls_code, taken from the spatial join's matched
+        polygon) come in two formats depending on when they were generated:
+          * 16 digits -> already the complete, correct DB code, use as-is.
+          * 14 digits -> legacy files with no suffix info. These never
+            encoded sub-units, so the only sane assumption is to pad with
+            "00" (regular SLS).
+
+    This function derives regency/subdistrict/village codes from the fixed
+    prefix positions (unaffected by the suffix length), and resolves the
+    SLS id using the rule above.
+    """
+    sls_code = str(sls_code).strip()
+
     regency_code = sls_code[:ID_SLICE["regency"]] if ID_SLICE.get("regency") else None
     subdistrict_code = sls_code[:ID_SLICE["subdistrict"]] if ID_SLICE.get("subdistrict") else None
     village_code = sls_code[:ID_SLICE["village"]] if ID_SLICE.get("village") else None
-    sls_code_full = sls_code + ID_SLICE.get("sls_suffix", "")
-    
-    # Look up the UUIDs from the lookup dictionaries
+
     reg_id = regencies_lookup.get(regency_code)
     sub_id = subdistricts_lookup.get(subdistrict_code)
     vil_id = villages_lookup.get(village_code)
-    sls_id = sls_lookup.get(sls_code_full)
-    
-    return reg_id, sub_id, vil_id, sls_id
+
+    # --- Resolve SLS id based on filename length ---
+    full_len = ID_SLICE.get("sls_full_len", 16)
+    legacy_len = ID_SLICE.get("sls_legacy_len", 14)
+
+    sls_candidate = None
+    if len(sls_code) >= full_len:
+        # Already a complete 16-digit code (or longer/odd — trim defensively).
+        sls_candidate = sls_code[:full_len]
+    elif len(sls_code) == legacy_len:
+        # Legacy 14-digit filename: pad with the default suffix.
+        sls_candidate = sls_code + ID_SLICE.get("sls_suffix", "00")
+    # else: unexpected length -> leave sls_candidate as None, don't guess
+
+    sls_id = sls_lookup.get(sls_candidate) if sls_candidate else None
+
+    # match_level reflects what actually resolved, so it's never out of sync
+    # with the returned ids (e.g. never "sls" while sls_id is NULL).
+    if sls_id is not None:
+        match_level = "sls"
+    elif vil_id is not None:
+        match_level = "village"
+    elif sub_id is not None:
+        match_level = "subdistrict"
+    elif reg_id is not None:
+        match_level = "regency"
+    else:
+        match_level = "noarea"
+
+    return reg_id, sub_id, vil_id, sls_id, match_level
 
 # =========================
 # DB HELPERS (modified for multi-table support)
@@ -265,7 +316,7 @@ def get_total_rows_to_process(cursor, table_name: str) -> int:
     """
     # Validate table name to prevent SQL injection
     validated_table = validate_table_name(table_name)
-    
+
     query = f"""
         SELECT COUNT(*) AS total
         FROM {validated_table}
@@ -280,7 +331,7 @@ def fetch_batch(cursor, table_name: str, limit: int):
     """Fetch a batch of rows from the specified table."""
     # Validate table name to prevent SQL injection
     validated_table = validate_table_name(table_name)
-    
+
     query = f"""
         SELECT id, latitude, longitude
         FROM {validated_table}
@@ -298,13 +349,13 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
     """
     if not rows:
         return 0
-    
+
     # Validate table name to prevent SQL injection
     validated_table = validate_table_name(table_name)
-    
+
     # Get Jakarta current time once for this batch
     jakarta_now = get_jakarta_now()
-    
+
     update_query = f"""
         UPDATE {validated_table}
         SET regency_id = %s,
@@ -315,7 +366,7 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
             matched_at = %s
         WHERE id = %s
     """
-    
+
     try:
         # Add jakarta_now to each row tuple
         rows_with_time = [(reg, sub, vil, sls, match, jakarta_now, id_) for reg, sub, vil, sls, match, id_ in rows]
@@ -387,18 +438,18 @@ def update_rows_batch(cursor, table_name: str, rows: list[tuple]):
                                         print(f"❌ Failed noarea for {validated_table} row {business_id}")
 
                 return updated_count
-    
+
 def mark_failed_rows(cursor, table_name: str, row_ids: list[int]):
     """Mark rows as failed in the specified table."""
     if not row_ids:
         return 0
-    
+
     # Validate table name to prevent SQL injection
     validated_table = validate_table_name(table_name)
-    
+
     # Get Jakarta current time
     jakarta_now = get_jakarta_now()
-    
+
     sql = f"""
         UPDATE {validated_table}
         SET match_level = 'failed',
@@ -459,14 +510,14 @@ def join_points_to_sls_chunked(points_gdf: gpd.GeoDataFrame, sls_gdf: gpd.GeoDat
 # =========================
 # PROCESS SINGLE TABLE
 # =========================
-def process_table(cursor, conn, table_name: str, sls_gdf: gpd.GeoDataFrame, 
-                 regencies_lookup: dict, subdistricts_lookup: dict, 
+def process_table(cursor, conn, table_name: str, sls_gdf: gpd.GeoDataFrame,
+                 regencies_lookup: dict, subdistricts_lookup: dict,
                  villages_lookup: dict, sls_lookup: dict):
     """Process a single table with geolocation matching."""
     print(f"\n{'='*60}")
     print(f"🎯 Processing table: {table_name}")
     print(f"{'='*60}")
-    
+
     # Determine how many rows to process for this table
     total_target = get_total_rows_to_process(cursor, table_name)
     print(f"🎯 Safety net activated: expecting to process about {total_target:,} rows in {table_name}")
@@ -510,10 +561,10 @@ def process_table(cursor, conn, table_name: str, sls_gdf: gpd.GeoDataFrame,
             if sls_base is None or pd.isna(sls_base):
                 failed_ids.append(rid)  # mark as failed later
                 continue
-            reg_id, sub_id, vil_id, sls_id = derive_ids_from_sls_code(
+            reg_id, sub_id, vil_id, sls_id, match_level = derive_ids_from_sls_code(
                 str(sls_base), regencies_lookup, subdistricts_lookup, villages_lookup, sls_lookup
             )
-            row_tuple = (reg_id, sub_id, vil_id, sls_id, "sls", rid)
+            row_tuple = (reg_id, sub_id, vil_id, sls_id, match_level, rid)
             updates.append(row_tuple)
             matched_in_batch += 1
 
@@ -565,19 +616,19 @@ def main():
     sls_dir = get_sls_dir_for_period_version(active_version)
     print(f"🗂️ Active area period version: {active_version}")
     print(f"📁 Using SLS folder: {sls_dir}")
-    
+
     # 3) Load area lookup tables
     regencies_lookup, subdistricts_lookup, villages_lookup, sls_lookup = load_all_area_lookups(cursor)
-    
+
     # 4) Load SLS polygons once (with progress)
     sls_gdf = load_all_sls(sls_dir, DEBUG_SLS_LIMIT if DEBUG_MODE else None)
-    
+
     # 5) Process each table
     all_results = []
-    
+
     for table_name in TABLES_TO_PROCESS:
         try:
-            result = process_table(cursor, conn, table_name, sls_gdf, 
+            result = process_table(cursor, conn, table_name, sls_gdf,
                                  regencies_lookup, subdistricts_lookup, villages_lookup, sls_lookup)
             all_results.append(result)
         except Exception as e:
@@ -589,14 +640,14 @@ def main():
     print("\n" + "="*80)
     print("🎉 ALL TABLES COMPLETED")
     print("="*80)
-    
+
     total_processed = sum(r['processed'] for r in all_results)
     total_updated = sum(r['updated'] for r in all_results)
     total_matched = sum(r['matched_points'] for r in all_results)
-    
+
     for result in all_results:
         print(f"📋 {result['table']:<20}: {result['processed']:>8,} processed | {result['updated']:>8,} updated | {result['matched_points']:>8,} matched")
-    
+
     print("-" * 80)
     print(f"📈 TOTAL ACROSS ALL TABLES: {total_processed:>8,} processed | {total_updated:>8,} updated | {total_matched:>8,} matched")
     print(f"⏱️ Total execution time: {total_dt/60:.2f} minutes")

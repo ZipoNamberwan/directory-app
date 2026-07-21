@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-types = ["kec", "des", "sls"]
+types = ["kab", "kec", "des", "sls"]
 
 for type in types:
 

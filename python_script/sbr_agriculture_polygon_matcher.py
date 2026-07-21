@@ -33,11 +33,18 @@ DOTENV_PATH = os.path.join(BASE_DIR, ".env")
 
 TABLES_TO_PROCESS = ["sbr_business", "agriculture_business"]
 
+# ID slicing
+# NOTE: DB `sls.long_code` is always 16 digits, with the last 2 digits being
+# a real suffix (e.g. "00" for regular SLS, "01"/"02"/... for sub-units).
+# Geojson filenames can be either 14 digits (legacy, no suffix info) or
+# 16 digits (full code including real suffix). See derive_ids_from_sls_code().
 ID_SLICE = {
 	"regency": 4,
 	"subdistrict": 7,
 	"village": 10,
-	"sls_suffix": "00",
+	"sls_full_len": 16,
+	"sls_legacy_len": 14,
+	"sls_suffix": "00",  # only used to pad legacy 14-digit filenames
 }
 
 load_dotenv(dotenv_path=DOTENV_PATH)
@@ -205,15 +212,45 @@ def derive_ids_from_sls_code(
 	villages_lookup: dict,
 	sls_lookup: dict,
 ):
+	"""
+	Return (regency_id, subdistrict_id, village_id, sls_id).
+
+	Background:
+	  - DB `sls.long_code` is ALWAYS 16 digits. The last 2 digits are a real
+	    suffix: "00" for a regular/parent SLS, or another value (e.g. "01",
+	    "02", ...) for a sub-unit (e.g. dorms/complexes sharing a parent
+	    polygon).
+	  - Geojson filenames (sls_code, taken from the spatial join's matched
+	    polygon) come in two formats depending on when they were generated:
+	      * 16 digits -> already the complete, correct DB code, use as-is.
+	      * 14 digits -> legacy files with no suffix info. These never
+	        encoded sub-units, so the only sane assumption is to pad with
+	        "00" (regular SLS).
+	"""
+	sls_code = str(sls_code).strip()
+
 	regency_code = sls_code[: ID_SLICE["regency"]] if ID_SLICE.get("regency") else None
 	subdistrict_code = sls_code[: ID_SLICE["subdistrict"]] if ID_SLICE.get("subdistrict") else None
 	village_code = sls_code[: ID_SLICE["village"]] if ID_SLICE.get("village") else None
-	sls_code_full = sls_code + ID_SLICE.get("sls_suffix", "")
 
 	regency_id = regencies_lookup.get(regency_code)
 	subdistrict_id = subdistricts_lookup.get(subdistrict_code)
 	village_id = villages_lookup.get(village_code)
-	sls_id = sls_lookup.get(sls_code_full)
+
+	# --- Resolve SLS id based on filename length ---
+	full_len = ID_SLICE.get("sls_full_len", 16)
+	legacy_len = ID_SLICE.get("sls_legacy_len", 14)
+
+	sls_candidate = None
+	if len(sls_code) >= full_len:
+		# Already a complete 16-digit code (or longer/odd — trim defensively).
+		sls_candidate = sls_code[:full_len]
+	elif len(sls_code) == legacy_len:
+		# Legacy 14-digit filename: pad with the default suffix.
+		sls_candidate = sls_code + ID_SLICE.get("sls_suffix", "00")
+	# else: unexpected length -> leave sls_candidate as None, don't guess
+
+	sls_id = sls_lookup.get(sls_candidate) if sls_candidate else None
 
 	return regency_id, subdistrict_id, village_id, sls_id
 

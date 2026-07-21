@@ -29,7 +29,7 @@ class SubdistrictJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $version = 2;
+        $version = 3;
         $periodId = AreaPeriod::where('period_version', $version)->first()->id;
 
         $data = [];
