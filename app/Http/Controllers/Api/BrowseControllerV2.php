@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgricultureBusiness;
+use App\Models\EnumerationBusiness;
 use App\Models\MarketBusiness;
 use App\Models\SbrBusiness;
 use App\Models\Sls;
@@ -11,7 +12,7 @@ use App\Models\SupplementBusiness;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 
-class BrowseController extends Controller
+class BrowseControllerV2 extends Controller
 {
     use ApiResponser;
 
@@ -117,6 +118,32 @@ class BrowseController extends Controller
                 return $business;
             });
 
+        $enumerationBusinesses = EnumerationBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
+            ->whereRaw(
+                "MBRContains(ST_PolygonFromText(?, 4326, 'axis-order=long-lat'), coordinate)",
+                [$polygonWkt]
+            )
+            ->get()
+            ->map(function ($business) {
+                $business->name = '*****';
+                $business->description = "Hasil Pencacahan SE2026";
+                $business->project = [
+                    'id' => 'enumeration',
+                    'name' => 'Hasil Pencacahan',
+                    'type' => 'enumeration',
+                    'description' => null,
+                    'created_at' => '2024-06-28 10:15:30',
+                    'updated_at' => '2024-06-28 10:15:30',
+                ];
+                $business->user =  [
+                    'id' => 'dummy-enumeration',
+                    'firstname' => 'Enumeration Business',
+                    'email' => 'dummy@example.com',
+                ];
+                $business->is_locked = true;
+                return $business;
+            });
+
         $agricultureBusinesses = AgricultureBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
             ->whereRaw(
                 "MBRContains(ST_PolygonFromText(?, 4326, 'axis-order=long-lat'), coordinate)",
@@ -143,7 +170,7 @@ class BrowseController extends Controller
 
 
         $combinedBusiness = $marketBusinesses->merge($supplementSwmapsBusinesses)
-            ->merge($sbrBusinesses)->merge($agricultureBusinesses);
+            ->merge($sbrBusinesses)->merge($enumerationBusinesses)->merge($agricultureBusinesses);
 
         return $this->successResponse($combinedBusiness, 'Businesses retrieved successfully');
     }
@@ -287,6 +314,41 @@ class BrowseController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | ENUMERATION BUSINESSES (ALL COLUMNS)
+        |--------------------------------------------------------------------------
+        */
+
+        $enumerationBusinesses = EnumerationBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
+            ->whereRaw(
+                'ST_Intersects(
+                    coordinate,
+                    ST_GeomFromText(?, 4326)
+                )',
+                [$sls->geom_wkt]
+            )
+            ->get()
+            ->map(function ($business) {
+                $business->name = '*****';
+                $business->description = "Hasil Pencacahan SE2026";
+                $business->project = [
+                    'id' => 'enumeration',
+                    'name' => 'Hasil Pencacahan',
+                    'type' => 'enumeration',
+                    'description' => null,
+                    'created_at' => '2024-06-28 10:15:30',
+                    'updated_at' => '2024-06-28 10:15:30',
+                ];
+                $business->user =  [
+                    'id' => 'dummy-enumeration',
+                    'firstname' => 'Enumeration Business',
+                    'email' => 'dummy@example.com',
+                ];
+                $business->is_locked = true;
+                return $business;
+            });
+
+        /*
+        |--------------------------------------------------------------------------
         | AGRICULTURE BUSINESSES (ALL COLUMNS)
         |--------------------------------------------------------------------------
         */
@@ -320,7 +382,7 @@ class BrowseController extends Controller
 
         $combinedBusiness = $marketBusinesses->merge($supplementBusinesses)
             ->merge($sbrBusinesses)
-            ->merge($agricultureBusinesses);
+            ->merge($agricultureBusinesses)->merge($enumerationBusinesses);
 
         /*
         |--------------------------------------------------------------------------

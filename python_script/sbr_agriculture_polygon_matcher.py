@@ -31,7 +31,7 @@ GEOJSON_BASE_DIR = os.path.join(BASE_DIR, "storage/app/private/geojson")
 SLS_FILE_EXTS = (".json", ".geojson")
 DOTENV_PATH = os.path.join(BASE_DIR, ".env")
 
-TABLES_TO_PROCESS = ["sbr_business", "agriculture_business"]
+TABLES_TO_PROCESS = ["sbr_business", "agriculture_business", "enumeration_business"]
 
 ID_SLICE = {
 	"regency": 4,
@@ -230,6 +230,7 @@ def get_total_rows_to_process(cursor, table_name: str) -> int:
 		SELECT COUNT(*) AS total
 		FROM {validated_table}
 		WHERE deleted_at IS NULL
+		  AND sls_id IS NULL
 	"""
 	cursor.execute(query)
 	result = cursor.fetchone()
@@ -243,6 +244,7 @@ def fetch_batch(cursor, table_name: str, last_id: str | None, limit: int):
 		SELECT id, latitude, longitude
 		FROM {validated_table}
 		WHERE deleted_at IS NULL
+		  AND sls_id IS NULL
 		  AND (%s IS NULL OR id > %s)
 		ORDER BY id
 		LIMIT %s

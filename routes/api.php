@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BrowseController;
+use App\Http\Controllers\Api\BrowseControllerV2;
 use App\Http\Controllers\Api\InfoController;
 use App\Http\Controllers\Api\PolygonController;
 use App\Http\Controllers\Api\ProjectController;
@@ -34,9 +35,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/business-in-box', [TaggingController::class, 'getBusinessInBoundingBox']);
     Route::get('/business/project/{projectId}', [TaggingController::class, 'getBusinessByProject']);
     Route::get('/business/project/locked/{projectId}', [TaggingController::class, 'getLockedBusinessByProject']);
-    
+
     Route::get('/business-in-box-spatial', [BrowseController::class, 'getBusinessInBoundingBox']);
     Route::get('/business-by-sls', [BrowseController::class, 'getBusinessBySls']);
+
+    Route::get('/v2/business-in-box-spatial', [BrowseControllerV2::class, 'getBusinessInBoundingBox']);
+    Route::get('/v2/business-by-sls', [BrowseControllerV2::class, 'getBusinessBySls']);
 
     Route::middleware(['api', 'api-closed'])->group(function () {
         Route::post('/business', [TaggingController::class, 'storeSupplementBusiness']);
@@ -49,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('users/{user}/projects', [ProjectController::class, 'getProjectsByUser']);
     Route::get('users/{user}/projects/v2', [ProjectController::class, 'getProjectsByUserV2']);
-    
+
     Route::post('mobile-projects', [ProjectController::class, 'storeMobileProject']);
     Route::get('mobile-projects/{id}', [ProjectController::class, 'show']);
     Route::put('mobile-projects/{id}', [ProjectController::class, 'updateMobileProject']);
