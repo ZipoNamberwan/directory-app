@@ -426,4 +426,31 @@ class BrowseControllerV2 extends Controller
             'businesses' => $combinedBusiness,
         ], 'Businesses retrieved successfully');
     }
+
+    public function findSlsByCoordinates(Request $request)
+    {
+        $validated = $request->validate([
+            'lat' => 'required|numeric|between:-90,90',
+            'lng' => 'required|numeric|between:-180,180',
+        ]);
+
+        $point = "POINT({$validated['lng']} {$validated['lat']})";
+
+        $sls = Sls::query()
+            ->with([
+                'village.subdistrict.regency'
+            ])
+            ->whereRaw(
+                "ST_Contains(geom, ST_GeomFromText(?, 4326, 'axis-order=long-lat'))",
+                [$point]
+            )->first();
+
+        if (!$sls) {
+            return $this->errorResponse('Tidak ditemukan SLS yang cocok', 404);
+        }
+
+        return $this->successResponse([
+            'sls' => $sls,
+        ], 'SLS retrieved successfully');
+    }
 }

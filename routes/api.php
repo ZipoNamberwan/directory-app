@@ -41,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/v2/business-in-box-spatial', [BrowseControllerV2::class, 'getBusinessInBoundingBox']);
     Route::get('/v2/business-by-sls', [BrowseControllerV2::class, 'getBusinessBySls']);
+    Route::post('/v2/sls-finder', [BrowseControllerV2::class, 'findSlsByCoordinates']);
 
     Route::middleware(['api', 'api-closed'])->group(function () {
         Route::post('/business', [TaggingController::class, 'storeSupplementBusiness']);
