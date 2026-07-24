@@ -137,7 +137,7 @@ class BrowseControllerV2 extends Controller
                 ];
                 $business->user =  [
                     'id' => 'dummy-enumeration',
-                    'firstname' => 'Enumeration Business',
+                    'firstname' => 'Petugas SE2026',
                     'email' => 'dummy@example.com',
                 ];
                 $business->is_locked = true;
@@ -340,7 +340,7 @@ class BrowseControllerV2 extends Controller
                 ];
                 $business->user =  [
                     'id' => 'dummy-enumeration',
-                    'firstname' => 'Enumeration Business',
+                    'firstname' => 'Petugas SE2026',
                     'email' => 'dummy@example.com',
                 ];
                 $business->is_locked = true;
