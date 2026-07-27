@@ -118,51 +118,57 @@ class AuthController extends Controller
 
     public function loginGoogle(Request $request)
     {
-        $request->validate([
-            'firebaseToken' => ['required'],
-        ]);
+        $allowed = false;
 
-        // Verify the token with Google and get user info
-        try {
-            $verifiedToken = $this->firebaseAuth->verifyIdToken($request->firebaseToken);
-            $uid = $verifiedToken->claims()->get('sub');
+        if ($allowed) {
+            $request->validate([
+                'firebaseToken' => ['required'],
+            ]);
 
-            // Get full profile from Firebase
-            $firebaseUser = $this->firebaseAuth->getUser($uid);
+            // Verify the token with Google and get user info
+            try {
+                $verifiedToken = $this->firebaseAuth->verifyIdToken($request->firebaseToken);
+                $uid = $verifiedToken->claims()->get('sub');
 
-            // Get name from Google provider data if displayName is null
-            $displayName = $firebaseUser->displayName;
+                // Get full profile from Firebase
+                $firebaseUser = $this->firebaseAuth->getUser($uid);
 
-            if (is_null($displayName) && !empty($firebaseUser->providerData)) {
-                $displayName = $firebaseUser->providerData[0]->displayName;
+                // Get name from Google provider data if displayName is null
+                $displayName = $firebaseUser->displayName;
+
+                if (is_null($displayName) && !empty($firebaseUser->providerData)) {
+                    $displayName = $firebaseUser->providerData[0]->displayName;
+                }
+            } catch (\Throwable $e) {
+                return $this->errorResponse('Token/Email Google tidak valid', 422);
             }
-        } catch (\Throwable $e) {
-            return $this->errorResponse('Token/Email Google tidak valid', 422);
-        }
 
-        // Find user by email
-        $user = User::where('email', $firebaseUser->email)->with(['organization', 'roles'])->first();
+            // Find user by email
+            $user = User::where('email', $firebaseUser->email)->with(['organization', 'roles'])->first();
 
-        if (!$user) {
+            if (!$user) {
+                return $this->successResponse([
+                    'is_user_exist' => false,
+                    'name' => $displayName ?? 'New User',
+                    'email' => $firebaseUser->email,
+                ], 'User not found');
+            }
+
+            if (!$user->is_kendedes_user) {
+                return $this->errorResponse('Akun ini tidak memiliki akses ke KDM. Silakan hubungi admin kab/kota untuk mengubah akses melalui Admin Kendedes Web', 422);
+            }
+
+            // Create new personal access token
+            $token = $user->createToken('mobile-token')->plainTextToken;
+
             return $this->successResponse([
-                'is_user_exist' => false,
-                'name' => $displayName ?? 'New User',
-                'email' => $firebaseUser->email,
-            ], 'User not found');
+                'is_user_exist' => true,
+                'user' => $user,
+                'token' => $token
+            ], 'Login successful');
+        } else {
+            return $this->errorResponse('Login dengan Google saat ini tidak diizinkan', 403);
         }
-
-        if (!$user->is_kendedes_user) {
-            return $this->errorResponse('Akun ini tidak memiliki akses ke KDM. Silakan hubungi admin kab/kota untuk mengubah akses melalui Admin Kendedes Web', 422);
-        }
-
-        // Create new personal access token
-        $token = $user->createToken('mobile-token')->plainTextToken;
-
-        return $this->successResponse([
-            'is_user_exist' => true,
-            'user' => $user,
-            'token' => $token
-        ], 'Login successful');
     }
 
     public function changeProfile(Request $request)

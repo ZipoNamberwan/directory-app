@@ -11,6 +11,7 @@ use App\Models\Sls;
 use App\Models\SupplementBusiness;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BrowseControllerV2 extends Controller
 {
@@ -452,5 +453,126 @@ class BrowseControllerV2 extends Controller
         return $this->successResponse([
             'sls' => $sls,
         ], 'SLS retrieved successfully');
+    }
+
+    public function checkBusinessDataUpdate(Request $request)
+    {
+        $payload = $request->all();
+        $slsIds = collect($payload)->pluck('sls_id')->unique()->values()->all();
+
+        /*
+    |--------------------------------------------------------------------------
+    | STEP 1: FAST PASS — count by sls_id column (cheap, indexed)
+    |--------------------------------------------------------------------------
+    */
+
+        $placeholders = implode(',', array_fill(0, count($slsIds), '?'));
+
+        $fastCounts = DB::select("
+        SELECT sls_id, SUM(cnt) as total_count
+        FROM (
+            SELECT sls_id, COUNT(*) as cnt FROM supplement_business WHERE sls_id IN ($placeholders) GROUP BY sls_id
+            UNION ALL
+            SELECT sls_id, COUNT(*) as cnt FROM market_business WHERE sls_id IN ($placeholders) GROUP BY sls_id
+            UNION ALL
+            SELECT sls_id, COUNT(*) as cnt FROM agriculture_business WHERE sls_id IN ($placeholders) GROUP BY sls_id
+            UNION ALL
+            SELECT sls_id, COUNT(*) as cnt FROM sbr_business WHERE sls_id IN ($placeholders) AND status_sbr = 1 GROUP BY sls_id
+            UNION ALL
+            SELECT sls_id, COUNT(*) as cnt FROM enumeration_business WHERE sls_id IN ($placeholders) GROUP BY sls_id
+        ) as combined
+        GROUP BY sls_id
+    ", array_merge($slsIds, $slsIds, $slsIds, $slsIds, $slsIds));
+
+        $fastCountMap = collect($fastCounts)->keyBy('sls_id');
+
+        /*
+    |--------------------------------------------------------------------------
+    | STEP 2: SPLIT — figure out which sls_ids look like they need_update
+    |--------------------------------------------------------------------------
+    */
+
+        $needsSpatialCheck = [];
+        $fastResults = [];
+
+        foreach ($payload as $item) {
+            $fastCount = (int) ($fastCountMap->get($item['sls_id'])->total_count ?? 0);
+            $reported = (int) $item['business_count'];
+
+            if ($fastCount === $reported) {
+                // Fast path agrees it's up to date — trust it, skip spatial check
+                $fastResults[$item['sls_id']] = [
+                    'sls_id' => $item['sls_id'],
+                    'need_update' => false,
+                    'actual_count' => $fastCount,
+                    'reported_count' => $reported,
+                ];
+            } else {
+                // Mismatch — could be a real change, OR a false positive from
+                // unmatched sls_id rows. Needs the accurate spatial check.
+                $needsSpatialCheck[] = $item;
+            }
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | STEP 3: SLOW PASS — spatial ST_Intersects, only for flagged sls
+    |--------------------------------------------------------------------------
+    */
+
+        if (!empty($needsSpatialCheck)) {
+            $spatialSlsIds = collect($needsSpatialCheck)->pluck('sls_id')->unique()->values()->all();
+
+            $slsList = Sls::withoutGlobalScopes()
+                ->whereIn('id', $spatialSlsIds)
+                ->selectRaw('id, ST_AsText(geom) as geom_wkt')
+                ->get()
+                ->keyBy('id');
+
+            foreach ($needsSpatialCheck as $item) {
+                $sls = $slsList->get($item['sls_id']);
+                $reported = (int) $item['business_count'];
+
+                if (!$sls) {
+                    $fastResults[$item['sls_id']] = [
+                        'sls_id' => $item['sls_id'],
+                        'need_update' => true,
+                        'actual_count' => 0,
+                        'reported_count' => $reported,
+                    ];
+                    continue;
+                }
+
+                $wkt = $sls->geom_wkt;
+                $intersects = 'ST_Intersects(coordinate, ST_GeomFromText(?, 4326))';
+
+                $actualCount =
+                    SupplementBusiness::whereRaw($intersects, [$wkt])->count() +
+                    MarketBusiness::whereRaw($intersects, [$wkt])->count() +
+                    AgricultureBusiness::whereRaw($intersects, [$wkt])->count() +
+                    SbrBusiness::where('status_sbr', 1)->whereRaw($intersects, [$wkt])->count() +
+                    EnumerationBusiness::whereRaw($intersects, [$wkt])->count();
+
+                // Overwrite the fast-path guess with the authoritative spatial result
+                $fastResults[$item['sls_id']] = [
+                    'sls_id' => $item['sls_id'],
+                    'need_update' => $actualCount !== $reported,
+                    'actual_count' => $actualCount,
+                    'reported_count' => $reported,
+                ];
+            }
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | STEP 4: RETURN IN ORIGINAL PAYLOAD ORDER
+    |--------------------------------------------------------------------------
+    */
+
+        $result = collect($payload)->map(function ($item) use ($fastResults) {
+            return $fastResults[$item['sls_id']];
+        })->values();
+
+        return $this->successResponse($result, 'SLS retrieved successfully');
     }
 }
