@@ -9,8 +9,10 @@ use App\Models\MarketBusiness;
 use App\Models\SbrBusiness;
 use App\Models\Sls;
 use App\Models\SupplementBusiness;
+use App\Models\User;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class BrowseControllerV2 extends Controller
@@ -119,14 +121,17 @@ class BrowseControllerV2 extends Controller
                 return $business;
             });
 
+        $isAllowedRawData = User::find(Auth::id())->is_allowed_raw_data;
         $enumerationBusinesses = EnumerationBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
             ->whereRaw(
                 "MBRContains(ST_PolygonFromText(?, 4326, 'axis-order=long-lat'), coordinate)",
                 [$polygonWkt]
             )
             ->get()
-            ->map(function ($business) {
-                $business->name = '*****';
+            ->map(function ($business) use ($isAllowedRawData) {
+                if (!$isAllowedRawData) {
+                    $business->name = '*****';
+                }
                 $business->description = "Hasil Pencacahan SE2026";
                 $business->project = [
                     'id' => 'enumeration',
@@ -319,6 +324,7 @@ class BrowseControllerV2 extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $isAllowedRawData = User::find(Auth::id())->is_allowed_raw_data;
         $enumerationBusinesses = EnumerationBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
             ->whereRaw(
                 'ST_Intersects(
@@ -328,8 +334,10 @@ class BrowseControllerV2 extends Controller
                 [$sls->geom_wkt]
             )
             ->get()
-            ->map(function ($business) {
-                $business->name = '*****';
+            ->map(function ($business) use ($isAllowedRawData) {
+                if (!$isAllowedRawData) {
+                    $business->name = '*****';
+                }
                 $business->description = "Hasil Pencacahan SE2026";
                 $business->project = [
                     'id' => 'enumeration',

@@ -1090,6 +1090,9 @@ class SampangKdmSeeder extends Seeder
                     'is_kendedes_user' => true
                 ]);
                 $u->assignRoleAllDatabase($user['role']);
+            } else {
+                $u = User::where('email', $user['email'])->first();
+                $u->assignRoleAllDatabase($user['role']);
             }
         }
     }
