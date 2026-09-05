@@ -23,10 +23,12 @@ class EnumerationBusinessJob implements ShouldQueue
     /**
      * @param array $header  CSV header row
      * @param array $rows    Array of row arrays, each matching $header order
+     * @param bool  $bulk    If true, skip assignment_id dedup checks and insert everything in one query
      */
     public function __construct(
         public array $header,
         public array $rows,
+        public bool $bulk = false,
     ) {}
 
     public function handle(): void
@@ -48,6 +50,46 @@ class EnumerationBusinessJob implements ShouldQueue
         if ($records->isEmpty()) {
             return;
         }
+
+        if ($this->bulk) {
+            $skippedNoGeo = 0;
+            $rows = [];
+
+            foreach ($records as $r) {
+                if (!is_numeric($r['geotag_latitude']) || !is_numeric($r['geotag_longitude'])) {
+                    $skippedNoGeo++;
+                    continue;
+                }
+
+                $lat = (float) $r['geotag_latitude'];
+                $lng = (float) $r['geotag_longitude'];
+
+                $rows[] = [
+                    'id'             => (string) Str::uuid(),
+                    'name'           => $r['nama_principal'] ?? null,
+                    'assignment_id'  => $r['assignment_id'],
+                    'latitude'       => $lat,
+                    'longitude'      => $lng,
+                    'original_area'  => $r['level_6_full_code'],
+                    'regency_id'     => null,
+                    'subdistrict_id' => null,
+                    'village_id'     => null,
+                    'sls_id'         => null,
+                    'coordinate'     => DB::raw("ST_SRID(POINT({$lng}, {$lat}), 4326)"),
+                    'created_at'     => $now,
+                    'updated_at'     => $now,
+                ];
+            }
+
+            if (!empty($rows)) {
+                DB::table('enumeration_business')->insert($rows);
+            }
+
+            Log::info("CSV chunk import (bulk): inserted=" . count($rows) . ", skipped_no_geo={$skippedNoGeo}");
+            return;
+        }
+
+        // --- original one-by-one path (with assignment_id dedup) ---
 
         // Rule 2: skip assignment_ids that already exist in DB
         $assignmentIds = $records->pluck('assignment_id')->unique()->values();
@@ -97,9 +139,7 @@ class EnumerationBusinessJob implements ShouldQueue
                 'updated_at'     => $now,
             ]);
 
-            // Prevent duplicate assignment_ids within the same batch too
             $existingIds[$r['assignment_id']] = true;
-
             $inserted++;
         }
 
