@@ -23,12 +23,10 @@ class EnumerationBusinessJob implements ShouldQueue
     /**
      * @param array $header  CSV header row
      * @param array $rows    Array of row arrays, each matching $header order
-     * @param bool  $bulk    If true, skip assignment_id dedup checks and insert everything in one query
      */
     public function __construct(
         public array $header,
         public array $rows,
-        public bool $bulk = false,
     ) {}
 
     public function handle(): void
@@ -51,99 +49,52 @@ class EnumerationBusinessJob implements ShouldQueue
             return;
         }
 
-        if ($this->bulk) {
-            $skippedNoGeo = 0;
-            $rows = [];
-
-            foreach ($records as $r) {
-                if (!is_numeric($r['geotag_latitude']) || !is_numeric($r['geotag_longitude'])) {
-                    $skippedNoGeo++;
-                    continue;
-                }
-
-                $lat = (float) $r['geotag_latitude'];
-                $lng = (float) $r['geotag_longitude'];
-
-                $rows[] = [
-                    'id'             => (string) Str::uuid(),
-                    'name'           => $r['nama_principal'] ?? null,
-                    'assignment_id'  => $r['assignment_id'],
-                    'latitude'       => $lat,
-                    'longitude'      => $lng,
-                    'original_area'  => $r['level_6_full_code'],
-                    'regency_id'     => null,
-                    'subdistrict_id' => null,
-                    'village_id'     => null,
-                    'sls_id'         => null,
-                    'coordinate'     => DB::raw("ST_SRID(POINT({$lng}, {$lat}), 4326)"),
-                    'created_at'     => $now,
-                    'updated_at'     => $now,
-                ];
-            }
-
-            if (!empty($rows)) {
-                DB::table('enumeration_business')->insert($rows);
-            }
-
-            Log::info("CSV chunk import (bulk): inserted=" . count($rows) . ", skipped_no_geo={$skippedNoGeo}");
-            return;
-        }
-
-        // --- original one-by-one path (with assignment_id dedup) ---
-
-        // Rule 2: skip assignment_ids that already exist in DB
-        $assignmentIds = $records->pluck('assignment_id')->unique()->values();
-
-        $existingIds = DB::table('enumeration_business')
-            ->whereIn('assignment_id', $assignmentIds)
-            ->pluck('assignment_id')
-            ->all();
-
-        $existingIds = array_flip($existingIds); // fast lookup
-
-        $inserted = 0;
-        $skippedExisting = 0;
         $skippedNoGeo = 0;
+        $rows = [];
 
         foreach ($records as $r) {
-            if (isset($existingIds[$r['assignment_id']])) {
-                $skippedExisting++;
-                continue;
-            }
-
             if (!is_numeric($r['geotag_latitude']) || !is_numeric($r['geotag_longitude'])) {
                 $skippedNoGeo++;
                 continue;
             }
 
-            $record = [
-                'valid_latitude'  => (float) $r['geotag_latitude'],
-                'valid_longitude' => (float) $r['geotag_longitude'],
+            $lat = (float) $r['geotag_latitude'];
+            $lng = (float) $r['geotag_longitude'];
+
+            $name = ($r['nama_kk'] ?? '') !== '' ? $r['nama_kk'] : ($r['nama_usaha_bang'] ?? null);
+
+            $rows[] = [
+                'id'                 => (string) Str::uuid(),
+                'name'               => $name,
+                'assignment_id'      => $r['assignment_id'],
+                'building_number'    => $r['no_bang'] ?? null,
+                'latitude'           => $lat,
+                'longitude'          => $lng,
+                'original_area'      => $r['level_6_full_code'],
+                'original_latitude'  => $lat,
+                'original_longitude' => $lng,
+                'regency_id'         => null,
+                'subdistrict_id'     => null,
+                'village_id'         => null,
+                'sls_id'             => null,
+                'coordinate'         => DB::raw("ST_SRID(POINT({$lng}, {$lat}), 4326)"),
+                'created_at'         => $now,
+                'updated_at'         => $now,
             ];
-
-            DB::table('enumeration_business')->insert([
-                'id'             => (string) Str::uuid(),
-                'name'           => $r['nama_principal'] ?? null,
-                'assignment_id'  => $r['assignment_id'],
-                'latitude'       => $record['valid_latitude'],
-                'longitude'      => $record['valid_longitude'],
-                'original_area'  => $r['level_6_full_code'],
-                'regency_id'     => null,
-                'subdistrict_id' => null,
-                'village_id'     => null,
-                'sls_id'         => null,
-                'coordinate'     => DB::raw(
-                    "ST_SRID(POINT({$record['valid_longitude']}, {$record['valid_latitude']}), 4326)"
-                ),
-                'created_at'     => $now,
-                'updated_at'     => $now,
-            ]);
-
-            $existingIds[$r['assignment_id']] = true;
-            $inserted++;
         }
 
-        Log::info("CSV chunk import: inserted={$inserted}, skipped_existing={$skippedExisting}, skipped_no_geo={$skippedNoGeo}");
+        if (!empty($rows)) {
+            // Existing assignment_id -> update name/building_number only.
+            // New assignment_id -> insert the full row (requires the unique
+            // index on assignment_id added in the 2026_09_18 migration).
+            DB::table('enumeration_business')->upsert(
+                $rows,
+                ['assignment_id'],
+                ['name', 'building_number', 'updated_at']
+            );
+        }
+
+        Log::info("CSV chunk import: upserted=" . count($rows) . ", skipped_no_geo={$skippedNoGeo}");
     }
 
     public function failed(Throwable $e): void
