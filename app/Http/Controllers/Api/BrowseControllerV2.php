@@ -10,6 +10,7 @@ use App\Models\SbrBusiness;
 use App\Models\Sls;
 use App\Models\SupplementBusiness;
 use App\Models\User;
+use App\Models\UserSlsCensus;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -121,16 +122,20 @@ class BrowseControllerV2 extends Controller
                 return $business;
             });
 
-        $isAllowedRawData = User::find(Auth::id())->is_allowed_raw_data;
+        $user = User::find(Auth::id());
+        $isAllowedRawData = $user->is_allowed_raw_data;
+        $allowedSlsIds = $isAllowedRawData
+            ? []
+            : UserSlsCensus::where('user_id', $user->id)->pluck('sls_id')->all();
         $enumerationBusinesses = EnumerationBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
             ->whereRaw(
                 "MBRContains(ST_PolygonFromText(?, 4326, 'axis-order=long-lat'), coordinate)",
                 [$polygonWkt]
             )
             ->get()
-            ->map(function ($business) use ($isAllowedRawData) {
-                if (!$isAllowedRawData) {
-                    $business->name = '*****';
+            ->map(function ($business) use ($isAllowedRawData, $allowedSlsIds) {
+                if (!$isAllowedRawData && !in_array($business->sls_id, $allowedSlsIds)) {
+                    $business->name = $business->building_number ?? '******';
                 }
                 $business->description = "Hasil Pencacahan SE2026";
                 $business->project = [
@@ -324,7 +329,10 @@ class BrowseControllerV2 extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $isAllowedRawData = User::find(Auth::id())->is_allowed_raw_data;
+        $user = User::find(Auth::id());
+        $isAllowedRawData = $user->is_allowed_raw_data
+            ? true
+            : UserSlsCensus::where('user_id', $user->id)->where('sls_id', $slsId)->exists();
         $enumerationBusinesses = EnumerationBusiness::with(['regency', 'subdistrict', 'village', 'sls'])
             ->whereRaw(
                 'ST_Intersects(
@@ -336,7 +344,7 @@ class BrowseControllerV2 extends Controller
             ->get()
             ->map(function ($business) use ($isAllowedRawData) {
                 if (!$isAllowedRawData) {
-                    $business->name = '*****';
+                    $business->name = $business->building_number ?? '******';
                 }
                 $business->description = "Hasil Pencacahan SE2026";
                 $business->project = [

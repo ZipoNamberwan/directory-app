@@ -11,10 +11,9 @@ class EnumerationBusinessImportCommand extends Command
     protected const DEFAULT_FOLDER = '../backup/enumeration';
     protected const DEFAULT_CHUNK_SIZE = 1000;
 
-    protected $signature = 'app:import-enumeration 
+    protected $signature = 'app:import-enumeration
                             {--chunk= : Number of rows per chunk}
-                            {--batches= : Limit execution to the first N batches per file}
-                            {--bulk : Insert all rows directly, skipping assignment_id duplicate checks}';
+                            {--batches= : Limit execution to the first N batches per file}';
 
     protected $description = 'Read large CSV file(s) and dispatch import jobs with row batches';
 
@@ -22,7 +21,6 @@ class EnumerationBusinessImportCommand extends Command
     {
         $chunkSize = (int) ($this->option('chunk') ?? self::DEFAULT_CHUNK_SIZE);
         $batchLimit = $this->option('batches') !== null ? (int) $this->option('batches') : null;
-        $bulk = (bool) $this->option('bulk');
 
         $folderPath = storage_path(self::DEFAULT_FOLDER);
 
@@ -46,22 +44,19 @@ class EnumerationBusinessImportCommand extends Command
         if ($batchLimit !== null) {
             $this->info('Batch limit: ' . $batchLimit . ' batch(es) per file');
         }
-        if ($bulk) {
-            $this->warn('Bulk mode enabled: assignment_id duplicate checks are skipped.');
-        }
         $this->info('Found ' . $csvFiles->count() . ' CSV file(s)');
         $this->newLine();
 
         foreach ($csvFiles as $file) {
             $this->info("Processing: {$file->getFilename()}");
-            $this->readAndDispatch($file->getPathname(), $chunkSize, $batchLimit, $bulk);
+            $this->readAndDispatch($file->getPathname(), $chunkSize, $batchLimit);
             $this->newLine();
         }
 
         return self::SUCCESS;
     }
 
-    protected function readAndDispatch(string $path, int $chunkSize, ?int $batchLimit, bool $bulk): void
+    protected function readAndDispatch(string $path, int $chunkSize, ?int $batchLimit): void
     {
         $handle = fopen($path, 'r');
         if (!$handle) {
@@ -81,13 +76,13 @@ class EnumerationBusinessImportCommand extends Command
         $buffer = [];
         $limitReached = false;
 
-        $flush = function () use (&$buffer, $header, &$dispatched, $bulk) {
+        $flush = function () use (&$buffer, $header, &$dispatched) {
             if (empty($buffer)) {
                 return;
             }
 
             // Dispatch job with the row batch directly — no file involved
-            EnumerationBusinessJob::dispatch($header, $buffer, $bulk);
+            EnumerationBusinessJob::dispatch($header, $buffer);
 
             $dispatched++;
             $buffer = [];
