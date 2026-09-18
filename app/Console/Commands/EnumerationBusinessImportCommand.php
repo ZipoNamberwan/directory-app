@@ -64,12 +64,27 @@ class EnumerationBusinessImportCommand extends Command
             return;
         }
 
-        $header = fgetcsv($handle);
-        if ($header === false) {
+        $headerLine = fgets($handle);
+        if ($headerLine === false) {
             $this->warn("CSV appears empty, skipping: {$path}");
             fclose($handle);
             return;
         }
+
+        $delimiter = ',';
+        $header = str_getcsv($headerLine, $delimiter);
+        if (count($header) <= 1) {
+            $delimiter = '|';
+            $header = str_getcsv($headerLine, $delimiter);
+        }
+
+        if (count($header) <= 1) {
+            $this->error("Unable to detect delimiter (tried ',' and '|'), skipping: {$path}");
+            fclose($handle);
+            return;
+        }
+
+        $this->line('  Detected delimiter: ' . ($delimiter === ',' ? 'comma' : 'pipe'));
 
         $rowCount = 0;
         $dispatched = 0;
@@ -88,7 +103,7 @@ class EnumerationBusinessImportCommand extends Command
             $buffer = [];
         };
 
-        while (($row = fgetcsv($handle)) !== false) {
+        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
             if ($batchLimit !== null && $dispatched >= $batchLimit) {
                 $limitReached = true;
                 break;

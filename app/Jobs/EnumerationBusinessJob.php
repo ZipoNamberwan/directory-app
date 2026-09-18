@@ -90,7 +90,7 @@ class EnumerationBusinessJob implements ShouldQueue
             DB::table('enumeration_business')->upsert(
                 $rows,
                 ['assignment_id'],
-                ['name', 'building_number', 'updated_at']
+                ['name', 'building_number', 'original_latitude', 'original_longitude', 'updated_at']
             );
         }
 
