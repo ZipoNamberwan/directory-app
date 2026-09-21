@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Jobs\UserSlsCensusImportJob;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class UserSlsCensusImportCommand extends Command
 {
@@ -16,7 +15,7 @@ class UserSlsCensusImportCommand extends Command
                             {--chunk= : Number of rows per chunk}
                             {--batches= : Limit execution to the first N batches per file}';
 
-    protected $description = 'Read Excel file(s) of user SLS census allocation and dispatch import jobs with row batches';
+    protected $description = 'Read CSV file(s) of user SLS census allocation and dispatch import jobs with row batches';
 
     public function handle(): int
     {
@@ -32,12 +31,12 @@ class UserSlsCensusImportCommand extends Command
 
         $files = File::files($folderPath);
 
-        $excelFiles = collect($files)->filter(
-            fn ($file) => in_array(strtolower($file->getExtension()), ['xlsx', 'xls'])
+        $csvFiles = collect($files)->filter(
+            fn ($file) => strtolower($file->getExtension()) === 'csv'
         );
 
-        if ($excelFiles->isEmpty()) {
-            $this->error("No Excel files found in: {$folderPath}");
+        if ($csvFiles->isEmpty()) {
+            $this->error("No CSV files found in: {$folderPath}");
             return self::FAILURE;
         }
 
@@ -48,10 +47,10 @@ class UserSlsCensusImportCommand extends Command
         if ($batchLimit !== null) {
             $this->info('Batch limit: ' . $batchLimit . ' batch(es) per file');
         }
-        $this->info('Found ' . $excelFiles->count() . ' Excel file(s)');
+        $this->info('Found ' . $csvFiles->count() . ' CSV file(s)');
         $this->newLine();
 
-        foreach ($excelFiles as $file) {
+        foreach ($csvFiles as $file) {
             $this->info("Processing: {$file->getFilename()}");
             $this->readAndDispatch($file->getPathname(), $chunkSize, $batchLimit);
             $this->newLine();
@@ -62,14 +61,33 @@ class UserSlsCensusImportCommand extends Command
 
     protected function readAndDispatch(string $path, int $chunkSize, ?int $batchLimit): void
     {
-        $rows = IOFactory::load($path)->getActiveSheet()->toArray(null, true, false, false);
-
-        if (empty($rows)) {
-            $this->warn("Excel file appears empty, skipping: {$path}");
+        $handle = fopen($path, 'r');
+        if (!$handle) {
+            $this->error("Unable to open file: {$path}");
             return;
         }
 
-        $header = array_shift($rows);
+        $headerLine = fgets($handle);
+        if ($headerLine === false) {
+            $this->warn("CSV appears empty, skipping: {$path}");
+            fclose($handle);
+            return;
+        }
+
+        $delimiter = ',';
+        $header = str_getcsv($headerLine, $delimiter);
+        if (count($header) <= 1) {
+            $delimiter = '|';
+            $header = str_getcsv($headerLine, $delimiter);
+        }
+
+        if (count($header) <= 1) {
+            $this->error("Unable to detect delimiter (tried ',' and '|'), skipping: {$path}");
+            fclose($handle);
+            return;
+        }
+
+        $this->line('  Detected delimiter: ' . ($delimiter === ',' ? 'comma' : 'pipe'));
 
         $rowCount = 0;
         $dispatched = 0;
@@ -88,10 +106,14 @@ class UserSlsCensusImportCommand extends Command
             $buffer = [];
         };
 
-        foreach ($rows as $row) {
+        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
             if ($batchLimit !== null && $dispatched >= $batchLimit) {
                 $limitReached = true;
                 break;
+            }
+
+            if (count($row) !== count($header)) {
+                continue; // skip malformed row
             }
 
             $buffer[] = $row;
@@ -106,6 +128,8 @@ class UserSlsCensusImportCommand extends Command
         if (!$limitReached) {
             $flush();
         }
+
+        fclose($handle);
 
         $suffix = $limitReached ? " (stopped early, batch limit reached)" : '';
         $this->line("  → {$rowCount} rows read, {$dispatched} job(s) dispatched.{$suffix}");
