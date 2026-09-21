@@ -61,8 +61,18 @@ class UserSlsCensusImportJob implements ShouldQueue
                 continue;
             }
 
+            // Zero-padded to each area level's fixed width: Excel stores these codes as
+            // plain numbers in some source files (e.g. kab_code 1 instead of "01"), which
+            // silently drops leading zeros and produces a long_code that matches nothing.
+            $longCode = str_pad($provCode, 2, '0', STR_PAD_LEFT)
+                . str_pad($kabCode, 2, '0', STR_PAD_LEFT)
+                . str_pad($kecCode, 3, '0', STR_PAD_LEFT)
+                . str_pad($desaCode, 3, '0', STR_PAD_LEFT)
+                . substr(str_pad($slsCode, 6, '0', STR_PAD_LEFT), 0, 4)
+                . '00';
+
             $parsed[] = [
-                'long_code' => $provCode . $kabCode . $kecCode . $desaCode . substr($slsCode, 0, 4) . '00',
+                'long_code' => $longCode,
                 'email' => $email,
             ];
         }

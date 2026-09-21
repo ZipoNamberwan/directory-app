@@ -170,7 +170,6 @@ class AuthController extends Controller
             return $this->errorResponse('Login dengan Google saat ini tidak diizinkan', 403);
         }
     }
-
     public function changeProfile(Request $request)
     {
         $request->validate([
