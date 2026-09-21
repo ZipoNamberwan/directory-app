@@ -11,7 +11,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class UserMitraImportCommand extends Command
 {
     protected const DEFAULT_FOLDER = '../backup/users';
-    protected const DEFAULT_CHUNK_SIZE = 500;
+    protected const DEFAULT_CHUNK_SIZE = 100;
 
     protected $signature = 'app:import-mitra-users
                             {--chunk= : Number of rows per chunk}
