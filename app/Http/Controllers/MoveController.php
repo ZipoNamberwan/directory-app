@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\EnumerationBusiness;
 use App\Models\Sls;
+use Exception;
 use App\Models\User;
 use App\Models\UserSlsCensus;
 use App\Traits\ApiResponser;
@@ -166,5 +167,35 @@ class MoveController extends Controller
         })->values();
 
         return $this->successResponse($result, 'SLS retrieved successfully');
+    }
+
+    public function updateLocation(Request $request, string $id)
+    {
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        try {
+            $business = EnumerationBusiness::find($id);
+            if (!$business) {
+                return $this->errorResponse('Data enumerasi tidak ditemukan', 404);
+            }
+
+            $business->update([
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+
+                // always regenerated
+                'coordinate' => DB::raw(
+                    "ST_PointFromText('POINT({$request->longitude} {$request->latitude})', 4326, 'axis-order=long-lat')"
+                ),
+            ]);
+            $business->refresh();
+
+            return $this->successResponse(data: $business, status: 200);
+        } catch (Exception $e) {
+            return $this->errorResponse('Gagal memperbarui tagging', 500);
+        }
     }
 }
