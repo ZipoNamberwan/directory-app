@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class EnumerationBusiness extends Model
+class EnumerationBusiness extends BaseModel
 {
     use HasFactory, HasUuids, SoftDeletes;
     protected $guarded = [];
