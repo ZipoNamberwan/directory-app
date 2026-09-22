@@ -9,6 +9,7 @@ use App\Models\UserSlsCensus;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MoveController extends Controller
 {
@@ -125,5 +126,45 @@ class MoveController extends Controller
             ],
             'businesses' => $enumerationBusinesses,
         ], 'Businesses retrieved successfully');
+    }
+
+    public function checkBusinessDataUpdate(Request $request)
+    {
+        $payload = $request->all();
+        $slsIds = collect($payload)->pluck('sls_id')->unique()->values()->all();
+
+        // enumeration_business is matched by the first 14 chars of original_area
+        // against the sls's long_code prefix, not by sls_id.
+        $slsLongCodes = Sls::withoutGlobalScopes()->whereIn('id', $slsIds)->pluck('long_code', 'id');
+
+        $countMap = collect();
+
+        if ($slsLongCodes->isNotEmpty()) {
+            $subqueries = [];
+            $bindings = [];
+
+            foreach ($slsLongCodes as $slsId => $longCode) {
+                $subqueries[] = 'SELECT ? as sls_id, COUNT(*) as cnt FROM enumeration_business WHERE original_area LIKE ?';
+                $bindings[] = $slsId;
+                $bindings[] = substr($longCode, 0, 14) . '%';
+            }
+
+            $counts = DB::select(implode(' UNION ALL ', $subqueries), $bindings);
+            $countMap = collect($counts)->keyBy('sls_id');
+        }
+
+        $result = collect($payload)->map(function ($item) use ($countMap) {
+            $actualCount = (int) ($countMap->get($item['sls_id'])->cnt ?? 0);
+            $reported = (int) $item['business_count'];
+
+            return [
+                'sls_id' => $item['sls_id'],
+                'need_update' => $actualCount !== $reported,
+                'actual_count' => $actualCount,
+                'reported_count' => $reported,
+            ];
+        })->values();
+
+        return $this->successResponse($result, 'SLS retrieved successfully');
     }
 }

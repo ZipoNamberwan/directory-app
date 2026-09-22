@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/v2/business-update-checker', [BrowseControllerV2::class, 'checkBusinessDataUpdate']);
 
     Route::get('/business-by-sls/move-mode', [MoveController::class, 'getBusinessBySls']);
+    Route::post('/business-update-checker/move-mode', [MoveController::class, 'checkBusinessDataUpdate']);
 
     Route::middleware(['api', 'api-closed'])->group(function () {
         Route::post('/business', [TaggingController::class, 'storeSupplementBusiness']);
