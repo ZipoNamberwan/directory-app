@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\VersionController;
 use App\Http\Controllers\Api\WilkerstatController;
 use App\Http\Controllers\Api\StatisticController;
 use App\Http\Controllers\MajapahitLoginController;
+use App\Http\Controllers\MoveController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -43,6 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/v2/business-by-sls', [BrowseControllerV2::class, 'getBusinessBySls']);
     Route::post('/v2/sls-finder', [BrowseControllerV2::class, 'findSlsByCoordinates']);
     Route::post('/v2/business-update-checker', [BrowseControllerV2::class, 'checkBusinessDataUpdate']);
+
+    Route::get('/business-by-sls/move-mode', [MoveController::class, 'getBusinessBySls']);
 
     Route::middleware(['api', 'api-closed'])->group(function () {
         Route::post('/business', [TaggingController::class, 'storeSupplementBusiness']);
