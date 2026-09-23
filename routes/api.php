@@ -18,6 +18,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/profile', [AuthController::class, 'changeProfile']);
 Route::post('/login/google', [AuthController::class, 'loginGoogle']);
+Route::post('/login/google/v2', [AuthController::class, 'loginGoogleV2']);
 Route::post('/login/wilkerstat', [AuthController::class, 'loginWilkerstat']);
 
 Route::middleware('auth:sanctum')->group(function () {

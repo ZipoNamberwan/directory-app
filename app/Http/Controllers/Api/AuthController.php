@@ -208,4 +208,42 @@ class AuthController extends Controller
             'user' => $user,
         ], 'Update successful');
     }
+
+    public function loginGoogleV2(Request $request)
+    {
+        $request->validate([
+            'firebaseToken' => ['required'],
+        ]);
+
+        // Verify the token with Google and get user info
+        try {
+            $verifiedToken = $this->firebaseAuth->verifyIdToken($request->firebaseToken);
+            $uid = $verifiedToken->claims()->get('sub');
+
+            // Get full profile from Firebase
+            $firebaseUser = $this->firebaseAuth->getUser($uid);
+        } catch (\Throwable $e) {
+            return $this->errorResponse('Token/Email Google tidak valid', 422);
+        }
+
+        // Find user by email
+        $user = User::where('email', $firebaseUser->email)->with(['organization', 'roles'])->first();
+
+        if (!$user) {
+            return $this->errorResponse('Akun anda tidak diizinkan untuk login google', 403);
+        }
+
+        if (!$user->is_kendedes_user) {
+            return $this->errorResponse('Akun ini tidak memiliki akses ke KDM. Silakan hubungi admin kab/kota untuk mengubah akses melalui Admin Kendedes Web', 422);
+        }
+
+        // Create new personal access token
+        $token = $user->createToken('mobile-token')->plainTextToken;
+
+        return $this->successResponse([
+            'is_user_exist' => true,
+            'user' => $user,
+            'token' => $token
+        ], 'Login successful');
+    }
 }
