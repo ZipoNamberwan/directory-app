@@ -10,7 +10,6 @@ use App\Http\Controllers\Api\TaggingController;
 use App\Http\Controllers\Api\VersionController;
 use App\Http\Controllers\Api\WilkerstatController;
 use App\Http\Controllers\Api\StatisticController;
-use App\Http\Controllers\MajapahitLoginController;
 use App\Http\Controllers\MoveController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,12 +19,9 @@ Route::post('/profile', [AuthController::class, 'changeProfile']);
 Route::post('/login/google', [AuthController::class, 'loginGoogle']);
 Route::post('/login/google/v2', [AuthController::class, 'loginGoogleV2']);
 Route::post('/login/wilkerstat', [AuthController::class, 'loginWilkerstat']);
+Route::get('/fasih/tag_data/{remoteId}', [MoveController::class, 'redirectToFasih']);
 
 Route::middleware('auth:sanctum')->group(function () {
-
-    Route::get('/test', function () {
-        return 'test';
-    });
 
     Route::get('/assignments/wilkerstat', [WilkerstatController::class, 'getAssignments']);
     Route::get('/assignments/wilkerstat/village/{villageId}', [WilkerstatController::class, 'getBusinessByVillage']);

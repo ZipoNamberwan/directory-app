@@ -51,8 +51,6 @@ class MoveController extends Controller
             return $this->errorResponse('Geojson SLS tidak ditemukan', 404);
         }
 
-        $now = now();
-
         /*
         |--------------------------------------------------------------------------
         | ENUMERATION BUSINESSES (ALL COLUMNS)
@@ -197,5 +195,14 @@ class MoveController extends Controller
         } catch (Exception $e) {
             return $this->errorResponse('Gagal memperbarui tagging', 500);
         }
+    }
+
+    public function redirectToFasih(string $remoteId)
+    {
+        $business = EnumerationBusiness::findOrFail($remoteId);
+
+        return view('mobile/fasih-redirect', [
+            'url' => 'https://fasih-sm.bps.go.id/app/assignment-detail/' . $business->assignment_id,
+        ]);
     }
 }

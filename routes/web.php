@@ -19,6 +19,7 @@ use App\Http\Controllers\MarketAssignmentController;
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\MarketManagementController;
 use App\Http\Controllers\PclController;
+use App\Http\Controllers\EnumerationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SupplementController;
 use App\Http\Controllers\InfoController;
@@ -111,6 +112,10 @@ Route::group(['middleware' => 'auth'], function () {
 		Route::delete('/suplemen/{id}', [SupplementController::class, 'deleteBusiness']);
 
 		Route::get('/suplemen/upload/data', [SupplementController::class, 'getUploadStatusData']);
+
+		Route::get('/se2026/allocation', [EnumerationController::class, 'showAllocationPage']);
+		Route::get('/se2026/allocation/data', [EnumerationController::class, 'getAllocationData']);
+		Route::post('/se2026/allocation/manual', [EnumerationController::class, 'storeManualAllocation']);
 
 		Route::get('/pasar/peta', [MarketController::class, 'getMarketDistributionData']);
 		Route::get('/pasar/muatan/{id}', [MarketController::class, 'getMarketBusinessDetail']);

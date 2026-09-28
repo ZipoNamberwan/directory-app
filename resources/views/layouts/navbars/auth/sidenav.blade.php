@@ -122,6 +122,20 @@
                     </a>
                 </li>
             @endhasrole
+            <li class="nav-item mt-3">
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Hasil Tagging SE2026</h6>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ str_contains(request()->url(), 'se2026/allocation') == true ? 'active' : '' }}"
+                    href="/se2026/allocation">
+                    <div
+                        class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-user-check text-sm opacity-10" style="color: #1565C0"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Alokasi Petugas</span>
+                </a>
+            </li>
+            
             @hasrole('pml|operator|adminkab|adminprov')
                 <li class="nav-item mt-3">
                     <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Sentra Ekonomi</h6>
