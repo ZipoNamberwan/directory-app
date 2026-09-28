@@ -70,9 +70,9 @@ class MoveController extends Controller
                 }
                 $business->description = "Hasil Pencacahan SE2026";
                 $business->project = [
-                    'id' => 'move',
+                    'id' => 'enumeration',
                     'name' => 'Hasil Pencacahan',
-                    'type' => 'move',
+                    'type' => 'enumeration',
                     'description' => null,
                     'created_at' => '2024-06-28 10:15:30',
                     'updated_at' => '2024-06-28 10:15:30',
